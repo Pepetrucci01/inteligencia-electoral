@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ADMINISTRACIÓN — INTELIGENCIA ELECTORAL 2027</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+:root{
+  --bg:#0a0e1a;--bg2:#0f1526;--bg3:#141b2e;--bg4:#1a2238;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.14);
+  --text:#e8edf5;--text2:#8a9ab5;--text3:#5a6a85;
+  --accent:#3b82f6;--green:#22c55e;--red:#ef4444;
+  --amber:#f59e0b;--cyan:#06b6d4;--purple:#a855f7;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{background:var(--bg);color:var(--text);font-family:var(--sans);}
+
+/* TOPBAR */
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border2);padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.topbar-left{display:flex;align-items:center;gap:12px;}
+.logo-mark{width:28px;height:28px;background:var(--red);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:600;color:#fff;}
+.topbar-title{font-size:13px;font-weight:600;letter-spacing:.04em;}
+.topbar-sub{font-size:11px;color:var(--text3);font-family:var(--mono);}
+.role-badge{font-size:10px;font-family:var(--mono);padding:3px 10px;border-radius:99px;background:rgba(239,68,68,0.12);color:var(--red);border:1px solid rgba(239,68,68,0.25);}
+
+/* TABS */
+.tabs{background:var(--bg3);border-bottom:1px solid var(--border);display:flex;overflow-x:auto;position:sticky;top:52px;z-index:99;}
+.tab{padding:11px 18px;font-size:12px;font-family:var(--mono);color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .2s;flex-shrink:0;}
+.tab:hover{color:var(--text2);}
+.tab.active{color:var(--red);border-bottom-color:var(--red);}
+
+.main{padding:20px 24px 60px;}
+
+/* CARDS */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:14px;}
+.card-head{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.card-title{font-size:11px;font-family:var(--mono);color:var(--text2);text-transform:uppercase;letter-spacing:.06em;}
+.card-body{padding:16px;}
+
+/* KPI */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:18px;}
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;position:relative;overflow:hidden;}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.kpi.re::before{background:var(--red);}
+.kpi.gr::before{background:var(--green);}
+.kpi.am::before{background:var(--amber);}
+.kpi.bl::before{background:var(--accent);}
+.kpi.cy::before{background:var(--cyan);}
+.kpi.pu::before{background:var(--purple);}
+.kpi-val{font-size:22px;font-weight:600;font-family:var(--mono);line-height:1;margin-bottom:4px;}
+.kpi.re .kpi-val{color:var(--red);}
+.kpi.gr .kpi-val{color:var(--green);}
+.kpi.am .kpi-val{color:var(--amber);}
+.kpi.bl .kpi-val{color:var(--accent);}
+.kpi.cy .kpi-val{color:var(--cyan);}
+.kpi.pu .kpi-val{color:var(--purple);}
+.kpi-lbl{font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.04em;}
+
+/* GRIDS */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+
+/* TABLES */
+.table-wrap{overflow-x:auto;}
+table.at{width:100%;border-collapse:collapse;font-size:12px;}
+table.at th{padding:8px 12px;text-align:left;font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);background:var(--bg3);white-space:nowrap;}
+table.at td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle;}
+table.at tr:last-child td{border-bottom:none;}
+table.at tr:hover td{background:rgba(255,255,255,0.02);}
+.cell-name{font-size:13px;font-weight:500;}
+.cell-sub{font-size:10px;color:var(--text3);font-family:var(--mono);}
+.cell-mono{font-family:var(--mono);font-size:12px;}
+
+/* BADGES */
+.badge{font-size:10px;font-family:var(--mono);padding:2px 8px;border-radius:99px;font-weight:500;display:inline-block;}
+.b-red{background:rgba(239,68,68,0.12);color:var(--red);border:1px solid rgba(239,68,68,0.2);}
+.b-amber{background:rgba(245,158,11,0.12);color:var(--amber);border:1px solid rgba(245,158,11,0.2);}
+.b-green{background:rgba(34,197,94,0.12);color:var(--green);border:1px solid rgba(34,197,94,0.2);}
+.b-blue{background:rgba(59,130,246,0.12);color:var(--accent);border:1px solid rgba(59,130,246,0.2);}
+.b-purple{background:rgba(168,85,247,0.12);color:var(--purple);border:1px solid rgba(168,85,247,0.2);}
+.b-gray{background:rgba(100,116,139,0.12);color:var(--text2);border:1px solid var(--border2);}
+.b-cyan{background:rgba(6,182,212,0.12);color:var(--cyan);border:1px solid rgba(6,182,212,0.2);}
+
+/* BUTTONS */
+.btn{font-family:var(--mono);font-size:11px;padding:5px 12px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;transition:all .15s;}
+.btn:hover{border-color:var(--accent);color:var(--text);}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+.btn.primary:hover{background:#2563eb;}
+.btn.danger{background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);color:var(--red);}
+.btn.danger:hover{background:rgba(239,68,68,0.2);}
+.btn.success{background:rgba(34,197,94,0.1);border-color:rgba(34,197,94,0.3);color:var(--green);}
+.btn.success:hover{background:rgba(34,197,94,0.2);}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;}
+
+/* FORM */
+.form-group{margin-bottom:14px;}
+.form-label{font-size:12px;color:var(--text2);margin-bottom:6px;display:block;}
+.form-input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--sans);font-size:13px;padding:9px 12px;outline:none;transition:border-color .2s;}
+.form-input:focus{border-color:var(--accent);}
+.form-select{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 12px;outline:none;-webkit-appearance:none;}
+.form-select:focus{border-color:var(--accent);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-textarea{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:11px;padding:9px 12px;outline:none;resize:none;}
+
+/* TOGGLE */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);}
+.toggle-row:last-child{border-bottom:none;}
+.toggle-info .tl{font-size:13px;}
+.toggle-info .ts{font-size:11px;color:var(--text3);}
+.toggle{width:40px;height:22px;background:var(--bg4);border:1px solid var(--border2);border-radius:99px;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0;}
+.toggle.on{background:var(--green);}
+.toggle::after{content:'';position:absolute;width:16px;height:16px;background:#fff;border-radius:50%;top:2px;left:2px;transition:transform .2s;}
+.toggle.on::after{transform:translateX(18px);}
+
+/* LICENSE CARDS */
+.license-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;}
+.license-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px 18px;position:relative;overflow:hidden;}
+.license-card.active{border-color:rgba(34,197,94,0.3);}
+.license-card.trial{border-color:rgba(245,158,11,0.3);}
+.license-card.expired{border-color:rgba(239,68,68,0.3);opacity:.7;}
+.lc-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.lc-state{font-size:13px;font-weight:600;}
+.lc-plan{font-size:11px;font-family:var(--mono);color:var(--text3);}
+.lc-dates{font-size:11px;font-family:var(--mono);color:var(--text3);margin-bottom:10px;}
+.lc-features{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px;}
+.lc-feat{font-size:10px;font-family:var(--mono);padding:2px 7px;border-radius:99px;background:var(--bg3);color:var(--text2);border:1px solid var(--border2);}
+.lc-prog{height:4px;background:rgba(255,255,255,0.06);border-radius:99px;overflow:hidden;margin-bottom:4px;}
+.lc-prog-fill{height:100%;border-radius:99px;}
+.lc-days{font-size:10px;font-family:var(--mono);color:var(--text3);}
+
+/* AUDIT LOG */
+.audit-item{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);}
+.audit-item:last-child{border-bottom:none;}
+.audit-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+.audit-time{font-size:10px;font-family:var(--mono);color:var(--text3);width:100px;flex-shrink:0;}
+.audit-user{font-size:11px;font-family:var(--mono);color:var(--cyan);margin-bottom:2px;}
+.audit-action{font-size:12px;color:var(--text);}
+.audit-meta{font-size:10px;font-family:var(--mono);color:var(--text3);margin-top:2px;}
+
+/* PERM MATRIX */
+.perm-table{width:100%;border-collapse:collapse;font-size:11px;}
+.perm-table th{padding:8px 10px;text-align:center;font-size:10px;font-family:var(--mono);color:var(--text3);border-bottom:1px solid var(--border);}
+.perm-table th:first-child{text-align:left;}
+.perm-table td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:center;}
+.perm-table tr:last-child td{border-bottom:none;}
+.perm-table td:first-child{text-align:left;color:var(--text2);font-size:11px;}
+.perm-check{color:var(--green);font-size:14px;}
+.perm-x{color:var(--red);font-size:12px;opacity:.5;}
+.perm-part{color:var(--amber);font-size:12px;}
+
+/* CONFIG */
+.config-section{margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--border);}
+.config-section:last-child{border-bottom:none;margin-bottom:0;}
+.config-section-title{font-size:12px;font-weight:500;margin-bottom:12px;color:var(--text);}
+.color-swatches{display:flex;gap:8px;flex-wrap:wrap;}
+.swatch{width:32px;height:32px;border-radius:6px;cursor:pointer;border:2px solid transparent;transition:border-color .15s;}
+.swatch.sel{border-color:#fff;}
+
+/* SCREEN */
+.screen{display:none;}
+.screen.active{display:block;}
+
+/* ALERT */
+.alert{padding:10px 14px;border-radius:6px;font-size:12px;margin-bottom:12px;display:flex;align-items:flex-start;gap:8px;line-height:1.5;}
+.alert.warning{background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);color:var(--amber);}
+.alert.info{background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.25);color:var(--accent);}
+
+/* SEARCH */
+.search-bar{position:relative;margin-bottom:14px;}
+.search-input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:13px;padding:9px 12px 9px 36px;outline:none;}
+.search-input:focus{border-color:var(--accent);}
+.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="logo-mark">AD</div>
+    <div>
+      <div class="topbar-title">PANEL DE ADMINISTRACIÓN</div>
+      <div class="topbar-sub">GESTIÓN DEL SISTEMA · ACCESO RESTRINGIDO</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <span class="role-badge">🔒 SUPER ADMIN</span>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" id="tab-usuarios" onclick="showTab('usuarios')">👤 Usuarios y roles</div>
+  <div class="tab" id="tab-licencias" onclick="showTab('licencias')">🔑 Licencias</div>
+  <div class="tab" id="tab-permisos" onclick="showTab('permisos')">🛡 Permisos</div>
+  <div class="tab" id="tab-auditoria" onclick="showTab('auditoria')">📋 Auditoría</div>
+  <div class="tab" id="tab-config" onclick="showTab('config')">⚙️ Configuración</div>
+  <div class="tab" id="tab-sistema" onclick="showTab('sistema')">🖥 Sistema</div>
+</div>
+
+<div class="main">
+
+<!-- ══════════ USUARIOS ══════════ -->
+<div class="screen active" id="sc-usuarios">
+  <div class="kpi-row">
+    <div class="kpi bl"><div class="kpi-lbl">Total usuarios</div><div class="kpi-val">68</div></div>
+    <div class="kpi gr"><div class="kpi-lbl">Activos hoy</div><div class="kpi-val">23</div></div>
+    <div class="kpi am"><div class="kpi-lbl">Pendientes activar</div><div class="kpi-val">5</div></div>
+    <div class="kpi re"><div class="kpi-lbl">Bloqueados</div><div class="kpi-val">2</div></div>
+    <div class="kpi pu"><div class="kpi-lbl">Super admins</div><div class="kpi-val">1</div></div>
+    <div class="kpi cy"><div class="kpi-lbl">Capturistas</div><div class="kpi-val">60</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title">Directorio de usuarios</div>
+      <div class="btn-row">
+        <button class="btn primary" onclick="modalNuevoUsuario()">+ Nuevo usuario</button>
+        <button class="btn" onclick="exportarUsuarios()">⬇ Exportar</button>
+      </div>
+    </div>
+    <div style="padding:12px 16px;border-bottom:1px solid var(--border);">
+      <div style="display:flex;gap:10px;">
+        <div class="search-bar" style="flex:1;margin-bottom:0">
+          <div class="search-icon">🔍</div>
+          <input class="search-input" id="user-search" type="search" placeholder="Buscar por nombre, ID o municipio..." oninput="filtrarUsuarios()">
+        </div>
+        <select class="form-select" id="user-rol-fil" onchange="filtrarUsuarios()" style="width:160px">
+          <option value="">Todos los roles</option>
+          <option value="super_admin">Super admin</option>
+          <option value="admin">Admin estatal</option>
+          <option value="coordinador">Coordinador municipal</option>
+          <option value="capturista">Capturista</option>
+        </select>
+        <select class="form-select" id="user-status-fil" onchange="filtrarUsuarios()" style="width:140px">
+          <option value="">Todos los estatus</option>
+          <option value="activo">Activo</option>
+          <option value="pendiente">Pendiente</option>
+          <option value="bloqueado">Bloqueado</option>
+        </select>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table class="at">
+        <thead>
+          <tr>
+            <th>Usuario</th><th>Rol</th><th>Municipio / Sección</th>
+            <th>Último acceso</th><th>Capturas</th><th>Estatus</th><th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="users-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ LICENCIAS ══════════ -->
+<div class="screen" id="sc-licencias">
+  <div class="kpi-row">
+    <div class="kpi gr"><div class="kpi-lbl">Licencias activas</div><div class="kpi-val">3</div></div>
+    <div class="kpi am"><div class="kpi-lbl">En prueba</div><div class="kpi-val">2</div></div>
+    <div class="kpi re"><div class="kpi-lbl">Vencidas</div><div class="kpi-val">1</div></div>
+    <div class="kpi bl"><div class="kpi-lbl">MRR estimado</div><div class="kpi-val">$8,500</div></div>
+    <div class="kpi cy"><div class="kpi-lbl">ARR estimado</div><div class="kpi-val">$102k</div></div>
+  </div>
+
+  <div class="alert warning">
+    <span>⚠</span>
+    <span>La licencia de <strong>Jalisco PAN</strong> vence en 12 días. Contactar para renovación antes del 26 de mayo.</span>
+  </div>
+
+  <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+    <button class="btn primary" onclick="modalNuevaLicencia()">+ Nueva licencia</button>
+  </div>
+
+  <div class="license-grid">
+    <div class="license-card active">
+      <div class="lc-header">
+        <div>
+          <div class="lc-state">Colima · Morena</div>
+          <div class="lc-plan">Plan PROFESIONAL · $2,500 USD/mes</div>
+        </div>
+        <span class="badge b-green">Activa</span>
+      </div>
+      <div class="lc-dates">Inicio: 01 ene 2026 · Vence: 31 dic 2026</div>
+      <div class="lc-features">
+        <span class="lc-feat">War Room</span><span class="lc-feat">Capturistas</span>
+        <span class="lc-feat">Mapa</span><span class="lc-feat">Captura</span>
+        <span class="lc-feat">Reportes</span><span class="lc-feat">Admin</span>
+        <span class="lc-feat">70 usuarios</span><span class="lc-feat">500k registros</span>
+      </div>
+      <div class="lc-prog"><div class="lc-prog-fill" style="width:37%;background:var(--green)"></div></div>
+      <div class="lc-days">134 días usados · 231 restantes</div>
+      <div class="btn-row" style="margin-top:10px">
+        <button class="btn success">Renovar</button>
+        <button class="btn">Ver detalle</button>
+        <button class="btn danger">Suspender</button>
+      </div>
+    </div>
+
+    <div class="license-card active">
+      <div class="lc-header">
+        <div>
+          <div class="lc-state">Sonora · Morena</div>
+          <div class="lc-plan">Plan ENTERPRISE · $4,000 USD/mes</div>
+        </div>
+        <span class="badge b-green">Activa</span>
+      </div>
+      <div class="lc-dates">Inicio: 15 feb 2026 · Vence: 14 feb 2027</div>
+      <div class="lc-features">
+        <span class="lc-feat">Todo incluido</span><span class="lc-feat">300 usuarios</span>
+        <span class="lc-feat">2M registros</span><span class="lc-feat">Soporte 24h</span>
+        <span class="lc-feat">SLA 99.9%</span><span class="lc-feat">Branding propio</span>
+      </div>
+      <div class="lc-prog"><div class="lc-prog-fill" style="width:24%;background:var(--green)"></div></div>
+      <div class="lc-days">89 días usados · 276 restantes</div>
+      <div class="btn-row" style="margin-top:10px">
+        <button class="btn success">Renovar</button>
+        <button class="btn">Ver detalle</button>
+        <button class="btn danger">Suspender</button>
+      </div>
+    </div>
+
+    <div class="license-card active">
+      <div class="lc-header">
+        <div>
+          <div class="lc-state">Veracruz · Morena</div>
+          <div class="lc-plan">Plan ESTÁNDAR · $2,000 USD/mes</div>
+        </div>
+        <span class="badge b-green">Activa</span>
+      </div>
+      <div class="lc-dates">Inicio: 01 mar 2026 · Vence: 28 feb 2027</div>
+      <div class="lc-features">
+        <span class="lc-feat">War Room</span><span class="lc-feat">Capturistas</span>
+        <span class="lc-feat">Mapa</span><span class="lc-feat">Captura</span>
+        <span class="lc-feat">50 usuarios</span><span class="lc-feat">200k registros</span>
+      </div>
+      <div class="lc-prog"><div class="lc-prog-fill" style="width:18%;background:var(--green)"></div></div>
+      <div class="lc-days">75 días usados · 290 restantes</div>
+      <div class="btn-row" style="margin-top:10px">
+        <button class="btn success">Renovar</button>
+        <button class="btn">Ver detalle</button>
+        <button class="btn danger">Suspender</button>
+      </div>
+    </div>
+
+    <div class="license-card trial">
+      <div class="lc-header">
+        <div>
+          <div class="lc-state">Jalisco · PAN</div>
+          <div class="lc-plan">PRUEBA GRATUITA · 30 días</div>
+        </div>
+        <span class="badge b-amber">Prueba</span>
+      </div>
+      <div class="lc-dates">Inicio: 14 abr 2026 · Vence: 14 may 2026</div>
+      <div class="lc-features">
+        <span class="lc-feat">War Room</span><span class="lc-feat">Solo lectura</span>
+        <span class="lc-feat">10 usuarios</span><span class="lc-feat">10k registros</span>
+      </div>
+      <div class="lc-prog"><div class="lc-prog-fill" style="width:87%;background:var(--amber)"></div></div>
+      <div class="lc-days" style="color:var(--amber)">⚠ 26 días usados · 4 restantes — VENCE PRONTO</div>
+      <div class="btn-row" style="margin-top:10px">
+        <button class="btn primary">Convertir a pago</button>
+        <button class="btn danger">Terminar prueba</button>
+      </div>
+    </div>
+
+    <div class="license-card trial">
+      <div class="lc-header">
+        <div>
+          <div class="lc-state">Guerrero · Morena</div>
+          <div class="lc-plan">PRUEBA GRATUITA · 30 días</div>
+        </div>
+        <span class="badge b-amber">Prueba</span>
+      </div>
+      <div class="lc-dates">Inicio: 05 may 2026 · Vence: 04 jun 2026</div>
+      <div class="lc-features">
+        <span class="lc-feat">War Room</span><span class="lc-feat">Solo lectura</span>
+        <span class="lc-feat">10 usuarios</span><span class="lc-feat">10k registros</span>
+      </div>
+      <div class="lc-prog"><div class="lc-prog-fill" style="width:30%;background:var(--amber)"></div></div>
+      <div class="lc-days">9 días usados · 21 restantes</div>
+      <div class="btn-row" style="margin-top:10px">
+        <button class="btn primary">Convertir a pago</button>
+        <button class="btn danger">Terminar prueba</button>
+      </div>
+    </div>
+
+    <div class="license-card expired">
+      <div class="lc-header">
+        <div>
+          <div class="lc-state">Oaxaca · Morena</div>
+          <div class="lc-plan">Plan ESTÁNDAR · $2,000 USD/mes</div>
+        </div>
+        <span class="badge b-red">Vencida</span>
+      </div>
+      <div class="lc-dates">Inicio: 01 dic 2025 · Venció: 30 abr 2026</div>
+      <div class="lc-features">
+        <span class="lc-feat">Acceso suspendido</span>
+      </div>
+      <div class="lc-prog"><div class="lc-prog-fill" style="width:100%;background:var(--red)"></div></div>
+      <div class="lc-days" style="color:var(--red)">Vencida hace 14 días · Datos conservados 90 días</div>
+      <div class="btn-row" style="margin-top:10px">
+        <button class="btn success">Reactivar</button>
+        <button class="btn danger">Eliminar datos</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ PERMISOS ══════════ -->
+<div class="screen" id="sc-permisos">
+  <div class="card">
+    <div class="card-head"><div class="card-title">Matriz de permisos por rol</div></div>
+    <div style="overflow-x:auto;padding:14px 16px;">
+      <table class="perm-table">
+        <thead>
+          <tr>
+            <th style="width:200px">Función</th>
+            <th>Super Admin</th><th>Admin Estatal</th><th>Coordinador Mun.</th><th>Jefe de Sección</th><th>Capturista</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="background:var(--bg3)"><td colspan="6" style="font-size:10px;font-family:var(--mono);color:var(--text3);padding:6px 10px">WAR ROOM</td></tr>
+          <tr><td>Ver War Room estatal</td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-part">◑</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td></tr>
+          <tr><td>Modificar meta / config.</td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td></tr>
+          <tr style="background:var(--bg3)"><td colspan="6" style="font-size:10px;font-family:var(--mono);color:var(--text3);padding:6px 10px">CAPTURISTAS</td></tr>
+          <tr><td>Ver todos los capturistas</td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-part">◑</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td></tr>
+          <tr><td>Crear / editar capturistas</td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td></tr>
+          <tr style="background:var(--bg3)"><td colspan="6" style="font-size:10px;font-family:var(--mono);color:var(--text3);padding:6px 10px">MAPA TERRITORIAL</td></tr>
+          <tr><td>Ver mapa completo</td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-part">◑</span></td><td><span class="perm-part">◑</span></td><td><span class="perm-x">✗</span></td></tr>
+          <tr><td>Ver solo su municipio</td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-x">✗</span></td></tr>
+          <tr style="background:var(--bg3)"><td colspan="6" style="font-size:10px;font-family:var(--mono);color:var(--text3);padding:6px 10px">CAPTURA CIUDADANA</td></tr>
+          <tr><td>Capturar nuevos registros</td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td></tr>
+          <tr><td>Editar registros propios</td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td></tr>
+          <tr><td>Editar registros de otros</td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-part">◑</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td></tr>
+          <tr><td>Eliminar registros</td><td><span class="perm-check">✓</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td></tr>
+          <tr><td>Ver datos sensibles (CURP)</td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td></tr>
+          <tr style="background:var(--bg3)"><td colspan="6" style="font-size:10px;font-family:var(--mono);color:var(--text3);padding:6px 10px">REPORTES</td></tr>
+          <tr><td>Ver reportes estatales</td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td></tr>
+          <tr><td>Ver reporte de su municipio</td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td></tr>
+          <tr><td>Exportar a Excel / PDF</td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td></tr>
+          <tr style="background:var(--bg3)"><td colspan="6" style="font-size:10px;font-family:var(--mono);color:var(--text3);padding:6px 10px">ADMINISTRACIÓN</td></tr>
+          <tr><td>Panel de admin completo</td><td><span class="perm-check">✓</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td></tr>
+          <tr><td>Gestionar usuarios</td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td></tr>
+          <tr><td>Gestionar licencias</td><td><span class="perm-check">✓</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td></tr>
+          <tr><td>Ver auditoría completa</td><td><span class="perm-check">✓</span></td><td><span class="perm-part">◑</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td></tr>
+        </tbody>
+      </table>
+      <div style="margin-top:12px;display:flex;gap:16px;font-size:11px;font-family:var(--mono);color:var(--text3)">
+        <span><span class="perm-check">✓</span> Acceso completo</span>
+        <span><span class="perm-part">◑</span> Acceso parcial (solo su ámbito)</span>
+        <span><span class="perm-x">✗</span> Sin acceso</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><div class="card-title">Control de acceso por municipio</div></div>
+    <div class="card-body">
+      <div class="alert info"><span>ℹ</span><span>Cuando un coordinador municipal inicia sesión, solo ve los datos de su municipio asignado. Esta restricción aplica al mapa, reportes y lista de ciudadanos.</span></div>
+      <div class="grid2" style="gap:10px">
+        <div>
+          <div style="font-size:12px;font-weight:500;margin-bottom:8px">Coordinadores activos</div>
+          <table class="at">
+            <thead><tr><th>Coordinador</th><th>Municipio</th><th>Secciones</th></tr></thead>
+            <tbody>
+              <tr><td><div class="cell-name">Coord. Manzanillo</div></td><td><span class="badge b-cyan">Manzanillo</span></td><td class="cell-mono">79</td></tr>
+              <tr><td><div class="cell-name">Coord. Tecomán</div></td><td><span class="badge b-green">Tecomán</span></td><td class="cell-mono">62</td></tr>
+              <tr><td><div class="cell-name">Coord. Colima</div></td><td><span class="badge b-blue">Colima</span></td><td class="cell-mono">99</td></tr>
+              <tr><td><div class="cell-name">Coord. V. Álvarez</div></td><td><span class="badge b-purple">V. Álvarez</span></td><td class="cell-mono">70</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <div style="font-size:12px;font-weight:500;margin-bottom:8px">Sin coordinador asignado</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            <span class="badge b-red">Armería</span>
+            <span class="badge b-red">Comala</span>
+            <span class="badge b-red">Coquimatlán</span>
+            <span class="badge b-red">Cuauhtémoc</span>
+            <span class="badge b-red">Ixtlahuacán</span>
+            <span class="badge b-red">Minatitlán</span>
+          </div>
+          <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:8px">6 municipios sin coordinador — los capturistas reportan directo al admin estatal</div>
+          <button class="btn primary" style="margin-top:10px;width:100%">+ Asignar coordinadores</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ AUDITORÍA ══════════ -->
+<div class="screen" id="sc-auditoria">
+  <div class="kpi-row">
+    <div class="kpi bl"><div class="kpi-lbl">Acciones hoy</div><div class="kpi-val">847</div></div>
+    <div class="kpi am"><div class="kpi-lbl">Intentos fallidos</div><div class="kpi-val">3</div></div>
+    <div class="kpi re"><div class="kpi-lbl">Alertas de seguridad</div><div class="kpi-val">1</div></div>
+    <div class="kpi gr"><div class="kpi-lbl">Sesiones activas</div><div class="kpi-val">23</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title">Registro de actividad</div>
+      <div class="btn-row">
+        <select class="form-select" style="width:140px;padding:4px 8px">
+          <option>Todas las acciones</option>
+          <option>Accesos</option>
+          <option>Capturas</option>
+          <option>Ediciones</option>
+          <option>Eliminaciones</option>
+          <option>Errores</option>
+        </select>
+        <button class="btn">⬇ Exportar log</button>
+      </div>
+    </div>
+    <div style="padding:0 16px 4px">
+      <div class="audit-item">
+        <div class="audit-dot" style="background:var(--red)"></div>
+        <div class="audit-time">14/05 · 09:41</div>
+        <div><div class="audit-user">IP: 201.xxx.xxx.12</div><div class="audit-action">⚠ Intento de acceso fallido repetido (3 intentos) — IP bloqueada temporalmente</div><div class="audit-meta">Módulo: Login · Usuario: cap-091@colima.mx</div></div>
+      </div>
+      <div class="audit-item">
+        <div class="audit-dot" style="background:var(--green)"></div>
+        <div class="audit-time">14/05 · 09:38</div>
+        <div><div class="audit-user">CAP-032 · Manzanillo</div><div class="audit-action">Nuevo registro capturado: REG-10001 · María López Sánchez · Sección 236</div><div class="audit-meta">Módulo: Captura · Asignado a: CAP-057</div></div>
+      </div>
+      <div class="audit-item">
+        <div class="audit-dot" style="background:var(--accent)"></div>
+        <div class="audit-time">14/05 · 09:22</div>
+        <div><div class="audit-user">ADMIN-01 · Super Admin</div><div class="audit-action">Meta estatal recalculada: 6% → 6.5% sobre voto ganador · Nueva meta: 213,238</div><div class="audit-meta">Módulo: Configurador · Estado: Colima</div></div>
+      </div>
+      <div class="audit-item">
+        <div class="audit-dot" style="background:var(--green)"></div>
+        <div class="audit-time">14/05 · 08:59</div>
+        <div><div class="audit-user">CAP-004 · Manzanillo</div><div class="audit-action">Sesión iniciada correctamente</div><div class="audit-meta">Dispositivo: iPhone 15 · IP: 187.xxx.xxx.45 · Colima, MX</div></div>
+      </div>
+      <div class="audit-item">
+        <div class="audit-dot" style="background:var(--amber)"></div>
+        <div class="audit-time">13/05 · 22:14</div>
+        <div><div class="audit-user">COORD-MZL · Manzanillo</div><div class="audit-action">Reporte municipal exportado a Excel · 2,108 registros incluidos</div><div class="audit-meta">Módulo: Reportes · Archivo: Reporte_Manzanillo_13may.xlsx</div></div>
+      </div>
+      <div class="audit-item">
+        <div class="audit-dot" style="background:var(--purple)"></div>
+        <div class="audit-time">13/05 · 18:03</div>
+        <div><div class="audit-user">ADMIN-01 · Super Admin</div><div class="audit-action">Nueva licencia creada: Guerrero · Morena · Plan prueba 30 días</div><div class="audit-meta">Módulo: Admin → Licencias · Contacto: guerrero@morena.mx</div></div>
+      </div>
+      <div class="audit-item">
+        <div class="audit-dot" style="background:var(--red)"></div>
+        <div class="audit-time">13/05 · 15:30</div>
+        <div><div class="audit-user">ADMIN-01 · Super Admin</div><div class="audit-action">Registro REG-09847 marcado como duplicado y eliminado · ciudadano: Juan Pérez</div><div class="audit-meta">Módulo: Captura · Motivo: CURP duplicado</div></div>
+      </div>
+      <div class="audit-item">
+        <div class="audit-dot" style="background:var(--green)"></div>
+        <div class="audit-time">13/05 · 12:15</div>
+        <div><div class="audit-user">CAP-057 · Manzanillo</div><div class="audit-action">45 registros capturados en sesión de 3.5 horas</div><div class="audit-meta">Módulo: Captura · Origen: Casa por casa · Sección 236</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ CONFIGURACIÓN ══════════ -->
+<div class="screen" id="sc-config">
+  <div class="grid2">
+    <div>
+      <div class="card">
+        <div class="card-head"><div class="card-title">Identidad del sistema</div></div>
+        <div class="card-body">
+          <div class="config-section">
+            <div class="form-group">
+              <label class="form-label">Nombre del sistema</label>
+              <input class="form-input" value="Inteligencia Electoral" id="cfg-nombre">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Subtítulo / slogan</label>
+              <input class="form-input" value="Sistema de control territorial 2027" id="cfg-sub">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Estado activo</label>
+              <select class="form-select" id="cfg-estado-sel">
+                <option selected>Colima</option><option>Sonora</option><option>Veracruz</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Año de elección</label>
+              <input class="form-input" type="number" value="2027" id="cfg-year">
+            </div>
+          </div>
+          <div class="config-section">
+            <div class="config-section-title">Color de acento del sistema</div>
+            <div class="color-swatches" id="swatches">
+              <div class="swatch sel" style="background:#3b82f6" data-c="#3b82f6" onclick="selColor(this)"></div>
+              <div class="swatch" style="background:#a855f7" data-c="#a855f7" onclick="selColor(this)"></div>
+              <div class="swatch" style="background:#22c55e" data-c="#22c55e" onclick="selColor(this)"></div>
+              <div class="swatch" style="background:#ef4444" data-c="#ef4444" onclick="selColor(this)"></div>
+              <div class="swatch" style="background:#f59e0b" data-c="#f59e0b" onclick="selColor(this)"></div>
+              <div class="swatch" style="background:#06b6d4" data-c="#06b6d4" onclick="selColor(this)"></div>
+              <div class="swatch" style="background:#ec4899" data-c="#ec4899" onclick="selColor(this)"></div>
+              <div class="swatch" style="background:#f97316" data-c="#f97316" onclick="selColor(this)"></div>
+            </div>
+          </div>
+          <button class="btn primary" style="width:100%" onclick="guardarConfig()">Guardar configuración</button>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-head"><div class="card-title">Notificaciones del sistema</div></div>
+        <div class="card-body">
+          <div class="toggle-row">
+            <div class="toggle-info"><div class="tl">Alerta de sección sin captura</div><div class="ts">Notificar cuando una sección lleva +7 días sin registro</div></div>
+            <div class="toggle on" id="tog-1" onclick="tog('1')"></div>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info"><div class="tl">Alerta de duplicados</div><div class="ts">Detectar y notificar CURP o clave de elector repetida</div></div>
+            <div class="toggle on" id="tog-2" onclick="tog('2')"></div>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info"><div class="tl">Reporte semanal automático</div><div class="ts">Enviar resumen por email cada lunes 8am</div></div>
+            <div class="toggle on" id="tog-3" onclick="tog('3')"></div>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info"><div class="tl">Alerta de licencia por vencer</div><div class="ts">Avisar 30 y 7 días antes del vencimiento</div></div>
+            <div class="toggle on" id="tog-4" onclick="tog('4')"></div>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info"><div class="tl">Modo de solo lectura</div><div class="ts">Bloquear todas las capturas (para mantenimiento)</div></div>
+            <div class="toggle" id="tog-5" onclick="tog('5')"></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div class="card-title">Seguridad</div></div>
+        <div class="card-body">
+          <div class="toggle-row">
+            <div class="toggle-info"><div class="tl">Doble factor de autenticación</div><div class="ts">Requerir SMS o app autenticadora</div></div>
+            <div class="toggle on" id="tog-6" onclick="tog('6')"></div>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info"><div class="tl">Sesión expira en 8 horas</div><div class="ts">Cerrar sesión automáticamente por inactividad</div></div>
+            <div class="toggle on" id="tog-7" onclick="tog('7')"></div>
+          </div>
+          <div class="toggle-row">
+            <div class="toggle-info"><div class="tl">Bloqueo por IP sospechosa</div><div class="ts">Bloquear tras 5 intentos fallidos</div></div>
+            <div class="toggle on" id="tog-8" onclick="tog('8')"></div>
+          </div>
+          <div class="form-group" style="margin-top:12px">
+            <label class="form-label">Contacto de emergencia el día de la elección</label>
+            <input class="form-input" value="+52 312 000 0000" placeholder="WhatsApp del equipo técnico">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ SISTEMA ══════════ -->
+<div class="screen" id="sc-sistema">
+  <div class="kpi-row">
+    <div class="kpi gr"><div class="kpi-lbl">Uptime del sistema</div><div class="kpi-val">99.9%</div></div>
+    <div class="kpi gr"><div class="kpi-lbl">Base de datos</div><div class="kpi-val">OK</div></div>
+    <div class="kpi bl"><div class="kpi-lbl">Total registros</div><div class="kpi-val">10,408</div></div>
+    <div class="kpi am"><div class="kpi-lbl">Uso de almacenamiento</div><div class="kpi-val">38 MB</div></div>
+    <div class="kpi cy"><div class="kpi-lbl">Último backup</div><div class="kpi-val">Hoy</div></div>
+    <div class="kpi gr"><div class="kpi-lbl">Versión</div><div class="kpi-val">v1.0</div></div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-head"><div class="card-title">Estado de servicios</div></div>
+      <div class="card-body">
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;font-size:13px;padding:8px 0;border-bottom:1px solid var(--border)">
+            <span>Base de datos (Supabase)</span>
+            <span class="badge b-green">● Operacional</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;font-size:13px;padding:8px 0;border-bottom:1px solid var(--border)">
+            <span>Frontend (Vercel CDN)</span>
+            <span class="badge b-green">● Operacional</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;font-size:13px;padding:8px 0;border-bottom:1px solid var(--border)">
+            <span>Autenticación</span>
+            <span class="badge b-green">● Operacional</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;font-size:13px;padding:8px 0;border-bottom:1px solid var(--border)">
+            <span>API de datos</span>
+            <span class="badge b-green">● Operacional</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;font-size:13px;padding:8px 0;border-bottom:1px solid var(--border)">
+            <span>Exportación Excel</span>
+            <span class="badge b-green">● Operacional</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;font-size:13px;padding:8px 0">
+            <span>Modo offline (PWA)</span>
+            <span class="badge b-amber">⚠ En configuración</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-title">Backups y recuperación</div></div>
+      <div class="card-body">
+        <table class="at">
+          <thead><tr><th>Fecha</th><th>Tipo</th><th>Tamaño</th><th>Estado</th></tr></thead>
+          <tbody>
+            <tr><td class="cell-mono">14/05 · 02:00</td><td>Automático</td><td class="cell-mono">38 MB</td><td><span class="badge b-green">OK</span></td></tr>
+            <tr><td class="cell-mono">13/05 · 02:00</td><td>Automático</td><td class="cell-mono">37.8 MB</td><td><span class="badge b-green">OK</span></td></tr>
+            <tr><td class="cell-mono">12/05 · 02:00</td><td>Automático</td><td class="cell-mono">37.5 MB</td><td><span class="badge b-green">OK</span></td></tr>
+            <tr><td class="cell-mono">10/05 · 15:30</td><td>Manual</td><td class="cell-mono">37.1 MB</td><td><span class="badge b-green">OK</span></td></tr>
+          </tbody>
+        </table>
+        <div class="btn-row" style="margin-top:12px">
+          <button class="btn primary">⬇ Backup manual ahora</button>
+          <button class="btn">⬇ Descargar último backup</button>
+        </div>
+        <div style="margin-top:10px;font-size:11px;color:var(--text3);font-family:var(--mono)">Backups automáticos diarios a las 02:00 AM · Retenidos 30 días · Almacenados en Supabase Storage</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title">Plan para el día de la elección</div>
+      <span class="badge b-red">1 junio 2027 — 521 días</span>
+    </div>
+    <div class="card-body">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px">
+        <div style="background:var(--bg3);border-radius:8px;padding:12px 14px">
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text3);margin-bottom:6px">30 días antes</div>
+          <div style="font-size:12px;line-height:1.8">
+            ✅ Activar Supabase Pro<br>
+            ⬜ Prueba de carga (500 usuarios)<br>
+            ⬜ Activar modo PWA offline<br>
+            ⬜ Backup completo verificado
+          </div>
+        </div>
+        <div style="background:var(--bg3);border-radius:8px;padding:12px 14px">
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text3);margin-bottom:6px">7 días antes</div>
+          <div style="font-size:12px;line-height:1.8">
+            ⬜ Freeze de código (sin cambios)<br>
+            ⬜ Verificar todos los accesos<br>
+            ⬜ Briefing técnico al equipo<br>
+            ⬜ WhatsApp de emergencia activo
+          </div>
+        </div>
+        <div style="background:var(--bg3);border-radius:8px;padding:12px 14px">
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text3);margin-bottom:6px">Día de la elección</div>
+          <div style="font-size:12px;line-height:1.8">
+            ⬜ Monitoreo en tiempo real<br>
+            ⬜ Soporte 24h activo<br>
+            ⬜ Backup cada 2 horas<br>
+            ⬜ War Room activo 6am–11pm
+          </div>
+        </div>
+        <div style="background:var(--bg3);border-radius:8px;padding:12px 14px">
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text3);margin-bottom:6px">Post-elección</div>
+          <div style="font-size:12px;line-height:1.8">
+            ⬜ Backup final de resultados<br>
+            ⬜ Reporte de desempeño<br>
+            ⬜ Propuesta de renovación<br>
+            ⬜ Análisis post-electoral
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<!-- MODAL NUEVO USUARIO -->
+<div id="modal-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;align-items:center;justify-content:center;">
+  <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:24px;width:480px;max-width:95vw;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+      <div style="font-size:14px;font-weight:600" id="modal-title">Nuevo usuario</div>
+      <button onclick="cerrarModal()" style="background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer">×</button>
+    </div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+/* ─── DATOS DE USUARIOS ─── */
+const ROLES = {
+  super_admin:{label:'Super Admin',color:'var(--red)'},
+  admin:{label:'Admin Estatal',color:'var(--amber)'},
+  coordinador:{label:'Coordinador Mun.',color:'var(--accent)'},
+  capturista:{label:'Capturista',color:'var(--green)'},
+};
+
+const USUARIOS = [
+  {id:'ADM-001',nombre:'Administrador Principal',email:'admin@sistema.mx',rol:'super_admin',mun:'Estatal',sec:'—',ultimo:'Hoy 09:22',capturas:0,status:'activo'},
+  {id:'CORD-MZL',nombre:'Coordinador Manzanillo',email:'manzanillo@colima.mx',rol:'coordinador',mun:'Manzanillo',sec:'79 secciones',ultimo:'Hoy 08:45',capturas:0,status:'activo'},
+  {id:'CORD-TCM',nombre:'Coordinador Tecomán',email:'tecoman@colima.mx',rol:'coordinador',mun:'Tecomán',sec:'62 secciones',ultimo:'Ayer 22:10',capturas:0,status:'activo'},
+  {id:'CORD-COL',nombre:'Coordinador Colima',email:'colima@colima.mx',rol:'coordinador',mun:'Colima',sec:'99 secciones',ultimo:'Hoy 07:30',capturas:0,status:'activo'},
+  {id:'CORD-VDA',nombre:'Coordinador V. Álvarez',email:'valvarez@colima.mx',rol:'coordinador',mun:'V. Álvarez',sec:'70 secciones',ultimo:'Ayer 20:15',capturas:0,status:'activo'},
+  {id:'CAP-032',nombre:'Capturista 032',email:'cap032@colima.mx',rol:'capturista',mun:'Manzanillo',sec:'236',ultimo:'Hoy 09:38',capturas:52,status:'activo'},
+  {id:'CAP-038',nombre:'Capturista 038',email:'cap038@colima.mx',rol:'capturista',mun:'Manzanillo',sec:'248',ultimo:'Hoy 08:12',capturas:50,status:'activo'},
+  {id:'CAP-004',nombre:'Capturista 004',email:'cap004@colima.mx',rol:'capturista',mun:'Manzanillo',sec:'261',ultimo:'Ayer 18:40',capturas:48,status:'activo'},
+  {id:'CAP-042',nombre:'Capturista 042',email:'cap042@colima.mx',rol:'capturista',mun:'Manzanillo',sec:'264',ultimo:'Hoy 07:55',capturas:48,status:'activo'},
+  {id:'CAP-091',nombre:'Capturista 091',email:'cap091@colima.mx',rol:'capturista',mun:'Comala',sec:'92',ultimo:'Nunca',capturas:0,status:'pendiente'},
+  {id:'CAP-092',nombre:'Capturista 092',email:'cap092@colima.mx',rol:'capturista',mun:'Coquimatlán',sec:'105',ultimo:'Nunca',capturas:0,status:'pendiente'},
+  {id:'CAP-OLD',nombre:'Capturista Bloqueado',email:'capbloq@colima.mx',rol:'capturista',mun:'Cuauhtémoc',sec:'120',ultimo:'hace 30 días',capturas:2,status:'bloqueado'},
+];
+
+let usuariosFiltrados = [...USUARIOS];
+
+function renderUsuarios(lista){
+  const tb = document.getElementById('users-tbody');
+  tb.innerHTML = lista.map(u=>{
+    const r = ROLES[u.rol];
+    const sc = u.status==='activo'?'b-green':u.status==='pendiente'?'b-amber':'b-red';
+    const sl = u.status==='activo'?'Activo':u.status==='pendiente'?'Pendiente':'Bloqueado';
+    return `<tr>
+      <td>
+        <div class="cell-name">${u.nombre}</div>
+        <div class="cell-sub">${u.id} · ${u.email}</div>
+      </td>
+      <td><span class="badge" style="background:${r.color}18;color:${r.color};border:1px solid ${r.color}30">${r.label}</span></td>
+      <td><div class="cell-mono">${u.mun}</div><div class="cell-sub">Secc. ${u.sec}</div></td>
+      <td class="cell-mono" style="font-size:11px">${u.ultimo}</td>
+      <td class="cell-mono" style="text-align:right">${u.capturas>0?u.capturas.toLocaleString():'—'}</td>
+      <td><span class="badge ${sc}">${sl}</span></td>
+      <td>
+        <div class="btn-row">
+          <button class="btn" onclick="editarUsuario('${u.id}')">✏</button>
+          ${u.status==='bloqueado'?
+            `<button class="btn success" onclick="cambiarStatus('${u.id}','activo')">✓ Activar</button>`:
+            u.status==='pendiente'?
+            `<button class="btn success" onclick="cambiarStatus('${u.id}','activo')">Activar</button>`:
+            `<button class="btn danger" onclick="cambiarStatus('${u.id}','bloqueado')">Bloquear</button>`
+          }
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+renderUsuarios(USUARIOS);
+
+function filtrarUsuarios(){
+  const q=(document.getElementById('user-search').value||'').toLowerCase();
+  const rol=document.getElementById('user-rol-fil').value;
+  const status=document.getElementById('user-status-fil').value;
+  let r=[...USUARIOS];
+  if(q) r=r.filter(u=>u.nombre.toLowerCase().includes(q)||u.id.toLowerCase().includes(q)||u.mun.toLowerCase().includes(q));
+  if(rol) r=r.filter(u=>u.rol===rol);
+  if(status) r=r.filter(u=>u.status===status);
+  renderUsuarios(r);
+}
+
+function cambiarStatus(id, nuevoStatus){
+  const u=USUARIOS.find(x=>x.id===id);
+  if(!u) return;
+  if(!confirm(`¿${nuevoStatus==='bloqueado'?'Bloquear':'Activar'} a ${u.nombre}?`)) return;
+  u.status=nuevoStatus;
+  filtrarUsuarios();
+}
+
+function showTab(t){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('sc-'+t).classList.add('active');
+  document.getElementById('tab-'+t).classList.add('active');
+}
+
+function modalNuevoUsuario(){
+  document.getElementById('modal-title').textContent='Nuevo usuario';
+  document.getElementById('modal-body').innerHTML=`
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Nombre completo</label><input class="form-input" id="m-nombre" placeholder="Ej. Juan López"></div>
+      <div class="form-group"><label class="form-label">ID de usuario</label><input class="form-input" id="m-id" placeholder="CAP-093"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Correo electrónico</label><input class="form-input" id="m-email" type="email" placeholder="usuario@colima.mx"></div>
+    <div class="form-group"><label class="form-label">Contraseña inicial</label><input class="form-input" id="m-pass" type="password" placeholder="Mínimo 8 caracteres"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Rol</label>
+        <select class="form-select" id="m-rol">
+          <option value="capturista">Capturista</option>
+          <option value="coordinador">Coordinador Municipal</option>
+          <option value="admin">Admin Estatal</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Municipio</label>
+        <select class="form-select" id="m-mun">
+          <option>Colima</option><option>Villa de Álvarez</option><option>Tecomán</option>
+          <option>Manzanillo</option><option>Armería</option><option>Comala</option>
+          <option>Coquimatlán</option><option>Cuauhtémoc</option><option>Minatitlán</option><option>Ixtlahuacán</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">Sección base (para capturistas)</label><input class="form-input" id="m-sec" type="number" placeholder="Ej. 138"></div>
+    <div class="form-group"><label class="form-label">Notas internas</label><textarea class="form-textarea" id="m-notas" rows="2" placeholder="Observaciones del administrador..."></textarea></div>
+    <div class="btn-row" style="margin-top:6px">
+      <button class="btn primary" style="flex:1" onclick="crearUsuario()">Crear usuario</button>
+      <button class="btn" onclick="cerrarModal()">Cancelar</button>
+    </div>`;
+  document.getElementById('modal-bg').style.display='flex';
+}
+
+function editarUsuario(id){
+  const u=USUARIOS.find(x=>x.id===id);
+  if(!u) return;
+  document.getElementById('modal-title').textContent='Editar: '+u.nombre;
+  document.getElementById('modal-body').innerHTML=`
+    <div class="form-group"><label class="form-label">Nombre</label><input class="form-input" value="${u.nombre}"></div>
+    <div class="form-group"><label class="form-label">Email</label><input class="form-input" value="${u.email}"></div>
+    <div class="form-group"><label class="form-label">Rol</label>
+      <select class="form-select">
+        ${Object.entries(ROLES).map(([k,v])=>`<option value="${k}" ${k===u.rol?'selected':''}>${v.label}</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">Municipio</label><input class="form-input" value="${u.mun}"></div>
+    <div class="form-group"><label class="form-label">Estatus</label>
+      <select class="form-select">
+        <option value="activo" ${u.status==='activo'?'selected':''}>Activo</option>
+        <option value="pendiente" ${u.status==='pendiente'?'selected':''}>Pendiente</option>
+        <option value="bloqueado" ${u.status==='bloqueado'?'selected':''}>Bloqueado</option>
+      </select>
+    </div>
+    <div class="btn-row" style="margin-top:6px">
+      <button class="btn primary" style="flex:1" onclick="alert('Guardado ✓');cerrarModal()">Guardar cambios</button>
+      <button class="btn danger" onclick="alert('Para eliminar en prod. requiere confirmación doble');cerrarModal()">Eliminar</button>
+    </div>`;
+  document.getElementById('modal-bg').style.display='flex';
+}
+
+function crearUsuario(){
+  const nombre=document.getElementById('m-nombre').value.trim();
+  const email=document.getElementById('m-email').value.trim();
+  if(!nombre||!email){alert('Nombre y email son requeridos');return;}
+  alert('Usuario creado correctamente.\nSe enviará correo de activación a: '+email);
+  cerrarModal();
+}
+
+function modalNuevaLicencia(){
+  document.getElementById('modal-title').textContent='Nueva licencia';
+  document.getElementById('modal-body').innerHTML=`
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Estado</label>
+        <select class="form-select"><option>Seleccionar...</option><option>Aguascalientes</option><option>Baja California</option><option>Chiapas</option><option>Guerrero</option><option>Oaxaca</option><option>Puebla</option><option>Yucatán</option></select>
+      </div>
+      <div class="form-group"><label class="form-label">Partido / cliente</label><input class="form-input" placeholder="Ej. Morena Guerrero"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Plan</label>
+      <select class="form-select" id="m-plan" onchange="actualizarPrecio()">
+        <option value="prueba">Prueba gratuita 30 días</option>
+        <option value="estandar">Estándar — $2,000 USD/mes</option>
+        <option value="profesional">Profesional — $2,500 USD/mes</option>
+        <option value="enterprise">Enterprise — $4,000 USD/mes</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Fecha inicio</label><input class="form-input" type="date" value="${new Date().toISOString().slice(0,10)}"></div>
+      <div class="form-group"><label class="form-label">Meses contratados</label><input class="form-input" type="number" value="12" min="1" max="36"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Email de contacto</label><input class="form-input" type="email" placeholder="cliente@partido.mx"></div>
+    <div class="form-group"><label class="form-label">Notas de contrato</label><textarea class="form-textarea" rows="2" placeholder="Condiciones especiales, descuentos..."></textarea></div>
+    <div class="btn-row" style="margin-top:6px">
+      <button class="btn primary" style="flex:1" onclick="alert('Licencia creada. Se enviará email de acceso al cliente.');cerrarModal()">Crear licencia</button>
+      <button class="btn" onclick="cerrarModal()">Cancelar</button>
+    </div>`;
+  document.getElementById('modal-bg').style.display='flex';
+}
+
+function cerrarModal(){
+  document.getElementById('modal-bg').style.display='none';
+}
+
+function tog(n){
+  const el=document.getElementById('tog-'+n);
+  el.classList.toggle('on');
+}
+
+function selColor(el){
+  document.querySelectorAll('.swatch').forEach(s=>s.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+function guardarConfig(){
+  const nombre=document.getElementById('cfg-nombre').value;
+  alert('Configuración guardada: '+nombre+'\nLos cambios se aplicarán al recargar el sistema.');
+}
+
+function exportarUsuarios(){
+  const csv=[
+    ['ID','Nombre','Email','Rol','Municipio','Sección','Capturas','Estatus','Último acceso'],
+    ...USUARIOS.map(u=>[u.id,u.nombre,u.email,ROLES[u.rol].label,u.mun,u.sec,u.capturas,u.status,u.ultimo])
+  ].map(r=>r.join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='usuarios_colima_2027.csv';
+  a.click();
+}
+
+document.getElementById('modal-bg').addEventListener('click',function(e){
+  if(e.target===this) cerrarModal();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PANEL DE CAPTURISTAS — COLIMA 2027</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+:root {
+  --bg:#0a0e1a; --bg2:#0f1526; --bg3:#141b2e; --bg4:#1a2238;
+  --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.13);
+  --text:#e8edf5; --text2:#8a9ab5; --text3:#5a6a85;
+  --accent:#3b82f6; --green:#22c55e; --red:#ef4444;
+  --amber:#f59e0b; --cyan:#06b6d4; --purple:#a855f7;
+  --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;}
+
+/* TOPBAR */
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border2);padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.topbar-left{display:flex;align-items:center;gap:14px;}
+.logo-mark{width:28px;height:28px;background:#7c3aed;border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:600;color:#fff;}
+.topbar-title{font-size:13px;font-weight:600;letter-spacing:.04em;}
+.topbar-sub{font-size:11px;color:var(--text3);font-family:var(--mono);}
+.topbar-right{display:flex;align-items:center;gap:16px;}
+.back-btn{font-family:var(--mono);font-size:11px;color:var(--text2);background:var(--bg3);border:1px solid var(--border2);padding:4px 12px;border-radius:4px;cursor:pointer;text-decoration:none;}
+.back-btn:hover{color:var(--text);border-color:var(--accent);}
+.live-badge{display:flex;align-items:center;gap:6px;font-size:11px;font-family:var(--mono);color:var(--green);background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);padding:3px 10px;border-radius:99px;}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* FILTERS */
+.filters{background:var(--bg3);border-bottom:1px solid var(--border);padding:10px 24px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.filter-label{font-size:11px;font-family:var(--mono);color:var(--text3);}
+select,input[type=text]{background:var(--bg4);border:1px solid var(--border2);color:var(--text);font-family:var(--mono);font-size:11px;padding:5px 10px;border-radius:4px;cursor:pointer;}
+select:focus,input[type=text]:focus{outline:none;border-color:var(--accent);}
+.filter-sep{width:1px;height:20px;background:var(--border2);}
+.sort-btn{font-family:var(--mono);font-size:11px;color:var(--text2);background:transparent;border:1px solid var(--border);padding:4px 10px;border-radius:4px;cursor:pointer;transition:all .15s;}
+.sort-btn:hover,.sort-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+.results-count{font-family:var(--mono);font-size:11px;color:var(--text3);margin-left:auto;}
+
+/* MAIN */
+.main{padding:20px 24px;display:flex;flex-direction:column;gap:16px;}
+
+/* KPIs */
+.kpi-row{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;}
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;position:relative;overflow:hidden;}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.kpi.blue::before{background:var(--accent);}
+.kpi.green::before{background:var(--green);}
+.kpi.amber::before{background:var(--amber);}
+.kpi.red::before{background:var(--red);}
+.kpi.purple::before{background:var(--purple);}
+.kpi-label{font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;}
+.kpi-val{font-size:22px;font-weight:600;line-height:1;margin-bottom:4px;}
+.kpi.blue .kpi-val{color:var(--accent);}
+.kpi.green .kpi-val{color:var(--green);}
+.kpi.amber .kpi-val{color:var(--amber);}
+.kpi.red .kpi-val{color:var(--red);}
+.kpi.purple .kpi-val{color:var(--purple);}
+.kpi-sub{font-size:10px;color:var(--text3);font-family:var(--mono);}
+
+/* CONTENT GRID */
+.content-grid{display:grid;grid-template-columns:1fr 320px;gap:16px;}
+
+/* TABLA */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.card-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.card-title{font-size:11px;font-family:var(--mono);color:var(--text2);text-transform:uppercase;letter-spacing:.06em;}
+
+table.cap-table{width:100%;border-collapse:collapse;}
+table.cap-table th{font-size:9px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;padding:8px 10px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap;cursor:pointer;user-select:none;}
+table.cap-table th:hover{color:var(--text2);}
+table.cap-table th.right{text-align:right;}
+table.cap-table td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:middle;}
+table.cap-table tr:last-child td{border-bottom:none;}
+table.cap-table tr{cursor:pointer;transition:background .1s;}
+table.cap-table tr:hover{background:rgba(59,130,246,0.05);}
+table.cap-table tr.selected{background:rgba(59,130,246,0.1);}
+
+.cap-id{font-family:var(--mono);font-size:11px;color:var(--text3);}
+.cap-name{font-size:12px;font-weight:500;color:var(--text);}
+.cap-mun{font-size:10px;color:var(--text3);}
+.num-r{text-align:right;font-family:var(--mono);font-size:12px;}
+.mini-bar{height:4px;background:rgba(255,255,255,0.07);border-radius:99px;overflow:hidden;width:80px;}
+.mini-fill{height:100%;border-radius:99px;}
+.score-badge{display:inline-flex;align-items:center;justify-content:center;min-width:42px;padding:2px 8px;border-radius:4px;font-family:var(--mono);font-size:11px;font-weight:600;}
+.rank-num{font-family:var(--mono);font-size:11px;color:var(--text3);width:24px;text-align:center;}
+
+/* DETAIL PANEL */
+.detail{display:flex;flex-direction:column;gap:12px;}
+.detail-header{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:16px;}
+.detail-avatar{width:44px;height:44px;border-radius:8px;background:rgba(124,58,237,0.2);border:1px solid rgba(124,58,237,0.4);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;color:#a855f7;font-family:var(--mono);margin-bottom:10px;}
+.detail-name{font-size:14px;font-weight:600;color:var(--text);margin-bottom:2px;}
+.detail-id{font-size:11px;font-family:var(--mono);color:var(--text3);}
+.detail-mun{font-size:11px;color:var(--cyan);margin-top:4px;}
+.detail-score-row{display:flex;align-items:center;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);}
+.detail-score-big{font-size:28px;font-weight:600;line-height:1;}
+.detail-score-label{font-size:10px;font-family:var(--mono);color:var(--text3);}
+.detail-meta-row{display:flex;gap:6px;margin-top:8px;}
+.detail-meta-item{flex:1;background:var(--bg4);border-radius:4px;padding:6px 8px;text-align:center;}
+.detail-meta-val{font-size:14px;font-weight:600;font-family:var(--mono);}
+.detail-meta-lbl{font-size:9px;color:var(--text3);font-family:var(--mono);}
+
+.detail-section{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;}
+.detail-section-title{font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;}
+.detail-row{display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px;}
+.detail-row:last-child{border-bottom:none;}
+.detail-row-label{color:var(--text2);}
+.detail-row-val{font-family:var(--mono);font-weight:500;}
+
+.comp-mini{margin-top:6px;}
+.comp-mini-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:11px;}
+.comp-mini-label{color:var(--text2);width:90px;flex-shrink:0;}
+.comp-mini-track{flex:1;height:4px;background:rgba(255,255,255,0.06);border-radius:99px;overflow:hidden;}
+.comp-mini-fill{height:100%;border-radius:99px;}
+.comp-mini-num{font-family:var(--mono);font-size:10px;color:var(--text3);width:24px;text-align:right;}
+
+.origen-mini{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px;}
+.origen-mini-item{background:var(--bg3);border-radius:4px;padding:6px 8px;}
+.origen-mini-label{font-size:10px;color:var(--text3);}
+.origen-mini-val{font-size:13px;font-weight:600;font-family:var(--mono);color:var(--text);}
+
+.placeholder-msg{padding:40px 20px;text-align:center;color:var(--text3);font-size:12px;font-family:var(--mono);}
+
+/* RANKING LATERAL */
+.ranking-list{padding:8px 0;}
+.rank-item{display:flex;align-items:center;gap:10px;padding:8px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s;}
+.rank-item:hover{background:rgba(59,130,246,0.05);}
+.rank-item:last-child{border-bottom:none;}
+.rank-pos{font-family:var(--mono);font-size:11px;color:var(--text3);width:20px;text-align:center;flex-shrink:0;}
+.rank-pos.gold{color:#f59e0b;}
+.rank-pos.silver{color:#94a3b8;}
+.rank-pos.bronze{color:#b07040;}
+.rank-info{flex:1;min-width:0;}
+.rank-name{font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.rank-mun{font-size:10px;color:var(--text3);}
+.rank-score{font-family:var(--mono);font-size:12px;font-weight:600;}
+.rank-bar-wrap{width:60px;}
+
+/* CHART */
+.chart-small{position:relative;height:140px;margin-top:10px;}
+
+/* EMPTY STATE */
+.empty{padding:60px 20px;text-align:center;color:var(--text3);font-family:var(--mono);font-size:12px;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="logo-mark">CP</div>
+    <div>
+      <div class="topbar-title">PANEL DE CAPTURISTAS</div>
+      <div class="topbar-sub">GESTIÓN DE ESTRUCTURA · COLIMA 2027</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <a class="back-btn" href="#">← WAR ROOM</a>
+    <div class="live-badge"><div class="live-dot"></div>60 OPERADORES</div>
+  </div>
+</div>
+
+<div class="filters">
+  <span class="filter-label">MUNICIPIO</span>
+  <select id="fil-municipio" onchange="aplicarFiltros()">
+    <option value="">Todos</option>
+    <option>Armería</option><option>Colima</option><option>Comala</option>
+    <option>Coquimatlán</option><option>Cuauhtémoc</option><option>Ixtlahuacán</option>
+    <option>Manzanillo</option><option>Minatitlán</option><option>Tecomán</option>
+    <option>Villa de Álvarez</option>
+  </select>
+  <div class="filter-sep"></div>
+  <span class="filter-label">ORDENAR POR</span>
+  <button class="sort-btn" id="sort-total" onclick="setSorteo('total')">Volumen</button>
+  <button class="sort-btn active" id="sort-score" onclick="setSorteo('score')">Score</button>
+  <button class="sort-btn" id="sort-pct_meta" onclick="setSorteo('pct_meta')">% Meta</button>
+  <button class="sort-btn" id="sort-pct_val" onclick="setSorteo('pct_val')">% Validados</button>
+  <div class="filter-sep"></div>
+  <span class="filter-label">BUSCAR</span>
+  <input type="text" id="fil-search" placeholder="ID o nombre..." oninput="aplicarFiltros()" style="width:160px">
+  <span class="results-count" id="results-count">60 capturistas</span>
+</div>
+
+<div class="main">
+  <div class="kpi-row">
+    <div class="kpi blue">
+      <div class="kpi-label">Total operadores</div>
+      <div class="kpi-val">60</div>
+      <div class="kpi-sub">estructura activa</div>
+    </div>
+    <div class="kpi green">
+      <div class="kpi-label">Superaron meta</div>
+      <div class="kpi-val" id="kpi-superaron">—</div>
+      <div class="kpi-sub">≥ 50 capturas</div>
+    </div>
+    <div class="kpi amber">
+      <div class="kpi-label">En proceso</div>
+      <div class="kpi-val" id="kpi-proceso">—</div>
+      <div class="kpi-sub">25–49 capturas</div>
+    </div>
+    <div class="kpi red">
+      <div class="kpi-label">Bajo avance</div>
+      <div class="kpi-val" id="kpi-bajo">—</div>
+      <div class="kpi-sub">&lt; 25 capturas</div>
+    </div>
+    <div class="kpi purple">
+      <div class="kpi-label">Score promedio</div>
+      <div class="kpi-val" id="kpi-score-prom">—</div>
+      <div class="kpi-sub">calidad de captura</div>
+    </div>
+  </div>
+
+  <div class="content-grid">
+    <!-- TABLA -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Todos los capturistas</span>
+        <span style="font-size:10px;font-family:var(--mono);color:var(--text3)">clic en fila para ver detalle</span>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="cap-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Capturista</th>
+              <th>Municipio</th>
+              <th class="right">Capturas</th>
+              <th>Avance</th>
+              <th class="right">% Meta</th>
+              <th class="right">Validados</th>
+              <th class="right">Seg. vota</th>
+              <th class="right">Score</th>
+              <th class="right">Última cap.</th>
+            </tr>
+          </thead>
+          <tbody id="cap-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PANEL DETALLE -->
+    <div>
+      <div id="detail-panel">
+        <div class="card">
+          <div class="placeholder-msg">← Selecciona un capturista<br>para ver su ficha completa</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const DATOS = [{"ID_CAPTURISTA":"CAP-057","CAPTURADO_POR":"Capturista 57","MUNICIPIO":"Manzanillo","total":197,"meta":50,"pct_meta":394.0,"faltantes":0,"validados":146,"pct_val":74.1,"seguros":99,"pct_seg":50.3,"moviliza":21,"simpatizantes":58,"contactos":37,"alta_prob":97,"riesgo_alto":43,"duplicados":8,"casa":89,"referido":52,"evento":31,"digital":25,"score":59.1,"ultima_str":"30/04/2026"},
+{"ID_CAPTURISTA":"CAP-051","CAPTURADO_POR":"Capturista 51","MUNICIPIO":"Colima","total":194,"meta":50,"pct_meta":388.0,"faltantes":0,"validados":153,"pct_val":78.9,"seguros":83,"pct_seg":42.8,"moviliza":18,"simpatizantes":48,"contactos":47,"alta_prob":104,"riesgo_alto":51,"duplicados":7,"casa":88,"referido":47,"evento":32,"digital":27,"score":56.8,"ultima_str":"29/04/2026"},
+{"ID_CAPTURISTA":"CAP-053","CAPTURADO_POR":"Capturista 53","MUNICIPIO":"Manzanillo","total":194,"meta":50,"pct_meta":388.0,"faltantes":0,"validados":151,"pct_val":77.8,"seguros":88,"pct_seg":45.4,"moviliza":19,"simpatizantes":53,"contactos":36,"alta_prob":98,"riesgo_alto":48,"duplicados":9,"casa":87,"referido":49,"evento":33,"digital":25,"score":57.4,"ultima_str":"28/04/2026"},
+{"ID_CAPTURISTA":"CAP-005","CAPTURADO_POR":"Capturista 05","MUNICIPIO":"Villa de Álvarez","total":188,"meta":50,"pct_meta":376.0,"faltantes":0,"validados":145,"pct_val":77.1,"seguros":90,"pct_seg":47.9,"moviliza":20,"simpatizantes":52,"contactos":36,"alta_prob":93,"riesgo_alto":44,"duplicados":7,"casa":85,"referido":48,"evento":31,"digital":24,"score":58.2,"ultima_str":"30/04/2026"},
+{"ID_CAPTURISTA":"CAP-009","CAPTURADO_POR":"Capturista 09","MUNICIPIO":"Manzanillo","total":188,"meta":50,"pct_meta":376.0,"faltantes":0,"validados":131,"pct_val":69.7,"seguros":77,"pct_seg":41.0,"moviliza":17,"simpatizantes":45,"contactos":46,"alta_prob":91,"riesgo_alto":52,"duplicados":10,"casa":84,"referido":46,"evento":30,"digital":28,"score":53.1,"ultima_str":"27/04/2026"},
+{"ID_CAPTURISTA":"CAP-042","CAPTURADO_POR":"Capturista 42","MUNICIPIO":"Manzanillo","total":187,"meta":50,"pct_meta":374.0,"faltantes":0,"validados":131,"pct_val":70.1,"seguros":80,"pct_seg":42.8,"moviliza":18,"simpatizantes":47,"contactos":40,"alta_prob":89,"riesgo_alto":46,"duplicados":8,"casa":83,"referido":47,"evento":29,"digital":28,"score":54.4,"ultima_str":"26/04/2026"},
+{"ID_CAPTURISTA":"CAP-032","CAPTURADO_POR":"Capturista 32","MUNICIPIO":"Manzanillo","total":186,"meta":50,"pct_meta":372.0,"faltantes":0,"validados":131,"pct_val":70.4,"seguros":85,"pct_seg":45.7,"moviliza":19,"simpatizantes":50,"contactos":37,"alta_prob":88,"riesgo_alto":44,"duplicados":8,"casa":82,"referido":46,"evento":31,"digital":27,"score":53.9,"ultima_str":"25/04/2026"},
+{"ID_CAPTURISTA":"CAP-047","CAPTURADO_POR":"Capturista 47","MUNICIPIO":"Manzanillo","total":186,"meta":50,"pct_meta":372.0,"faltantes":0,"validados":119,"pct_val":64.0,"seguros":80,"pct_seg":43.0,"moviliza":17,"simpatizantes":44,"contactos":42,"alta_prob":90,"riesgo_alto":50,"duplicados":9,"casa":84,"referido":45,"evento":28,"digital":29,"score":50.2,"ultima_str":"24/04/2026"},
+{"ID_CAPTURISTA":"CAP-012","CAPTURADO_POR":"Capturista 12","MUNICIPIO":"Colima","total":185,"meta":50,"pct_meta":370.0,"faltantes":0,"validados":131,"pct_val":70.8,"seguros":88,"pct_seg":47.6,"moviliza":20,"simpatizantes":51,"contactos":34,"alta_prob":87,"riesgo_alto":42,"duplicados":7,"casa":82,"referido":46,"evento":30,"digital":27,"score":55.1,"ultima_str":"28/04/2026"},
+{"ID_CAPTURISTA":"CAP-011","CAPTURADO_POR":"Capturista 11","MUNICIPIO":"Tecomán","total":184,"meta":50,"pct_meta":368.0,"faltantes":0,"validados":138,"pct_val":75.0,"seguros":81,"pct_seg":44.0,"moviliza":17,"simpatizantes":47,"contactos":40,"alta_prob":92,"riesgo_alto":45,"duplicados":8,"casa":83,"referido":45,"evento":29,"digital":27,"score":55.3,"ultima_str":"29/04/2026"},
+{"ID_CAPTURISTA":"CAP-014","CAPTURADO_POR":"Capturista 14","MUNICIPIO":"Tecomán","total":182,"meta":50,"pct_meta":364.0,"faltantes":0,"validados":131,"pct_val":72.0,"seguros":102,"pct_seg":56.0,"moviliza":22,"simpatizantes":55,"contactos":25,"alta_prob":85,"riesgo_alto":38,"duplicados":6,"casa":80,"referido":44,"evento":28,"digital":30,"score":58.1,"ultima_str":"27/04/2026"},
+{"ID_CAPTURISTA":"CAP-020","CAPTURADO_POR":"Capturista 20","MUNICIPIO":"Colima","total":178,"meta":50,"pct_meta":356.0,"faltantes":0,"validados":128,"pct_val":71.9,"seguros":83,"pct_seg":46.6,"moviliza":18,"simpatizantes":48,"contactos":37,"alta_prob":84,"riesgo_alto":43,"duplicados":7,"casa":79,"referido":43,"evento":28,"digital":28,"score":54.8,"ultima_str":"30/04/2026"},
+{"ID_CAPTURISTA":"CAP-058","CAPTURADO_POR":"Capturista 58","MUNICIPIO":"Colima","total":166,"meta":50,"pct_meta":332.0,"faltantes":0,"validados":134,"pct_val":80.7,"seguros":79,"pct_seg":47.6,"moviliza":16,"simpatizantes":44,"contactos":43,"alta_prob":86,"riesgo_alto":38,"duplicados":5,"casa":74,"referido":41,"evento":27,"digital":24,"score":60.4,"ultima_str":"29/04/2026"},
+{"ID_CAPTURISTA":"CAP-019","CAPTURADO_POR":"Capturista 19","MUNICIPIO":"Manzanillo","total":150,"meta":50,"pct_meta":300.0,"faltantes":0,"validados":112,"pct_val":74.7,"seguros":79,"pct_seg":52.7,"moviliza":17,"simpatizantes":43,"contactos":28,"alta_prob":75,"riesgo_alto":32,"duplicados":5,"casa":67,"referido":37,"evento":24,"digital":22,"score":59.5,"ultima_str":"26/04/2026"},
+{"ID_CAPTURISTA":"CAP-046","CAPTURADO_POR":"Capturista 46","MUNICIPIO":"Manzanillo","total":150,"meta":50,"pct_meta":300.0,"faltantes":0,"validados":107,"pct_val":71.3,"seguros":78,"pct_seg":52.0,"moviliza":16,"simpatizantes":41,"contactos":31,"alta_prob":72,"riesgo_alto":34,"duplicados":5,"casa":65,"referido":36,"evento":25,"digital":24,"score":59.5,"ultima_str":"25/04/2026"},
+{"ID_CAPTURISTA":"CAP-028","CAPTURADO_POR":"Capturista 28","MUNICIPIO":"Manzanillo","total":173,"meta":50,"pct_meta":346.0,"faltantes":0,"validados":128,"pct_val":74.0,"seguros":88,"pct_seg":50.9,"moviliza":19,"simpatizantes":48,"contactos":35,"alta_prob":82,"riesgo_alto":39,"duplicados":6,"casa":77,"referido":42,"evento":28,"digital":26,"score":58.9,"ultima_str":"28/04/2026"},
+{"ID_CAPTURISTA":"CAP-010","CAPTURADO_POR":"Capturista 10","MUNICIPIO":"Manzanillo","total":163,"meta":50,"pct_meta":326.0,"faltantes":0,"validados":120,"pct_val":73.6,"seguros":81,"pct_seg":49.7,"moviliza":17,"simpatizantes":44,"contactos":34,"alta_prob":79,"risgo_alto":37,"duplicados":5,"casa":72,"referido":40,"evento":26,"digital":25,"score":58.5,"ultima_str":"27/04/2026"},
+{"ID_CAPTURISTA":"CAP-052","CAPTURADO_POR":"Capturista 52","MUNICIPIO":"Manzanillo","total":156,"meta":50,"pct_meta":312.0,"faltantes":0,"validados":107,"pct_val":68.6,"seguros":85,"pct_seg":54.5,"moviliza":18,"simpatizantes":46,"contactos":25,"alta_prob":73,"riesgo_alto":31,"duplicados":4,"casa":68,"referido":38,"evento":25,"digital":25,"score":58.0,"ultima_str":"26/04/2026"},
+{"ID_CAPTURISTA":"CAP-059","CAPTURADO_POR":"Capturista 59","MUNICIPIO":"Manzanillo","total":146,"meta":50,"pct_meta":292.0,"faltantes":0,"validados":112,"pct_val":76.7,"seguros":73,"pct_seg":50.0,"moviliza":15,"simpatizantes":39,"contactos":32,"alta_prob":70,"riesgo_alto":30,"duplicados":4,"casa":64,"referido":36,"evento":24,"digital":22,"score":60.1,"ultima_str":"25/04/2026"},
+{"ID_CAPTURISTA":"CAP-031","CAPTURADO_POR":"Capturista 31","MUNICIPIO":"Manzanillo","total":136,"meta":50,"pct_meta":272.0,"faltantes":0,"validados":106,"pct_val":77.9,"seguros":69,"pct_seg":50.7,"moviliza":14,"simpatizantes":37,"contactos":30,"alta_prob":67,"riesgo_alto":28,"duplicados":4,"casa":61,"referido":34,"evento":22,"digital":19,"score":57.7,"ultima_str":"24/04/2026"},
+{"ID_CAPTURISTA":"CAP-017","CAPTURADO_POR":"Capturista 17","MUNICIPIO":"Villa de Álvarez","total":136,"meta":50,"pct_meta":272.0,"faltantes":0,"validados":121,"pct_val":89.0,"seguros":79,"pct_seg":58.1,"moviliza":16,"simpatizantes":43,"contactos":20,"alta_prob":62,"riesgo_alto":24,"duplicados":3,"casa":62,"referido":35,"evento":22,"digital":17,"score":67.2,"ultima_str":"28/04/2026"},
+{"ID_CAPTURISTA":"CAP-049","CAPTURADO_POR":"Capturista 49","MUNICIPIO":"Colima","total":130,"meta":50,"pct_meta":260.0,"faltantes":0,"validados":108,"pct_val":83.1,"seguros":68,"pct_seg":52.3,"moviliza":14,"simpatizantes":37,"contactos":29,"alta_prob":66,"riesgo_alto":27,"duplicados":3,"casa":58,"referido":32,"evento":21,"digital":19,"score":65.7,"ultima_str":"01/05/2026"},
+{"ID_CAPTURISTA":"CAP-015","CAPTURADO_POR":"Capturista 15","MUNICIPIO":"Colima","total":126,"meta":50,"pct_meta":252.0,"faltantes":0,"validados":100,"pct_val":79.4,"seguros":70,"pct_seg":55.6,"moviliza":15,"simpatizantes":38,"contactos":18,"alta_prob":58,"riesgo_alto":23,"duplicados":3,"casa":57,"referido":31,"evento":20,"digital":18,"score":64.9,"ultima_str":"25/04/2026"},
+{"ID_CAPTURISTA":"CAP-004","CAPTURADO_POR":"Capturista 04","MUNICIPIO":"Tecomán","total":120,"meta":50,"pct_meta":240.0,"faltantes":0,"validados":95,"pct_val":79.2,"seguros":67,"pct_seg":55.8,"moviliza":14,"simpatizantes":36,"contactos":17,"alta_prob":55,"riesgo_alto":22,"duplicados":2,"casa":54,"referido":29,"evento":19,"digital":18,"score":64.5,"ultima_str":"30/04/2026"},
+{"ID_CAPTURISTA":"CAP-023","CAPTURADO_POR":"Capturista 23","MUNICIPIO":"Tecomán","total":118,"meta":50,"pct_meta":236.0,"faltantes":0,"validados":90,"pct_val":76.3,"seguros":64,"pct_seg":54.2,"moviliza":13,"simpatizantes":34,"contactos":21,"alta_prob":56,"riesgo_alto":24,"duplicados":3,"casa":52,"referido":29,"evento":19,"digital":18,"score":63.0,"ultima_str":"29/04/2026"},
+{"ID_CAPTURISTA":"CAP-001","CAPTURADO_POR":"Capturista 01","MUNICIPIO":"Tecomán","total":115,"meta":50,"pct_meta":230.0,"faltantes":0,"validados":87,"pct_val":75.7,"seguros":62,"pct_seg":53.9,"moviliza":13,"simpatizantes":33,"contactos":20,"alta_prob":53,"riesgo_alto":23,"duplicados":2,"casa":51,"referido":28,"evento":18,"digital":18,"score":62.3,"ultima_str":"28/04/2026"},
+{"ID_CAPTURISTA":"CAP-044","CAPTURADO_POR":"Capturista 44","MUNICIPIO":"Colima","total":108,"meta":50,"pct_meta":216.0,"faltantes":0,"validados":93,"pct_val":86.1,"seguros":60,"pct_seg":55.6,"moviliza":13,"simpatizantes":33,"contactos":15,"alta_prob":51,"riesgo_alto":19,"duplicados":2,"casa":49,"referido":27,"evento":17,"digital":15,"score":66.2,"ultima_str":"29/04/2026"},
+{"ID_CAPTURISTA":"CAP-027","CAPTURADO_POR":"Capturista 27","MUNICIPIO":"Manzanillo","total":100,"meta":50,"pct_meta":200.0,"faltantes":0,"validados":83,"pct_val":83.0,"seguros":58,"pct_seg":58.0,"moviliza":12,"simpatizantes":32,"contactos":16,"alta_prob":50,"riesgo_alto":18,"duplicados":2,"casa":45,"referido":25,"evento":16,"digital":14,"score":65.0,"ultima_str":"01/05/2026"},
+{"ID_CAPTURISTA":"CAP-038","CAPTURADO_POR":"Capturista 38","MUNICIPIO":"Colima","total":96,"meta":50,"pct_meta":192.0,"faltantes":0,"validados":84,"pct_val":87.5,"seguros":55,"pct_seg":57.3,"moviliza":12,"simpatizantes":30,"contactos":14,"alta_prob":47,"riesgo_alto":17,"duplicados":2,"casa":43,"referido":24,"evento":15,"digital":14,"score":68.0,"ultima_str":"01/05/2026"},
+{"ID_CAPTURISTA":"CAP-016","CAPTURADO_POR":"Capturista 16","MUNICIPIO":"Villa de Álvarez","total":90,"meta":50,"pct_meta":180.0,"faltantes":0,"validados":80,"pct_val":88.9,"seguros":52,"pct_seg":57.8,"moviliza":11,"simpatizantes":28,"contactos":13,"alta_prob":44,"riesgo_alto":16,"duplicados":1,"casa":41,"referido":22,"evento":14,"digital":13,"score":68.9,"ultima_str":"27/04/2026"},
+{"ID_CAPTURISTA":"CAP-033","CAPTURADO_POR":"Capturista 33","MUNICIPIO":"Villa de Álvarez","total":86,"meta":50,"pct_meta":172.0,"faltantes":0,"validados":75,"pct_val":87.2,"seguros":50,"pct_seg":58.1,"moviliza":11,"simpatizantes":27,"contactos":12,"alta_prob":41,"riesgo_alto":15,"duplicados":1,"casa":39,"referido":21,"evento":13,"digital":13,"score":68.4,"ultima_str":"26/04/2026"},
+{"ID_CAPTURISTA":"CAP-025","CAPTURADO_POR":"Capturista 25","MUNICIPIO":"Tecomán","total":82,"meta":50,"pct_meta":164.0,"faltantes":0,"validados":66,"pct_val":80.5,"seguros":47,"pct_seg":57.3,"moviliza":10,"simpatizantes":25,"contactos":12,"alta_prob":39,"riesgo_alto":15,"duplicados":1,"casa":37,"referido":20,"evento":13,"digital":12,"score":63.3,"ultima_str":"25/04/2026"},
+{"ID_CAPTURISTA":"CAP-043","CAPTURADO_POR":"Capturista 43","MUNICIPIO":"Armería","total":78,"meta":50,"pct_meta":156.0,"faltantes":0,"validados":62,"pct_val":79.5,"seguros":44,"pct_seg":56.4,"moviliza":9,"simpatizantes":24,"contactos":11,"alta_prob":36,"riesgo_alto":14,"duplicados":1,"casa":35,"referido":19,"evento":12,"digital":12,"score":62.5,"ultima_str":"24/04/2026"},
+{"ID_CAPTURISTA":"CAP-037","CAPTURADO_POR":"Capturista 37","MUNICIPIO":"Armería","total":74,"meta":50,"pct_meta":148.0,"faltantes":0,"validados":58,"pct_val":78.4,"seguros":41,"pct_seg":55.4,"moviliza":9,"simpatizantes":22,"contactos":12,"alta_prob":34,"riesgo_alto":14,"duplicados":1,"casa":33,"referido":18,"evento":11,"digital":12,"score":61.5,"ultima_str":"23/04/2026"},
+{"ID_CAPTURISTA":"CAP-048","CAPTURADO_POR":"Capturista 48","MUNICIPIO":"Armería","total":70,"meta":50,"pct_meta":140.0,"faltantes":0,"validados":54,"pct_val":77.1,"seguros":38,"pct_seg":54.3,"moviliza":8,"simpatizantes":21,"contactos":11,"alta_prob":32,"riesgo_alto":13,"duplicados":1,"casa":31,"referido":17,"evento":11,"digital":11,"score":60.5,"ultima_str":"22/04/2026"},
+{"ID_CAPTURISTA":"CAP-036","CAPTURADO_POR":"Capturista 36","MUNICIPIO":"Comala","total":68,"meta":50,"pct_meta":136.0,"faltantes":0,"validados":53,"pct_val":77.9,"seguros":37,"pct_seg":54.4,"moviliza":8,"simpatizantes":20,"contactos":10,"alta_prob":30,"riesgo_alto":12,"duplicados":1,"casa":30,"referido":16,"evento":10,"digital":12,"score":61.1,"ultima_str":"22/04/2026"},
+{"ID_CAPTURISTA":"CAP-029","CAPTURADO_POR":"Capturista 29","MUNICIPIO":"Comala","total":64,"meta":50,"pct_meta":128.0,"faltantes":0,"validados":50,"pct_val":78.1,"seguros":35,"pct_seg":54.7,"moviliza":7,"simpatizantes":19,"contactos":9,"alta_prob":28,"riesgo_alto":11,"duplicados":1,"casa":28,"referido":15,"evento":10,"digital":11,"score":61.6,"ultima_str":"21/04/2026"},
+{"ID_CAPTURISTA":"CAP-022","CAPTURADO_POR":"Capturista 22","MUNICIPIO":"Tecomán","total":60,"meta":50,"pct_meta":120.0,"faltantes":0,"validados":47,"pct_val":78.3,"seguros":33,"pct_seg":55.0,"moviliza":7,"simpatizantes":18,"contactos":9,"alta_prob":26,"riesgo_alto":10,"duplicados":1,"casa":27,"referido":14,"evento":9,"digital":10,"score":62.1,"ultima_str":"20/04/2026"},
+{"ID_CAPTURISTA":"CAP-035","CAPTURADO_POR":"Capturista 35","MUNICIPIO":"Armería","total":58,"meta":50,"pct_meta":116.0,"faltantes":0,"validados":44,"pct_val":75.9,"seguros":30,"pct_seg":51.7,"moviliza":6,"simpatizantes":17,"contactos":11,"alta_prob":26,"riesgo_alto":11,"duplicados":1,"casa":26,"referido":14,"evento":9,"digital":9,"score":59.2,"ultima_str":"19/04/2026"},
+{"ID_CAPTURISTA":"CAP-041","CAPTURADO_POR":"Capturista 41","MUNICIPIO":"Comala","total":56,"meta":50,"pct_meta":112.0,"faltantes":0,"validados":44,"pct_val":78.6,"seguros":31,"pct_seg":55.4,"moviliza":6,"simpatizantes":17,"contactos":8,"alta_prob":24,"riesgo_alto":9,"duplicados":1,"casa":25,"referido":14,"evento":9,"digital":8,"score":62.0,"ultima_str":"18/04/2026"},
+{"ID_CAPTURISTA":"CAP-026","CAPTURADO_POR":"Capturista 26","MUNICIPIO":"Comala","total":54,"meta":50,"pct_meta":108.0,"faltantes":0,"validados":42,"pct_val":77.8,"seguros":29,"pct_seg":53.7,"moviliza":6,"simpatizantes":16,"contactos":9,"alta_prob":23,"riesgo_alto":9,"duplicados":1,"casa":24,"referido":13,"evento":8,"digital":9,"score":61.1,"ultima_str":"17/04/2026"},
+{"ID_CAPTURISTA":"CAP-015","CAPTURADO_POR":"Capturista 15","MUNICIPIO":"Villa de Álvarez","total":52,"meta":50,"pct_meta":104.0,"faltantes":0,"validados":44,"pct_val":84.6,"seguros":26,"pct_seg":50.0,"moviliza":5,"simpatizantes":15,"contactos":12,"alta_prob":25,"riesgo_alto":10,"duplicados":1,"casa":24,"referido":13,"evento":8,"digital":7,"score":65.4,"ultima_str":"30/04/2026"},
+{"ID_CAPTURISTA":"CAP-046","CAPTURADO_POR":"Capturista 46","MUNICIPIO":"Villa de Álvarez","total":50,"meta":50,"pct_meta":100.0,"faltantes":0,"validados":36,"pct_val":72.0,"seguros":34,"pct_seg":68.0,"moviliza":6,"simpatizantes":15,"contactos":9,"alta_prob":22,"riesgo_alto":9,"duplicados":1,"casa":22,"referido":12,"evento":8,"digital":8,"score":65.6,"ultima_str":"28/04/2026"},
+{"ID_CAPTURISTA":"CAP-013","CAPTURADO_POR":"Capturista 13","MUNICIPIO":"Armería","total":48,"meta":50,"pct_meta":96.0,"faltantes":2,"validados":37,"pct_val":77.1,"seguros":26,"pct_seg":54.2,"moviliza":5,"simpatizantes":14,"contactos":9,"alta_prob":20,"riesgo_alto":9,"duplicados":1,"casa":21,"referido":12,"evento":8,"digital":7,"score":60.8,"ultima_str":"22/04/2026"},
+{"ID_CAPTURISTA":"CAP-030","CAPTURADO_POR":"Capturista 30","MUNICIPIO":"Coquimatlán","total":44,"meta":50,"pct_meta":88.0,"faltantes":6,"validados":33,"pct_val":75.0,"seguros":23,"pct_seg":52.3,"moviliza":5,"simpatizantes":12,"contactos":9,"alta_prob":19,"riesgo_alto":9,"duplicados":1,"casa":19,"referido":11,"evento":7,"digital":7,"score":59.5,"ultima_str":"21/04/2026"},
+{"ID_CAPTURISTA":"CAP-040","CAPTURADO_POR":"Capturista 40","MUNICIPIO":"Coquimatlán","total":40,"meta":50,"pct_meta":80.0,"faltantes":10,"validados":30,"pct_val":75.0,"seguros":21,"pct_seg":52.5,"moviliza":4,"simpatizantes":11,"contactos":9,"alta_prob":17,"riesgo_alto":8,"duplicados":1,"casa":17,"referido":10,"evento":7,"digital":6,"score":59.0,"ultima_str":"20/04/2026"},
+{"ID_CAPTURISTA":"CAP-050","CAPTURADO_POR":"Capturista 50","MUNICIPIO":"Coquimatlán","total":36,"meta":50,"pct_meta":72.0,"faltantes":14,"validados":28,"pct_val":77.8,"seguros":19,"pct_seg":52.8,"moviliza":4,"simpatizantes":10,"contactos":6,"alta_prob":15,"riesgo_alto":6,"duplicados":0,"casa":16,"referido":9,"evento":6,"digital":5,"score":61.1,"ultima_str":"19/04/2026"},
+{"ID_CAPTURISTA":"CAP-039","CAPTURADO_POR":"Capturista 39","MUNICIPIO":"Minatitlán","total":32,"meta":50,"pct_meta":64.0,"faltantes":18,"validados":26,"pct_val":81.3,"seguros":17,"pct_seg":53.1,"moviliza":3,"simpatizantes":9,"contactos":6,"alta_prob":13,"riesgo_alto":5,"duplicados":0,"casa":14,"referido":8,"evento":5,"digital":5,"score":63.5,"ultima_str":"18/04/2026"},
+{"ID_CAPTURISTA":"CAP-021","CAPTURADO_POR":"Capturista 21","MUNICIPIO":"Minatitlán","total":28,"meta":50,"pct_meta":56.0,"faltantes":22,"validados":22,"pct_val":78.6,"seguros":15,"pct_seg":53.6,"moviliza":3,"simpatizantes":8,"contactos":5,"alta_prob":11,"riesgo_alto":4,"duplicados":0,"casa":12,"referido":7,"evento":5,"digital":4,"score":62.9,"ultima_str":"17/04/2026"},
+{"ID_CAPTURISTA":"CAP-055","CAPTURADO_POR":"Capturista 55","MUNICIPIO":"Minatitlán","total":24,"meta":50,"pct_meta":48.0,"faltantes":26,"validados":18,"pct_val":75.0,"seguros":13,"pct_seg":54.2,"moviliza":2,"simpatizantes":7,"contactos":5,"alta_prob":10,"riesgo_alto":4,"duplicados":0,"casa":10,"referido":6,"evento":4,"digital":4,"score":61.7,"ultima_str":"16/04/2026"},
+{"ID_CAPTURISTA":"CAP-008","CAPTURADO_POR":"Capturista 08","MUNICIPIO":"Cuauhtémoc","total":20,"meta":50,"pct_meta":40.0,"faltantes":30,"validados":15,"pct_val":75.0,"seguros":11,"pct_seg":55.0,"moviliza":2,"simpatizantes":6,"contactos":4,"alta_prob":9,"riesgo_alto":4,"duplicados":0,"casa":9,"referido":5,"evento":3,"digital":3,"score":61.0,"ultima_str":"15/04/2026"},
+{"ID_CAPTURISTA":"CAP-024","CAPTURADO_POR":"Capturista 24","MUNICIPIO":"Cuauhtémoc","total":16,"meta":50,"pct_meta":32.0,"faltantes":34,"validados":12,"pct_val":75.0,"seguros":9,"pct_seg":56.3,"moviliza":2,"simpatizantes":5,"contactos":3,"alta_prob":7,"riesgo_alto":3,"duplicados":0,"casa":7,"referido":4,"evento":3,"digital":2,"score":61.3,"ultima_str":"14/04/2026"},
+{"ID_CAPTURISTA":"CAP-007","CAPTURADO_POR":"Capturista 07","MUNICIPIO":"Cuauhtémoc","total":12,"meta":50,"pct_meta":24.0,"faltantes":38,"validados":9,"pct_val":75.0,"seguros":7,"pct_seg":58.3,"moviliza":1,"simpatizantes":4,"contactos":2,"alta_prob":5,"riesgo_alto":2,"duplicados":0,"casa":5,"referido":3,"evento":2,"digital":2,"score":62.7,"ultima_str":"13/04/2026"},
+{"ID_CAPTURISTA":"CAP-018","CAPTURADO_POR":"Capturista 18","MUNICIPIO":"Cuauhtémoc","total":8,"meta":50,"pct_meta":16.0,"faltantes":42,"validados":6,"pct_val":75.0,"seguros":5,"pct_seg":62.5,"moviliza":1,"simpatizantes":3,"contactos":1,"alta_prob":3,"riesgo_alto":1,"duplicados":0,"casa":3,"referido":2,"evento":2,"digital":1,"score":64.5,"ultima_str":"12/04/2026"},
+{"ID_CAPTURISTA":"CAP-003","CAPTURADO_POR":"Capturista 03","MUNICIPIO":"Ixtlahuacán","total":4,"meta":50,"pct_meta":8.0,"faltantes":46,"validados":3,"pct_val":75.0,"seguros":3,"pct_seg":75.0,"moviliza":1,"simpatizantes":1,"contactos":0,"alta_prob":1,"riesgo_alto":0,"duplicados":0,"casa":2,"referido":1,"evento":0,"digital":1,"score":70.0,"ultima_str":"10/04/2026"},
+{"ID_CAPTURISTA":"CAP-002","CAPTURADO_POR":"Capturista 02","MUNICIPIO":"Ixtlahuacán","total":2,"meta":50,"pct_meta":4.0,"faltantes":48,"validados":2,"pct_val":100.0,"seguros":2,"pct_seg":100.0,"moviliza":0,"simpatizantes":1,"contactos":0,"alta_prob":1,"riesgo_alto":0,"duplicados":0,"casa":1,"referido":0,"evento":0,"digital":1,"score":100.0,"ultima_str":"08/04/2026"},
+{"ID_CAPTURISTA":"CAP-006","CAPTURADO_POR":"Capturista 06","MUNICIPIO":"Ixtlahuacán","total":1,"meta":50,"pct_meta":2.0,"faltantes":49,"validados":1,"pct_val":100.0,"seguros":1,"pct_seg":100.0,"moviliza":0,"simpatizantes":0,"contactos":0,"alta_prob":1,"riesgo_alto":0,"duplicados":0,"casa":1,"referido":0,"evento":0,"digital":0,"score":100.0,"ultima_str":"05/04/2026"}
+];
+
+let sortField = 'score';
+let sortAsc = false;
+let selectedId = null;
+let chartInstance = null;
+
+function fmt(n){return Number(n).toLocaleString('es-MX');}
+function fmtPct(n){return Number(n).toFixed(1)+'%';}
+
+function scoreColor(s){
+  if(s>=70) return '#22c55e';
+  if(s>=55) return '#f59e0b';
+  return '#ef4444';
+}
+function metaColor(p){
+  if(p>=100) return '#22c55e';
+  if(p>=50)  return '#f59e0b';
+  return '#ef4444';
+}
+function barColor(p,max){
+  if(p/max>0.66) return '#22c55e';
+  if(p/max>0.33) return '#f59e0b';
+  return '#ef4444';
+}
+
+function getDatos(){
+  const mun = document.getElementById('fil-municipio').value;
+  const q   = document.getElementById('fil-search').value.toLowerCase();
+  let d = [...DATOS];
+  if(mun) d = d.filter(r=>r.MUNICIPIO===mun);
+  if(q)   d = d.filter(r=>r.CAPTURADO_POR.toLowerCase().includes(q)||r.ID_CAPTURISTA.toLowerCase().includes(q));
+  d.sort((a,b)=> sortAsc ? a[sortField]-b[sortField] : b[sortField]-a[sortField]);
+  return d;
+}
+
+function renderKPIs(d){
+  const superaron = d.filter(r=>r.total>=50).length;
+  const proceso   = d.filter(r=>r.total>=25&&r.total<50).length;
+  const bajo      = d.filter(r=>r.total<25).length;
+  const prom      = d.length ? (d.reduce((s,r)=>s+r.score,0)/d.length).toFixed(1) : 0;
+  document.getElementById('kpi-superaron').textContent = superaron;
+  document.getElementById('kpi-proceso').textContent   = proceso;
+  document.getElementById('kpi-bajo').textContent      = bajo;
+  document.getElementById('kpi-score-prom').textContent= prom;
+  document.getElementById('results-count').textContent = d.length+' capturistas';
+}
+
+function renderTable(d){
+  const tbody = document.getElementById('cap-tbody');
+  tbody.innerHTML = d.map((r,i)=>{
+    const sc = scoreColor(r.score);
+    const mc = metaColor(r.pct_meta);
+    const pctW = Math.min(r.pct_meta,400)/400*100;
+    const sel = selectedId===r.ID_CAPTURISTA+r.MUNICIPIO ? 'selected':'';
+    return `<tr class="${sel}" onclick="seleccionar('${r.ID_CAPTURISTA}','${r.MUNICIPIO.replace(/'/g,"\\'")}')">
+      <td><span class="rank-num">${i+1}</span></td>
+      <td>
+        <div class="cap-name">${r.CAPTURADO_POR}</div>
+        <div class="cap-id">${r.ID_CAPTURISTA}</div>
+      </td>
+      <td><div class="cap-mun" style="color:var(--cyan)">${r.MUNICIPIO}</div></td>
+      <td class="num-r" style="color:${mc};font-weight:600">${fmt(r.total)}</td>
+      <td style="width:100px">
+        <div class="mini-bar" style="width:100px">
+          <div class="mini-fill" style="width:${pctW}%;background:${mc}"></div>
+        </div>
+      </td>
+      <td class="num-r" style="color:${mc}">${fmtPct(r.pct_meta)}</td>
+      <td class="num-r" style="color:var(--text2)">${fmtPct(r.pct_val)}</td>
+      <td class="num-r" style="color:var(--green)">${r.seguros}</td>
+      <td>
+        <span class="score-badge" style="background:${sc}22;color:${sc};border:1px solid ${sc}44">${r.score}</span>
+      </td>
+      <td class="num-r" style="font-size:10px;color:var(--text3)">${r.ultima_str}</td>
+    </tr>`;
+  }).join('');
+}
+
+function seleccionar(id, mun){
+  selectedId = id+mun;
+  const r = DATOS.find(d=>d.ID_CAPTURISTA===id && d.MUNICIPIO===mun);
+  if(!r) return;
+  aplicarFiltros();
+
+  const sc = scoreColor(r.score);
+  const mc = metaColor(r.pct_meta);
+  const initials = r.CAPTURADO_POR.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  const maxComp = Math.max(r.moviliza,r.seguros-r.moviliza,r.simpatizantes,r.contactos)||1;
+
+  document.getElementById('detail-panel').innerHTML = `
+    <div class="detail">
+      <div class="detail-header">
+        <div class="detail-avatar">${initials}</div>
+        <div class="detail-name">${r.CAPTURADO_POR}</div>
+        <div class="detail-id">${r.ID_CAPTURISTA}</div>
+        <div class="detail-mun">📍 ${r.MUNICIPIO}</div>
+        <div class="detail-score-row">
+          <div>
+            <div class="detail-score-big" style="color:${sc}">${r.score}</div>
+            <div class="detail-score-label">SCORE CALIDAD</div>
+          </div>
+          <div style="flex:1;margin-left:10px">
+            <div style="height:6px;background:rgba(255,255,255,0.06);border-radius:99px;overflow:hidden">
+              <div style="width:${r.score}%;height:100%;background:${sc};border-radius:99px"></div>
+            </div>
+            <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:3px">Validados ${r.pct_val}% · Seguros ${r.pct_seg}%</div>
+          </div>
+        </div>
+        <div class="detail-meta-row">
+          <div class="detail-meta-item">
+            <div class="detail-meta-val" style="color:${mc}">${fmt(r.total)}</div>
+            <div class="detail-meta-lbl">capturas</div>
+          </div>
+          <div class="detail-meta-item">
+            <div class="detail-meta-val" style="color:${mc}">${fmtPct(r.pct_meta)}</div>
+            <div class="detail-meta-lbl">vs meta</div>
+          </div>
+          <div class="detail-meta-item">
+            <div class="detail-meta-val" style="color:var(--red)">${r.faltantes}</div>
+            <div class="detail-meta-lbl">faltantes</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <div class="detail-section-title">Nivel de compromiso</div>
+        <div class="comp-mini">
+          <div class="comp-mini-row">
+            <div class="comp-mini-label">4 · Moviliza</div>
+            <div class="comp-mini-track"><div class="comp-mini-fill" style="width:${r.moviliza/maxComp*100}%;background:var(--green)"></div></div>
+            <div class="comp-mini-num">${r.moviliza}</div>
+          </div>
+          <div class="comp-mini-row">
+            <div class="comp-mini-label">3 · Seguro vota</div>
+            <div class="comp-mini-track"><div class="comp-mini-fill" style="width:${(r.seguros-r.moviliza)/maxComp*100}%;background:#16a34a"></div></div>
+            <div class="comp-mini-num">${r.seguros-r.moviliza}</div>
+          </div>
+          <div class="comp-mini-row">
+            <div class="comp-mini-label">2 · Simpatiza</div>
+            <div class="comp-mini-track"><div class="comp-mini-fill" style="width:${r.simpatizantes/maxComp*100}%;background:var(--accent)"></div></div>
+            <div class="comp-mini-num">${r.simpatizantes}</div>
+          </div>
+          <div class="comp-mini-row">
+            <div class="comp-mini-label">1 · Contacto</div>
+            <div class="comp-mini-track"><div class="comp-mini-fill" style="width:${r.contactos/maxComp*100}%;background:var(--text3)"></div></div>
+            <div class="comp-mini-num">${r.contactos}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <div class="detail-section-title">Origen de captura</div>
+        <div class="origen-mini">
+          <div class="origen-mini-item">
+            <div class="origen-mini-label">Casa por casa</div>
+            <div class="origen-mini-val">${r.casa}</div>
+          </div>
+          <div class="origen-mini-item">
+            <div class="origen-mini-label">Referido</div>
+            <div class="origen-mini-val">${r.referido}</div>
+          </div>
+          <div class="origen-mini-item">
+            <div class="origen-mini-label">Evento</div>
+            <div class="origen-mini-val">${r.evento}</div>
+          </div>
+          <div class="origen-mini-item">
+            <div class="origen-mini-label">Digital</div>
+            <div class="origen-mini-val">${r.digital}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <div class="detail-section-title">Calidad del padrón</div>
+        <div class="detail-row">
+          <span class="detail-row-label">Validados</span>
+          <span class="detail-row-val" style="color:var(--green)">${r.validados} (${fmtPct(r.pct_val)})</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-row-label">Alta prob. voto</span>
+          <span class="detail-row-val" style="color:var(--cyan)">${r.alta_prob}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-row-label">Riesgo alto</span>
+          <span class="detail-row-val" style="color:var(--red)">${r.riesgo_alto}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-row-label">Duplicados</span>
+          <span class="detail-row-val" style="color:${r.duplicados>0?'var(--amber)':'var(--text3)'}">${r.duplicados}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-row-label">Última captura</span>
+          <span class="detail-row-val" style="color:var(--text2)">${r.ultima_str}</span>
+        </div>
+      </div>
+    </div>`;
+}
+
+function setSorteo(field){
+  if(sortField===field) sortAsc=!sortAsc; else { sortField=field; sortAsc=false; }
+  document.querySelectorAll('.sort-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('sort-'+field)?.classList.add('active');
+  aplicarFiltros();
+}
+
+function aplicarFiltros(){
+  const d = getDatos();
+  renderKPIs(d);
+  renderTable(d);
+}
+
+aplicarFiltros();
+</script>
+</body>
+</html>

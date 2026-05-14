@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WAR ROOM ELECTORAL — COLIMA 2027</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #0a0e1a;
+    --bg2: #0f1526;
+    --bg3: #141b2e;
+    --bg4: #1a2238;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.13);
+    --text: #e8edf5;
+    --text2: #8a9ab5;
+    --text3: #5a6a85;
+    --accent: #3b82f6;
+    --accent2: #1d4ed8;
+    --green: #22c55e;
+    --green2: #16a34a;
+    --red: #ef4444;
+    --amber: #f59e0b;
+    --cyan: #06b6d4;
+    --purple: #a855f7;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; }
+
+  .topbar {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border2);
+    padding: 0 24px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 14px; }
+  .logo-mark {
+    width: 28px; height: 28px;
+    background: var(--accent);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 13px; font-weight: 600; color: #fff;
+  }
+  .topbar-title { font-size: 13px; font-weight: 600; letter-spacing: .04em; color: var(--text); }
+  .topbar-sub { font-size: 11px; color: var(--text3); font-family: var(--mono); }
+  .topbar-right { display: flex; align-items: center; gap: 20px; }
+  .live-badge {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; font-family: var(--mono); color: var(--green);
+    background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.25);
+    padding: 3px 10px; border-radius: 99px;
+  }
+  .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+  .clock { font-family: var(--mono); font-size: 12px; color: var(--text2); }
+
+  /* CONFIG BAR */
+  .config-bar {
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 24px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .config-item { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  .config-label { color: var(--text3); font-family: var(--mono); }
+  .config-val { color: var(--cyan); font-family: var(--mono); font-weight: 600; }
+  .config-input {
+    background: var(--bg4); border: 1px solid var(--border2); color: var(--cyan);
+    font-family: var(--mono); font-size: 12px; padding: 3px 8px;
+    border-radius: 4px; width: 64px; text-align: center;
+  }
+  .config-input:focus { outline: none; border-color: var(--accent); }
+  .btn-recalc {
+    background: var(--accent2); border: none; color: #fff;
+    font-family: var(--mono); font-size: 11px; padding: 4px 14px;
+    border-radius: 4px; cursor: pointer; transition: background .15s;
+  }
+  .btn-recalc:hover { background: var(--accent); }
+
+  /* MAIN GRID */
+  .main { padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; }
+
+  /* KPI ROW */
+  .kpi-row { display: grid; grid-template-columns: repeat(6, minmax(0,1fr)); gap: 10px; }
+  .kpi {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  }
+  .kpi.blue::before { background: var(--accent); }
+  .kpi.green::before { background: var(--green); }
+  .kpi.amber::before { background: var(--amber); }
+  .kpi.red::before { background: var(--red); }
+  .kpi.cyan::before { background: var(--cyan); }
+  .kpi.purple::before { background: var(--purple); }
+  .kpi-label { font-size: 10px; font-family: var(--mono); color: var(--text3); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
+  .kpi-val { font-size: 22px; font-weight: 600; line-height: 1; margin-bottom: 4px; }
+  .kpi.blue .kpi-val { color: var(--accent); }
+  .kpi.green .kpi-val { color: var(--green); }
+  .kpi.amber .kpi-val { color: var(--amber); }
+  .kpi.red .kpi-val { color: var(--red); }
+  .kpi.cyan .kpi-val { color: var(--cyan); }
+  .kpi.purple .kpi-val { color: var(--purple); }
+  .kpi-sub { font-size: 10px; color: var(--text3); font-family: var(--mono); }
+
+  /* MID GRID */
+  .mid-grid { display: grid; grid-template-columns: 1fr 380px; gap: 16px; }
+
+  /* CARD */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .card-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .card-title { font-size: 11px; font-family: var(--mono); color: var(--text2); text-transform: uppercase; letter-spacing: .06em; }
+  .card-body { padding: 16px; }
+
+  /* MUNICIPIOS TABLE */
+  .mun-table { width: 100%; border-collapse: collapse; }
+  .mun-table th {
+    font-size: 9px; font-family: var(--mono); color: var(--text3); text-transform: uppercase;
+    letter-spacing: .06em; text-align: left; padding: 0 8px 8px; border-bottom: 1px solid var(--border);
+  }
+  .mun-table th.right { text-align: right; }
+  .mun-table td { padding: 8px; vertical-align: middle; border-bottom: 1px solid var(--border); }
+  .mun-table tr:last-child td { border-bottom: none; }
+  .mun-name { font-size: 12px; font-weight: 500; color: var(--text); }
+  .mun-secs { font-size: 10px; color: var(--text3); font-family: var(--mono); }
+  .num-cell { font-family: var(--mono); font-size: 12px; text-align: right; }
+  .pct-cell { font-family: var(--mono); font-size: 12px; font-weight: 600; text-align: right; }
+  .bar-cell { width: 120px; }
+  .mini-bar { height: 4px; background: rgba(255,255,255,0.08); border-radius: 99px; overflow: hidden; }
+  .mini-bar-fill { height: 100%; border-radius: 99px; transition: width 1s ease; }
+  .semaforo {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 20px; height: 20px; border-radius: 50%; font-size: 9px; font-weight: 700;
+  }
+  .sem-green { background: rgba(34,197,94,.15); color: var(--green); border: 1px solid rgba(34,197,94,.3); }
+  .sem-amber { background: rgba(245,158,11,.15); color: var(--amber); border: 1px solid rgba(245,158,11,.3); }
+  .sem-red { background: rgba(239,68,68,.15); color: var(--red); border: 1px solid rgba(239,68,68,.3); }
+
+  /* ALERTAS */
+  .alert-list { display: flex; flex-direction: column; gap: 8px; padding: 14px; }
+  .alert-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 12px; border-radius: 6px; border: 1px solid;
+  }
+  .alert-item.critical { background: rgba(239,68,68,.07); border-color: rgba(239,68,68,.2); }
+  .alert-item.warning { background: rgba(245,158,11,.07); border-color: rgba(245,158,11,.2); }
+  .alert-item.info { background: rgba(59,130,246,.07); border-color: rgba(59,130,246,.2); }
+  .alert-icon { font-size: 14px; margin-top: 1px; flex-shrink: 0; }
+  .alert-item.critical .alert-icon { color: var(--red); }
+  .alert-item.warning .alert-icon { color: var(--amber); }
+  .alert-item.info .alert-icon { color: var(--accent); }
+  .alert-title { font-size: 12px; font-weight: 500; color: var(--text); margin-bottom: 2px; }
+  .alert-desc { font-size: 11px; color: var(--text2); font-family: var(--mono); }
+
+  /* BOTTOM GRID */
+  .bottom-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+  /* CHART containers */
+  .chart-wrap { position: relative; padding: 14px 16px; }
+
+  /* COMPROMISO BARS */
+  .comp-bars { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+  .comp-row { display: flex; align-items: center; gap: 10px; }
+  .comp-label { font-size: 11px; color: var(--text2); width: 120px; flex-shrink: 0; }
+  .comp-track { flex: 1; height: 6px; background: rgba(255,255,255,0.06); border-radius: 99px; overflow: hidden; }
+  .comp-fill { height: 100%; border-radius: 99px; }
+  .comp-num { font-family: var(--mono); font-size: 11px; color: var(--text2); width: 40px; text-align: right; }
+
+  /* ORIGEN */
+  .origen-list { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+  .origen-row { display: flex; align-items: center; gap: 10px; }
+  .origen-icon { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+  .origen-name { font-size: 12px; color: var(--text); flex: 1; }
+  .origen-bar-wrap { width: 100px; }
+  .origen-num { font-family: var(--mono); font-size: 11px; color: var(--text2); width: 36px; text-align: right; }
+
+  /* ESTADO GENERAL */
+  .estado-grid { padding: 14px 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .estado-item {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
+    padding: 10px 12px;
+  }
+  .estado-lbl { font-size: 10px; font-family: var(--mono); color: var(--text3); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .04em; }
+  .estado-val { font-size: 18px; font-weight: 600; }
+  .estado-sub { font-size: 10px; color: var(--text3); font-family: var(--mono); margin-top: 2px; }
+
+  /* FOOTER */
+  .footer {
+    padding: 12px 24px;
+    border-top: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 10px; font-family: var(--mono); color: var(--text3);
+  }
+
+  /* TOTAL BAR */
+  .total-progress {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 16px 20px;
+    display: flex; align-items: center; gap: 20px;
+  }
+  .tp-label { font-size: 11px; font-family: var(--mono); color: var(--text3); text-transform: uppercase; letter-spacing: .06em; width: 160px; flex-shrink: 0; }
+  .tp-track { flex: 1; height: 10px; background: rgba(255,255,255,0.07); border-radius: 99px; overflow: hidden; }
+  .tp-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #1d4ed8, #3b82f6); transition: width 1.2s ease; }
+  .tp-pct { font-family: var(--mono); font-size: 16px; font-weight: 600; color: var(--accent); width: 52px; text-align: right; }
+  .tp-nums { font-family: var(--mono); font-size: 11px; color: var(--text2); width: 180px; text-align: right; }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="logo-mark">WR</div>
+    <div>
+      <div class="topbar-title">WAR ROOM ELECTORAL</div>
+      <div class="topbar-sub">ESTADO DE COLIMA · CICLO 2025–2027</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="live-badge"><div class="live-dot"></div>SISTEMA ACTIVO</div>
+    <div class="clock" id="clock">--:--:--</div>
+  </div>
+</div>
+
+<!-- CONFIG BAR -->
+<div class="config-bar">
+  <div class="config-item">
+    <span class="config-label">% META SOBRE VOTO GANADOR</span>
+    <input class="config-input" id="cfg-pct" type="number" value="6" min="1" max="30" step="0.5">
+    <span class="config-label">%</span>
+  </div>
+  <div class="config-item">
+    <span class="config-label">ESTRUCTURA DE CAMPO</span>
+    <input class="config-input" id="cfg-estructura" type="number" value="1500" min="100" max="9999" step="100">
+    <span class="config-label">operadores</span>
+  </div>
+  <div class="config-item">
+    <span class="config-label">META X CAPTURISTA</span>
+    <input class="config-input" id="cfg-xcap" type="number" value="50" min="10" max="200" step="5">
+    <span class="config-label">simpatizantes</span>
+  </div>
+  <button class="btn-recalc" onclick="recalcular()">⟳ RECALCULAR META</button>
+  <div class="config-item">
+    <span class="config-label">META ESTATAL CALCULADA:</span>
+    <span class="config-val" id="meta-calculada">197,297</span>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- BARRA DE PROGRESO TOTAL -->
+  <div class="total-progress">
+    <div class="tp-label">AVANCE ESTATAL VS META 2027</div>
+    <div class="tp-track"><div class="tp-fill" id="tp-fill" style="width:7.2%"></div></div>
+    <div class="tp-pct" id="tp-pct">7.2%</div>
+    <div class="tp-nums" id="tp-nums">14,300 / 197,297 capturados</div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-row">
+    <div class="kpi blue">
+      <div class="kpi-label">Meta estatal 2027</div>
+      <div class="kpi-val" id="kpi-meta">197,297</div>
+      <div class="kpi-sub">votos proyectados</div>
+    </div>
+    <div class="kpi green">
+      <div class="kpi-label">Total capturados</div>
+      <div class="kpi-val">14,300</div>
+      <div class="kpi-sub">registros activos</div>
+    </div>
+    <div class="kpi green">
+      <div class="kpi-label">Seguro vota</div>
+      <div class="kpi-val">3,432</div>
+      <div class="kpi-sub">nivel compromiso 3+4</div>
+    </div>
+    <div class="kpi amber">
+      <div class="kpi-label">Prioridad alta</div>
+      <div class="kpi-val">2,757</div>
+      <div class="kpi-sub">requieren atención</div>
+    </div>
+    <div class="kpi red">
+      <div class="kpi-label">Riesgo alto</div>
+      <div class="kpi-val">2,203</div>
+      <div class="kpi-sub">posible fuga de voto</div>
+    </div>
+    <div class="kpi purple">
+      <div class="kpi-label">Duplicados</div>
+      <div class="kpi-val">408</div>
+      <div class="kpi-sub">registros a depurar</div>
+    </div>
+  </div>
+
+  <!-- MID: municipios + alertas -->
+  <div class="mid-grid">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Avance por municipio vs. meta 2027</span>
+        <span style="font-size:10px;font-family:var(--mono);color:var(--text3)">10 municipios · 393 secciones</span>
+      </div>
+      <div style="padding:0 16px 16px;">
+        <table class="mun-table">
+          <thead>
+            <tr>
+              <th>Municipio</th>
+              <th class="right">Capturados</th>
+              <th class="right">Meta 2027</th>
+              <th class="right">% Avance</th>
+              <th>Progreso</th>
+              <th>Semáforo</th>
+              <th class="right">2024</th>
+            </tr>
+          </thead>
+          <tbody id="mun-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Alertas del sistema</span>
+        <span style="font-size:10px;font-family:var(--mono);color:var(--red)">● 3 críticas</span>
+      </div>
+      <div class="alert-list">
+        <div class="alert-item critical">
+          <div class="alert-icon">⚠</div>
+          <div>
+            <div class="alert-title">Secciones sin captura</div>
+            <div class="alert-desc">Comala (98,99), Coquimatlan (114,119), Manzanillo (207) — 0% avance</div>
+          </div>
+        </div>
+        <div class="alert-item critical">
+          <div class="alert-icon">⚠</div>
+          <div>
+            <div class="alert-title">408 registros duplicados</div>
+            <div class="alert-desc">4.1% de la base — requieren depuración urgente</div>
+          </div>
+        </div>
+        <div class="alert-item critical">
+          <div class="alert-icon">⚠</div>
+          <div>
+            <div class="alert-title">55 secciones ganadas por oposición</div>
+            <div class="alert-desc">PRIAN ganó 14% de secciones en 2024 — zonas de mayor esfuerzo</div>
+          </div>
+        </div>
+        <div class="alert-item warning">
+          <div class="alert-icon">◈</div>
+          <div>
+            <div class="alert-title">1,845 votantes necesitan apoyo</div>
+            <div class="alert-desc">Movilización logística pendiente de asignar</div>
+          </div>
+        </div>
+        <div class="alert-item warning">
+          <div class="alert-icon">◈</div>
+          <div>
+            <div class="alert-title">1,763 registros pendientes de validar</div>
+            <div class="alert-desc">17.6% de la base en estatus Pendiente o Incompleto</div>
+          </div>
+        </div>
+        <div class="alert-item info">
+          <div class="alert-icon">◉</div>
+          <div>
+            <div class="alert-title">73 secciones de difícil movilización</div>
+            <div class="alert-desc">Alta afluencia histórica — requieren estructura reforzada</div>
+          </div>
+        </div>
+        <div class="alert-item info">
+          <div class="alert-icon">◉</div>
+          <div>
+            <div class="alert-title">Tecomán lidera el avance</div>
+            <div class="alert-desc">14.5% vs. meta — modelo replicable a otros municipios</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM GRID -->
+  <div class="bottom-grid">
+
+    <!-- NIVEL DE COMPROMISO -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Nivel de compromiso</span>
+        <span style="font-size:10px;font-family:var(--mono);color:var(--text3)">10,000 registros calificados</span>
+      </div>
+      <div class="comp-bars">
+        <div class="comp-row">
+          <div class="comp-label">4 · Moviliza</div>
+          <div class="comp-track"><div class="comp-fill" style="width:11.7%;background:var(--green)"></div></div>
+          <div class="comp-num">1,169</div>
+        </div>
+        <div class="comp-row">
+          <div class="comp-label">3 · Seguro vota</div>
+          <div class="comp-track"><div class="comp-fill" style="width:34.3%;background:#16a34a"></div></div>
+          <div class="comp-num">3,432</div>
+        </div>
+        <div class="comp-row">
+          <div class="comp-label">2 · Simpatiza</div>
+          <div class="comp-track"><div class="comp-fill" style="width:32.2%;background:var(--accent)"></div></div>
+          <div class="comp-num">3,219</div>
+        </div>
+        <div class="comp-row">
+          <div class="comp-label">1 · Contacto</div>
+          <div class="comp-track"><div class="comp-fill" style="width:21.8%;background:var(--text3)"></div></div>
+          <div class="comp-num">2,180</div>
+        </div>
+        <div style="margin-top:8px;padding-top:10px;border-top:1px solid var(--border)">
+          <div style="display:flex;justify-content:space-between;font-size:10px;font-family:var(--mono)">
+            <span style="color:var(--text3)">VOTO SEGURO (niv. 3+4)</span>
+            <span style="color:var(--green);font-weight:600">4,601 — 46.0%</span>
+          </div>
+        </div>
+        <div style="margin-top:6px">
+          <div style="height:6px;background:rgba(255,255,255,0.06);border-radius:99px;overflow:hidden">
+            <div style="width:46%;height:100%;background:var(--green);border-radius:99px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ORIGEN DE CAPTURA -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Origen de captura</span>
+      </div>
+      <div class="origen-list">
+        <div class="origen-row">
+          <div class="origen-icon" style="background:rgba(59,130,246,.15);color:var(--accent)">🚪</div>
+          <div class="origen-name">Casa por casa</div>
+          <div class="origen-bar-wrap">
+            <div class="mini-bar"><div class="mini-bar-fill" style="width:45.4%;background:var(--accent)"></div></div>
+          </div>
+          <div class="origen-num">4,538</div>
+        </div>
+        <div class="origen-row">
+          <div class="origen-icon" style="background:rgba(168,85,247,.15);color:var(--purple)">👥</div>
+          <div class="origen-name">Referido</div>
+          <div class="origen-bar-wrap">
+            <div class="mini-bar"><div class="mini-bar-fill" style="width:25.2%;background:var(--purple)"></div></div>
+          </div>
+          <div class="origen-num">2,519</div>
+        </div>
+        <div class="origen-row">
+          <div class="origen-icon" style="background:rgba(245,158,11,.15);color:var(--amber)">🎪</div>
+          <div class="origen-name">Evento</div>
+          <div class="origen-bar-wrap">
+            <div class="mini-bar"><div class="mini-bar-fill" style="width:17.1%;background:var(--amber)"></div></div>
+          </div>
+          <div class="origen-num">1,711</div>
+        </div>
+        <div class="origen-row">
+          <div class="origen-icon" style="background:rgba(6,182,212,.15);color:var(--cyan)">💻</div>
+          <div class="origen-name">Digital</div>
+          <div class="origen-bar-wrap">
+            <div class="mini-bar"><div class="mini-bar-fill" style="width:12.3%;background:var(--cyan)"></div></div>
+          </div>
+          <div class="origen-num">1,232</div>
+        </div>
+        <div style="margin-top:8px;padding-top:10px;border-top:1px solid var(--border)">
+          <div style="position:relative;height:200px;">
+            <canvas id="origenChart" role="img" aria-label="Gráfica de origen de captura: Casa 45%, Referido 25%, Evento 17%, Digital 12%">Casa 45%, Referido 25%, Evento 17%, Digital 12%</canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ESTADO GENERAL -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Estado general del padrón</span>
+      </div>
+      <div class="estado-grid">
+        <div class="estado-item">
+          <div class="estado-lbl">Validados</div>
+          <div class="estado-val" style="color:var(--green)">7,193</div>
+          <div class="estado-sub">71.9% de la base</div>
+        </div>
+        <div class="estado-item">
+          <div class="estado-lbl">Pendientes</div>
+          <div class="estado-val" style="color:var(--amber)">1,763</div>
+          <div class="estado-sub">requieren revisión</div>
+        </div>
+        <div class="estado-item">
+          <div class="estado-lbl">Ya votaron</div>
+          <div class="estado-val" style="color:var(--cyan)">4,490</div>
+          <div class="estado-sub">44.9% movilizados</div>
+        </div>
+        <div class="estado-item">
+          <div class="estado-lbl">Necesitan apoyo</div>
+          <div class="estado-val" style="color:var(--amber)">1,845</div>
+          <div class="estado-sub">logística pendiente</div>
+        </div>
+        <div class="estado-item">
+          <div class="estado-lbl">Influencia red</div>
+          <div class="estado-val" style="color:var(--purple)">1,190</div>
+          <div class="estado-sub">multiplicadores clave</div>
+        </div>
+        <div class="estado-item">
+          <div class="estado-lbl">Incompletos</div>
+          <div class="estado-val" style="color:var(--red)">636</div>
+          <div class="estado-sub">datos faltantes</div>
+        </div>
+        <div class="estado-item">
+          <div class="estado-lbl">Fácil movilización</div>
+          <div class="estado-val" style="color:var(--green)">169</div>
+          <div class="estado-sub">secciones estatus FÁCIL</div>
+        </div>
+        <div class="estado-item">
+          <div class="estado-lbl">Alta dificultad</div>
+          <div class="estado-val" style="color:var(--red)">73</div>
+          <div class="estado-sub">secciones DIFÍCIL</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="footer">
+  <span>WAR ROOM ELECTORAL v1.0 · COLIMA 2027 · DATOS REALES INE 2024</span>
+  <span id="footer-time">Última actualización: --</span>
+  <span>393 secciones · 10 municipios · 197,297 votos proyectados</span>
+</div>
+
+<script>
+// DATA
+const municipios = [
+  {n:'Tecomán',      cap:4475,  meta:29211, secs:62, m24:'MORENA', pct24:61.7},
+  {n:'Armería',      cap:688,   meta:7337,  secs:21, m24:'MORENA', pct24:60.4},
+  {n:'Colima',       cap:1620,  meta:48030, secs:99, m24:'MORENA', pct24:45.4},
+  {n:'Villa de Álvarez', cap:1393, meta:34952, secs:70, m24:'MORENA', pct24:47.0},
+  {n:'Manzanillo',   cap:2108,  meta:51442, secs:79, m24:'MORENA', pct24:58.3},
+  {n:'Comala',       cap:631,   meta:6292,  secs:13, m24:'MORENA', pct24:47.7},
+  {n:'Cuauhtémoc',   cap:619,   meta:8061,  secs:18, m24:'MORENA', pct24:50.6},
+  {n:'Minatitlán',   cap:625,   meta:4329,  secs:7,  m24:'MORENA', pct24:64.1},
+  {n:'Coquimatlán',  cap:469,   meta:5049,  secs:15, m24:'MORENA', pct24:49.8},
+  {n:'Ixtlahuacán',  cap:310,   meta:2593,  secs:8,  m24:'MORENA', pct24:61.4},
+];
+
+const BASE_VOTOS_GANADORES = 197297;
+let factorPct = 0.06;
+
+function fmt(n){ return Math.round(n).toLocaleString('es-MX'); }
+
+function semaforo(pct){
+  if(pct >= 10) return '<span class="semaforo sem-green">✓</span>';
+  if(pct >= 5)  return '<span class="semaforo sem-amber">!</span>';
+  return '<span class="semaforo sem-red">✗</span>';
+}
+
+function barColor(pct){
+  if(pct >= 10) return '#22c55e';
+  if(pct >= 5)  return '#f59e0b';
+  return '#ef4444';
+}
+
+function renderTable(){
+  const sorted = [...municipios].sort((a,b)=>{ return (b.cap/b.meta)-(a.cap/a.meta); });
+  const tbody = document.getElementById('mun-tbody');
+  tbody.innerHTML = sorted.map(m=>{
+    const metaAdj = Math.round(m.meta * (factorPct/0.06));
+    const pct = (m.cap/metaAdj*100);
+    const pctStr = pct.toFixed(1)+'%';
+    const barW = Math.min(pct/20*100,100).toFixed(1);
+    const color = barColor(pct);
+    return `<tr>
+      <td><div class="mun-name">${m.n}</div><div class="mun-secs">${m.secs} secciones</div></td>
+      <td class="num-cell" style="color:#e8edf5">${fmt(m.cap)}</td>
+      <td class="num-cell" style="color:var(--text2)">${fmt(metaAdj)}</td>
+      <td class="pct-cell" style="color:${color}">${pctStr}</td>
+      <td class="bar-cell"><div class="mini-bar"><div class="mini-bar-fill" style="width:${barW}%;background:${color}"></div></div></td>
+      <td style="text-align:center">${semaforo(pct)}</td>
+      <td class="num-cell" style="color:${m.m24==='MORENA'?'var(--green)':'var(--red)'}; font-size:10px">${m.pct24}%</td>
+    </tr>`;
+  }).join('');
+}
+
+function recalcular(){
+  const pct = parseFloat(document.getElementById('cfg-pct').value)||6;
+  const estructura = parseInt(document.getElementById('cfg-estructura').value)||1500;
+  const xcap = parseInt(document.getElementById('cfg-xcap').value)||50;
+  factorPct = pct/100;
+
+  const nuevaMeta = Math.round(BASE_VOTOS_GANADORES * (pct/6));
+  document.getElementById('meta-calculada').textContent = fmt(nuevaMeta);
+  document.getElementById('kpi-meta').textContent = fmt(nuevaMeta);
+
+  const capTotal = 14300;
+  const avance = (capTotal/nuevaMeta*100).toFixed(1);
+  document.getElementById('tp-fill').style.width = Math.min(avance,100)+'%';
+  document.getElementById('tp-pct').textContent = avance+'%';
+  document.getElementById('tp-nums').textContent = fmt(capTotal)+' / '+fmt(nuevaMeta)+' capturados';
+
+  renderTable();
+}
+
+// CLOCK
+function updateClock(){
+  const now = new Date();
+  document.getElementById('clock').textContent = now.toLocaleTimeString('es-MX');
+  document.getElementById('footer-time').textContent = 'Última actualización: '+now.toLocaleString('es-MX');
+}
+setInterval(updateClock,1000); updateClock();
+
+// INIT TABLE
+renderTable();
+
+// DONUT CHART — ORIGEN
+new Chart(document.getElementById('origenChart'),{
+  type:'doughnut',
+  data:{
+    labels:['Casa por casa','Referido','Evento','Digital'],
+    datasets:[{
+      data:[4538,2519,1711,1232],
+      backgroundColor:['#1d4ed8','#7c3aed','#b45309','#0e7490'],
+      borderWidth:0, hoverOffset:4
+    }]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    cutout:'65%',
+    plugins:{
+      legend:{
+        display:false
+      }
+    }
+  }
+});
+</script>
+</body>
+</html>
