@@ -216,6 +216,12 @@ iframe{width:100%;height:100%;border:none;display:block;}
       <span class="nav-badge" style="background:rgba(34,197,94,.12);color:var(--green)">+</span>
       <div class="nav-tip">Captura ciudadana</div>
     </div>
+    <div class="nav-item" id="nav-micap" onclick="load('micap','panel_capturista_personal.html','Mi Panel · Capturista','Mis simpatizantes · Fase 1 y 2')">
+      <div class="nav-icon" style="background:rgba(34,197,94,.12);color:var(--green)">📱</div>
+      <span class="nav-label">Mi Panel</span>
+      <span class="nav-badge" style="background:rgba(34,197,94,.12);color:var(--green)">F1/F2</span>
+      <div class="nav-tip">Mi Panel Capturista</div>
+    </div>
     <div class="nav-item" id="nav-meta" onclick="load('meta','configurador_meta_estados.html','Configurador de meta','Carga Excel por estado')">
       <div class="nav-icon" style="background:rgba(245,158,11,.12);color:var(--amber)">⚙️</div>
       <span class="nav-label">Meta / Config</span>
@@ -288,7 +294,7 @@ iframe{width:100%;height:100%;border:none;display:block;}
     <div class="hub-head">
       <div>
         <div class="hub-title">Bienvenido al sistema</div>
-        <div class="hub-sub">Colima · Ciclo 2025–2027 · <strong>7 módulos</strong> operativos</div>
+        <div class="hub-sub">Colima · Ciclo 2025–2027 · <strong>8 módulos</strong> operativos</div>
       </div>
       <div class="hub-date" id="hub-date">--</div>
     </div>
@@ -311,13 +317,13 @@ iframe{width:100%;height:100%;border:none;display:block;}
       <div class="kpi re"><div class="kv">219</div><div class="kl">Sec. críticas</div></div>
     </div>
 
-    <div class="mod-title">7 módulos del sistema — clic para abrir</div>
+    <div class="mod-title">8 módulos del sistema — clic para abrir</div>
     <div class="modules-grid">
 
       <div class="mc war" onclick="load('war','war_room_electoral_colima.html','War Room','Control de avance estatal')">
-        <div class="mc-head"><div class="mc-icon" style="background:rgba(59,130,246,.15)">⚡</div><div><div class="mc-name">War Room</div><div class="mc-sub">Control de avance</div></div></div>
-        <div class="mc-desc">Dashboard principal con avance vs meta configurable, semáforo por municipio, alertas críticas y parámetros en tiempo real.</div>
-        <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(239,68,68,.1);color:var(--red)">En vivo</span><span class="tag" style="background:rgba(59,130,246,.1);color:var(--accent)">10 municipios</span></div><span class="arr">→</span></div>
+        <div class="mc-head"><div class="mc-icon" style="background:rgba(239,68,68,.15)">⚔️</div><div><div class="mc-name">War Room Electoral</div><div class="mc-sub">Fase 1 campaña · Fase 2 elección</div></div></div>
+        <div class="mc-desc">Panel de mando completo. Resumen con KPIs y tabla municipal + cuadrantes jerárquicos navegables: DF → Municipio → DL → Sección → Casilla. Funciona en ambas fases.</div>
+        <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(239,68,68,.1);color:var(--red)">Fase 1 y 2</span><span class="tag" style="background:rgba(239,68,68,.1);color:var(--red)">6 niveles</span></div><span class="arr">→</span></div>
       </div>
 
       <div class="mc cap" onclick="load('cap','panel_capturistas.html','Capturistas','Gestión de estructura de campo')">
@@ -336,6 +342,12 @@ iframe{width:100%;height:100%;border:none;display:block;}
         <div class="mc-head"><div class="mc-icon" style="background:rgba(34,197,94,.15)">✏️</div><div><div class="mc-name">Captura ciudadana</div><div class="mc-sub">Campo · mobile first</div></div></div>
         <div class="mc-desc">Formulario en 2 pasos, buscador con ficha individual, lista por sección y asignación automática al responsable territorial.</div>
         <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(34,197,94,.1);color:var(--green)">Mobile first</span><span class="tag" style="background:rgba(34,197,94,.1);color:var(--green)">Auto-asignación</span></div><span class="arr">→</span></div>
+      </div>
+
+      <div class="mc c2" onclick="load('micap','panel_capturista_personal.html','Mi Panel · Capturista','Mis simpatizantes · Fase 1 y 2')">
+        <div class="mc-head"><div class="mc-icon" style="background:rgba(34,197,94,.15)">📱</div><div><div class="mc-name">Mi Panel · Capturista</div><div class="mc-sub">Vista personal · Fase 1 y 2</div></div></div>
+        <div class="mc-desc">Avance personal vs meta, lista completa de simpatizantes con ficha detallada, edición de registros y modo día de elección para marcar votos en casilla.</div>
+        <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(34,197,94,.1);color:var(--green)">Fase 1 captura</span><span class="tag" style="background:rgba(34,197,94,.1);color:var(--green)">Fase 2 elección</span></div><span class="arr">→</span></div>
       </div>
 
       <div class="mc meta" onclick="load('meta','configurador_meta_estados.html','Configurador de meta','Carga Excel por estado')">

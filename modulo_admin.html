@@ -192,6 +192,7 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
 <div class="tabs">
   <div class="tab active" id="tab-usuarios" onclick="showTab('usuarios')">👤 Usuarios y roles</div>
   <div class="tab" id="tab-licencias" onclick="showTab('licencias')">🔑 Licencias</div>
+  <div class="tab" id="tab-candidaturas" onclick="showTab('candidaturas')">🗳 Candidaturas</div>
   <div class="tab" id="tab-permisos" onclick="showTab('permisos')">🛡 Permisos</div>
   <div class="tab" id="tab-auditoria" onclick="showTab('auditoria')">📋 Auditoría</div>
   <div class="tab" id="tab-config" onclick="showTab('config')">⚙️ Configuración</div>
@@ -266,7 +267,7 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
 
   <div class="alert warning">
     <span>⚠</span>
-    <span>La licencia de <strong>Jalisco PAN</strong> vence en 12 días. Contactar para renovación antes del 26 de mayo.</span>
+    <span>La licencia de <strong>Jalisco — Cliente D</strong> vence en 12 días. Contactar para renovación antes del 26 de mayo.</span>
   </div>
 
   <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
@@ -277,7 +278,7 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
     <div class="license-card active">
       <div class="lc-header">
         <div>
-          <div class="lc-state">Colima · Morena</div>
+          <div class="lc-state">Colima · Cliente A</div>
           <div class="lc-plan">Plan PROFESIONAL · $2,500 USD/mes</div>
         </div>
         <span class="badge b-green">Activa</span>
@@ -301,7 +302,7 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
     <div class="license-card active">
       <div class="lc-header">
         <div>
-          <div class="lc-state">Sonora · Morena</div>
+          <div class="lc-state">Sonora · Cliente B</div>
           <div class="lc-plan">Plan ENTERPRISE · $4,000 USD/mes</div>
         </div>
         <span class="badge b-green">Activa</span>
@@ -324,7 +325,7 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
     <div class="license-card active">
       <div class="lc-header">
         <div>
-          <div class="lc-state">Veracruz · Morena</div>
+          <div class="lc-state">Veracruz · Cliente C</div>
           <div class="lc-plan">Plan ESTÁNDAR · $2,000 USD/mes</div>
         </div>
         <span class="badge b-green">Activa</span>
@@ -347,7 +348,7 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
     <div class="license-card trial">
       <div class="lc-header">
         <div>
-          <div class="lc-state">Jalisco · PAN</div>
+          <div class="lc-state">Jalisco · Cliente D</div>
           <div class="lc-plan">PRUEBA GRATUITA · 30 días</div>
         </div>
         <span class="badge b-amber">Prueba</span>
@@ -368,7 +369,7 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
     <div class="license-card trial">
       <div class="lc-header">
         <div>
-          <div class="lc-state">Guerrero · Morena</div>
+          <div class="lc-state">Guerrero · Cliente E</div>
           <div class="lc-plan">PRUEBA GRATUITA · 30 días</div>
         </div>
         <span class="badge b-amber">Prueba</span>
@@ -389,7 +390,7 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
     <div class="license-card expired">
       <div class="lc-header">
         <div>
-          <div class="lc-state">Oaxaca · Morena</div>
+          <div class="lc-state">Oaxaca · Cliente F</div>
           <div class="lc-plan">Plan ESTÁNDAR · $2,000 USD/mes</div>
         </div>
         <span class="badge b-red">Vencida</span>
@@ -543,7 +544,7 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
       <div class="audit-item">
         <div class="audit-dot" style="background:var(--purple)"></div>
         <div class="audit-time">13/05 · 18:03</div>
-        <div><div class="audit-user">ADMIN-01 · Super Admin</div><div class="audit-action">Nueva licencia creada: Guerrero · Morena · Plan prueba 30 días</div><div class="audit-meta">Módulo: Admin → Licencias · Contacto: guerrero@morena.mx</div></div>
+        <div><div class="audit-user">ADMIN-01 · Super Admin</div><div class="audit-action">Nueva licencia creada: Guerrero · Cliente E · Plan prueba 30 días</div><div class="audit-meta">Módulo: Admin → Licencias · Contacto: guerrero@cliente.mx</div></div>
       </div>
       <div class="audit-item">
         <div class="audit-dot" style="background:var(--red)"></div>
@@ -766,7 +767,112 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
   </div>
 </div>
 
+<!-- ══════════ CANDIDATURAS ══════════ -->
+<div class="screen" id="sc-candidaturas">
+
+  <!-- KPIs -->
+  <div class="kpi-row">
+    <div class="kpi bl"><div class="kpi-lbl">Candidaturas activas</div><div class="kpi-val" id="c-total">0</div></div>
+    <div class="kpi gr"><div class="kpi-lbl">Votos meta total</div><div class="kpi-val" id="c-meta">—</div></div>
+    <div class="kpi am"><div class="kpi-lbl">Capturistas asignados</div><div class="kpi-val" id="c-caps">—</div></div>
+    <div class="kpi pu"><div class="kpi-lbl">Candidatura activa</div><div class="kpi-val" id="c-activa" style="font-size:13px;line-height:1.3">—</div></div>
+  </div>
+
+  <!-- FILTRO GLOBAL -->
+  <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:14px 16px;margin-bottom:16px;">
+    <div style="font-size:12px;font-weight:500;margin-bottom:10px;display:flex;align-items:center;gap:8px;">
+      <span style="font-size:16px">🎯</span> Filtro global del sistema
+      <span style="font-size:11px;font-family:var(--mono);color:var(--text3);font-weight:400;margin-left:4px">— Al cambiar la candidatura, todos los módulos se filtran automáticamente</span>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      <select class="form-select" id="filtro-candidatura" onchange="aplicarFiltroCandidatura()" style="flex:1;min-width:220px">
+        <option value="">📊 Vista completa — Todas las candidaturas</option>
+      </select>
+      <button class="btn primary" onclick="aplicarFiltroCandidatura()">Aplicar filtro</button>
+      <button class="btn" onclick="limpiarFiltro()">✕ Ver todo</button>
+    </div>
+    <div id="filtro-activo-banner" style="display:none;margin-top:10px;padding:8px 12px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);border-radius:6px;font-size:12px;font-family:var(--mono);color:var(--accent)"></div>
+  </div>
+
+  <!-- HEADER ACCIONES -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+    <div style="font-size:13px;font-weight:500">Candidaturas registradas</div>
+    <div class="btn-row">
+      <button class="btn primary" onclick="modalNuevaCandidatura()">+ Nueva candidatura</button>
+      <button class="btn" onclick="cargarExcelCandidaturas()">⬆ Cargar desde Excel</button>
+    </div>
+  </div>
+
+  <!-- TABLA DE CANDIDATURAS -->
+  <div class="card" style="margin-bottom:16px">
+    <div class="table-wrap">
+      <table class="at" id="tabla-candidaturas">
+        <thead>
+          <tr>
+            <th>Tipo</th>
+            <th>Candidatura</th>
+            <th>Territorio</th>
+            <th class="right">Meta votos</th>
+            <th class="right">Capturistas</th>
+            <th class="right">Avance</th>
+            <th>Estatus</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="cand-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- COMPROMISOS POR CANDIDATURA -->
+  <div style="font-size:13px;font-weight:500;margin-bottom:12px;">Compromisos múltiples — Un ciudadano, varias candidaturas</div>
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title">Ejemplo: María García López · Sección 138 · Villa de Álvarez</div>
+      <span class="badge b-green">Ciudadana capturada</span>
+    </div>
+    <div style="padding:14px 16px;">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Esta ciudadana fue capturada una sola vez pero tiene compromisos con múltiples candidaturas del mismo partido:</div>
+      <div id="ejemplo-compromisos"></div>
+      <div style="margin-top:12px;padding:10px 14px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:6px;font-size:12px;color:var(--accent)">
+        💡 <strong>Clave del sistema:</strong> Un solo registro de ciudadano — múltiples compromisos. El capturista selecciona para qué candidatura(s) apoya al momento de capturar.
+      </div>
+    </div>
+  </div>
+
+  <!-- CARGA DE EXCEL -->
+  <div style="font-size:13px;font-weight:500;margin:16px 0 12px">Cargar estructura desde Excel</div>
+  <div class="card">
+    <div class="card-body">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Para agregar datos reales de candidaturas, carga un Excel con el formato siguiente. El sistema detecta automáticamente las columnas.</div>
+      <div style="background:var(--bg3);border-radius:6px;padding:10px 14px;font-family:var(--mono);font-size:11px;color:var(--text2);margin-bottom:12px;line-height:1.8">
+        TIPO · NOMBRE · MUNICIPIO_DISTRITO · META_VOTOS · CAPTURISTAS · ACTIVA
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <label style="flex:1;min-width:200px">
+          <div style="background:var(--bg3);border:1px dashed var(--border2);border-radius:8px;padding:16px;text-align:center;cursor:pointer;font-size:12px;color:var(--text2)" onclick="document.getElementById('excel-cand-in').click()">
+            📊 Seleccionar Excel de candidaturas
+          </div>
+          <input type="file" id="excel-cand-in" accept=".xlsx,.xls,.csv" style="display:none" onchange="procesarExcelCandidaturas(this)">
+        </label>
+        <button class="btn" style="flex:0" onclick="descargarPlantillaCand()">⬇ Descargar plantilla</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </div><!-- /main -->
+
+<!-- MODAL NUEVA CANDIDATURA -->
+<div id="modal-cand-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:300;align-items:center;justify-content:center;">
+  <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:24px;width:500px;max-width:95vw;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+      <div style="font-size:14px;font-weight:600" id="modal-cand-title">Nueva candidatura</div>
+      <button onclick="cerrarModalCand()" style="background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer">×</button>
+    </div>
+    <div id="modal-cand-body"></div>
+  </div>
+</div>
 
 <!-- MODAL NUEVO USUARIO -->
 <div id="modal-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;align-items:center;justify-content:center;">
@@ -939,7 +1045,7 @@ function modalNuevaLicencia(){
       <div class="form-group"><label class="form-label">Estado</label>
         <select class="form-select"><option>Seleccionar...</option><option>Aguascalientes</option><option>Baja California</option><option>Chiapas</option><option>Guerrero</option><option>Oaxaca</option><option>Puebla</option><option>Yucatán</option></select>
       </div>
-      <div class="form-group"><label class="form-label">Partido / cliente</label><input class="form-input" placeholder="Ej. Morena Guerrero"></div>
+      <div class="form-group"><label class="form-label">Partido / cliente</label><input class="form-input" placeholder="Ej. Partido — Estado"></div>
     </div>
     <div class="form-group"><label class="form-label">Plan</label>
       <select class="form-select" id="m-plan" onchange="actualizarPrecio()">
@@ -996,6 +1102,289 @@ function exportarUsuarios(){
 document.getElementById('modal-bg').addEventListener('click',function(e){
   if(e.target===this) cerrarModal();
 });
+
+// ══════════════════════════════════════════════════════════════════
+// MÓDULO DE CANDIDATURAS
+// ══════════════════════════════════════════════════════════════════
+
+const TIPOS_COLOR = {
+  gobernador:  {color:'var(--purple)', bg:'rgba(168,85,247,.12)', icon:'🏛'},
+  senador:     {color:'var(--accent)', bg:'rgba(59,130,246,.12)',  icon:'🏅'},
+  dip_federal: {color:'var(--cyan)',   bg:'rgba(6,182,212,.12)',   icon:'🇲🇽'},
+  dip_local:   {color:'var(--amber)',  bg:'rgba(245,158,11,.12)',  icon:'📋'},
+  presidente:  {color:'var(--green)',  bg:'rgba(34,197,94,.12)',   icon:'🏙'},
+  regidor:     {color:'var(--green)',  bg:'rgba(34,197,94,.08)',   icon:'🏘'},
+  sindico:     {color:'var(--green)',  bg:'rgba(34,197,94,.08)',   icon:'⚖️'},
+};
+
+const TIPOS_LABEL = {
+  gobernador:'Gobernador',senador:'Senador',dip_federal:'Diputado Federal',
+  dip_local:'Diputado Local',presidente:'Presidente Municipal',
+  regidor:'Regidor',sindico:'Síndico',
+};
+
+let CANDIDATURAS = [
+  {id:'CAND-001',tipo:'gobernador',  nombre:'Candidato a Gobernador',      territorio:'Estado de Colima', meta:197297,caps:1500,avance:7.2, activa:true},
+  {id:'CAND-002',tipo:'senador',     nombre:'Candidato a Senador',          territorio:'Estado de Colima', meta:197297,caps:800, avance:5.1, activa:true},
+  {id:'CAND-003',tipo:'dip_federal', nombre:'Diputado Federal Dist. 1',     territorio:'Distrito Federal 1',meta:98648,caps:380, avance:8.4, activa:true},
+  {id:'CAND-004',tipo:'dip_federal', nombre:'Diputado Federal Dist. 2',     territorio:'Distrito Federal 2',meta:98649,caps:390, avance:6.1, activa:true},
+  {id:'CAND-005',tipo:'dip_local',   nombre:'Diputado Local Dist. 1',       territorio:'Distrito Local 1',  meta:18200,caps:80,  avance:9.3, activa:true},
+  {id:'CAND-006',tipo:'dip_local',   nombre:'Diputado Local Dist. 4',       territorio:'Distrito Local 4',  meta:22400,caps:95,  avance:11.2,activa:true},
+  {id:'CAND-007',tipo:'presidente',  nombre:'Presidente Municipal Colima',   territorio:'Colima',            meta:48030,caps:220, avance:7.3, activa:true},
+  {id:'CAND-008',tipo:'presidente',  nombre:'Presidente Municipal Manzanillo',territorio:'Manzanillo',       meta:51442,caps:280, avance:4.3, activa:true},
+  {id:'CAND-009',tipo:'presidente',  nombre:'Pte. Municipal Villa de Álvarez',territorio:'Villa de Álvarez', meta:34952,caps:180, avance:6.0, activa:true},
+  {id:'CAND-010',tipo:'presidente',  nombre:'Presidente Municipal Tecomán',  territorio:'Tecomán',           meta:29211,caps:160, avance:14.5,activa:true},
+];
+
+const COMPROMISOS_EJEMPLO = [
+  {candidatura:'Candidato a Gobernador',    tipo:'gobernador',  comp:3, label:'Seguro vota'},
+  {candidatura:'Pte. Municipal V. Álvarez', tipo:'presidente',  comp:4, label:'Moviliza'},
+  {candidatura:'Diputado Local Dist. 4',    tipo:'dip_local',   comp:2, label:'Simpatiza'},
+  {candidatura:'Candidato a Senador',       tipo:'senador',     comp:3, label:'Seguro vota'},
+];
+
+let filtroActivo = '';
+
+function initCandidaturas(){
+  // Llenar KPIs
+  document.getElementById('c-total').textContent = CANDIDATURAS.filter(c=>c.activa).length;
+  const totalMeta = CANDIDATURAS.reduce((s,c)=>s+c.meta,0);
+  document.getElementById('c-meta').textContent = (totalMeta/1000).toFixed(0)+'k';
+  document.getElementById('c-caps').textContent = CANDIDATURAS.reduce((s,c)=>s+c.caps,0).toLocaleString();
+  document.getElementById('c-activa').textContent = filtroActivo ?
+    (CANDIDATURAS.find(c=>c.id===filtroActivo)||{nombre:'—'}).nombre : 'Todo el estado';
+
+  // Llenar select filtro
+  const sel = document.getElementById('filtro-candidatura');
+  const val = sel.value;
+  sel.innerHTML = '<option value="">📊 Vista completa — Todas las candidaturas</option>' +
+    CANDIDATURAS.map(c=>{
+      const t = TIPOS_COLOR[c.tipo]||{icon:'🗳'};
+      return `<option value="${c.id}" ${c.id===filtroActivo?'selected':''}>${t.icon} ${TIPOS_LABEL[c.tipo]||c.tipo} — ${c.nombre}</option>`;
+    }).join('');
+
+  // Renderizar tabla
+  renderTablaCandidaturas();
+
+  // Renderizar compromisos ejemplo
+  renderCompromisosEjemplo();
+}
+
+function renderTablaCandidaturas(){
+  const tbody = document.getElementById('cand-tbody');
+  tbody.innerHTML = CANDIDATURAS.map(c=>{
+    const t = TIPOS_COLOR[c.tipo]||{color:'var(--text2)',bg:'rgba(100,116,139,.12)',icon:'🗳'};
+    const avColor = c.avance>=10?'var(--green)':c.avance>=5?'var(--amber)':'var(--red)';
+    const isActive = filtroActivo === c.id;
+    return `<tr style="${isActive?'background:rgba(59,130,246,0.08)':''}">
+      <td>
+        <span class="badge" style="background:${t.bg};color:${t.color};border:1px solid ${t.color}30">
+          ${t.icon} ${TIPOS_LABEL[c.tipo]||c.tipo}
+        </span>
+      </td>
+      <td>
+        <div class="cell-name">${c.nombre}</div>
+        <div class="cell-sub">${c.id}</div>
+      </td>
+      <td><div class="cell-mono" style="font-size:11px">${c.territorio}</div></td>
+      <td class="cell-num">${c.meta.toLocaleString()}</td>
+      <td class="cell-num">${c.caps}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="flex:1;max-width:80px;height:5px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden">
+            <div style="width:${Math.min(c.avance/20*100,100)}%;height:100%;background:${avColor};border-radius:99px"></div>
+          </div>
+          <span style="font-family:var(--mono);font-size:11px;color:${avColor};font-weight:600">${c.avance}%</span>
+        </div>
+      </td>
+      <td><span class="badge ${c.activa?'b-green':'b-gray'}">${c.activa?'Activa':'Inactiva'}</span>
+          ${isActive?'<span class="badge b-blue" style="margin-left:4px">● Filtro activo</span>':''}</td>
+      <td>
+        <div class="btn-row">
+          <button class="btn" onclick="filtrarPorCandidatura('${c.id}')">🔍 Filtrar</button>
+          <button class="btn" onclick="editarCandidatura('${c.id}')">✏</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function renderCompromisosEjemplo(){
+  const cont = document.getElementById('ejemplo-compromisos');
+  const compColors = {1:'#64748b',2:'var(--accent)',3:'var(--green)',4:'var(--purple)'};
+  cont.innerHTML = `<div style="display:flex;flex-direction:column;gap:6px">` +
+    COMPROMISOS_EJEMPLO.map(c=>{
+      const t = TIPOS_COLOR[c.tipo]||{color:'var(--text2)',bg:'rgba(100,116,139,.12)',icon:'🗳'};
+      const cc = compColors[c.comp];
+      return `<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg3);border-radius:6px;border-left:3px solid ${t.color}">
+        <span style="font-size:14px">${t.icon}</span>
+        <div style="flex:1;font-size:12px;font-weight:500">${c.candidatura}</div>
+        <span class="badge" style="background:${cc}15;color:${cc};border:1px solid ${cc}30">${c.comp} — ${c.label}</span>
+      </div>`;
+    }).join('') + `</div>`;
+}
+
+function aplicarFiltroCandidatura(){
+  const sel = document.getElementById('filtro-candidatura');
+  filtroActivo = sel.value;
+  const banner = document.getElementById('filtro-activo-banner');
+  if(filtroActivo){
+    const c = CANDIDATURAS.find(x=>x.id===filtroActivo);
+    const t = TIPOS_COLOR[c.tipo]||{icon:'🗳'};
+    banner.style.display='block';
+    banner.textContent = `🎯 Filtro activo: ${t.icon} ${c.nombre} — ${c.territorio} · Meta: ${c.meta.toLocaleString()} votos · Avance: ${c.avance}%`;
+    // En producción aquí se haría: localStorage.setItem('ie_candidatura_filtro', filtroActivo)
+    // y todos los módulos leerían este valor al cargar
+    alert(`✓ Filtro aplicado: ${c.nombre}\n\nEn producción, todos los módulos (War Room, Mapa, Reportes, etc.) se filtrarían automáticamente para mostrar solo datos de esta candidatura.\n\nEn la versión con Supabase, este filtro persiste entre módulos via localStorage o contexto global.`);
+  } else {
+    limpiarFiltro();
+  }
+  initCandidaturas();
+}
+
+function limpiarFiltro(){
+  filtroActivo = '';
+  document.getElementById('filtro-candidatura').value = '';
+  document.getElementById('filtro-activo-banner').style.display='none';
+  initCandidaturas();
+}
+
+function filtrarPorCandidatura(id){
+  filtroActivo = id;
+  document.getElementById('filtro-candidatura').value = id;
+  aplicarFiltroCandidatura();
+}
+
+function editarCandidatura(id){
+  const c = CANDIDATURAS.find(x=>x.id===id);
+  if(!c) return;
+  document.getElementById('modal-cand-title').textContent = 'Editar: '+c.nombre;
+  document.getElementById('modal-cand-body').innerHTML = `
+    <div class="form-group"><label class="form-label">Nombre de la candidatura</label>
+      <input class="form-input" id="ec-nombre" value="${c.nombre}"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Tipo</label>
+        <select class="form-select" id="ec-tipo">
+          ${Object.entries(TIPOS_LABEL).map(([k,v])=>`<option value="${k}" ${k===c.tipo?'selected':''}>${v}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Territorio</label>
+        <input class="form-input" id="ec-territorio" value="${c.territorio}"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Meta de votos</label>
+        <input class="form-input" id="ec-meta" type="number" value="${c.meta}"></div>
+      <div class="form-group"><label class="form-label">Capturistas asignados</label>
+        <input class="form-input" id="ec-caps" type="number" value="${c.caps}"></div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--border);margin-top:6px">
+      <span style="font-size:13px">Candidatura activa</span>
+      <div class="toggle ${c.activa?'on':''}" id="ec-activa" onclick="this.classList.toggle('on')"></div>
+    </div>
+    <div class="btn-row" style="margin-top:10px">
+      <button class="btn primary" style="flex:1" onclick="guardarCandidatura('${c.id}')">Guardar</button>
+      <button class="btn" onclick="cerrarModalCand()">Cancelar</button>
+    </div>`;
+  document.getElementById('modal-cand-bg').style.display='flex';
+}
+
+function guardarCandidatura(id){
+  const c = CANDIDATURAS.find(x=>x.id===id);
+  if(!c) return;
+  c.nombre = document.getElementById('ec-nombre').value;
+  c.tipo = document.getElementById('ec-tipo').value;
+  c.territorio = document.getElementById('ec-territorio').value;
+  c.meta = parseInt(document.getElementById('ec-meta').value)||c.meta;
+  c.caps = parseInt(document.getElementById('ec-caps').value)||c.caps;
+  c.activa = document.getElementById('ec-activa').classList.contains('on');
+  cerrarModalCand();
+  initCandidaturas();
+  alert('✓ Candidatura actualizada correctamente');
+}
+
+function modalNuevaCandidatura(){
+  document.getElementById('modal-cand-title').textContent = 'Nueva candidatura';
+  document.getElementById('modal-cand-body').innerHTML = `
+    <div class="form-group"><label class="form-label">Tipo de candidatura</label>
+      <select class="form-select" id="nc-tipo">
+        ${Object.entries(TIPOS_LABEL).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">Nombre del candidato</label>
+      <input class="form-input" id="nc-nombre" placeholder="Ej. Juan López Martínez"></div>
+    <div class="form-group"><label class="form-label">Territorio (municipio o distrito)</label>
+      <input class="form-input" id="nc-territorio" placeholder="Ej. Colima o Distrito Local 5"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Meta de votos</label>
+        <input class="form-input" id="nc-meta" type="number" placeholder="0"></div>
+      <div class="form-group"><label class="form-label">Capturistas asignados</label>
+        <input class="form-input" id="nc-caps" type="number" placeholder="0"></div>
+    </div>
+    <div class="btn-row" style="margin-top:10px">
+      <button class="btn primary" style="flex:1" onclick="crearCandidatura()">Crear candidatura</button>
+      <button class="btn" onclick="cerrarModalCand()">Cancelar</button>
+    </div>`;
+  document.getElementById('modal-cand-bg').style.display='flex';
+}
+
+function crearCandidatura(){
+  const nombre = document.getElementById('nc-nombre').value.trim();
+  const tipo = document.getElementById('nc-tipo').value;
+  const territorio = document.getElementById('nc-territorio').value.trim();
+  const meta = parseInt(document.getElementById('nc-meta').value)||0;
+  const caps = parseInt(document.getElementById('nc-caps').value)||0;
+  if(!nombre||!territorio){alert('Nombre y territorio son requeridos');return;}
+  const nueva = {
+    id: 'CAND-'+ String(CANDIDATURAS.length+1).padStart(3,'0'),
+    tipo, nombre, territorio, meta, caps, avance:0, activa:true
+  };
+  CANDIDATURAS.push(nueva);
+  cerrarModalCand();
+  initCandidaturas();
+  alert(`✓ Candidatura creada: ${nombre}`);
+}
+
+function cerrarModalCand(){
+  document.getElementById('modal-cand-bg').style.display='none';
+}
+
+function cargarExcelCandidaturas(){
+  document.getElementById('excel-cand-in').click();
+}
+
+function procesarExcelCandidaturas(input){
+  const file = input.files[0];
+  if(!file) return;
+  alert(`Archivo seleccionado: ${file.name}\n\nEn producción, el sistema procesaría este Excel con SheetJS, detectaría las columnas TIPO, NOMBRE, MUNICIPIO_DISTRITO, META_VOTOS, CAPTURISTAS y las cargaría automáticamente a la tabla de candidaturas.\n\nEsta funcionalidad está conectada al Configurador de Meta para calcular metas ajustadas por afluencia histórica.`);
+  input.value='';
+}
+
+function descargarPlantillaCand(){
+  const csv = [
+    'TIPO,NOMBRE,MUNICIPIO_DISTRITO,META_VOTOS,CAPTURISTAS,ACTIVA',
+    'gobernador,Candidato a Gobernador,Estado de Colima,197297,1500,SI',
+    'presidente,Presidente Municipal Ejemplo,Nombre Municipio,25000,120,SI',
+    'dip_local,Diputado Local Dist. 1,Distrito Local 1,18000,80,SI',
+    'dip_federal,Diputado Federal Dist. 1,Distrito Federal 1,98000,380,SI',
+    'senador,Candidato a Senador,Estado de Colima,197297,800,SI',
+  ].join('\n');
+  const blob = new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'plantilla_candidaturas.csv';
+  a.click();
+}
+
+document.getElementById('modal-cand-bg').addEventListener('click',function(e){
+  if(e.target===this) cerrarModalCand();
+});
+
+// Inicializar cuando se abre la pestaña
+const _origShowTab = showTab;
+showTab = function(t){
+  _origShowTab(t);
+  if(t==='candidaturas') initCandidaturas();
+};
 </script>
 </body>
 </html>
