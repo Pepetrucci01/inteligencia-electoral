@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>INTELIGENCIA ELECTORAL — SISTEMA 2027</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+:root{
+  --bg:#0a0e1a;--bg2:#0f1526;--bg3:#141b2e;--bg4:#1a2238;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.14);
+  --text:#e8edf5;--text2:#8a9ab5;--text3:#5a6a85;
+  --accent:#3b82f6;--green:#22c55e;--red:#ef4444;
+  --amber:#f59e0b;--cyan:#06b6d4;--purple:#a855f7;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);}
+.shell{display:flex;height:100vh;overflow:hidden;}
+
+/* ── SIDEBAR ── */
+.sidebar{width:224px;background:var(--bg2);border-right:1px solid var(--border2);display:flex;flex-direction:column;flex-shrink:0;transition:width .25s;}
+.sidebar.collapsed{width:56px;}
+.brand{padding:16px 14px 12px;border-bottom:1px solid var(--border);flex-shrink:0;overflow:hidden;}
+.brand-row{display:flex;align-items:center;gap:10px;}
+.brand-icon{width:30px;height:30px;border-radius:7px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:600;color:#fff;flex-shrink:0;overflow:hidden;}
+.brand-icon img{width:100%;height:100%;object-fit:cover;border-radius:7px;}
+.brand-text{overflow:hidden;}
+.brand-name{font-size:13px;font-weight:600;white-space:nowrap;}
+.brand-ver{font-size:10px;font-family:var(--mono);color:var(--text3);}
+.estado-card{background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:8px 10px;margin-top:10px;overflow:hidden;}
+.estado-lbl{font-size:9px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;}
+.estado-nom{font-size:12px;font-weight:500;color:var(--cyan);}
+.estado-meta{font-size:10px;font-family:var(--mono);color:var(--text3);}
+.sidebar.collapsed .brand-text,.sidebar.collapsed .estado-card{display:none;}
+.nav{flex:1;padding:8px 0;overflow-y:auto;overflow-x:hidden;}
+.nav-section{font-size:9px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.08em;padding:10px 14px 4px;white-space:nowrap;}
+.sidebar.collapsed .nav-section{opacity:0;padding:10px 0 4px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 14px;cursor:pointer;transition:all .15s;border-left:2px solid transparent;color:var(--text2);position:relative;user-select:none;}
+.nav-item:hover{background:rgba(255,255,255,0.03);color:var(--text);}
+.nav-item.active{background:rgba(59,130,246,0.08);border-left-color:var(--accent);color:var(--text);}
+.nav-item.admin-item.active{background:rgba(239,68,68,0.08);border-left-color:var(--red);}
+.nav-icon{width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.nav-label{font-size:12px;font-weight:500;white-space:nowrap;flex:1;}
+.nav-badge{font-size:9px;font-family:var(--mono);padding:2px 6px;border-radius:99px;flex-shrink:0;}
+.sidebar.collapsed .nav-label,.sidebar.collapsed .nav-badge{display:none;}
+.nav-tip{display:none;position:absolute;left:60px;top:50%;transform:translateY(-50%);background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:4px 10px;font-size:11px;white-space:nowrap;z-index:300;pointer-events:none;font-family:var(--mono);}
+.sidebar.collapsed .nav-item:hover .nav-tip{display:block;}
+.collapse-btn{padding:10px 14px;border-top:1px solid var(--border);flex-shrink:0;cursor:pointer;display:flex;align-items:center;gap:10px;color:var(--text3);font-size:11px;font-family:var(--mono);}
+.collapse-btn:hover{color:var(--text);}
+.collapse-icon{font-size:14px;transition:transform .25s;flex-shrink:0;}
+.sidebar.collapsed .collapse-icon{transform:rotate(180deg);}
+.sidebar.collapsed .collapse-lbl{display:none;}
+.user-footer{padding:10px 14px;border-top:1px solid var(--border);flex-shrink:0;overflow:hidden;}
+.user-row{display:flex;align-items:center;gap:8px;}
+.user-av{width:28px;height:28px;border-radius:6px;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;font-family:var(--mono);color:var(--red);flex-shrink:0;}
+.user-info{flex:1;overflow:hidden;}
+.user-name{font-size:11px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.user-role{font-size:10px;font-family:var(--mono);color:var(--text3);}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;flex-shrink:0;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.sidebar.collapsed .user-info,.sidebar.collapsed .live-dot{display:none;}
+
+/* ── CONTENT ── */
+.content{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;}
+.topbar{height:52px;background:var(--bg2);border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;padding:0 20px;flex-shrink:0;}
+.topbar-left{display:flex;align-items:center;gap:12px;}
+.hamburger{width:34px;height:34px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;display:none;align-items:center;justify-content:center;cursor:pointer;font-size:15px;color:var(--text2);flex-shrink:0;}
+.tb-title{font-size:13px;font-weight:600;}
+.tb-sub{font-size:11px;color:var(--text3);font-family:var(--mono);}
+.topbar-right{display:flex;align-items:center;gap:10px;}
+.tb-badge{font-size:10px;font-family:var(--mono);padding:3px 10px;border-radius:99px;}
+.clock{font-family:var(--mono);font-size:12px;color:var(--text3);}
+.breadcrumb{height:30px;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:6px;font-size:11px;font-family:var(--mono);color:var(--text3);flex-shrink:0;}
+.bc-sep{opacity:.4;}
+.bc-cur{color:var(--text2);}
+
+/* ── FRAME ── */
+.frame-wrap{flex:1;position:relative;overflow:hidden;}
+iframe{width:100%;height:100%;border:none;display:block;}
+.overlay{position:absolute;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:50;transition:opacity .3s;}
+.overlay.gone{opacity:0;pointer-events:none;}
+.spinner{width:32px;height:32px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:10px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ld-txt{font-size:11px;font-family:var(--mono);color:var(--text3);}
+
+/* ── HUB ── */
+.hub{flex:1;overflow-y:auto;padding:22px 22px 60px;}
+.hub-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px;}
+.hub-title{font-size:20px;font-weight:600;margin-bottom:3px;}
+.hub-sub{font-size:13px;color:var(--text2);}
+.hub-date{font-size:11px;font-family:var(--mono);color:var(--text3);background:var(--bg3);border:1px solid var(--border2);padding:5px 12px;border-radius:6px;white-space:nowrap;}
+
+.prog-bar{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:14px;}
+.pb-label{font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.05em;width:150px;flex-shrink:0;}
+.pb-track{flex:1;height:9px;background:rgba(255,255,255,0.06);border-radius:99px;overflow:hidden;}
+.pb-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#1d4ed8,#3b82f6);}
+.pb-pct{font-family:var(--mono);font-size:18px;font-weight:600;color:var(--accent);width:48px;text-align:right;flex-shrink:0;}
+.pb-nums{font-family:var(--mono);font-size:11px;color:var(--text2);text-align:right;flex-shrink:0;}
+
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:9px;margin-bottom:18px;}
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;position:relative;overflow:hidden;}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.kpi.bl::before{background:var(--accent);}  .kpi.bl .kv{color:var(--accent);}
+.kpi.gr::before{background:var(--green);}  .kpi.gr .kv{color:var(--green);}
+.kpi.am::before{background:var(--amber);}  .kpi.am .kv{color:var(--amber);}
+.kpi.re::before{background:var(--red);}    .kpi.re .kv{color:var(--red);}
+.kpi.cy::before{background:var(--cyan);}   .kpi.cy .kv{color:var(--cyan);}
+.kpi.pu::before{background:var(--purple);} .kpi.pu .kv{color:var(--purple);}
+.kv{font-size:20px;font-weight:600;font-family:var(--mono);line-height:1;margin-bottom:3px;}
+.kl{font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.04em;}
+
+.mod-title{font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:11px;}
+.modules-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(228px,1fr));gap:11px;margin-bottom:18px;}
+.mc{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:15px 17px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;}
+.mc:hover{transform:translateY(-2px);}
+.mc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.mc.war::before,.mc.war:hover{border-color:rgba(59,130,246,.35);}  .mc.war::before{background:var(--accent);}
+.mc.cap::before,.mc.cap:hover{border-color:rgba(168,85,247,.35);}  .mc.cap::before{background:var(--purple);}
+.mc.map::before,.mc.map:hover{border-color:rgba(6,182,212,.35);}   .mc.map::before{background:var(--cyan);}
+.mc.c2::before,.mc.c2:hover{border-color:rgba(34,197,94,.35);}     .mc.c2::before{background:var(--green);}
+.mc.meta::before,.mc.meta:hover{border-color:rgba(245,158,11,.35);}.mc.meta::before{background:var(--amber);}
+.mc.rep::before,.mc.rep:hover{border-color:rgba(168,85,247,.35);}  .mc.rep::before{background:var(--purple);}
+.mc.adm::before,.mc.adm:hover{border-color:rgba(239,68,68,.35);}   .mc.adm::before{background:var(--red);}
+.mc-head{display:flex;align-items:center;gap:10px;margin-bottom:7px;}
+.mc-icon{width:34px;height:34px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.mc-name{font-size:13px;font-weight:600;}
+.mc-sub{font-size:10px;color:var(--text3);}
+.mc-desc{font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:9px;}
+.mc-foot{display:flex;align-items:center;justify-content:space-between;}
+.tags{display:flex;gap:4px;flex-wrap:wrap;}
+.tag{font-size:10px;font-family:var(--mono);padding:2px 6px;border-radius:99px;}
+.arr{font-size:13px;color:var(--text3);}
+
+/* ── ALERTS ── */
+.alerts{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.al-head{padding:11px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.al-title{font-size:10px;font-family:var(--mono);color:var(--text2);text-transform:uppercase;letter-spacing:.06em;}
+.al-item{display:flex;align-items:flex-start;gap:10px;padding:9px 16px;border-bottom:1px solid var(--border);font-size:12px;}
+.al-item:last-child{border-bottom:none;}
+.al-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:3px;}
+.al-body{flex:1;}
+.al-text{color:var(--text);line-height:1.4;}
+.al-meta{font-size:10px;font-family:var(--mono);color:var(--text3);margin-top:2px;}
+.al-act{font-size:10px;font-family:var(--mono);color:var(--accent);cursor:pointer;flex-shrink:0;margin-top:2px;}
+.al-act:hover{text-decoration:underline;}
+
+/* ── MOBILE ── */
+.mob-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:19;}
+@media(max-width:768px){
+  .sidebar{position:fixed;left:-224px;top:0;bottom:0;z-index:20;transition:left .25s;width:224px;}
+  .sidebar.open{left:0;}
+  .sidebar.collapsed{width:224px;}
+  .sidebar.collapsed .brand-text,.sidebar.collapsed .estado-card,
+  .sidebar.collapsed .nav-label,.sidebar.collapsed .nav-badge,
+  .sidebar.collapsed .nav-section,.sidebar.collapsed .user-info,
+  .sidebar.collapsed .live-dot,.sidebar.collapsed .collapse-lbl{display:block;opacity:1;}
+  .mob-overlay.open{display:block;}
+  .hamburger{display:flex;}
+  .collapse-btn{display:none;}
+  .pb-nums{display:none;}
+}
+</style>
+</head>
+<body>
+
+<div class="mob-overlay" id="mob-overlay" onclick="closeSidebar()"></div>
+
+<div class="shell">
+<!-- ── SIDEBAR ── -->
+<div class="sidebar" id="sidebar">
+  <div class="brand">
+    <div class="brand-row">
+      <div class="brand-icon" data-theme="logo-inicial">IE
+        <img data-theme="logo-img" src="" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:7px;">
+      </div>
+      <div class="brand-text">
+        <div class="brand-name" data-theme="partido-nombre">Intel Electoral</div>
+        <div class="brand-ver">v1.0 · 2027</div>
+      </div>
+    </div>
+    <div class="estado-card">
+      <div class="estado-lbl">Estado activo</div>
+      <div class="estado-nom" data-theme="sistema-titulo">Colima 2027</div>
+      <div class="estado-meta"><span data-theme="sistema-meta">197,297</span> meta</div>
+    </div>
+  </div>
+
+  <nav class="nav">
+    <div class="nav-section">Principal</div>
+    <div class="nav-item active" id="nav-hub" onclick="showHub()">
+      <div class="nav-icon" style="background:rgba(59,130,246,.12);color:var(--accent)">⌂</div>
+      <span class="nav-label">Inicio</span>
+      <div class="nav-tip">Inicio</div>
+    </div>
+
+    <div class="nav-section">Módulos</div>
+    <div class="nav-item" id="nav-war" onclick="load('war','war_room_electoral_colima.html','War Room','Control de avance estatal')">
+      <div class="nav-icon" style="background:rgba(59,130,246,.12);color:var(--accent)">⚡</div>
+      <span class="nav-label">War Room</span>
+      <span class="nav-badge" style="background:rgba(239,68,68,.12);color:var(--red)">VIVO</span>
+      <div class="nav-tip">War Room</div>
+    </div>
+    <div class="nav-item" id="nav-cap" onclick="load('cap','panel_capturistas.html','Capturistas','Gestión de estructura de campo')">
+      <div class="nav-icon" style="background:rgba(168,85,247,.12);color:var(--purple)">👥</div>
+      <span class="nav-label">Capturistas</span>
+      <span class="nav-badge" style="background:rgba(168,85,247,.12);color:var(--purple)">60</span>
+      <div class="nav-tip">Capturistas</div>
+    </div>
+    <div class="nav-item" id="nav-map" onclick="load('map','mapa_secciones_v2.html','Mapa territorial','Inteligencia por sección')">
+      <div class="nav-icon" style="background:rgba(6,182,212,.12);color:var(--cyan)">🗺</div>
+      <span class="nav-label">Mapa</span>
+      <span class="nav-badge" style="background:rgba(6,182,212,.12);color:var(--cyan)">392</span>
+      <div class="nav-tip">Mapa territorial</div>
+    </div>
+    <div class="nav-item" id="nav-captura" onclick="load('captura','modulo_captura.html','Captura ciudadana','Registro y búsqueda de ciudadanos')">
+      <div class="nav-icon" style="background:rgba(34,197,94,.12);color:var(--green)">✏️</div>
+      <span class="nav-label">Captura</span>
+      <span class="nav-badge" style="background:rgba(34,197,94,.12);color:var(--green)">+</span>
+      <div class="nav-tip">Captura ciudadana</div>
+    </div>
+    <div class="nav-item" id="nav-micap" onclick="load('micap','panel_capturista_personal.html','Mi Panel · Capturista','Mis simpatizantes · Fase 1 y 2')">
+      <div class="nav-icon" style="background:rgba(34,197,94,.12);color:var(--green)">📱</div>
+      <span class="nav-label">Mi Panel</span>
+      <span class="nav-badge" style="background:rgba(34,197,94,.12);color:var(--green)">F1/F2</span>
+      <div class="nav-tip">Mi Panel Capturista</div>
+    </div>
+    <div class="nav-item" id="nav-meta" onclick="load('meta','configurador_meta_estados.html','Configurador de meta','Carga Excel por estado')">
+      <div class="nav-icon" style="background:rgba(245,158,11,.12);color:var(--amber)">⚙️</div>
+      <span class="nav-label">Meta / Config</span>
+      <div class="nav-tip">Configurador de meta</div>
+    </div>
+    <div class="nav-item" id="nav-rep" onclick="load('rep','modulo_reportes.html','Reportes y análisis','Datos reales · PDF y Excel')">
+      <div class="nav-icon" style="background:rgba(168,85,247,.12);color:var(--purple)">📊</div>
+      <span class="nav-label">Reportes</span>
+      <div class="nav-tip">Reportes</div>
+    </div>
+
+    <div class="nav-section">Sistema</div>
+    <div class="nav-item admin-item" id="nav-adm" onclick="load('adm','modulo_admin.html','Administración','Usuarios · licencias · auditoría')">
+      <div class="nav-icon" style="background:rgba(239,68,68,.12);color:var(--red)">🔒</div>
+      <span class="nav-label">Administración</span>
+      <span class="nav-badge" style="background:rgba(239,68,68,.12);color:var(--red)">ADMIN</span>
+      <div class="nav-tip">Administración</div>
+    </div>
+  </nav>
+
+  <div class="user-footer">
+    <div class="user-row">
+      <div class="user-av">AD</div>
+      <div class="user-info">
+        <div class="user-name">Administrador</div>
+        <div class="user-role">Super admin</div>
+      </div>
+      <div class="live-dot"></div>
+    </div>
+  </div>
+  <div class="collapse-btn" onclick="toggleSidebar()">
+    <span class="collapse-icon">◀</span>
+    <span class="collapse-lbl">Contraer</span>
+  </div>
+</div>
+
+<!-- ── CONTENT ── -->
+<div class="content">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="hamburger" onclick="openSidebar()">☰</div>
+      <div>
+        <div class="tb-title" id="tb-title">Panel de inicio</div>
+        <div class="tb-sub" id="tb-sub">Inteligencia Electoral · Colima 2027</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span class="tb-badge" style="background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.25)">● Sistema activo</span>
+      <span class="tb-badge" style="background:var(--bg3);color:var(--text3);border:1px solid var(--border2)" id="tb-dias">521 días</span>
+      <span class="clock" id="clock">--:--:--</span>
+    </div>
+  </div>
+  <div class="breadcrumb">
+    <span>Inteligencia Electoral</span>
+    <span class="bc-sep">›</span>
+    <span class="bc-cur" id="bc">Inicio</span>
+  </div>
+
+  <!-- FRAME -->
+  <div class="frame-wrap" id="frame-wrap" style="display:none">
+    <div class="overlay" id="ld">
+      <div class="spinner"></div>
+      <div class="ld-txt" id="ld-txt">Cargando...</div>
+    </div>
+    <iframe id="fr" title="Módulo" sandbox="allow-scripts allow-same-origin allow-forms allow-downloads"></iframe>
+  </div>
+
+  <!-- HUB -->
+  <div class="hub" id="hub">
+    <div class="hub-head">
+      <div>
+        <div class="hub-title">Bienvenido al sistema</div>
+        <div class="hub-sub"><span data-theme="sistema-titulo">Colima 2027</span> · <strong>8 módulos</strong> operativos</div>
+      </div>
+      <div class="hub-date" id="hub-date">--</div>
+    </div>
+
+    <div class="prog-bar">
+      <div class="pb-label">Avance vs meta <span data-theme="sistema-anio">2027</span></div>
+      <div class="pb-track"><div class="pb-fill" style="width:5.1%"></div></div>
+      <div class="pb-pct">5.1%</div>
+      <div class="pb-nums">10,000 / <span data-theme="sistema-meta">197,297</span></div>
+    </div>
+
+    <div class="kpi-row">
+      <div class="kpi bl"><div class="kv" data-theme="sistema-meta">197,297</div><div class="kl">Meta estatal</div></div>
+      <div class="kpi gr"><div class="kv">10,000</div><div class="kl">Capturados</div></div>
+      <div class="kpi gr"><div class="kv">4,601</div><div class="kl">Voto seguro</div></div>
+      <div class="kpi am"><div class="kv">2,203</div><div class="kl">En riesgo</div></div>
+      <div class="kpi re"><div class="kv">408</div><div class="kl">Duplicados</div></div>
+      <div class="kpi cy"><div class="kv">60</div><div class="kl">Operadores</div></div>
+      <div class="kpi cy"><div class="kv">392</div><div class="kl">Secciones</div></div>
+      <div class="kpi re"><div class="kv">219</div><div class="kl">Sec. críticas</div></div>
+    </div>
+
+    <div class="mod-title">8 módulos del sistema — clic para abrir</div>
+    <div class="modules-grid">
+
+      <div class="mc war" onclick="load('war','war_room_electoral_colima.html','War Room','Control de avance estatal')">
+        <div class="mc-head"><div class="mc-icon" style="background:rgba(239,68,68,.15)">⚔️</div><div><div class="mc-name">War Room Electoral</div><div class="mc-sub">Fase 1 campaña · Fase 2 elección</div></div></div>
+        <div class="mc-desc">Panel de mando completo. Resumen con KPIs y tabla municipal + cuadrantes jerárquicos navegables: DF → Municipio → DL → Sección → Casilla. Funciona en ambas fases.</div>
+        <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(239,68,68,.1);color:var(--red)">Fase 1 y 2</span><span class="tag" style="background:rgba(239,68,68,.1);color:var(--red)">6 niveles</span></div><span class="arr">→</span></div>
+      </div>
+
+      <div class="mc cap" onclick="load('cap','panel_capturistas.html','Capturistas','Gestión de estructura de campo')">
+        <div class="mc-head"><div class="mc-icon" style="background:rgba(168,85,247,.15)">👥</div><div><div class="mc-name">Capturistas</div><div class="mc-sub">Gestión de estructura</div></div></div>
+        <div class="mc-desc">60 operadores con score de calidad, avance individual vs meta y ficha detallada con nivel de compromiso.</div>
+        <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(168,85,247,.1);color:var(--purple)">60 operadores</span><span class="tag" style="background:rgba(168,85,247,.1);color:var(--purple)">Score</span></div><span class="arr">→</span></div>
+      </div>
+
+      <div class="mc map" onclick="load('map','mapa_secciones_v2.html','Mapa territorial','Inteligencia por sección electoral')">
+        <div class="mc-head"><div class="mc-icon" style="background:rgba(6,182,212,.15)">🗺</div><div><div class="mc-name">Mapa territorial</div><div class="mc-sub">Inteligencia por sección</div></div></div>
+        <div class="mc-desc">392 secciones coloreadas por avance, ganador 2024 o dificultad. Zoom, filtros y ficha completa por sección.</div>
+        <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(6,182,212,.1);color:var(--cyan)">3 vistas</span><span class="tag" style="background:rgba(6,182,212,.1);color:var(--cyan)">Sin internet</span></div><span class="arr">→</span></div>
+      </div>
+
+      <div class="mc c2" onclick="load('captura','modulo_captura.html','Captura ciudadana','Registro y búsqueda de ciudadanos')">
+        <div class="mc-head"><div class="mc-icon" style="background:rgba(34,197,94,.15)">✏️</div><div><div class="mc-name">Captura ciudadana</div><div class="mc-sub">Campo · mobile first</div></div></div>
+        <div class="mc-desc">Formulario en 2 pasos, buscador con ficha individual, lista por sección y asignación automática al responsable territorial.</div>
+        <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(34,197,94,.1);color:var(--green)">Mobile first</span><span class="tag" style="background:rgba(34,197,94,.1);color:var(--green)">Auto-asignación</span></div><span class="arr">→</span></div>
+      </div>
+
+      <div class="mc c2" onclick="load('micap','panel_capturista_personal.html','Mi Panel · Capturista','Mis simpatizantes · Fase 1 y 2')">
+        <div class="mc-head"><div class="mc-icon" style="background:rgba(34,197,94,.15)">📱</div><div><div class="mc-name">Mi Panel · Capturista</div><div class="mc-sub">Vista personal · Fase 1 y 2</div></div></div>
+        <div class="mc-desc">Avance personal vs meta, lista completa de simpatizantes con ficha detallada, edición de registros y modo día de elección para marcar votos en casilla.</div>
+        <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(34,197,94,.1);color:var(--green)">Fase 1 captura</span><span class="tag" style="background:rgba(34,197,94,.1);color:var(--green)">Fase 2 elección</span></div><span class="arr">→</span></div>
+      </div>
+
+      <div class="mc meta" onclick="load('meta','configurador_meta_estados.html','Configurador de meta','Carga Excel por estado')">
+        <div class="mc-head"><div class="mc-icon" style="background:rgba(245,158,11,.15)">⚙️</div><div><div class="mc-name">Configurador de meta</div><div class="mc-sub">Multi-estado · Excel</div></div></div>
+        <div class="mc-desc">Carga Excel de secciones de cualquier estado, detecta columnas automáticamente, aplica factores de afluencia y exporta.</div>
+        <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(245,158,11,.1);color:var(--amber)">32 estados</span><span class="tag" style="background:rgba(245,158,11,.1);color:var(--amber)">Exporta .xlsx</span></div><span class="arr">→</span></div>
+      </div>
+
+      <div class="mc rep" onclick="load('rep','modulo_reportes.html','Reportes y análisis','Datos reales · PDF y Excel')">
+        <div class="mc-head"><div class="mc-icon" style="background:rgba(168,85,247,.15)">📊</div><div><div class="mc-name">Reportes y análisis</div><div class="mc-sub">6 reportes con datos reales</div></div></div>
+        <div class="mc-desc">Resumen ejecutivo, avance y ritmo, calidad del padrón, por municipio, estructura de campo y perfil del votante.</div>
+        <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(168,85,247,.1);color:var(--purple)">6 secciones</span><span class="tag" style="background:rgba(168,85,247,.1);color:var(--purple)">PDF + Excel</span></div><span class="arr">→</span></div>
+      </div>
+
+      <div class="mc adm" onclick="load('adm','modulo_admin.html','Administración','Usuarios · licencias · auditoría · seguridad')">
+        <div class="mc-head"><div class="mc-icon" style="background:rgba(239,68,68,.15)">🔒</div><div><div class="mc-name">Administración</div><div class="mc-sub">Solo super admin</div></div></div>
+        <div class="mc-desc">Usuarios y roles, licencias multi-estado, matriz de permisos, auditoría de actividad y configuración del sistema.</div>
+        <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(239,68,68,.1);color:var(--red)">Restringido</span><span class="tag" style="background:rgba(239,68,68,.1);color:var(--red)">6 licencias</span></div><span class="arr">→</span></div>
+      </div>
+
+    </div>
+
+    <!-- ALERTAS -->
+    <div class="alerts">
+      <div class="al-head">
+        <span class="al-title">Alertas activas</span>
+        <span class="tb-badge" style="background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.2)">3 críticas · 2 avisos</span>
+      </div>
+      <div class="al-item">
+        <div class="al-dot" style="background:var(--red)"></div>
+        <div class="al-body"><div class="al-text">36 secciones sin ningún registro capturado</div><div class="al-meta">Comala · Coquimatlán · Manzanillo · Colima norte · Tecomán sur</div></div>
+        <span class="al-act" onclick="load('map','mapa_secciones_v2.html','Mapa territorial','Inteligencia por sección electoral')">Ver mapa →</span>
+      </div>
+      <div class="al-item">
+        <div class="al-dot" style="background:var(--red)"></div>
+        <div class="al-body"><div class="al-text">408 registros duplicados pendientes de depuración</div><div class="al-meta">4.1% de la base · CURP o clave de elector repetida</div></div>
+        <span class="al-act" onclick="load('captura','modulo_captura.html','Captura ciudadana','Registro y búsqueda de ciudadanos')">Depurar →</span>
+      </div>
+      <div class="al-item">
+        <div class="al-dot" style="background:var(--red)"></div>
+        <div class="al-body"><div class="al-text">Licencia Jalisco vence en 4 días — requiere renovación urgente</div><div class="al-meta">Plan prueba · $2,000 USD/mes plan estándar · contactar antes del 18 mayo</div></div>
+        <span class="al-act" onclick="load('adm','modulo_admin.html','Administración','Usuarios · licencias · auditoría')">Gestionar →</span>
+      </div>
+      <div class="al-item">
+        <div class="al-dot" style="background:var(--amber)"></div>
+        <div class="al-body"><div class="al-text">183 secciones en estado crítico — avance menor a 5%</div><div class="al-meta">Requieren refuerzo de estructura en campo esta semana</div></div>
+        <span class="al-act" onclick="load('war','war_room_electoral_colima.html','War Room','Control de avance estatal')">War Room →</span>
+      </div>
+      <div class="al-item">
+        <div class="al-dot" style="background:var(--amber)"></div>
+        <div class="al-body"><div class="al-text">Ritmo actual insuficiente — se necesita ×4.4 más capturas por semana</div><div class="al-meta">Actual: 574/sem · Requerido: 2,531/sem · Proyección: 26.6% a jun 2027</div></div>
+        <span class="al-act" onclick="load('rep','modulo_reportes.html','Reportes y análisis','Datos reales · PDF y Excel')">Ver proyección →</span>
+      </div>
+    </div>
+
+  </div><!-- /hub -->
+</div><!-- /content -->
+</div><!-- /shell -->
+
+<script>
+let collapsed = false;
+
+function tick(){
+  const now = new Date();
+  document.getElementById('clock').textContent = now.toLocaleTimeString('es-MX');
+  document.getElementById('hub-date').textContent =
+    now.toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  // Usar fecha de elección del tema si está disponible
+  const tema = typeof loadTheme === 'function' ? loadTheme() : {};
+  const fechaElec = tema.fechaEleccion || '2027-06-01';
+  const dias = Math.ceil((new Date(fechaElec) - now) / 864e5);
+  document.getElementById('tb-dias').textContent = dias > 0 ? dias + ' días a elección' : 'Día de la elección';
+}
+setInterval(tick,1000); tick();
+
+function toggleSidebar(){
+  collapsed = !collapsed;
+  document.getElementById('sidebar').classList.toggle('collapsed', collapsed);
+}
+function openSidebar(){
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('mob-overlay').classList.add('open');
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('mob-overlay').classList.remove('open');
+}
+
+function load(id, file, title, sub){
+  closeSidebar();
+  document.getElementById('tb-title').textContent = title;
+  document.getElementById('tb-sub').textContent = sub + ' · Colima 2027';
+  document.getElementById('bc').textContent = title;
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  const ni = document.getElementById('nav-'+id);
+  if(ni) ni.classList.add('active');
+  document.getElementById('hub').style.display = 'none';
+  document.getElementById('frame-wrap').style.display = 'block';
+  const ld = document.getElementById('ld');
+  ld.classList.remove('gone');
+  document.getElementById('ld-txt').textContent = 'Cargando ' + title + '...';
+  const fr = document.getElementById('fr');
+  fr.onload = () => setTimeout(()=>ld.classList.add('gone'), 250);
+  fr.src = file;
+}
+
+function showHub(){
+  closeSidebar();
+  document.getElementById('hub').style.display = 'block';
+  document.getElementById('frame-wrap').style.display = 'none';
+  document.getElementById('tb-title').textContent = 'Panel de inicio';
+  document.getElementById('tb-sub').textContent = 'Inteligencia Electoral · Colima 2027';
+  document.getElementById('bc').textContent = 'Inicio';
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  document.getElementById('nav-hub').classList.add('active');
+  document.getElementById('fr').src = '';
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape') showHub();
+  if((e.metaKey||e.ctrlKey) && e.key==='['){e.preventDefault();toggleSidebar();}
+});
+</script>
+<script src="theme.js"></script>
+</body>
+</html>

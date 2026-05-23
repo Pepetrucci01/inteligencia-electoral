@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CONFIGURADOR DE META — INTELIGENCIA ELECTORAL 2027</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+:root {
+  --bg:#0a0e1a; --bg2:#0f1526; --bg3:#141b2e; --bg4:#1a2238;
+  --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.14);
+  --text:#e8edf5; --text2:#8a9ab5; --text3:#5a6a85;
+  --accent:#3b82f6; --green:#22c55e; --red:#ef4444;
+  --amber:#f59e0b; --cyan:#06b6d4; --purple:#a855f7;
+  --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);}
+
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border2);padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.topbar-left{display:flex;align-items:center;gap:12px;}
+.logo-mark{width:28px;height:28px;background:var(--amber);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:600;color:#fff;}
+.topbar-title{font-size:13px;font-weight:600;letter-spacing:.04em;}
+.topbar-sub{font-size:11px;color:var(--text3);font-family:var(--mono);}
+.live-badge{display:flex;align-items:center;gap:6px;font-size:11px;font-family:var(--mono);color:var(--amber);background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);padding:3px 10px;border-radius:99px;}
+
+.main{max-width:960px;margin:0 auto;padding:28px 24px 60px;}
+
+.steps-bar{display:flex;align-items:center;margin-bottom:28px;}
+.step-item{display:flex;align-items:center;gap:8px;}
+.step-circle{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;font-family:var(--mono);flex-shrink:0;transition:all .3s;border:1px solid transparent;}
+.step-circle.done{background:rgba(34,197,94,0.15);border-color:rgba(34,197,94,0.4);color:var(--green);}
+.step-circle.active{background:rgba(59,130,246,0.15);border-color:rgba(59,130,246,0.4);color:var(--accent);}
+.step-circle.idle{background:var(--bg3);border-color:var(--border2);color:var(--text3);}
+.step-label{font-size:12px;font-family:var(--mono);color:var(--text3);}
+.step-label.active{color:var(--text);}
+.step-line{flex:1;height:1px;background:var(--border2);margin:0 12px;}
+
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px 24px;margin-bottom:16px;}
+.card-title{font-size:14px;font-weight:600;margin-bottom:4px;}
+.card-sub{font-size:12px;color:var(--text2);margin-bottom:18px;line-height:1.6;}
+
+.config-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:18px;}
+.cfg-item{background:var(--bg3);border-radius:8px;padding:12px 14px;}
+.cfg-label{font-size:11px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;}
+.cfg-input{width:100%;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:14px;padding:8px 10px;outline:none;transition:border-color .2s;-webkit-appearance:none;appearance:none;}
+.cfg-input:focus{border-color:var(--accent);}
+.cfg-select{width:100%;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:13px;padding:8px 10px;outline:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235a6a85' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;}
+.cfg-select:focus{border-color:var(--accent);}
+.cfg-result-val{font-size:22px;font-weight:600;font-family:var(--mono);color:var(--amber);line-height:1.2;margin-bottom:2px;}
+.cfg-result-lbl{font-size:10px;color:var(--text3);}
+
+.drop-zone{border:1.5px dashed var(--border2);border-radius:10px;padding:48px 24px;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg3);}
+.drop-zone:hover,.drop-zone.drag{border-color:var(--accent);background:rgba(59,130,246,0.05);}
+.drop-icon{font-size:40px;color:var(--text3);margin-bottom:12px;}
+.drop-title{font-size:15px;font-weight:500;margin-bottom:4px;}
+.drop-hint{font-size:12px;color:var(--text3);}
+.drop-link{color:var(--accent);cursor:pointer;text-decoration:underline;}
+
+.btn-row{display:flex;gap:10px;margin-top:14px;}
+.btn-primary{flex:1;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:13px;font-size:14px;font-weight:600;cursor:pointer;transition:background .15s;font-family:var(--sans);}
+.btn-primary:hover{background:#2563eb;}
+.btn-secondary{flex:1;background:var(--bg3);color:var(--text2);border:1px solid var(--border2);border-radius:8px;padding:12px;font-size:13px;cursor:pointer;font-family:var(--sans);}
+.btn-secondary:hover{border-color:var(--accent);color:var(--text);}
+.btn-success{width:100%;background:var(--green);color:#fff;border:none;border-radius:8px;padding:14px;font-size:14px;font-weight:600;cursor:pointer;margin-top:8px;font-family:var(--sans);}
+.btn-amber{width:100%;background:rgba(245,158,11,0.15);color:var(--amber);border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:12px;font-size:13px;cursor:pointer;margin-top:8px;font-family:var(--sans);}
+
+.col-map-grid{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;}
+.col-row{display:grid;grid-template-columns:200px 1fr;align-items:start;gap:12px;}
+.col-key-label{font-size:13px;color:var(--text);}
+.col-key-hint{font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:2px;}
+.col-req{color:var(--red);margin-left:2px;}
+.col-select{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:12px;padding:8px 10px;outline:none;-webkit-appearance:none;}
+.col-select:focus{border-color:var(--accent);}
+.col-status{font-size:11px;margin-top:4px;font-family:var(--mono);}
+.col-status.ok{color:var(--green);}
+.col-status.err{color:var(--red);}
+.col-status.opt{color:var(--text3);}
+
+.preview-wrap{overflow-x:auto;border-radius:8px;border:1px solid var(--border);margin-top:14px;}
+table.ptable{width:100%;border-collapse:collapse;font-size:12px;}
+table.ptable th{background:var(--bg3);padding:9px 12px;text-align:left;font-weight:500;font-size:11px;color:var(--text2);border-bottom:1px solid var(--border);white-space:nowrap;}
+table.ptable td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:11px;white-space:nowrap;}
+table.ptable tr:last-child td{border-bottom:none;}
+table.ptable tr:hover td{background:rgba(255,255,255,0.02);}
+
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px;}
+.kpi{background:var(--bg3);border-radius:8px;padding:14px 16px;}
+.kpi-val{font-size:24px;font-weight:600;font-family:var(--mono);line-height:1;margin-bottom:4px;}
+.kpi-lbl{font-size:11px;color:var(--text3);}
+
+.alert{padding:12px 16px;border-radius:8px;font-size:13px;margin-bottom:14px;display:flex;align-items:flex-start;gap:10px;line-height:1.5;}
+.alert-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
+.alert.success{background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);color:var(--green);}
+.alert.warning{background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);color:var(--amber);}
+.alert.info{background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.25);color:var(--accent);}
+.alert.danger{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);color:var(--red);}
+
+.factor-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
+.factor-card{background:var(--bg3);border-radius:8px;padding:12px 14px;}
+.factor-title{font-size:12px;font-weight:500;margin-bottom:2px;}
+.factor-val{font-size:18px;font-weight:600;font-family:var(--mono);}
+.factor-desc{font-size:10px;color:var(--text3);margin-top:2px;}
+
+.mun-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.mun-tag{font-size:11px;padding:4px 10px;border-radius:99px;background:rgba(59,130,246,0.12);color:var(--accent);border:1px solid rgba(59,130,246,0.25);font-family:var(--mono);}
+
+.result-table-wrap{overflow-x:auto;border-radius:8px;border:1px solid var(--border);}
+table.rtable{width:100%;border-collapse:collapse;font-size:12px;}
+table.rtable th{background:var(--bg3);padding:9px 12px;text-align:left;font-size:11px;font-weight:500;color:var(--text2);border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;}
+table.rtable th:hover{color:var(--text);}
+table.rtable td{padding:8px 12px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:11px;}
+table.rtable tr:last-child td{border-bottom:none;}
+table.rtable tr:hover td{background:rgba(255,255,255,0.02);}
+
+.download-bar{display:flex;gap:10px;margin-top:16px;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="logo-mark">M5</div>
+    <div>
+      <div class="topbar-title">CONFIGURADOR DE META ELECTORAL</div>
+      <div class="topbar-sub">MULTI-ESTADO · CARGA DE EXCEL · CÁLCULO AUTOMÁTICO</div>
+    </div>
+  </div>
+  <div class="live-badge">⚡ Motor de meta activo</div>
+</div>
+
+<div class="main">
+
+  <!-- STEPS -->
+  <div class="steps-bar" id="steps-bar">
+    <div class="step-item">
+      <div class="step-circle active" id="sn1">1</div>
+      <div class="step-label active" id="sl1">Estado</div>
+    </div>
+    <div class="step-line"></div>
+    <div class="step-item">
+      <div class="step-circle idle" id="sn2">2</div>
+      <div class="step-label" id="sl2">Excel</div>
+    </div>
+    <div class="step-line"></div>
+    <div class="step-item">
+      <div class="step-circle idle" id="sn3">3</div>
+      <div class="step-label" id="sl3">Columnas</div>
+    </div>
+    <div class="step-line"></div>
+    <div class="step-item">
+      <div class="step-circle idle" id="sn4">✓</div>
+      <div class="step-label" id="sl4">Meta</div>
+    </div>
+  </div>
+
+  <!-- PANTALLA 1: ESTADO -->
+  <div id="p1">
+    <div class="card">
+      <div class="card-title">Configuración del estado</div>
+      <div class="card-sub">Define los parámetros base. Estos números controlan cómo se calcula la meta para todo el estado. Puedes cambiarlos en cualquier momento y recalcular.</div>
+
+      <div class="config-grid">
+        <div class="cfg-item">
+          <div class="cfg-label">Estado / entidad federativa</div>
+          <select class="cfg-select" id="cfg-estado" onchange="calcularEstimado()">
+            <option value="">Seleccionar estado...</option>
+            <option>Aguascalientes</option><option>Baja California</option><option>Baja California Sur</option>
+            <option>Campeche</option><option>Chiapas</option><option>Chihuahua</option>
+            <option>Ciudad de México</option><option>Coahuila</option><option>Colima</option>
+            <option>Durango</option><option>Estado de México</option><option>Guanajuato</option>
+            <option>Guerrero</option><option>Hidalgo</option><option>Jalisco</option>
+            <option>Michoacán</option><option>Morelos</option><option>Nayarit</option>
+            <option>Nuevo León</option><option>Oaxaca</option><option>Puebla</option>
+            <option>Querétaro</option><option>Quintana Roo</option><option>San Luis Potosí</option>
+            <option>Sinaloa</option><option>Sonora</option><option>Tabasco</option>
+            <option>Tamaulipas</option><option>Tlaxcala</option><option>Veracruz</option>
+            <option>Yucatán</option><option>Zacatecas</option>
+          </select>
+        </div>
+        <div class="cfg-item">
+          <div class="cfg-label">Año de elección</div>
+          <input class="cfg-input" id="cfg-year" type="number" value="2027" min="2025" max="2032" oninput="calcularEstimado()">
+        </div>
+        <div class="cfg-item">
+          <div class="cfg-label">% sobre voto ganador</div>
+          <input class="cfg-input" id="cfg-pct" type="number" value="6" min="1" max="30" step="0.5" oninput="calcularEstimado()">
+        </div>
+        <div class="cfg-item">
+          <div class="cfg-label">Meta por capturista</div>
+          <input class="cfg-input" id="cfg-xcap" type="number" value="50" min="10" max="300" step="5" oninput="calcularEstimado()">
+        </div>
+        <div class="cfg-item">
+          <div class="cfg-label">Estructura de campo</div>
+          <input class="cfg-input" id="cfg-estructura" type="number" value="1500" min="50" max="100000" step="100" oninput="calcularEstimado()">
+        </div>
+        <div class="cfg-item">
+          <div class="cfg-label">Meta estimada (estructura)</div>
+          <div class="cfg-result-val" id="meta-est">75,000</div>
+          <div class="cfg-result-lbl">estructura × meta/capturista</div>
+        </div>
+      </div>
+
+      <div class="card-title" style="margin-bottom:10px;margin-top:4px;">Factores de afluencia por sección</div>
+      <div class="factor-grid">
+        <div class="factor-card">
+          <div class="factor-title" style="color:var(--green)">Fácil</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+            <span style="font-size:11px;color:var(--text3)">Afluencia &gt;</span>
+            <input class="cfg-input" id="cfg-umbral-facil" type="number" value="60" min="40" max="80" style="width:60px;padding:4px 6px;font-size:12px" oninput="calcularEstimado()">
+            <span style="font-size:11px;color:var(--text3)">% → factor ×</span>
+            <input class="cfg-input" id="cfg-factor-facil" type="number" value="0.77" min="0.3" max="1.5" step="0.01" style="width:64px;padding:4px 6px;font-size:12px" oninput="calcularEstimado()">
+          </div>
+        </div>
+        <div class="factor-card">
+          <div class="factor-title" style="color:var(--amber)">Medio</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+            <span style="font-size:11px;color:var(--text3)">Afluencia 50–</span>
+            <span style="font-size:11px;color:var(--text3)" id="lbl-medio">60%</span>
+            <span style="font-size:11px;color:var(--text3)"> → ×</span>
+            <input class="cfg-input" id="cfg-factor-medio" type="number" value="0.97" min="0.3" max="1.5" step="0.01" style="width:64px;padding:4px 6px;font-size:12px" oninput="calcularEstimado()">
+          </div>
+        </div>
+        <div class="factor-card">
+          <div class="factor-title" style="color:var(--red)">Difícil</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+            <span style="font-size:11px;color:var(--text3)">Afluencia &lt; 50% → ×</span>
+            <input class="cfg-input" id="cfg-factor-dificil" type="number" value="1.17" min="0.3" max="2.0" step="0.01" style="width:64px;padding:4px 6px;font-size:12px" oninput="calcularEstimado()">
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-primary" onclick="irP2()">Continuar — cargar Excel →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANTALLA 2: EXCEL -->
+  <div id="p2" style="display:none">
+    <div class="card">
+      <div class="card-title">Carga el Excel de secciones electorales</div>
+      <div class="card-sub">Una fila por sección. El sistema detecta automáticamente las columnas. Si alguna no coincide, la mapeas en el siguiente paso.</div>
+
+      <div class="alert info">
+        <span class="alert-icon">ℹ</span>
+        <span>El archivo nunca se sube a ningún servidor — todo el procesamiento ocurre en tu navegador. Tus datos no salen de tu computadora.</span>
+      </div>
+
+      <div class="drop-zone" id="drop-zone"
+        ondragover="event.preventDefault();this.classList.add('drag')"
+        ondragleave="this.classList.remove('drag')"
+        ondrop="handleDrop(event)"
+        onclick="document.getElementById('file-in').click()">
+        <div class="drop-icon">📊</div>
+        <div class="drop-title">Arrastra tu archivo aquí</div>
+        <div class="drop-hint">o <span class="drop-link">haz clic para seleccionar</span> · .xlsx · .xls · .csv · máx 20 MB</div>
+        <input type="file" id="file-in" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFile(this.files[0])">
+      </div>
+
+      <div style="margin-top:14px;background:var(--bg3);border-radius:8px;padding:14px 16px;">
+        <div style="font-size:13px;font-weight:500;margin-bottom:8px;">¿No tienes el Excel todavía?</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:10px;">Descarga la plantilla, llénala con los datos de tu estado y súbela aquí.</div>
+        <div class="btn-row">
+          <button class="btn-secondary" onclick="descargarPlantilla()">⬇ Descargar plantilla .xlsx</button>
+          <button class="btn-secondary" onclick="usarDemo()">▶ Probar con datos demo</button>
+        </div>
+      </div>
+
+      <div class="btn-row" style="margin-top:14px">
+        <button class="btn-secondary" onclick="irP1()">← Regresar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANTALLA 3: MAPEO -->
+  <div id="p3" style="display:none">
+    <div class="card">
+      <div class="card-title">Mapeo de columnas</div>
+      <div class="card-sub">El sistema detectó automáticamente las columnas marcadas en verde. Ajusta cualquier campo que no haya sido detectado correctamente.</div>
+      <div class="col-map-grid" id="col-map-cont"></div>
+      <div style="font-size:12px;font-weight:500;color:var(--text2);margin-bottom:8px;">Vista previa del archivo</div>
+      <div class="preview-wrap" id="preview-wrap"></div>
+      <div class="btn-row" style="margin-top:16px">
+        <button class="btn-secondary" onclick="irP2()">← Regresar</button>
+        <button class="btn-primary" onclick="procesarMeta()">Calcular meta →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANTALLA 4: RESULTADO -->
+  <div id="p4" style="display:none"></div>
+
+</div>
+
+<script>
+let excelCols=[], excelData=[], cfg={};
+
+const ESTADOS_MX=[
+  'Aguascalientes','Baja California','Baja California Sur','Campeche','Chiapas','Chihuahua',
+  'Ciudad de México','Coahuila','Colima','Durango','Estado de México','Guanajuato','Guerrero',
+  'Hidalgo','Jalisco','Michoacán','Morelos','Nayarit','Nuevo León','Oaxaca','Puebla',
+  'Querétaro','Quintana Roo','San Luis Potosí','Sinaloa','Sonora','Tabasco','Tamaulipas',
+  'Tlaxcala','Veracruz','Yucatán','Zacatecas'
+];
+
+const CAMPOS=[
+  {key:'col_sec',    label:'Sección electoral',  req:true,  hint:'Número de sección'},
+  {key:'col_mun',    label:'Municipio',           req:true,  hint:'Nombre del municipio'},
+  {key:'col_df',     label:'Distrito federal',    req:false, hint:'Número de DF'},
+  {key:'col_dl',     label:'Distrito local',      req:false, hint:'Número de DL'},
+  {key:'col_morena', label:'Votos partido A',     req:true,  hint:'Votos primera fuerza 2024'},
+  {key:'col_prian',  label:'Votos partido B',     req:false, hint:'Votos segunda fuerza 2024'},
+  {key:'col_total',  label:'Total votos',         req:true,  hint:'Total votos válidos'},
+  {key:'col_nomi',   label:'Lista nominal',       req:true,  hint:'Ciudadanos en lista nominal'},
+  {key:'col_aflu',   label:'Afluencia',           req:false, hint:'% afluencia (0–1 o 0–100)'},
+  {key:'col_meta',   label:'Meta precalculada',   req:false, hint:'Si ya tienes meta por sección'},
+  {key:'col_ganador',label:'Ganador 2024',        req:false, hint:'Partido ganador por sección'},
+];
+
+const AUTO_PATTERNS={
+  col_sec:    ['seccion','sección','sec','secció','section','secciones'],
+  col_mun:    ['municipio','mun','municipalidad','ciudad','municipality'],
+  col_df:     ['distrito_fed','df','distritofed','distritofe','d.f','distritofederal'],
+  col_dl:     ['distrito_loc','dl','distritolocal','distritoloc','distritol'],
+  col_morena: ['morena','v_morena','votos_morena','v.coalicionmorena','coalicion_morena','votosgano','votosp1','partidoa'],
+  col_prian:  ['prian','v_prian','votos_prian','v.coalicionprian','prian_votos','votosp2','partidob'],
+  col_total:  ['total_votos','totalvotos','totalvotos','votos_total','total','votototal'],
+  col_nomi:   ['lista_nominal','nominal','listanominal','listanominal','ciudadanos','electores'],
+  col_aflu:   ['afluencia','aflu','turnout','participacion','porcentaje_part'],
+  col_meta:   ['meta_proyectada','meta','metaproyectada','metaproy','meta27','objetivos'],
+  col_ganador:['ganador','winner','ganó','gano','resultado','party_winner'],
+};
+
+function normalize(s){
+  return String(s).toLowerCase().trim()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[\s_\-\.]/g,'');
+}
+
+function autoDetect(key){
+  const pats=AUTO_PATTERNS[key]||[];
+  for(let col of excelCols){
+    const nc=normalize(col);
+    for(let p of pats){
+      const np=normalize(p);
+      if(nc===np||nc.includes(np)||np.includes(nc)) return col;
+    }
+  }
+  return '';
+}
+
+function calcularEstimado(){
+  const e=parseInt(document.getElementById('cfg-estructura').value)||0;
+  const x=parseInt(document.getElementById('cfg-xcap').value)||50;
+  document.getElementById('meta-est').textContent=(e*x).toLocaleString('es-MX');
+  const uf=document.getElementById('cfg-umbral-facil').value;
+  document.getElementById('lbl-medio').textContent=uf+'%';
+}
+calcularEstimado();
+
+function setStep(n){
+  [1,2,3,4].forEach(i=>{
+    const num=document.getElementById('sn'+i);
+    const lbl=document.getElementById('sl'+i);
+    if(i<n){num.className='step-circle done';num.textContent='✓';}
+    else if(i===n){num.className='step-circle active';if(i<4)num.textContent=i;lbl.className='step-label active';}
+    else{num.className='step-circle idle';if(i<4)num.textContent=i;lbl.className='step-label';}
+  });
+}
+
+function showOnly(p){
+  [1,2,3,4].forEach(i=>document.getElementById('p'+i).style.display='none');
+  document.getElementById('p'+p).style.display='block';
+}
+
+function irP1(){showOnly(1);setStep(1);}
+function irP2(){
+  if(!document.getElementById('cfg-estado').value){alert('Selecciona el estado antes de continuar.');return;}
+  cfg={
+    estado:document.getElementById('cfg-estado').value,
+    year:parseInt(document.getElementById('cfg-year').value),
+    pct:parseFloat(document.getElementById('cfg-pct').value),
+    xcap:parseInt(document.getElementById('cfg-xcap').value),
+    estructura:parseInt(document.getElementById('cfg-estructura').value),
+    umbralFacil:parseFloat(document.getElementById('cfg-umbral-facil').value)/100,
+    facFacil:parseFloat(document.getElementById('cfg-factor-facil').value),
+    facMedio:parseFloat(document.getElementById('cfg-factor-medio').value),
+    facDificil:parseFloat(document.getElementById('cfg-factor-dificil').value),
+  };
+  showOnly(2);setStep(2);
+}
+
+function handleDrop(e){
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('drag');
+  handleFile(e.dataTransfer.files[0]);
+}
+
+function handleFile(file){
+  if(!file)return;
+  if(file.size>20*1024*1024){alert('El archivo supera los 20 MB.');return;}
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      const wb=XLSX.read(ev.target.result,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const json=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      if(json.length<2){alert('El archivo no tiene datos suficientes.');return;}
+      excelCols=(json[0]||[]).map(c=>String(c).trim()).filter(c=>c);
+      excelData=json.slice(1).filter(r=>r.some(c=>c!==''&&c!==null&&c!==undefined));
+      mostrarMapeo();
+    }catch(err){alert('No se pudo leer el archivo. Verifica que sea .xlsx, .xls o .csv válido.\n\n'+err.message);}
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function usarDemo(){
+  excelCols=['SECCION','MUNICIPIO','DISTRITO_FEDERAL','DISTRITO_LOCAL','V_MORENA','V_PRIAN','TOTAL_VOTOS','LISTA_NOMINAL','AFLUENCIA','META_PROYECTADA','GANADOR'];
+  excelData=[
+    [291,'TECOMAN',2,15,1172,299,1714,4072,0.421,1242,'C. MORENA'],
+    [308,'TECOMAN',2,15,365,102,549,1135,0.484,387,'C. MORENA'],
+    [312,'TECOMAN',2,15,1066,235,1550,3355,0.462,1130,'C. MORENA'],
+    [138,'VILLA DE ALVAREZ',1,4,2075,1467,4281,7261,0.590,2200,'C. MORENA'],
+    [139,'VILLA DE ALVAREZ',1,4,2635,2692,5396,12556,0.430,0,'PRIAND'],
+    [12,'COLIMA',1,1,86,292,802,978,0.820,310,'PRIAND'],
+    [33,'COLIMA',1,1,360,424,892,1266,0.705,449,'PRIAND'],
+    [236,'MANZANILLO',2,14,4358,596,6520,14416,0.452,4619,'C. MORENA'],
+    [248,'MANZANILLO',2,12,3653,2098,7142,12441,0.574,3872,'C. MORENA'],
+    [191,'IXTLAHUACAN',2,16,622,130,1072,1311,0.818,659,'C. MORENA'],
+    [270,'MINATITLAN',2,14,820,323,1316,1585,0.830,869,'C. MORENA'],
+    [92,'COMALA',1,4,850,599,1467,2468,0.595,901,'C. MORENA'],
+    [98,'COMALA',1,4,44,24,75,99,0.758,47,'C. MORENA'],
+    [105,'COQUIMATLAN',1,5,766,612,1404,2778,0.505,812,'C. MORENA'],
+    [114,'COQUIMATLAN',1,5,75,52,152,212,0.717,80,'C. MORENA'],
+    [120,'CUAUHTEMOC',1,6,652,520,1274,2774,0.459,691,'C. MORENA'],
+    [171,'ARMERIA',2,9,590,137,946,1652,0.573,625,'C. MORENA'],
+    [178,'ARMERIA',2,9,248,110,700,1241,0.564,263,'C. MORENA'],
+  ];
+  mostrarMapeo();
+}
+
+function mostrarMapeo(){
+  showOnly(3);setStep(3);
+  const cont=document.getElementById('col-map-cont');
+  cont.innerHTML=CAMPOS.map(f=>{
+    const det=autoDetect(f.key);
+    const opts=['<option value="">— No usar —</option>',
+      ...excelCols.map(c=>`<option value="${c}"${c===det?' selected':''}>${c}</option>`)
+    ].join('');
+    return `<div class="col-row">
+      <div>
+        <div class="col-key-label">${f.label}${f.req?'<span class="col-req">*</span>':''}</div>
+        <div class="col-key-hint">${f.hint}</div>
+      </div>
+      <div>
+        <select class="col-select" id="${f.key}" onchange="validarMapa()">
+          ${opts}
+        </select>
+        <div class="col-status ${det?'ok':f.req?'err':'opt'}" id="st-${f.key}">
+          ${det?'✓ detectado: '+det:f.req?'⚠ requerido':'opcional'}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const preview=excelData.slice(0,6);
+  document.getElementById('preview-wrap').innerHTML=`
+    <table class="ptable">
+      <thead><tr>${excelCols.map(c=>`<th>${c}</th>`).join('')}</tr></thead>
+      <tbody>${preview.map(r=>`<tr>${excelCols.map((_,i)=>`<td>${r[i]??''}</td>`).join('')}</tr>`).join('')}</tbody>
+    </table>`;
+}
+
+function validarMapa(){
+  CAMPOS.forEach(f=>{
+    const sel=document.getElementById(f.key);
+    const st=document.getElementById('st-'+f.key);
+    if(!sel||!st)return;
+    if(sel.value){
+      st.className='col-status ok';st.textContent='✓ mapeado: '+sel.value;
+    }else if(f.req){
+      st.className='col-status err';st.textContent='⚠ requerido';
+    }else{
+      st.className='col-status opt';st.textContent='opcional';
+    }
+  });
+}
+
+function getMap(){
+  const m={};
+  CAMPOS.forEach(f=>{m[f.key]=(document.getElementById(f.key)||{}).value||'';});
+  return m;
+}
+
+function colVal(row,colName){
+  const i=excelCols.indexOf(colName);
+  return i>=0?row[i]:undefined;
+}
+
+function procesarMeta(){
+  const map=getMap();
+  const reqs=CAMPOS.filter(f=>f.req&&!map[f.key]);
+  if(reqs.length){alert('Faltan columnas requeridas:\n'+reqs.map(f=>f.label).join('\n'));return;}
+
+  const fFacil=cfg.facFacil||0.77;
+  const fMedio=cfg.facMedio||0.97;
+  const fDificil=cfg.facDificil||1.17;
+  const umbral=cfg.umbralFacil||0.60;
+
+  const secciones=excelData.map(row=>{
+    const sec=colVal(row,map.col_sec);
+    const mun=colVal(row,map.col_mun)||'—';
+    const df=colVal(row,map.col_df)||'';
+    const dl=colVal(row,map.col_dl)||'';
+    const morena=parseFloat(colVal(row,map.col_morena))||0;
+    const prian=parseFloat(colVal(row,map.col_prian))||0;
+    const total=parseFloat(colVal(row,map.col_total))||Math.max(morena+prian,1);
+    const nominal=parseFloat(colVal(row,map.col_nomi))||0;
+    let aflu=parseFloat(colVal(row,map.col_aflu))||0;
+    if(aflu>1) aflu=aflu/100;
+    const ganador=colVal(row,map.col_ganador)||(morena>=prian?'PARTIDO A':'PARTIDO B');
+    const vGanador=Math.max(morena,prian,1);
+    let metaBase=parseFloat(colVal(row,map.col_meta))||0;
+    if(!metaBase) metaBase=Math.round(vGanador*(cfg.pct/100));
+    const factor=aflu>umbral?fFacil:aflu>0.50?fMedio:fDificil;
+    const dificultad=aflu>umbral?'FÁCIL':aflu>0.50?'MEDIO':'DIFÍCIL';
+    const meta=Math.round(metaBase*factor);
+    const capturistas=Math.max(1,Math.ceil(meta/cfg.xcap));
+    return {sec,mun,df,dl,morena,prian,total,nominal,aflu,ganador,vGanador,metaBase,factor,dificultad,meta,capturistas};
+  }).filter(r=>r.sec!==undefined&&r.sec!=='');
+
+  mostrarResultado(secciones);
+}
+
+function mostrarResultado(data){
+  showOnly(4);setStep(4);
+
+  const totalMeta=data.reduce((s,r)=>s+r.meta,0);
+  const totalCap=data.reduce((s,r)=>s+r.capturistas,0);
+  const totalNom=data.reduce((s,r)=>s+r.nominal,0);
+  const municipios=[...new Set(data.map(r=>String(r.mun).toUpperCase()))].sort();
+  const secciones=data.length;
+  const ganadas=data.filter(r=>!String(r.ganador).toLowerCase().includes('priand')&&!String(r.ganador).toLowerCase().includes('partido b')).length;
+  const faciles=data.filter(r=>r.dificultad==='FÁCIL').length;
+  const dificiles=data.filter(r=>r.dificultad==='DIFÍCIL').length;
+
+  document.getElementById('p4').innerHTML=`
+    <div class="alert success">
+      <span class="alert-icon">✓</span>
+      <div><strong>${cfg.estado} ${cfg.year}</strong> — ${secciones} secciones procesadas correctamente. Meta estatal: <strong>${totalMeta.toLocaleString('es-MX')} simpatizantes</strong>.</div>
+    </div>
+
+    <div class="kpi-row">
+      <div class="kpi"><div class="kpi-val" style="color:var(--amber)">${totalMeta.toLocaleString('es-MX')}</div><div class="kpi-lbl">Meta estatal</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:var(--accent)">${secciones}</div><div class="kpi-lbl">Secciones</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:var(--text)">${totalCap.toLocaleString('es-MX')}</div><div class="kpi-lbl">Capturistas</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:var(--text2)">${municipios.length}</div><div class="kpi-lbl">Municipios</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:var(--green)">${ganadas}</div><div class="kpi-lbl">Secc. ganadas</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:var(--red)">${secciones-ganadas}</div><div class="kpi-lbl">Secc. oposición</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:var(--green)">${faciles}</div><div class="kpi-lbl">Fácil movilización</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:var(--red)">${dificiles}</div><div class="kpi-lbl">Difícil movilización</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" style="margin-bottom:8px">Parámetros aplicados · ${cfg.estado} ${cfg.year}</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;font-size:12px;">
+        <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text2)">% sobre voto ganador</span><span style="font-family:var(--mono)">${cfg.pct}%</span></div>
+        <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text2)">Meta por capturista</span><span style="font-family:var(--mono)">${cfg.xcap}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text2)">Factor fácil (>${Math.round(cfg.umbralFacil*100)}%)</span><span style="font-family:var(--mono);color:var(--green)">×${cfg.facFacil}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text2)">Factor medio (50–${Math.round(cfg.umbralFacil*100)}%)</span><span style="font-family:var(--mono);color:var(--amber)">×${cfg.facMedio}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text2)">Factor difícil (&lt;50%)</span><span style="font-family:var(--mono);color:var(--red)">×${cfg.facDificil}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text2)">Estructura de campo</span><span style="font-family:var(--mono)">${cfg.estructura.toLocaleString()}</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" style="margin-bottom:8px">Municipios (${municipios.length})</div>
+      <div class="mun-tags">${municipios.map(m=>`<span class="mun-tag">${m}</span>`).join('')}</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" style="margin-bottom:12px">Detalle por sección (${secciones} secciones)</div>
+      <div class="result-table-wrap">
+        <table class="rtable">
+          <thead><tr>
+            <th>Sección</th><th>Municipio</th><th>DF</th><th>DL</th>
+            <th>Morena</th><th>Oposición</th><th>Nominal</th>
+            <th>Afluencia</th><th>Dificultad</th><th>Factor</th>
+            <th>Meta base</th><th>Meta final</th><th>Capturistas</th><th>Ganador 2024</th>
+          </tr></thead>
+          <tbody>${data.map(r=>{
+            const dc=r.dificultad==='FÁCIL'?'var(--green)':r.dificultad==='MEDIO'?'var(--amber)':'var(--red)';
+            const gc=!String(r.ganador).toLowerCase().includes('priand')&&!String(r.ganador).toLowerCase().includes('partido b')?'var(--green)':'var(--red)';
+            return `<tr>
+              <td style="font-weight:500">${r.sec}</td>
+              <td>${r.mun}</td>
+              <td>${r.df||'—'}</td>
+              <td>${r.dl||'—'}</td>
+              <td style="color:var(--purple)">${Number(r.morena).toLocaleString()}</td>
+              <td style="color:var(--red)">${Number(r.prian).toLocaleString()}</td>
+              <td>${Number(r.nominal).toLocaleString()}</td>
+              <td>${(r.aflu*100).toFixed(1)}%</td>
+              <td style="color:${dc}">${r.dificultad}</td>
+              <td style="color:${dc}">×${r.factor}</td>
+              <td style="color:var(--text2)">${Number(r.metaBase).toLocaleString()}</td>
+              <td style="color:var(--amber);font-weight:500">${Number(r.meta).toLocaleString()}</td>
+              <td style="color:var(--cyan)">${r.capturistas}</td>
+              <td style="color:${gc};font-size:10px">${r.ganador}</td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="download-bar">
+      <button class="btn-primary" onclick="exportarExcel()" style="flex:2">⬇ Exportar meta calculada (.xlsx)</button>
+      <button class="btn-secondary" onclick="irP1()" style="flex:1">+ Cargar otro estado</button>
+    </div>`;
+
+  window._metaData=data;
+}
+
+function exportarExcel(){
+  const data=window._metaData||[];
+  if(!data.length){alert('Sin datos para exportar.');return;}
+  const rows=[
+    ['SECCION','MUNICIPIO','DISTRITO_FEDERAL','DISTRITO_LOCAL','V_MORENA','V_PRIAN',
+     'LISTA_NOMINAL','AFLUENCIA_%','DIFICULTAD','FACTOR','META_BASE','META_FINAL',
+     'CAPTURISTAS','GANADOR_2024','ESTADO','AÑO','PCT_META'],
+    ...data.map(r=>[
+      r.sec,r.mun,r.df||'',r.dl||'',r.morena,r.prian,r.nominal,
+      parseFloat((r.aflu*100).toFixed(1)),r.dificultad,r.factor,
+      r.metaBase,r.meta,r.capturistas,r.ganador,cfg.estado,cfg.year,cfg.pct
+    ])
+  ];
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=rows[0].map(()=>({wch:16}));
+  XLSX.utils.book_append_sheet(wb,ws,'META_'+cfg.estado.toUpperCase().replace(/ /g,'_'));
+
+  const resumen=[[
+    'ESTADO','AÑO','TOTAL_SECCIONES','META_ESTATAL','CAPTURISTAS_NECESARIOS',
+    'MUNICIPIOS','PCT_SOBRE_VOTO','META_POR_CAPTURISTA','FACTOR_FACIL','FACTOR_MEDIO','FACTOR_DIFICIL'
+  ],[
+    cfg.estado,cfg.year,data.length,
+    data.reduce((s,r)=>s+r.meta,0),
+    data.reduce((s,r)=>s+r.capturistas,0),
+    [...new Set(data.map(r=>r.mun))].length,
+    cfg.pct,cfg.xcap,cfg.facFacil,cfg.facMedio,cfg.facDificil
+  ]];
+  const ws2=XLSX.utils.aoa_to_sheet(resumen);
+  ws2['!cols']=resumen[0].map(()=>({wch:22}));
+  XLSX.utils.book_append_sheet(wb,ws2,'RESUMEN');
+  XLSX.writeFile(wb,`META_${cfg.estado.replace(/ /g,'_')}_${cfg.year}.xlsx`);
+}
+
+function descargarPlantilla(){
+  const rows=[
+    ['SECCION','MUNICIPIO','DISTRITO_FEDERAL','DISTRITO_LOCAL',
+     'V_MORENA','V_PRIAN','TOTAL_VOTOS','LISTA_NOMINAL',
+     'AFLUENCIA','META_PROYECTADA','GANADOR'],
+    [1,'MUNICIPIO 1',1,1,1500,800,2500,4200,0.60,0,'C. MORENA'],
+    [2,'MUNICIPIO 1',1,1,900,1200,2300,3800,0.61,0,'PRIAND'],
+    [3,'MUNICIPIO 2',1,2,2100,400,2800,5100,0.45,0,'C. MORENA'],
+    [4,'MUNICIPIO 2',2,3,650,580,1400,2600,0.54,0,'C. MORENA'],
+  ];
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=rows[0].map(()=>({wch:18}));
+  const rango=XLSX.utils.encode_range({s:{r:0,c:0},e:{r:0,c:rows[0].length-1}});
+  XLSX.utils.book_append_sheet(wb,ws,'META_CONFIG');
+
+  const instrucciones=[
+    ['INSTRUCCIONES DE USO'],
+    [''],
+    ['Columna','Descripción','Obligatorio','Ejemplo'],
+    ['SECCION','Número de sección electoral del INE','SÍ','291'],
+    ['MUNICIPIO','Nombre del municipio','SÍ','TECOMAN'],
+    ['DISTRITO_FEDERAL','Número de distrito federal electoral','NO','2'],
+    ['DISTRITO_LOCAL','Número de distrito local','NO','15'],
+    ['V_MORENA','Votos obtenidos por Morena/coalición en 2024','SÍ','1172'],
+    ['V_PRIAN','Votos obtenidos por la oposición en 2024','NO','299'],
+    ['TOTAL_VOTOS','Total de votos válidos en la sección','SÍ','1714'],
+    ['LISTA_NOMINAL','Ciudadanos inscritos en lista nominal','SÍ','4072'],
+    ['AFLUENCIA','Porcentaje de participación (escribe 0.42 o 42)','NO','0.421'],
+    ['META_PROYECTADA','Si ya tienes la meta precalculada, ponla aquí. Si no, déjala en 0','NO','1242'],
+    ['GANADOR','Partido ganador de la sección en 2024','NO','C. MORENA'],
+    [''],
+    ['IMPORTANTE: El sistema auto-detecta los nombres de columnas.'],
+    ['No es necesario que se llamen exactamente igual, pero mientras más parecidos,'],
+    ['mejor funcionará el mapeo automático.'],
+  ];
+  const ws2=XLSX.utils.aoa_to_sheet(instrucciones);
+  ws2['!cols']=[{wch:22},{wch:50},{wch:14},{wch:16}];
+  XLSX.utils.book_append_sheet(wb,ws2,'INSTRUCCIONES');
+  XLSX.writeFile(wb,'plantilla_meta_electoral.xlsx');
+}
+</script>
+<script src="theme.js"></script>
+</body>
+</html>

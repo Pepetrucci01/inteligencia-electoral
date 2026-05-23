@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Acceso al Sistema — Inteligencia Electoral</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Syne:wght@400;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+:root {
+  --bg:     #080c18;
+  --bg2:    #0c1124;
+  --bg3:    #111828;
+  --border: rgba(255,255,255,0.07);
+  --border2:rgba(255,255,255,0.13);
+  --text:   #e8edf5;
+  --text2:  #8a9ab5;
+  --text3:  #4a5a75;
+  --accent: #3b82f6;
+  --green:  #22c55e;
+  --red:    #ef4444;
+  --amber:  #f59e0b;
+  --cyan:   #06b6d4;
+  --purple: #a855f7;
+  --mono:   'IBM Plex Mono', monospace;
+  --sans:   'IBM Plex Sans', sans-serif;
+  --display:'Syne', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  overflow: hidden;
+}
+
+/* ── FONDO ANIMADO ── */
+.bg-grid {
+  position: fixed; inset: 0; z-index: 0;
+  background-image:
+    linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  animation: gridDrift 20s linear infinite;
+}
+@keyframes gridDrift { from { background-position: 0 0; } to { background-position: 40px 40px; } }
+
+.bg-glow {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 60% 50% at 20% 50%, rgba(59,130,246,0.07) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 60% at 80% 30%, rgba(6,182,212,0.05) 0%, transparent 70%);
+}
+
+.scan-line {
+  position: fixed; top: -2px; left: 0; right: 0; height: 2px; z-index: 1;
+  background: linear-gradient(90deg, transparent, rgba(59,130,246,0.6), transparent);
+  animation: scan 4s ease-in-out infinite;
+}
+@keyframes scan { 0%,100%{ top:-2px; opacity:0 } 10%{ opacity:1 } 90%{ opacity:1 } 100%{ top:100vh; opacity:0 } }
+
+/* ── LAYOUT ── */
+.shell {
+  position: relative; z-index: 10;
+  display: flex; height: 100vh;
+}
+
+/* Panel izquierdo — branding */
+.left-panel {
+  width: 45%; background: var(--bg2);
+  border-right: 1px solid var(--border2);
+  display: flex; flex-direction: column;
+  justify-content: space-between;
+  padding: 40px 48px;
+  position: relative; overflow: hidden;
+}
+.left-panel::after {
+  content: '';
+  position: absolute; top: 0; right: 0; bottom: 0; width: 1px;
+  background: linear-gradient(to bottom, transparent, rgba(59,130,246,0.4), transparent);
+}
+
+.brand-mark {
+  display: flex; align-items: center; gap: 14px;
+}
+.brand-icon {
+  width: 44px; height: 44px; border-radius: 10px;
+  background: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 14px; font-weight: 700; color: #fff;
+  overflow: hidden; flex-shrink: 0;
+  box-shadow: 0 0 20px rgba(59,130,246,0.3);
+}
+.brand-icon img { width:100%;height:100%;object-fit:cover;border-radius:10px;display:none; }
+.brand-name { font-family: var(--display); font-size: 15px; font-weight: 700; letter-spacing: .02em; }
+.brand-sub  { font-size: 11px; font-family: var(--mono); color: var(--text3); margin-top: 2px; }
+
+.left-center { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+
+.hero-label {
+  font-family: var(--mono); font-size: 10px; color: var(--accent);
+  text-transform: uppercase; letter-spacing: .14em;
+  margin-bottom: 18px; display: flex; align-items: center; gap: 8px;
+}
+.hero-label::before {
+  content: ''; width: 24px; height: 1px; background: var(--accent);
+}
+
+.hero-title {
+  font-family: var(--display);
+  font-size: clamp(28px, 3.5vw, 42px);
+  font-weight: 800; line-height: 1.1;
+  margin-bottom: 18px;
+  background: linear-gradient(135deg, #e8edf5 0%, #8a9ab5 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+
+.hero-desc {
+  font-size: 13px; color: var(--text2); line-height: 1.7;
+  max-width: 340px; margin-bottom: 32px;
+}
+
+/* Stats */
+.stats-row { display: flex; gap: 24px; }
+.stat { }
+.stat-val {
+  font-family: var(--mono); font-size: 22px; font-weight: 600;
+  color: var(--accent); line-height: 1; margin-bottom: 3px;
+}
+.stat-lbl { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .06em; }
+
+/* Roles en el panel izquierdo */
+.roles-list { display: flex; flex-direction: column; gap: 8px; }
+.role-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: 8px; font-size: 12px; color: var(--text2);
+  transition: all .2s;
+}
+.role-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.role-name { flex: 1; }
+.role-dest { font-family: var(--mono); font-size: 10px; color: var(--text3); }
+
+/* ── PANEL DERECHO — FORMULARIO ── */
+.right-panel {
+  flex: 1;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.login-box {
+  width: 100%; max-width: 400px;
+  animation: fadeUp .5s ease both;
+}
+@keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+
+.login-header { margin-bottom: 28px; }
+.login-title {
+  font-family: var(--display);
+  font-size: 24px; font-weight: 700; margin-bottom: 6px;
+}
+.login-sub { font-size: 13px; color: var(--text2); }
+
+/* Selector de rol */
+.rol-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; }
+.rol-btn {
+  padding: 12px 10px; border-radius: 8px;
+  border: 1px solid var(--border2);
+  background: var(--bg3); cursor: pointer;
+  transition: all .2s; text-align: center;
+  position: relative; overflow: hidden;
+}
+.rol-btn:hover { border-color: rgba(255,255,255,.2); }
+.rol-btn.active { border-color: var(--rol-color, var(--accent)); background: rgba(59,130,246,0.08); }
+.rol-btn.active::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: var(--rol-color, var(--accent));
+}
+.rol-icon { font-size: 18px; margin-bottom: 4px; }
+.rol-label { font-size: 11px; font-family: var(--mono); color: var(--text2); display: block; }
+.rol-btn.active .rol-label { color: var(--text); }
+
+/* Form fields */
+.field { margin-bottom: 14px; }
+.field-label {
+  font-size: 10px; font-family: var(--mono); color: var(--text3);
+  text-transform: uppercase; letter-spacing: .06em;
+  display: block; margin-bottom: 6px;
+}
+.field-wrap { position: relative; }
+.field-icon {
+  position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+  font-size: 14px; color: var(--text3); pointer-events: none;
+}
+.field-input {
+  width: 100%; background: var(--bg3);
+  border: 1px solid var(--border2); border-radius: 8px;
+  color: var(--text); font-family: var(--sans); font-size: 14px;
+  padding: 12px 14px 12px 42px;
+  outline: none; transition: border-color .2s;
+  -webkit-appearance: none;
+}
+.field-input:focus { border-color: var(--accent); }
+.field-input::placeholder { color: var(--text3); }
+.field-input.error { border-color: var(--red); }
+
+.pass-toggle {
+  position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+  cursor: pointer; color: var(--text3); font-size: 14px;
+  background: none; border: none; padding: 4px;
+}
+.pass-toggle:hover { color: var(--text2); }
+
+/* Credenciales de prueba */
+.demo-creds {
+  background: rgba(59,130,246,0.06); border: 1px solid rgba(59,130,246,0.15);
+  border-radius: 8px; padding: 12px 14px; margin-bottom: 16px;
+  font-size: 11px; font-family: var(--mono);
+}
+.demo-title { color: var(--accent); font-weight: 600; margin-bottom: 8px; font-size: 10px; text-transform: uppercase; letter-spacing: .06em; }
+.demo-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+  cursor: pointer; transition: color .15s;
+}
+.demo-item:last-child { border-bottom: none; }
+.demo-item:hover { color: var(--text); }
+.demo-item-rol { color: var(--text2); }
+.demo-item-pass { color: var(--text3); }
+.demo-hint { font-size: 10px; color: var(--text3); margin-top: 6px; }
+
+/* Botón login */
+.btn-login {
+  width: 100%; padding: 14px;
+  background: var(--accent); color: #fff;
+  border: none; border-radius: 8px;
+  font-size: 14px; font-weight: 600; font-family: var(--sans);
+  cursor: pointer; transition: all .2s; margin-top: 4px;
+  position: relative; overflow: hidden;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn-login:hover { background: #2563eb; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(59,130,246,0.3); }
+.btn-login:active { transform: translateY(0); }
+.btn-login.loading { pointer-events: none; opacity: .8; }
+.btn-spinner {
+  width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.3);
+  border-top-color: #fff; border-radius: 50%;
+  animation: spin .7s linear infinite; display: none;
+}
+.btn-login.loading .btn-spinner { display: block; }
+.btn-login.loading .btn-text { opacity: .7; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Error */
+.login-error {
+  background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25);
+  border-radius: 8px; padding: 10px 14px;
+  font-size: 12px; color: var(--red); margin-top: 12px;
+  display: none; font-family: var(--mono);
+}
+.login-error.show { display: block; animation: shake .3s ease; }
+@keyframes shake {
+  0%,100%{ transform:translateX(0) }
+  25%{ transform:translateX(-6px) }
+  75%{ transform:translateX(6px) }
+}
+
+/* Footer */
+.login-footer {
+  margin-top: 20px; text-align: center;
+  font-size: 11px; color: var(--text3); font-family: var(--mono);
+}
+.login-footer a { color: var(--text2); text-decoration: none; }
+.login-footer a:hover { color: var(--text); }
+
+/* Versión */
+.ver-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 10px; font-family: var(--mono); color: var(--text3);
+  background: var(--bg3); border: 1px solid var(--border);
+  padding: 3px 10px; border-radius: 99px;
+}
+.ver-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:.3} }
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .left-panel { display: none; }
+  .right-panel { padding: 20px 16px; align-items: flex-start; padding-top: 40px; }
+  html, body { overflow-y: auto; }
+}
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+<div class="scan-line"></div>
+
+<div class="shell">
+
+  <!-- ── PANEL IZQUIERDO ── -->
+  <div class="left-panel">
+
+    <!-- Logo -->
+    <div class="brand-mark">
+      <div class="brand-icon" data-theme="logo-inicial">IE
+        <img data-theme="logo-img" src="" style="display:none">
+      </div>
+      <div>
+        <div class="brand-name" data-theme="partido-nombre">Inteligencia Electoral</div>
+        <div class="brand-sub" data-theme="sistema-titulo">Sistema · 2027</div>
+      </div>
+    </div>
+
+    <!-- Hero -->
+    <div class="left-center">
+      <div class="hero-label">Sistema electoral</div>
+      <div class="hero-title">Control territorial inteligente</div>
+      <div class="hero-desc">
+        Plataforma de gestión de estructura de campo, captura de simpatizantes y análisis electoral en tiempo real.
+      </div>
+      <div class="stats-row">
+        <div class="stat">
+          <div class="stat-val" data-theme="sistema-meta">—</div>
+          <div class="stat-lbl">Meta estatal</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val" data-theme="dias-eleccion">—</div>
+          <div class="stat-lbl">Días a elección</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val" id="reloj">—</div>
+          <div class="stat-lbl">Hora actual</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Roles -->
+    <div>
+      <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Niveles de acceso</div>
+      <div class="roles-list">
+        <div class="role-item">
+          <div class="role-dot" style="background:#ef4444"></div>
+          <span class="role-name">Super Admin</span>
+          <span class="role-dest">Panel administración</span>
+        </div>
+        <div class="role-item">
+          <div class="role-dot" style="background:#3b82f6"></div>
+          <span class="role-name">Admin Estatal (candidato)</span>
+          <span class="role-dest">Panel del cliente</span>
+        </div>
+        <div class="role-item">
+          <div class="role-dot" style="background:#06b6d4"></div>
+          <span class="role-name">Coordinador Municipal</span>
+          <span class="role-dest">War Room + Capturistas</span>
+        </div>
+        <div class="role-item">
+          <div class="role-dot" style="background:#22c55e"></div>
+          <span class="role-name">Capturista</span>
+          <span class="role-dest">Captura + Mi Panel</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── PANEL DERECHO — FORMULARIO ── -->
+  <div class="right-panel">
+    <div class="login-box">
+
+      <div class="login-header">
+        <div class="login-title">Iniciar sesión</div>
+        <div class="login-sub">Selecciona tu rol e ingresa tus credenciales</div>
+      </div>
+
+      <!-- Selector de rol -->
+      <div class="rol-selector" id="rol-selector" style="grid-template-columns:1fr 1fr 1fr;">
+        <div class="rol-btn" id="rol-superadmin" style="--rol-color:#ef4444" onclick="selRol('superadmin')">
+          <div class="rol-icon">🔒</div>
+          <span class="rol-label">Super Admin</span>
+        </div>
+        <div class="rol-btn" id="rol-admin" style="--rol-color:#3b82f6" onclick="selRol('admin')">
+          <div class="rol-icon">🏛</div>
+          <span class="rol-label">Admin Estatal</span>
+        </div>
+        <div class="rol-btn" id="rol-coordinador" style="--rol-color:#06b6d4" onclick="selRol('coordinador')">
+          <div class="rol-icon">📍</div>
+          <span class="rol-label">Coordinador</span>
+        </div>
+        <div class="rol-btn" id="rol-lider_seccion" style="--rol-color:#a855f7" onclick="selRol('lider_seccion')">
+          <div class="rol-icon">⭐</div>
+          <span class="rol-label">Líder de Sección</span>
+        </div>
+        <div class="rol-btn active" id="rol-capturista" style="--rol-color:#22c55e" onclick="selRol('capturista')">
+          <div class="rol-icon">✏️</div>
+          <span class="rol-label">Capturista</span>
+        </div>
+      </div>
+
+      <!-- Credenciales demo -->
+      <div class="demo-creds">
+        <div class="demo-title">🔑 Credenciales de prueba — clic para cargar</div>
+        <div class="demo-item" onclick="cargarDemo('superadmin','admin@sistema.mx','Admin2027!')">
+          <span class="demo-item-rol">🔒 Super Admin</span>
+          <span class="demo-item-pass">admin@sistema.mx / Admin2027!</span>
+        </div>
+        <div class="demo-item" onclick="cargarDemo('admin','candidato@colima.mx','Colima2027!')">
+          <span class="demo-item-rol">🏛 Admin Estatal</span>
+          <span class="demo-item-pass">candidato@colima.mx / Colima2027!</span>
+        </div>
+        <div class="demo-item" onclick="cargarDemo('coordinador','coord.mzl@colima.mx','Coord2027!')">
+          <span class="demo-item-rol">📍 Coordinador</span>
+          <span class="demo-item-pass">coord.mzl@colima.mx / Coord2027!</span>
+        </div>
+        <div class="demo-item" onclick="cargarDemo('lider_seccion','lider138@colima.mx','Lider2027!')">
+          <span class="demo-item-rol">⭐ Líder de Sección</span>
+          <span class="demo-item-pass">lider138@colima.mx / Lider2027!</span>
+        </div>
+        <div class="demo-item" onclick="cargarDemo('capturista','cap017@colima.mx','Cap2027!')">
+          <span class="demo-item-rol">✏️ Capturista</span>
+          <span class="demo-item-pass">cap017@colima.mx / Cap2027!</span>
+        </div>
+        <div class="demo-hint">⚠ Solo para demostración. En producción se conecta a Supabase.</div>
+      </div>
+
+      <!-- Campos -->
+      <div class="field">
+        <label class="field-label">Correo electrónico</label>
+        <div class="field-wrap">
+          <span class="field-icon">✉</span>
+          <input class="field-input" id="f-email" type="email"
+            placeholder="usuario@partido.mx" autocomplete="email"
+            onkeydown="if(event.key==='Enter')document.getElementById('f-pass').focus()">
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Contraseña</label>
+        <div class="field-wrap">
+          <span class="field-icon">🔑</span>
+          <input class="field-input" id="f-pass" type="password"
+            placeholder="••••••••" autocomplete="current-password"
+            onkeydown="if(event.key==='Enter')intentarLogin()">
+          <button class="pass-toggle" onclick="togglePass()" type="button" id="pass-eye">👁</button>
+        </div>
+      </div>
+
+      <!-- Botón -->
+      <button class="btn-login" id="btn-login" onclick="intentarLogin()">
+        <div class="btn-spinner" id="btn-spinner"></div>
+        <span class="btn-text" id="btn-text">Ingresar al sistema</span>
+      </button>
+
+      <!-- Error -->
+      <div class="login-error" id="login-error"></div>
+
+      <!-- Footer -->
+      <div class="login-footer" style="margin-top:24px">
+        <div style="margin-bottom:8px">
+          <a href="#" onclick="mostrarRecuperar()">¿Olvidaste tu contraseña?</a>
+          &nbsp;·&nbsp;
+          <a href="#" onclick="mostrarSoporte()">Soporte técnico</a>
+        </div>
+        <div class="ver-badge">
+          <div class="ver-dot"></div>
+          v1.0 · <span data-theme="sistema-titulo">Sistema Electoral 2027</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /shell -->
+
+<script>
+// ══════════════════════════════════════════════════════
+// USUARIOS DEMO (en producción → Supabase auth)
+// ══════════════════════════════════════════════════════
+const USUARIOS_DEMO = [
+  {
+    email:    'admin@sistema.mx',
+    pass:     'Admin2027!',
+    rol:      'superadmin',
+    nombre:   'Super Administrador',
+    id:       'ADM-001',
+    licencia: 'SISTEMA',
+    destino:  'modulo_admin.html',
+  },
+  {
+    email:    'candidato@colima.mx',
+    pass:     'Colima2027!',
+    rol:      'admin',
+    nombre:   'Administrador Colima',
+    id:       'ADM-COL',
+    licencia: 'COL-2027',
+    estado:   'Colima',
+    destino:  'panel_cliente.html',
+  },
+  {
+    email:    'coord.mzl@colima.mx',
+    pass:     'Coord2027!',
+    rol:      'coordinador',
+    nombre:   'Coordinador Manzanillo',
+    id:       'CORD-MZL',
+    licencia: 'COL-2027',
+    municipio:'Manzanillo',
+    destino:  'index.html?modulo=war',   // abre war room dentro del index
+  },
+  {
+    email:    'lider138@colima.mx',
+    pass:     'Lider2027!',
+    rol:      'lider_seccion',
+    nombre:   'Líder Sección 138',
+    id:       'LDR-138',
+    licencia: 'COL-2027',
+    seccion:  138,
+    municipio:'Villa de Álvarez',
+    destino:  'panel_capturista_personal.html',
+  },
+  {
+    email:    'cap017@colima.mx',
+    pass:     'Cap2027!',
+    rol:      'capturista',
+    nombre:   'Capturista 017',
+    id:       'CAP-017',
+    licencia: 'COL-2027',
+    seccion:  138,
+    municipio:'Villa de Álvarez',
+    destino:  'modulo_captura.html',
+  },
+];
+
+// Rol seleccionado actualmente
+let rolActivo = 'capturista';
+
+// ── Reloj ──
+setInterval(() => {
+  document.getElementById('reloj').textContent =
+    new Date().toLocaleTimeString('es-MX', { hour:'2-digit', minute:'2-digit' });
+}, 1000);
+document.getElementById('reloj').textContent =
+  new Date().toLocaleTimeString('es-MX', { hour:'2-digit', minute:'2-digit' });
+
+// ══════════════════════════════════════════════════════
+// SELECTOR DE ROL
+// ══════════════════════════════════════════════════════
+function selRol(rol) {
+  rolActivo = rol;
+  document.querySelectorAll('.rol-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('rol-' + rol).classList.add('active');
+
+  // Cambiar color del botón de login según el rol
+  const colores = {
+    superadmin:    '#ef4444',
+    admin:         '#3b82f6',
+    coordinador:   '#06b6d4',
+    lider_seccion: '#a855f7',
+    capturista:    '#22c55e',
+  };
+  document.getElementById('btn-login').style.background = colores[rol] || '#3b82f6';
+
+  // Limpiar error
+  document.getElementById('login-error').classList.remove('show');
+}
+
+// ══════════════════════════════════════════════════════
+// CARGAR CREDENCIAL DEMO
+// ══════════════════════════════════════════════════════
+function cargarDemo(rol, email, pass) {
+  selRol(rol);
+  document.getElementById('f-email').value = email;
+  document.getElementById('f-pass').value  = pass;
+  document.getElementById('login-error').classList.remove('show');
+}
+
+// ══════════════════════════════════════════════════════
+// TOGGLE CONTRASEÑA
+// ══════════════════════════════════════════════════════
+function togglePass() {
+  const inp = document.getElementById('f-pass');
+  const eye = document.getElementById('pass-eye');
+  if (inp.type === 'password') {
+    inp.type = 'text';
+    eye.textContent = '🙈';
+  } else {
+    inp.type = 'password';
+    eye.textContent = '👁';
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// LOGIN
+// ══════════════════════════════════════════════════════
+async function intentarLogin() {
+  const email = document.getElementById('f-email').value.trim().toLowerCase();
+  const pass  = document.getElementById('f-pass').value;
+  const errEl = document.getElementById('login-error');
+  const btn   = document.getElementById('btn-login');
+
+  // Validar campos
+  if (!email) return mostrarError('Ingresa tu correo electrónico.');
+  if (!pass)  return mostrarError('Ingresa tu contraseña.');
+
+  // Animación de carga
+  btn.classList.add('loading');
+  document.getElementById('btn-text').textContent = 'Verificando...';
+  errEl.classList.remove('show');
+
+  // Simular latencia de red (en producción → await supabase.auth.signIn)
+  await sleep(900);
+
+  // Buscar usuario
+  const usuario = USUARIOS_DEMO.find(u =>
+    u.email.toLowerCase() === email && u.pass === pass && u.rol === rolActivo
+  );
+
+  btn.classList.remove('loading');
+  document.getElementById('btn-text').textContent = 'Ingresar al sistema';
+
+  if (!usuario) {
+    // Verificar si existe el email pero rol incorrecto
+    const existeEmail = USUARIOS_DEMO.find(u => u.email.toLowerCase() === email);
+    if (existeEmail && existeEmail.pass === pass) {
+      mostrarError(`Credenciales correctas pero el rol seleccionado es incorrecto. Tu rol es: ${labelRol(existeEmail.rol)}`);
+    } else {
+      mostrarError('Correo o contraseña incorrectos. Verifica tus datos e intenta de nuevo.');
+    }
+    document.getElementById('f-pass').classList.add('error');
+    setTimeout(() => document.getElementById('f-pass').classList.remove('error'), 2000);
+    return;
+  }
+
+  // ✅ Login exitoso — guardar sesión
+  const sesion = {
+    id:        usuario.id,
+    nombre:    usuario.nombre,
+    email:     usuario.email,
+    rol:       usuario.rol,
+    licencia:  usuario.licencia,
+    estado:    usuario.estado    || '',
+    municipio: usuario.municipio || '',
+    seccion:   usuario.seccion   || null,
+    ts:        Date.now(),
+  };
+  localStorage.setItem('electoral_sesion', JSON.stringify(sesion));
+
+  // Animación de éxito
+  btn.style.background = '#22c55e';
+  document.getElementById('btn-text').textContent = '✓ Acceso concedido — redirigiendo...';
+
+  await sleep(800);
+
+  // Redirigir según destino
+  window.location.href = usuario.destino;
+}
+
+function mostrarError(msg) {
+  const el = document.getElementById('login-error');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+
+function labelRol(rol) {
+  return { superadmin:'Super Admin', admin:'Admin Estatal', coordinador:'Coordinador', lider_seccion:'Líder de Sección', capturista:'Capturista' }[rol] || rol;
+}
+
+// ══════════════════════════════════════════════════════
+// RECUPERAR / SOPORTE
+// ══════════════════════════════════════════════════════
+function mostrarRecuperar() {
+  const email = document.getElementById('f-email').value.trim();
+  if (!email) {
+    mostrarError('Primero ingresa tu correo electrónico para recuperar la contraseña.');
+    document.getElementById('f-email').focus();
+    return;
+  }
+  alert(`Se enviará un enlace de recuperación a:\n${email}\n\nEn producción esto se conecta a Supabase Auth.`);
+}
+
+function mostrarSoporte() {
+  window.open('https://wa.me/523120000000?text=Hola,%20necesito%20soporte%20para%20acceder%20al%20sistema%20electoral', '_blank');
+}
+
+// ══════════════════════════════════════════════════════
+// HELPER
+// ══════════════════════════════════════════════════════
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ── Verificar si ya hay sesión activa ──
+(function() {
+  try {
+    const sesion = JSON.parse(localStorage.getItem('electoral_sesion') || 'null');
+    if (sesion && sesion.ts) {
+      const horas = (Date.now() - sesion.ts) / 3600000;
+      if (horas < 8) {
+        // Sesión válida — redirigir directo
+        const destinos = {
+          superadmin:    'modulo_admin.html',
+          admin:         'panel_cliente.html',
+          coordinador:   'index.html',
+          lider_seccion: 'panel_capturista_personal.html',
+          capturista:    'modulo_captura.html',
+        };
+        const dest = destinos[sesion.rol];
+        if (dest) {
+          // Mostrar banner de sesión activa
+          const banner = document.createElement('div');
+          banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:999;background:rgba(34,197,94,0.1);border-bottom:1px solid rgba(34,197,94,0.3);padding:10px 20px;font-size:12px;font-family:monospace;color:#22c55e;display:flex;justify-content:space-between;align-items:center';
+          banner.innerHTML = `<span>✓ Sesión activa: ${sesion.nombre} · ${labelRol(sesion.rol)}</span>
+            <div style="display:flex;gap:10px">
+              <a href="${dest}" style="color:#22c55e;text-decoration:none;font-weight:600">Continuar →</a>
+              <a href="#" onclick="cerrarSesion()" style="color:#8a9ab5;text-decoration:none">Cambiar usuario</a>
+            </div>`;
+          document.body.appendChild(banner);
+        }
+      }
+    }
+  } catch(e) {}
+})();
+
+function cerrarSesion() {
+  localStorage.removeItem('electoral_sesion');
+  location.reload();
+}
+</script>
+<script src="theme.js"></script>
+</body>
+</html>

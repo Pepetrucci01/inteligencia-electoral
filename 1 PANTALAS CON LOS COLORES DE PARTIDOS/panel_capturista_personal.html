@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MI PANEL — CAPTURISTA</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+:root{
+  --bg:#0a0e1a;--bg2:#0f1526;--bg3:#141b2e;--bg4:#1a2238;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.14);
+  --text:#e8edf5;--text2:#8a9ab5;--text3:#5a6a85;
+  --accent:#3b82f6;--green:#22c55e;--red:#ef4444;
+  --amber:#f59e0b;--cyan:#06b6d4;--purple:#a855f7;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border2);padding:0 16px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;}
+.tb-left{display:flex;align-items:center;gap:10px;}
+.tb-av{width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:600;flex-shrink:0;}
+.tb-name{font-size:13px;font-weight:600;}
+.tb-id{font-size:10px;font-family:var(--mono);color:var(--text3);}
+.phase-badge{font-size:11px;font-family:var(--mono);padding:4px 12px;border-radius:99px;font-weight:600;}
+
+/* ── TABS ── */
+.tabs{display:flex;background:var(--bg3);border-bottom:1px solid var(--border);position:sticky;top:52px;z-index:199;}
+.tab{flex:1;padding:11px 4px;text-align:center;font-size:11px;font-family:var(--mono);color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;}
+.tab.active-f1{color:var(--accent);border-bottom-color:var(--accent);}
+.tab.active-f2{color:var(--red);border-bottom-color:var(--red);}
+.tab-icon{font-size:15px;display:block;margin-bottom:2px;}
+
+/* ── SCREENS ── */
+.screen{display:none;padding:14px 16px 100px;}
+.screen.active{display:block;}
+
+/* ── FASE BANNER ── */
+.fase-banner{border-radius:10px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px;}
+.fase-banner.f1{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);}
+.fase-banner.f2{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);}
+.fase-icon{font-size:28px;flex-shrink:0;}
+.fase-title{font-size:14px;font-weight:600;}
+.fase-sub{font-size:11px;color:var(--text2);margin-top:2px;font-family:var(--mono);}
+
+/* ── KPIs ── */
+.kpi-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.kpi-wide{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:14px;}
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;position:relative;overflow:hidden;}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.kpi.bl::before{background:var(--accent);}
+.kpi.gr::before{background:var(--green);}
+.kpi.am::before{background:var(--amber);}
+.kpi.re::before{background:var(--red);}
+.kpi.pu::before{background:var(--purple);}
+.kpi.cy::before{background:var(--cyan);}
+.kv{font-size:26px;font-weight:600;font-family:var(--mono);line-height:1;margin-bottom:3px;}
+.kpi.bl .kv{color:var(--accent);}
+.kpi.gr .kv{color:var(--green);}
+.kpi.am .kv{color:var(--amber);}
+.kpi.re .kv{color:var(--red);}
+.kpi.pu .kv{color:var(--purple);}
+.kpi.cy .kv{color:var(--cyan);}
+.kl{font-size:11px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.04em;}
+.prog-bar{height:6px;background:rgba(255,255,255,0.07);border-radius:99px;overflow:hidden;margin-top:8px;}
+.prog-fill{height:100%;border-radius:99px;transition:width .5s;}
+
+/* ── CARDS ── */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:12px;}
+.card-head{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.card-title{font-size:11px;font-family:var(--mono);color:var(--text2);text-transform:uppercase;letter-spacing:.06em;}
+
+/* ── SEARCH ── */
+.search-wrap{position:relative;margin-bottom:12px;}
+.search-input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:15px;padding:12px 14px 12px 42px;outline:none;}
+.search-input:focus{border-color:var(--accent);}
+.search-input::placeholder{color:var(--text3);}
+.search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:18px;}
+
+/* ── FILTER CHIPS ── */
+.chips{display:flex;gap:8px;margin-bottom:12px;overflow-x:auto;padding-bottom:4px;}
+.chip{flex-shrink:0;padding:6px 12px;border-radius:99px;border:1px solid var(--border2);font-size:11px;font-family:var(--mono);cursor:pointer;color:var(--text2);white-space:nowrap;}
+.chip.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+
+/* ── SIMPATIZANTE CARD ── */
+.simp-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;cursor:pointer;transition:border-color .15s;}
+.simp-card:active{border-color:var(--accent);}
+.simp-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.simp-av{width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;font-family:var(--mono);flex-shrink:0;}
+.simp-name{font-size:14px;font-weight:500;}
+.simp-meta{font-size:10px;font-family:var(--mono);color:var(--text3);}
+.simp-badges{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;}
+.badge{font-size:10px;font-family:var(--mono);padding:2px 8px;border-radius:99px;font-weight:500;}
+.b-green{background:rgba(34,197,94,.12);color:var(--green);border:1px solid rgba(34,197,94,.25);}
+.b-amber{background:rgba(245,158,11,.12);color:var(--amber);border:1px solid rgba(245,158,11,.25);}
+.b-red{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.25);}
+.b-blue{background:rgba(59,130,246,.12);color:var(--accent);border:1px solid rgba(59,130,246,.25);}
+.b-gray{background:rgba(100,116,139,.12);color:var(--text2);border:1px solid var(--border2);}
+.b-purple{background:rgba(168,85,247,.12);color:var(--purple);border:1px solid rgba(168,85,247,.25);}
+.b-voto{background:rgba(34,197,94,.2);color:var(--green);border:1px solid rgba(34,197,94,.4);font-weight:700;}
+.simp-footer{display:flex;align-items:center;justify-content:space-between;padding-top:8px;border-top:1px solid var(--border);}
+.simp-sec{font-size:11px;font-family:var(--mono);color:var(--text3);}
+.simp-comp{font-size:11px;}
+
+/* ── FICHA ── */
+.ficha-back{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);cursor:pointer;padding:10px 0;margin-bottom:8px;}
+.ficha-av{width:52px;height:52px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;font-family:var(--mono);margin-bottom:10px;}
+.ficha-name{font-size:18px;font-weight:600;margin-bottom:2px;}
+.ficha-sub{font-size:12px;color:var(--text2);font-family:var(--mono);}
+.ficha-section{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;}
+.ficha-section-title{font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;}
+.ficha-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border);}
+.ficha-row:last-child{border-bottom:none;}
+.ficha-label{color:var(--text2);}
+.ficha-val{font-family:var(--mono);}
+
+/* ── EDIT FORM ── */
+.form-group{margin-bottom:14px;}
+.form-label{font-size:12px;color:var(--text2);margin-bottom:6px;display:block;}
+.form-input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:15px;padding:11px 13px;outline:none;}
+.form-input:focus{border-color:var(--accent);}
+.form-select{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:14px;padding:11px 13px;outline:none;-webkit-appearance:none;}
+.comp-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.comp-btn{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:10px;cursor:pointer;text-align:center;transition:all .2s;}
+.comp-num{font-size:20px;font-weight:600;font-family:var(--mono);line-height:1;margin-bottom:2px;}
+.comp-lbl{font-size:11px;color:var(--text2);}
+.comp-btn.sel-1{border-color:#64748b;background:rgba(100,116,139,.15);}
+.comp-btn.sel-2{border-color:var(--accent);background:rgba(59,130,246,.15);}
+.comp-btn.sel-3{border-color:var(--green);background:rgba(34,197,94,.15);}
+.comp-btn.sel-4{border-color:var(--purple);background:rgba(168,85,247,.15);}
+
+/* ── BUTTONS ── */
+.btn-primary{width:100%;background:var(--accent);color:#fff;border:none;border-radius:10px;padding:15px;font-size:15px;font-weight:600;cursor:pointer;margin-top:8px;font-family:var(--sans);}
+.btn-primary:active{background:#2563eb;}
+.btn-secondary{width:100%;background:var(--bg3);color:var(--text2);border:1px solid var(--border2);border-radius:10px;padding:14px;font-size:14px;cursor:pointer;margin-top:8px;font-family:var(--sans);}
+.btn-success{width:100%;background:var(--green);color:#fff;border:none;border-radius:10px;padding:15px;font-size:15px;font-weight:600;cursor:pointer;margin-top:8px;font-family:var(--sans);}
+.btn-voto{width:100%;background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;border:none;border-radius:12px;padding:20px;font-size:17px;font-weight:600;cursor:pointer;margin-top:8px;font-family:var(--sans);letter-spacing:.02em;}
+.btn-voto:active{background:var(--green);}
+.btn-row{display:flex;gap:8px;}
+
+/* ── FASE 2: DÍA DE ELECCIÓN ── */
+.eleccion-search{margin-bottom:16px;}
+.eleccion-input{width:100%;background:var(--bg3);border:2px solid var(--red);border-radius:12px;color:var(--text);font-size:17px;padding:16px 16px 16px 48px;outline:none;font-family:var(--sans);}
+.eleccion-input:focus{border-color:var(--amber);}
+.eleccion-input::placeholder{color:var(--text3);}
+.eleccion-search-icon{position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:20px;color:var(--red);}
+.result-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:10px;}
+.result-card.encontrado{border-color:rgba(34,197,94,.4);background:rgba(34,197,94,.05);}
+.result-card.votado{border-color:rgba(59,130,246,.4);background:rgba(59,130,246,.05);opacity:.7;}
+.result-name{font-size:16px;font-weight:600;margin-bottom:4px;}
+.result-meta{font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:10px;}
+.result-badges{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+.no-result{text-align:center;padding:30px 20px;color:var(--text3);font-family:var(--mono);font-size:12px;}
+.no-result-icon{font-size:36px;margin-bottom:10px;opacity:.4;}
+.registro-rapido{background:var(--bg3);border:1px dashed var(--border2);border-radius:10px;padding:14px;margin-top:10px;}
+.registro-rapido-title{font-size:12px;font-weight:600;color:var(--amber);margin-bottom:10px;font-family:var(--mono);}
+
+.stats-dia{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
+.stat-dia{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center;}
+.stat-dia-val{font-size:22px;font-weight:600;font-family:var(--mono);line-height:1;margin-bottom:2px;}
+.stat-dia-lbl{font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;}
+
+/* ── TOGGLE ── */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);}
+.toggle-row:last-child{border-bottom:none;}
+.toggle-info .tl{font-size:13px;}
+.toggle-info .ts{font-size:11px;color:var(--text3);}
+.toggle{width:42px;height:23px;background:var(--bg4);border:1px solid var(--border2);border-radius:99px;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0;}
+.toggle.on{background:var(--green);}
+.toggle::after{content:'';position:absolute;width:17px;height:17px;background:#fff;border-radius:50%;top:2px;left:2px;transition:transform .2s;}
+.toggle.on::after{transform:translateX(19px);}
+
+/* ── NO RESULTS ── */
+.empty{text-align:center;padding:40px 20px;color:var(--text3);font-family:var(--mono);font-size:12px;}
+.empty-icon{font-size:28px;margin-bottom:8px;opacity:.3;}
+
+/* ── FASE SELECTOR (demo) ── */
+.fase-selector{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px;font-size:12px;font-family:var(--mono);color:var(--text2);}
+.fase-selector label{display:flex;align-items:center;gap:6px;cursor:pointer;}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="tb-left">
+    <div class="tb-av" id="tb-av" style="background:rgba(34,197,94,.15);color:var(--green)">C17</div>
+    <div>
+      <div class="tb-name">Capturista 17</div>
+      <div class="tb-id">CAP-017 · Secc. 138 · V. Álvarez</div>
+    </div>
+  </div>
+  <div class="phase-badge" id="phase-badge">FASE 1</div>
+</div>
+
+<!-- TABS -->
+<div class="tabs" id="tabs">
+  <div class="tab active-f1" id="tab-inicio" onclick="showTab('inicio')">
+    <span class="tab-icon">⌂</span>Mi avance
+  </div>
+  <div class="tab" id="tab-lista" onclick="showTab('lista')">
+    <span class="tab-icon">👥</span>Simpatizantes
+  </div>
+  <div class="tab" id="tab-eleccion" onclick="showTab('eleccion')">
+    <span class="tab-icon">🗳</span>Día elección
+  </div>
+</div>
+
+<!-- ══ SCREEN: INICIO ══ -->
+<div class="screen active" id="sc-inicio">
+
+  <!-- Demo: selector de fase -->
+  <div class="fase-selector">
+    <span>Demo — Simular fase:</span>
+    <label><input type="radio" name="fase" value="1" checked onchange="setFase(1)"> Fase 1 (captura)</label>
+    <label><input type="radio" name="fase" value="2" onchange="setFase(2)"> Fase 2 (elección)</label>
+  </div>
+
+  <!-- Banner de fase -->
+  <div class="fase-banner f1" id="banner-f1">
+    <div class="fase-icon">✏️</div>
+    <div>
+      <div class="fase-title">FASE 1 — Captura de simpatizantes</div>
+      <div class="fase-sub" id="dias-restantes">Activa hasta 3 días antes de la elección</div>
+    </div>
+  </div>
+  <div class="fase-banner f2" id="banner-f2" style="display:none">
+    <div class="fase-icon">🗳</div>
+    <div>
+      <div class="fase-title">FASE 2 — Día de la elección</div>
+      <div class="fase-sub">Hoy es el día — ve a la pestaña "Día elección"</div>
+    </div>
+  </div>
+
+  <!-- KPIs personales -->
+  <div class="kpi-row">
+    <div class="kpi gr">
+      <div class="kl">Mis capturas</div>
+      <div class="kv">32</div>
+      <div class="prog-bar"><div class="prog-fill" style="width:64%;background:var(--green)"></div></div>
+      <div style="font-size:10px;font-family:var(--mono);color:var(--text3);margin-top:4px">64% de mi meta</div>
+    </div>
+    <div class="kpi am">
+      <div class="kl">Me faltan</div>
+      <div class="kv">18</div>
+      <div style="font-size:10px;font-family:var(--mono);color:var(--text3);margin-top:8px">para llegar a 50</div>
+    </div>
+  </div>
+  <div class="kpi-row">
+    <div class="kpi bl">
+      <div class="kl">Validados</div>
+      <div class="kv">26</div>
+      <div style="font-size:10px;font-family:var(--mono);color:var(--text3);margin-top:3px">81% de mis registros</div>
+    </div>
+    <div class="kpi pu">
+      <div class="kl">Seg. votan</div>
+      <div class="kv">19</div>
+      <div style="font-size:10px;font-family:var(--mono);color:var(--text3);margin-top:3px">nivel 3 y 4</div>
+    </div>
+  </div>
+  <div class="kpi-row">
+    <div class="kpi re">
+      <div class="kl">En riesgo</div>
+      <div class="kv">4</div>
+      <div style="font-size:10px;font-family:var(--mono);color:var(--text3);margin-top:3px">requieren atención</div>
+    </div>
+    <div class="kpi cy">
+      <div class="kl">Mi sección</div>
+      <div class="kv">138</div>
+      <div style="font-size:10px;font-family:var(--mono);color:var(--text3);margin-top:3px">Villa de Álvarez</div>
+    </div>
+  </div>
+
+  <!-- Ranking dentro del municipio -->
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title">Mi posición en el municipio</span>
+    </div>
+    <div style="padding:14px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+        <div style="font-size:32px;font-weight:600;font-family:var(--mono);color:var(--amber)">#3</div>
+        <div>
+          <div style="font-size:13px;font-weight:500">de 8 capturistas en V. Álvarez</div>
+          <div style="font-size:11px;color:var(--text3);font-family:var(--mono)">Top 3 del municipio 🏆</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+          <span style="font-family:var(--mono);color:var(--amber);width:20px">#1</span>
+          <div style="flex:1;height:5px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden"><div style="width:100%;height:100%;background:var(--amber);border-radius:99px"></div></div>
+          <span style="font-family:var(--mono);color:var(--text2);width:24px">48</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+          <span style="font-family:var(--mono);color:var(--text2);width:20px">#2</span>
+          <div style="flex:1;height:5px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden"><div style="width:87%;height:100%;background:var(--text3);border-radius:99px"></div></div>
+          <span style="font-family:var(--mono);color:var(--text2);width:24px">42</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+          <span style="font-family:var(--mono);color:var(--green);width:20px">#3</span>
+          <div style="flex:1;height:5px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden"><div style="width:66%;height:100%;background:var(--green);border-radius:99px"></div></div>
+          <span style="font-family:var(--mono);color:var(--green);width:24px;font-weight:600">32 ←</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Botón ir a capturar -->
+  <button class="btn-success" onclick="alert('Abre el módulo de captura')">+ Capturar nuevo simpatizante</button>
+</div>
+
+<!-- ══ SCREEN: LISTA ══ -->
+<div class="screen" id="sc-lista">
+
+  <div class="search-wrap">
+    <div class="search-icon">🔍</div>
+    <input class="search-input" id="search-q" type="search" placeholder="Buscar por nombre o sección..." oninput="buscarSimp()">
+  </div>
+
+  <div class="chips">
+    <div class="chip active" id="chip-todos" onclick="setChip('todos')">Todos (32)</div>
+    <div class="chip" id="chip-seguros" onclick="setChip('seguros')">✅ Seg. votan</div>
+    <div class="chip" id="chip-riesgo" onclick="setChip('riesgo')">⚠ Riesgo</div>
+    <div class="chip" id="chip-apoyo" onclick="setChip('apoyo')">🚗 Apoyo</div>
+    <div class="chip" id="chip-pendiente" onclick="setChip('pendiente')">⏳ Sin validar</div>
+  </div>
+
+  <div id="lista-simps"></div>
+</div>
+
+<!-- ══ SCREEN: FICHA ══ -->
+<div class="screen" id="sc-ficha">
+  <div class="ficha-back" onclick="volverLista()">← Regresar a lista</div>
+  <div id="ficha-content"></div>
+</div>
+
+<!-- ══ SCREEN: EDITAR ══ -->
+<div class="screen" id="sc-editar">
+  <div class="ficha-back" onclick="volverFicha()">← Regresar a ficha</div>
+  <div id="edit-content"></div>
+</div>
+
+<!-- ══ SCREEN: ELECCIÓN ══ -->
+<div class="screen" id="sc-eleccion">
+
+  <!-- SUB-PANTALLA A: REGISTRO DE CASILLA -->
+  <div id="sub-casilla">
+    <div class="fase-banner f2">
+      <div class="fase-icon">📋</div>
+      <div>
+        <div class="fase-title">PASO 1 — Registro de casilla</div>
+        <div class="fase-sub">Llena los datos antes de iniciar la jornada electoral</div>
+      </div>
+    </div>
+
+    <!-- Tipo de casilla -->
+    <div style="margin-bottom:14px">
+      <div style="font-size:11px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Tipo de casilla <span style="color:var(--red)">*</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div class="comp-btn" id="tipo-basica"    onclick="selTipo('basica')">   <div style="font-size:16px;margin-bottom:3px">🏛</div><div class="comp-lbl" style="font-size:12px">Básica</div></div>
+        <div class="comp-btn" id="tipo-contigua"  onclick="selTipo('contigua')"> <div style="font-size:16px;margin-bottom:3px">🏘</div><div class="comp-lbl" style="font-size:12px">Contigua</div></div>
+        <div class="comp-btn" id="tipo-especial"  onclick="selTipo('especial')"> <div style="font-size:16px;margin-bottom:3px">⭐</div><div class="comp-lbl" style="font-size:12px">Especial</div></div>
+        <div class="comp-btn" id="tipo-extraordinaria" onclick="selTipo('extraordinaria')"><div style="font-size:16px;margin-bottom:3px">🔔</div><div class="comp-lbl" style="font-size:12px">Extraordinaria</div></div>
+      </div>
+    </div>
+
+    <!-- Datos de la casilla -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Número de casilla <span style="color:var(--red)">*</span></label>
+        <input class="form-input" id="cas-numero" type="number" placeholder="Ej. 1060" min="1">
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Sección electoral <span style="color:var(--red)">*</span></label>
+        <input class="form-input" id="cas-seccion" type="number" placeholder="Ej. 138" min="1" max="400">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Municipio <span style="color:var(--red)">*</span></label>
+      <select class="form-select" id="cas-municipio">
+        <option value="">Seleccionar...</option>
+        <option>ARMERIA</option><option>COLIMA</option><option>COMALA</option>
+        <option>COQUIMATLAN</option><option>CUAUHTEMOC</option><option>IXTLAHUACAN</option>
+        <option>MANZANILLO</option><option>MINATITLAN</option><option>TECOMAN</option>
+        <option>VILLA DE ALVAREZ</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Domicilio de la casilla <span style="color:var(--red)">*</span></label>
+      <input class="form-input" id="cas-domicilio" type="text" placeholder="Calle y número">
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Colonia</label>
+        <input class="form-input" id="cas-colonia" type="text" placeholder="Ej. Col. Centro">
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Lugar de ubicación</label>
+        <input class="form-input" id="cas-lugar" type="text" placeholder="Ej. Escuela primaria">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Hora de apertura <span style="color:var(--red)">*</span></label>
+      <input class="form-input" id="cas-hora" type="time" value="08:00">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Observaciones</label>
+      <textarea class="form-input" id="cas-obs" rows="2" placeholder="Notas sobre la casilla, acceso, condiciones..." style="resize:none"></textarea>
+    </div>
+
+    <div id="cas-error" style="font-size:12px;color:var(--red);font-family:var(--mono);text-align:center;margin-bottom:8px;display:none"></div>
+    <button class="btn-voto" onclick="registrarCasilla()" style="background:linear-gradient(135deg,#dc2626,#ef4444)">
+      ✓ Registrar casilla e iniciar jornada
+    </button>
+  </div>
+
+  <!-- SUB-PANTALLA B: JORNADA ACTIVA -->
+  <div id="sub-jornada" style="display:none">
+
+    <!-- Info casilla registrada -->
+    <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:10px;padding:12px 14px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <div style="font-size:13px;font-weight:600;color:var(--red)">🗳 JORNADA EN CURSO</div>
+        <div style="font-size:11px;font-family:var(--mono);color:var(--text3)" id="reloj-jornada">--:--:--</div>
+      </div>
+      <div id="casilla-info-banner" style="font-size:11px;font-family:var(--mono);color:var(--text2);line-height:1.8"></div>
+      <button onclick="verDetalleCasilla()" style="font-size:10px;font-family:var(--mono);color:var(--accent);background:none;border:none;cursor:pointer;margin-top:4px;padding:0">Ver detalle completo →</button>
+    </div>
+
+    <!-- Contador en tiempo real -->
+    <div class="stats-dia" style="margin-bottom:14px">
+      <div class="stat-dia">
+        <div class="stat-dia-val" style="color:var(--green)" id="votos-marcados">0</div>
+        <div class="stat-dia-lbl">Ya votaron</div>
+      </div>
+      <div class="stat-dia">
+        <div class="stat-dia-val" style="color:var(--amber)">32</div>
+        <div class="stat-dia-lbl">En mi lista</div>
+      </div>
+      <div class="stat-dia">
+        <div class="stat-dia-val" style="color:var(--accent)" id="nuevos-dia">0</div>
+        <div class="stat-dia-lbl">Nuevos hoy</div>
+      </div>
+    </div>
+
+    <!-- Barra de progreso -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;font-size:11px;font-family:var(--mono);color:var(--text3);margin-bottom:6px">
+        <span>Participación de mi lista</span>
+        <span id="pct-voto" style="color:var(--green)">0%</span>
+      </div>
+      <div class="prog-bar" style="height:8px">
+        <div class="prog-fill" id="prog-voto" style="width:0%;background:var(--green)"></div>
+      </div>
+    </div>
+
+    <!-- Buscador grande -->
+    <div class="eleccion-search" style="position:relative;margin-bottom:12px">
+      <div class="eleccion-search-icon">🔍</div>
+      <input class="eleccion-input" id="eleccion-q" type="search"
+        placeholder="Nombre completo del votante..."
+        oninput="buscarEleccion()" autocomplete="off">
+    </div>
+
+    <div id="eleccion-results">
+      <div class="no-result">
+        <div class="no-result-icon">🗳</div>
+        Escribe el nombre del votante<br>para buscarlo en tu lista
+      </div>
+    </div>
+
+    <!-- Cierre de casilla -->
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+      <button onclick="cerrarCasilla()" style="width:100%;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);color:var(--red);border-radius:8px;padding:12px;font-size:13px;font-family:var(--mono);cursor:pointer">
+        🔒 Cerrar jornada electoral
+      </button>
+    </div>
+  </div>
+
+  <!-- SUB-PANTALLA C: DETALLE CASILLA -->
+  <div id="sub-detalle-casilla" style="display:none">
+    <div class="ficha-back" onclick="volverJornada()">← Regresar a jornada</div>
+    <div id="detalle-casilla-content"></div>
+  </div>
+
+  <!-- SUB-PANTALLA D: JORNADA CERRADA -->
+  <div id="sub-cierre" style="display:none">
+    <div style="text-align:center;padding:30px 20px">
+      <div style="font-size:48px;margin-bottom:12px">🏁</div>
+      <div style="font-size:18px;font-weight:600;color:var(--green);margin-bottom:6px">Jornada cerrada</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:20px">Los datos han sido registrados</div>
+      <div id="resumen-cierre" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:left;margin-bottom:16px"></div>
+      <button class="btn-primary" onclick="nuevaCasilla()">+ Registrar otra casilla</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── DATOS SIMULADOS ────────────────────────────────────────────────────────
+const SIMPATIZANTES = [
+  {id:'REG-001',nombre:'María García López',paterno:'García',materno:'López',edad:34,nacimiento:'1990-03-15',sexo:'MUJER',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0001',movil:'312-111-0001',email:'mgarcia@gmail.com',domicilio:'Calle Hidalgo 245, Col. Centro',cp:'28010',curp:'GALM901230MCLRPR01',clave:'GALMX9012300H1VW',comp:3,origen:'Casa por casa',prob_voto:'Alta',valor:'Alto',riesgo:false,apoyo:false,influencia:true,ya_voto:false,duplicado:false,validado:true,voto:false,obs:'Vecina activa, trae 3 familias',fecha:'12/04/2026'},
+  {id:'REG-002',nombre:'José Martínez Ruiz',paterno:'Martínez',materno:'Ruiz',edad:52,nacimiento:'1972-07-20',sexo:'HOMBRE',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0002',movil:'312-222-0002',email:'',domicilio:'Av. Independencia 78, Col. Las Palmas',cp:'28017',curp:'MARJ720415HCLRRZ09',clave:'MARJX7204200H1VW',comp:4,origen:'Referido',prob_voto:'Alta',valor:'Alto',riesgo:false,apoyo:true,influencia:true,ya_voto:false,duplicado:false,validado:true,voto:false,obs:'Necesita transporte el día de la elección',fecha:'13/04/2026'},
+  {id:'REG-003',nombre:'Ana Torres Mendoza',paterno:'Torres',materno:'Mendoza',edad:28,nacimiento:'1998-06-12',sexo:'MUJER',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0003',movil:'312-333-0003',email:'ana.torres@hotmail.com',domicilio:'Calle Morelos 12, Col. Jardines',cp:'28015',curp:'TOMA980612MCLRNN06',clave:'TOMAX9806120H1VW',comp:2,origen:'Digital',prob_voto:'Media',valor:'Medio',riesgo:false,apoyo:false,influencia:false,ya_voto:false,duplicado:false,validado:false,voto:false,obs:'',fecha:'15/04/2026'},
+  {id:'REG-004',nombre:'Carlos Pérez Silva',paterno:'Pérez',materno:'Silva',edad:45,nacimiento:'1980-11-03',sexo:'HOMBRE',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0004',movil:'312-444-0004',email:'',domicilio:'Privada Las Flores 5, Col. Residencial',cp:'28018',curp:'PESC791103HCLRLR03',clave:'PESCX7911030H1VW',comp:3,origen:'Evento',prob_voto:'Media',valor:'Medio',riesgo:true,apoyo:false,influencia:false,ya_voto:false,duplicado:false,validado:true,voto:false,obs:'Dudó al final — seguimiento recomendado',fecha:'10/04/2026'},
+  {id:'REG-005',nombre:'Laura Hernández Cruz',paterno:'Hernández',materno:'Cruz',edad:31,nacimiento:'1994-02-22',sexo:'MUJER',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0005',movil:'',email:'',domicilio:'Calle Juárez 89, Col. Centro',cp:'28010',curp:'HECL950222MCLRRR08',clave:'',comp:1,origen:'Casa por casa',prob_voto:'Baja',valor:'Bajo',riesgo:false,apoyo:true,influencia:false,ya_voto:false,duplicado:false,validado:false,voto:false,obs:'',fecha:'16/04/2026'},
+  {id:'REG-006',nombre:'Roberto Díaz Morales',paterno:'Díaz',materno:'Morales',edad:60,nacimiento:'1964-08-15',sexo:'HOMBRE',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0006',movil:'312-666-0006',email:'rdiaz@empresa.com',domicilio:'Blvd. Camino Real 340, Col. Las Américas',cp:'28019',curp:'DIMR640815HCLRZB02',clave:'DIMRX6408150H1VW',comp:4,origen:'Referido',prob_voto:'Alta',valor:'Alto',riesgo:false,apoyo:false,influencia:true,ya_voto:false,duplicado:false,validado:true,voto:false,obs:'Líder de colonia, coordina 15 vecinos',fecha:'11/04/2026'},
+  {id:'REG-007',nombre:'Sofía Ramírez Vega',paterno:'Ramírez',materno:'Vega',edad:22,nacimiento:'2002-03-18',sexo:'MUJER',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0007',movil:'312-777-0007',email:'sofia.rv@gmail.com',domicilio:'Calle Colón 56, Col. Obrera',cp:'28012',curp:'RAVS020318MCLRMF05',clave:'',comp:2,origen:'Digital',prob_voto:'Media',valor:'Bajo',riesgo:false,apoyo:false,influencia:false,ya_voto:false,duplicado:true,validado:false,voto:false,obs:'Posible duplicado — verificar CURP',fecha:'17/04/2026'},
+  {id:'REG-008',nombre:'Miguel Flores Jiménez',paterno:'Flores',materno:'Jiménez',edad:48,nacimiento:'1977-09-30',sexo:'HOMBRE',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0008',movil:'312-888-0008',email:'',domicilio:'Av. de la Paz 123, Col. La Paz',cp:'28013',curp:'FOJM760930HCLRLG07',clave:'FOJMX7609300H1VW',comp:3,origen:'Casa por casa',prob_voto:'Media',valor:'Medio',riesgo:true,apoyo:true,influencia:false,ya_voto:false,duplicado:false,validado:true,voto:false,obs:'Riesgo alto — revisar antes de la elección',fecha:'09/04/2026'},
+  {id:'REG-009',nombre:'Patricia Gómez Luna',paterno:'Gómez',materno:'Luna',edad:39,nacimiento:'1986-11-15',sexo:'MUJER',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0009',movil:'312-999-0009',email:'pgomez@escuela.edu.mx',domicilio:'Calle Reforma 67, Col. Magisterial',cp:'28016',curp:'GOLP851115MCLRMN01',clave:'GOLPX8511150H1VW',comp:3,origen:'Evento',prob_voto:'Alta',valor:'Alto',riesgo:false,apoyo:false,influencia:true,ya_voto:false,duplicado:false,validado:true,voto:false,obs:'Maestra — organiza vecinos de su colonia',fecha:'14/04/2026'},
+  {id:'REG-010',nombre:'Fernando Castro Reyes',paterno:'Castro',materno:'Reyes',edad:55,nacimiento:'1970-07-28',sexo:'HOMBRE',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0010',movil:'312-100-0010',email:'fcastro@negocio.mx',domicilio:'Privada del Sol 8, Fracc. Los Pinos',cp:'28020',curp:'CARF690728HCLLRN04',clave:'CARFX6907280H1VW',comp:4,origen:'Referido',prob_voto:'Alta',valor:'Alto',riesgo:false,apoyo:false,influencia:true,ya_voto:false,duplicado:false,validado:true,voto:false,obs:'',fecha:'08/04/2026'},
+  {id:'REG-011',nombre:'Elena Vargas Soto',paterno:'Vargas',materno:'Soto',edad:42,nacimiento:'1983-04-10',sexo:'MUJER',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0011',movil:'312-110-0011',email:'evargas@correo.com',domicilio:'Calle Allende 34, Col. Centro',cp:'28010',curp:'VASE830410MCLRGN05',clave:'VASEX8304100H1VW',comp:3,origen:'Casa por casa',prob_voto:'Alta',valor:'Medio',riesgo:false,apoyo:false,influencia:false,ya_voto:false,duplicado:false,validado:true,voto:false,obs:'',fecha:'18/04/2026'},
+  {id:'REG-012',nombre:'Alejandro Núñez Ramos',paterno:'Núñez',materno:'Ramos',edad:36,nacimiento:'1989-12-05',sexo:'HOMBRE',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0012',movil:'312-120-0012',email:'',domicilio:'Calle 5 de Mayo 201, Col. Insurgentes',cp:'28014',curp:'NURA891205HCLZMN08',clave:'',comp:2,origen:'Digital',prob_voto:'Baja',valor:'Bajo',riesgo:true,apoyo:false,influencia:false,ya_voto:false,duplicado:false,validado:false,voto:false,obs:'Indeciso — no confirmó compromiso',fecha:'19/04/2026'},
+];
+
+let chipActivo='todos', fichaActual=null, compSel=0, fase=1;
+let votosCount=0, nuevosCount=0;
+
+const compColor={1:'#64748b',2:'var(--accent)',3:'var(--green)',4:'var(--purple)'};
+const compLabel={1:'Contacto',2:'Simpatiza',3:'Seg. vota',4:'Moviliza'};
+
+function initials(n){ return n.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase(); }
+
+// ── FASE ──────────────────────────────────────────────────────────────────
+function setFase(f){
+  fase=f;
+  const pb=document.getElementById('phase-badge');
+  const bf1=document.getElementById('banner-f1');
+  const bf2=document.getElementById('banner-f2');
+  const tabEl=document.getElementById('tab-eleccion');
+  if(f===1){
+    pb.textContent='FASE 1';
+    pb.style.background='rgba(59,130,246,0.12)';
+    pb.style.color='var(--accent)';
+    pb.style.border='1px solid rgba(59,130,246,0.3)';
+    bf1.style.display='flex'; bf2.style.display='none';
+    tabEl.style.opacity='0.4';
+  } else {
+    pb.textContent='FASE 2 🗳';
+    pb.style.background='rgba(239,68,68,0.15)';
+    pb.style.color='var(--red)';
+    pb.style.border='1px solid rgba(239,68,68,0.35)';
+    bf1.style.display='none'; bf2.style.display='flex';
+    tabEl.style.opacity='1';
+    showTab('eleccion');
+  }
+}
+
+// ── TABS ──────────────────────────────────────────────────────────────────
+function showTab(t){
+  ['inicio','lista','ficha','editar','eleccion'].forEach(s=>{
+    document.getElementById('sc-'+s).classList.remove('active');
+  });
+  document.getElementById('sc-'+t).classList.add('active');
+  ['inicio','lista','eleccion'].forEach(id=>{
+    const el=document.getElementById('tab-'+id);
+    if(el){
+      el.className='tab';
+      if(id===t) el.classList.add(fase===1?'active-f1':'active-f2');
+    }
+  });
+  if(t==='lista') renderLista();
+}
+
+// ── CHIPS ─────────────────────────────────────────────────────────────────
+function setChip(c){
+  chipActivo=c;
+  ['todos','seguros','riesgo','apoyo','pendiente'].forEach(x=>{
+    document.getElementById('chip-'+x).classList.toggle('active',x===c);
+  });
+  renderLista();
+}
+
+// ── LISTA ─────────────────────────────────────────────────────────────────
+function getFiltrados(){
+  const q=(document.getElementById('search-q').value||'').toLowerCase();
+  let d=[...SIMPATIZANTES];
+  if(q) d=d.filter(s=>s.nombre.toLowerCase().includes(q));
+  if(chipActivo==='seguros') d=d.filter(s=>s.comp>=3);
+  if(chipActivo==='riesgo') d=d.filter(s=>s.riesgo);
+  if(chipActivo==='apoyo') d=d.filter(s=>s.apoyo);
+  if(chipActivo==='pendiente') d=d.filter(s=>!s.validado);
+  return d;
+}
+
+function renderLista(){
+  const d=getFiltrados();
+  const cont=document.getElementById('lista-simps');
+  if(!d.length){ cont.innerHTML='<div class="empty"><div class="empty-icon">👥</div>Sin resultados</div>'; return; }
+  cont.innerHTML=d.map(s=>{
+    const cc=compColor[s.comp];
+    return `<div class="simp-card" onclick="abrirFicha('${s.id}')">
+      <div class="simp-header">
+        <div class="simp-av" style="background:${cc}20;color:${cc};border:1px solid ${cc}40">${initials(s.nombre)}</div>
+        <div>
+          <div class="simp-name">${s.nombre}</div>
+          <div class="simp-meta">${s.sexo} · ${s.edad} años · ${s.origen}</div>
+        </div>
+      </div>
+      <div class="simp-badges">
+        <span class="badge" style="background:${cc}15;color:${cc};border:1px solid ${cc}30">${s.comp} ${compLabel[s.comp]}</span>
+        ${s.validado?'<span class="badge b-green">✓ Validado</span>':'<span class="badge b-gray">⏳ Pendiente</span>'}
+        ${s.riesgo?'<span class="badge b-red">⚠ Riesgo</span>':''}
+        ${s.apoyo?'<span class="badge b-amber">🚗 Apoyo</span>':''}
+        ${s.influencia?'<span class="badge b-purple">👥 Influencia</span>':''}
+        ${s.voto?'<span class="badge b-voto">✓ VOTÓ</span>':''}
+      </div>
+      <div class="simp-footer">
+        <span class="simp-sec">Secc. ${s.sec} · ${s.tel||'Sin tel'}</span>
+        <span class="simp-comp" style="color:${cc}">${compLabel[s.comp]}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function buscarSimp(){ renderLista(); }
+
+// ── FICHA COMPLETA ────────────────────────────────────────────────────────
+function abrirFicha(id){
+  fichaActual=id;
+  const s=SIMPATIZANTES.find(x=>x.id===id);
+  if(!s) return;
+  showTab('ficha');
+  const cc=compColor[s.comp];
+  const probColor={Alta:'var(--green)',Media:'var(--amber)',Baja:'var(--red)'}[s.prob_voto]||'var(--text2)';
+  const valorColor={Alto:'var(--green)',Medio:'var(--amber)',Bajo:'var(--red)'}[s.valor]||'var(--text2)';
+
+  document.getElementById('ficha-content').innerHTML=`
+
+    <!-- ENCABEZADO -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:10px;">
+      <div class="ficha-av" style="background:${cc}20;color:${cc};border:1px solid ${cc}40">${initials(s.nombre)}</div>
+      <div class="ficha-name">${s.nombre}</div>
+      <div class="ficha-sub">${s.id} · Capturado el ${s.fecha}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
+        <span class="badge" style="background:${cc}15;color:${cc};border:1px solid ${cc}30">${s.comp} — ${compLabel[s.comp]}</span>
+        ${s.validado?'<span class="badge b-green">✓ Validado</span>':'<span class="badge b-gray">⏳ Sin validar</span>'}
+        ${s.riesgo?'<span class="badge b-red">⚠ Riesgo alto</span>':''}
+        ${s.apoyo?'<span class="badge b-amber">🚗 Necesita apoyo</span>':''}
+        ${s.influencia?'<span class="badge b-purple">👥 Tiene influencia</span>':''}
+        ${s.duplicado?'<span class="badge b-red">⚠ Duplicado</span>':''}
+        ${s.voto?'<span class="badge b-voto">✓ YA VOTÓ</span>':''}
+      </div>
+    </div>
+
+    <!-- PASO 1: DATOS PERSONALES -->
+    <div class="ficha-section">
+      <div class="ficha-section-title">📋 Datos personales</div>
+      <div class="ficha-row"><span class="ficha-label">Nombre completo</span><span class="ficha-val" style="font-size:12px">${s.nombre}</span></div>
+      <div class="ficha-row"><span class="ficha-label">Apellido paterno</span><span class="ficha-val">${s.paterno}</span></div>
+      <div class="ficha-row"><span class="ficha-label">Apellido materno</span><span class="ficha-val">${s.materno||'—'}</span></div>
+      <div class="ficha-row"><span class="ficha-label">Edad</span><span class="ficha-val">${s.edad} años</span></div>
+      <div class="ficha-row"><span class="ficha-label">Fecha nacimiento</span><span class="ficha-val">${s.nacimiento||'—'}</span></div>
+      <div class="ficha-row"><span class="ficha-label">Sexo</span><span class="ficha-val">${s.sexo}</span></div>
+    </div>
+
+    <!-- UBICACIÓN ELECTORAL -->
+    <div class="ficha-section">
+      <div class="ficha-section-title">🗺 Ubicación electoral</div>
+      <div class="ficha-row"><span class="ficha-label">Municipio</span><span class="ficha-val">${s.mun}</span></div>
+      <div class="ficha-row"><span class="ficha-label">Sección donde vota</span><span class="ficha-val" style="color:var(--cyan);font-weight:600">${s.sec}</span></div>
+      <div class="ficha-row"><span class="ficha-label">Domicilio</span><span class="ficha-val" style="font-size:11px;text-align:right;max-width:55%">${s.domicilio||'—'}</span></div>
+      <div class="ficha-row"><span class="ficha-label">Código postal</span><span class="ficha-val">${s.cp||'—'}</span></div>
+    </div>
+
+    <!-- CONTACTO -->
+    <div class="ficha-section">
+      <div class="ficha-section-title">📞 Contacto</div>
+      <div class="ficha-row"><span class="ficha-label">Teléfono fijo</span><span class="ficha-val">${s.tel||'—'}</span></div>
+      <div class="ficha-row"><span class="ficha-label">Celular</span><span class="ficha-val">${s.movil||'—'}</span></div>
+      <div class="ficha-row"><span class="ficha-label">Email</span><span class="ficha-val" style="font-size:11px">${s.email||'—'}</span></div>
+    </div>
+
+    <!-- DOCUMENTOS -->
+    <div class="ficha-section">
+      <div class="ficha-section-title">🪪 Documentos electorales</div>
+      <div class="ficha-row"><span class="ficha-label">CURP</span><span class="ficha-val" style="font-size:10px;letter-spacing:.04em">${s.curp||'—'}</span></div>
+      <div class="ficha-row"><span class="ficha-label">Clave de elector</span><span class="ficha-val" style="font-size:10px;letter-spacing:.04em">${s.clave||'—'}</span></div>
+    </div>
+
+    <!-- PASO 2: INDICADORES ELECTORALES -->
+    <div class="ficha-section">
+      <div class="ficha-section-title">⚡ Indicadores electorales</div>
+      <div class="ficha-row">
+        <span class="ficha-label">Nivel de compromiso</span>
+        <span class="ficha-val" style="color:${cc};font-weight:600">${s.comp} — ${compLabel[s.comp]}</span>
+      </div>
+      <div class="ficha-row">
+        <span class="ficha-label">Origen de contacto</span>
+        <span class="ficha-val">${s.origen}</span>
+      </div>
+      <div class="ficha-row">
+        <span class="ficha-label">Probabilidad de voto</span>
+        <span class="ficha-val" style="color:${probColor};font-weight:600">${s.prob_voto||'—'}</span>
+      </div>
+      <div class="ficha-row">
+        <span class="ficha-label">Valor electoral</span>
+        <span class="ficha-val" style="color:${valorColor};font-weight:600">${s.valor||'—'}</span>
+      </div>
+    </div>
+
+    <!-- INDICADORES DE CAMPO -->
+    <div class="ficha-section">
+      <div class="ficha-section-title">🚦 Indicadores de campo</div>
+      <div class="ficha-row">
+        <span class="ficha-label">⚠️ Riesgo alto</span>
+        <span class="ficha-val" style="color:${s.riesgo?'var(--red)':'var(--text3)'}">${s.riesgo?'SÍ':'No'}</span>
+      </div>
+      <div class="ficha-row">
+        <span class="ficha-label">🚗 Necesita apoyo</span>
+        <span class="ficha-val" style="color:${s.apoyo?'var(--amber)':'var(--text3)'}">${s.apoyo?'SÍ — transporte':'No'}</span>
+      </div>
+      <div class="ficha-row">
+        <span class="ficha-label">👥 Tiene influencia</span>
+        <span class="ficha-val" style="color:${s.influencia?'var(--purple)':'var(--text3)'}">${s.influencia?'SÍ — moviliza red':'No'}</span>
+      </div>
+      <div class="ficha-row">
+        <span class="ficha-label">⚠ Posible duplicado</span>
+        <span class="ficha-val" style="color:${s.duplicado?'var(--red)':'var(--text3)'}">${s.duplicado?'SÍ — verificar':'No'}</span>
+      </div>
+      <div class="ficha-row">
+        <span class="ficha-label">✅ Estatus validación</span>
+        <span class="ficha-val" style="color:${s.validado?'var(--green)':'var(--amber)'}">${s.validado?'Validado':'Pendiente'}</span>
+      </div>
+    </div>
+
+    <!-- NOTAS -->
+    ${s.obs?`<div class="ficha-section">
+      <div class="ficha-section-title">📝 Notas del capturista</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.6;padding:4px 0">${s.obs}</div>
+    </div>`:''}
+
+    <!-- ACCIONES -->
+    <div class="btn-row" style="margin-top:4px">
+      <button class="btn-primary" style="margin:0;flex:1" onclick="abrirEditar('${s.id}')">✏️ Editar datos</button>
+      ${!s.voto&&fase===2?`<button class="btn-success" style="margin:0;flex:1" onclick="marcarVoto('${s.id}',true)">✅ Votó</button>`:''}
+    </div>
+    ${s.voto?`<div style="text-align:center;margin-top:10px;font-size:12px;font-family:var(--mono);color:var(--green)">✓ Este simpatizante ya ejerció su voto</div>`:''}
+  `;
+}
+
+function volverLista(){
+  showTab('lista');
+  renderLista();
+}
+
+// ── EDITAR ────────────────────────────────────────────────────────────────
+function abrirEditar(id){
+  fichaActual=id;
+  const s=SIMPATIZANTES.find(x=>x.id===id);
+  if(!s) return;
+  compSel=s.comp;
+  showTab('editar');
+  document.getElementById('edit-content').innerHTML=`
+    <div style="font-size:15px;font-weight:600;margin-bottom:16px;color:var(--text)">Editar: ${s.nombre}</div>
+    <div class="form-group">
+      <label class="form-label">Teléfono</label>
+      <input class="form-input" id="e-tel" value="${s.tel||''}" placeholder="312 000 0000" type="tel">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nivel de compromiso</label>
+      <div class="comp-grid">
+        ${[1,2,3,4].map(n=>`<div class="comp-btn ${n===compSel?'sel-'+n:''}" id="ec-${n}" onclick="selCompEdit(${n})">
+          <div class="comp-num" style="color:${compColor[n]}">${n}</div>
+          <div class="comp-lbl">${compLabel[n]}</div>
+        </div>`).join('')}
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Observaciones</label>
+      <textarea class="form-input" id="e-obs" rows="3" placeholder="Notas relevantes...">${s.obs||''}</textarea>
+    </div>
+    <div style="padding:12px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin-bottom:14px">
+      <div class="toggle-row">
+        <div class="toggle-info"><div class="tl">⚠️ Riesgo alto</div><div class="ts">Puede cambiar su voto</div></div>
+        <div class="toggle ${s.riesgo?'on':''}" id="e-riesgo" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info"><div class="tl">🚗 Necesita transporte</div><div class="ts">Apoyo logístico el día de la elección</div></div>
+        <div class="toggle ${s.apoyo?'on':''}" id="e-apoyo" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info"><div class="tl">👥 Tiene influencia</div><div class="ts">Puede movilizar a otros</div></div>
+        <div class="toggle ${s.influencia?'on':''}" id="e-influencia" onclick="this.classList.toggle('on')"></div>
+      </div>
+    </div>
+    <button class="btn-success" onclick="guardarEdicion('${s.id}')">Guardar cambios</button>
+    <button class="btn-secondary" onclick="volverFicha()">Cancelar</button>`;
+}
+
+function selCompEdit(n){
+  compSel=n;
+  [1,2,3,4].forEach(i=>{ document.getElementById('ec-'+i).className='comp-btn'+(i===n?' sel-'+n:''); });
+}
+
+function guardarEdicion(id){
+  const s=SIMPATIZANTES.find(x=>x.id===id);
+  if(!s) return;
+  s.tel=document.getElementById('e-tel').value;
+  s.comp=compSel;
+  s.obs=document.getElementById('e-obs').value;
+  s.riesgo=document.getElementById('e-riesgo').classList.contains('on');
+  s.apoyo=document.getElementById('e-apoyo').classList.contains('on');
+  s.influencia=document.getElementById('e-influencia').classList.contains('on');
+  alert('✓ Cambios guardados');
+  abrirFicha(id);
+}
+
+function volverFicha(){
+  if(fichaActual) abrirFicha(fichaActual);
+}
+
+// ── FASE 2: DÍA DE LA ELECCIÓN ────────────────────────────────────────────
+function buscarEleccion(){
+  const q=(document.getElementById('eleccion-q').value||'').trim().toLowerCase();
+  const cont=document.getElementById('eleccion-results');
+  if(q.length<2){
+    cont.innerHTML='<div class="no-result"><div class="no-result-icon">🗳</div>Escribe el nombre del votante<br>para buscarlo en tu lista</div>';
+    return;
+  }
+  const found=SIMPATIZANTES.filter(s=>s.nombre.toLowerCase().includes(q));
+  if(!found.length){
+    cont.innerHTML=`<div class="no-result">
+      <div class="no-result-icon">❌</div>
+      <div style="margin-bottom:16px"><strong style="color:var(--text)">"${q}"</strong><br>No está en tu lista capturada</div>
+    </div>
+    <div class="registro-rapido">
+      <div class="registro-rapido-title">⚡ Registro rápido — votante no capturado</div>
+      <div class="form-group" style="margin-bottom:10px">
+        <input class="form-input" id="rr-nombre" placeholder="Nombre completo" style="font-size:14px;padding:10px 12px">
+      </div>
+      <button class="btn-primary" style="margin:0;padding:12px;font-size:14px" onclick="registroRapido()">📝 Registrar solo nombre</button>
+    </div>`;
+    return;
+  }
+  cont.innerHTML=found.map(s=>{
+    const cc=compColor[s.comp];
+    if(s.voto) return `<div class="result-card votado">
+      <div class="result-name">${s.nombre} <span class="badge b-voto">✓ YA VOTÓ</span></div>
+      <div class="result-meta">${s.sexo} · ${s.edad} años · Secc. ${s.sec}</div>
+    </div>`;
+    return `<div class="result-card encontrado">
+      <div class="result-name">${s.nombre}</div>
+      <div class="result-meta">${s.sexo} · ${s.edad} años · Secc. ${s.sec}</div>
+      <div class="result-badges">
+        <span class="badge" style="background:${cc}15;color:${cc};border:1px solid ${cc}30">${compLabel[s.comp]}</span>
+        ${s.apoyo?'<span class="badge b-amber">🚗 Necesita transporte</span>':''}
+        ${s.riesgo?'<span class="badge b-red">⚠ Riesgo</span>':''}
+      </div>
+      <button class="btn-voto" onclick="marcarVoto('${s.id}',false)">✅ MARCAR VOTO</button>
+    </div>`;
+  }).join('');
+}
+
+function marcarVoto(id, desdeficha){
+  const s=SIMPATIZANTES.find(x=>x.id===id);
+  if(!s) return;
+  if(s.voto){ alert('Este simpatizante ya fue marcado como votante.'); return; }
+  s.voto=true;
+  votosCount++;
+  document.getElementById('votos-marcados').textContent=votosCount;
+  if(desdeficha){
+    alert('✓ Voto registrado para '+s.nombre);
+    abrirFicha(id);
+  } else {
+    document.getElementById('eleccion-q').value='';
+    document.getElementById('eleccion-results').innerHTML=`<div class="no-result">
+      <div style="font-size:40px;margin-bottom:10px">✅</div>
+      <strong style="color:var(--green);font-size:15px">¡Voto registrado!</strong><br>
+      <span style="color:var(--text2)">${s.nombre}</span><br><br>
+      <span style="color:var(--text3);font-size:11px">Busca al siguiente votante</span>
+    </div>`;
+    setTimeout(()=>{ document.getElementById('eleccion-q').focus(); },1000);
+  }
+}
+
+function registroRapido(){
+  const nombre=document.getElementById('rr-nombre').value.trim();
+  if(!nombre){ alert('Escribe el nombre completo'); return; }
+  nuevosCount++;
+  document.getElementById('nuevos-dia').textContent=nuevosCount;
+  document.getElementById('eleccion-q').value='';
+  document.getElementById('eleccion-results').innerHTML=`<div class="no-result">
+    <div style="font-size:40px;margin-bottom:10px">📝</div>
+    <strong style="color:var(--amber);font-size:15px">Registrado</strong><br>
+    <span style="color:var(--text2)">${nombre}</span><br>
+    <span style="color:var(--text3);font-size:11px;margin-top:8px;display:block">Solo nombre — sin datos adicionales</span>
+  </div>`;
+  setTimeout(()=>{ document.getElementById('eleccion-q').focus(); },1000);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+renderLista();
+
+// ── CASILLA ───────────────────────────────────────────────────────────────
+let tipoCasilla = '';
+let casillaRegistrada = null;
+let relojInterval = null;
+
+function selTipo(t){
+  tipoCasilla = t;
+  ['basica','contigua','especial','extraordinaria'].forEach(x=>{
+    const el = document.getElementById('tipo-'+x);
+    el.className = 'comp-btn' + (x===t?' sel-3':'');
+  });
+}
+
+function registrarCasilla(){
+  const err = document.getElementById('cas-error');
+  const numero  = document.getElementById('cas-numero').value.trim();
+  const seccion = document.getElementById('cas-seccion').value.trim();
+  const mun     = document.getElementById('cas-municipio').value;
+  const dom     = document.getElementById('cas-domicilio').value.trim();
+  const hora    = document.getElementById('cas-hora').value;
+
+  if(!tipoCasilla){ err.textContent='Selecciona el tipo de casilla'; err.style.display='block'; return; }
+  if(!numero)      { err.textContent='El número de casilla es requerido'; err.style.display='block'; return; }
+  if(!seccion)     { err.textContent='La sección electoral es requerida'; err.style.display='block'; return; }
+  if(!mun)         { err.textContent='El municipio es requerido'; err.style.display='block'; return; }
+  if(!dom)         { err.textContent='El domicilio es requerido'; err.style.display='block'; return; }
+  err.style.display='none';
+
+  const tipoLabel = {basica:'Básica',contigua:'Contigua',especial:'Especial',extraordinaria:'Extraordinaria'}[tipoCasilla];
+
+  casillaRegistrada = {
+    tipo: tipoCasilla,
+    tipoLabel,
+    numero,
+    seccion,
+    municipio: mun,
+    domicilio: dom,
+    colonia:   document.getElementById('cas-colonia').value.trim(),
+    lugar:     document.getElementById('cas-lugar').value.trim(),
+    horaApertura: hora,
+    obs:       document.getElementById('cas-obs').value.trim(),
+    horaRegistro: new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}),
+    representante: 'CAP-017',
+  };
+
+  // Mostrar banner
+  document.getElementById('casilla-info-banner').innerHTML =
+    `Casilla ${tipoLabel} #${numero}  ·  Secc. ${seccion}  ·  ${mun}\n` +
+    `${dom}${casillaRegistrada.colonia ? ', '+casillaRegistrada.colonia : ''}\n` +
+    `Apertura: ${hora}  ·  Registrada: ${casillaRegistrada.horaRegistro}`;
+
+  // Cambiar sub-pantalla
+  document.getElementById('sub-casilla').style.display  = 'none';
+  document.getElementById('sub-jornada').style.display  = 'block';
+
+  // Iniciar reloj
+  relojInterval = setInterval(()=>{
+    document.getElementById('reloj-jornada').textContent =
+      new Date().toLocaleTimeString('es-MX');
+  }, 1000);
+
+  // Scroll top
+  window.scrollTo(0,0);
+}
+
+function verDetalleCasilla(){
+  if(!casillaRegistrada) return;
+  const c = casillaRegistrada;
+  document.getElementById('sub-jornada').style.display = 'none';
+  document.getElementById('sub-detalle-casilla').style.display = 'block';
+  document.getElementById('detalle-casilla-content').innerHTML = `
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:12px">
+      <div style="font-size:18px;font-weight:600;margin-bottom:4px">Casilla ${c.tipoLabel} #${c.numero}</div>
+      <div style="font-size:11px;font-family:var(--mono);color:var(--text3)">Registrada a las ${c.horaRegistro}</div>
+    </div>
+    <div class="ficha-section">
+      <div class="ficha-section-title">📋 Datos de la casilla</div>
+      <div class="ficha-row"><span class="ficha-label">Tipo</span><span class="ficha-val">${c.tipoLabel}</span></div>
+      <div class="ficha-row"><span class="ficha-label">Número</span><span class="ficha-val">${c.numero}</span></div>
+      <div class="ficha-row"><span class="ficha-label">Sección</span><span class="ficha-val" style="color:var(--cyan)">${c.seccion}</span></div>
+      <div class="ficha-row"><span class="ficha-label">Municipio</span><span class="ficha-val">${c.municipio}</span></div>
+      <div class="ficha-row"><span class="ficha-label">Domicilio</span><span class="ficha-val" style="font-size:11px;text-align:right;max-width:55%">${c.domicilio}</span></div>
+      ${c.colonia?`<div class="ficha-row"><span class="ficha-label">Colonia</span><span class="ficha-val">${c.colonia}</span></div>`:''}
+      ${c.lugar?`<div class="ficha-row"><span class="ficha-label">Lugar</span><span class="ficha-val">${c.lugar}</span></div>`:''}
+      <div class="ficha-row"><span class="ficha-label">Hora de apertura</span><span class="ficha-val" style="color:var(--green)">${c.horaApertura}</span></div>
+      <div class="ficha-row"><span class="ficha-label">Representante</span><span class="ficha-val">${c.representante}</span></div>
+      ${c.obs?`<div class="ficha-row"><span class="ficha-label">Observaciones</span><span class="ficha-val" style="font-size:11px;text-align:right;max-width:60%">${c.obs}</span></div>`:''}
+    </div>
+    <div class="ficha-section">
+      <div class="ficha-section-title">📊 Avance de la jornada</div>
+      <div class="ficha-row"><span class="ficha-label">Votos marcados</span><span class="ficha-val" style="color:var(--green)">${votosCount}</span></div>
+      <div class="ficha-row"><span class="ficha-label">Registros nuevos</span><span class="ficha-val" style="color:var(--accent)">${nuevosCount}</span></div>
+      <div class="ficha-row"><span class="ficha-label">Total en mi lista</span><span class="ficha-val">32</span></div>
+    </div>`;
+}
+
+function volverJornada(){
+  document.getElementById('sub-detalle-casilla').style.display = 'none';
+  document.getElementById('sub-jornada').style.display = 'block';
+}
+
+function cerrarCasilla(){
+  if(!confirm('¿Confirmas el cierre de la jornada electoral?\n\nEsta acción registrará el cierre oficial de tu casilla.')) return;
+  if(relojInterval) clearInterval(relojInterval);
+
+  document.getElementById('sub-jornada').style.display = 'none';
+  document.getElementById('sub-cierre').style.display  = 'block';
+
+  const pct = Math.round(votosCount/32*100);
+  document.getElementById('resumen-cierre').innerHTML = `
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--text)">
+      Casilla ${casillaRegistrada.tipoLabel} #${casillaRegistrada.numero}
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px;font-size:12px">
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--text2)">Votos marcados</span><span style="font-family:var(--mono);color:var(--green);font-weight:600">${votosCount}</span></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--text2)">Registros nuevos</span><span style="font-family:var(--mono);color:var(--accent)">${nuevosCount}</span></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--text2)">Sin confirmar (lista)</span><span style="font-family:var(--mono);color:var(--amber)">${32-votosCount}</span></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--text2)">Participación de lista</span><span style="font-family:var(--mono);color:var(--green);font-weight:600">${pct}%</span></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--text2)">Hora de cierre</span><span style="font-family:var(--mono)">${new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})}</span></div>
+    </div>`;
+  window.scrollTo(0,0);
+}
+
+function nuevaCasilla(){
+  // Reset
+  casillaRegistrada = null; tipoCasilla = '';
+  votosCount = 0; nuevosCount = 0;
+  ['basica','contigua','especial','extraordinaria'].forEach(x=>
+    document.getElementById('tipo-'+x).className='comp-btn');
+  ['cas-numero','cas-seccion','cas-domicilio','cas-colonia','cas-lugar','cas-obs'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('cas-municipio').value='';
+  document.getElementById('cas-hora').value='08:00';
+  document.getElementById('sub-cierre').style.display  = 'none';
+  document.getElementById('sub-casilla').style.display = 'block';
+  window.scrollTo(0,0);
+}
+
+// Actualizar progreso al marcar votos
+const _origMarcarVoto = marcarVoto;
+marcarVoto = function(id, desdeficha){
+  _origMarcarVoto(id, desdeficha);
+  // Actualizar barra de progreso
+  setTimeout(()=>{
+    const pct = Math.round(votosCount/32*100);
+    const prog = document.getElementById('prog-voto');
+    const pctEl = document.getElementById('pct-voto');
+    if(prog) prog.style.width = pct+'%';
+    if(pctEl) pctEl.textContent = pct+'%';
+  }, 100);
+};
+</script>
+<script src="theme.js"></script>
+</body>
+</html>

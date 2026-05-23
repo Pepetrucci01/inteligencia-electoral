@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login — Sistema de Inteligencia Electoral Colima 2027</title>
+<script src="sie_data.js"></script>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--border:#30363d;--accent:#e94560;--green:#00cc66;--text:#e6edf3;--text2:#8b949e;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:Arial,sans-serif;background:radial-gradient(ellipse at 60% 40%,#1a0a1e,#0d1117);min-height:100vh;display:flex;align-items:center;justify-content:center;color:var(--text);}
+.box{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:40px;width:420px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,0.5);}
+.logo{text-align:center;margin-bottom:28px;}
+.logo .icon{font-size:44px;margin-bottom:8px;}
+.logo h1{font-size:18px;font-weight:700;color:var(--accent);letter-spacing:1px;}
+.logo p{font-size:12px;color:var(--text2);margin-top:4px;}
+.fg{margin-bottom:14px;}
+.fg label{display:block;font-size:12px;color:var(--text2);margin-bottom:5px;font-weight:500;}
+.fg input,.fg select{width:100%;padding:10px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;outline:none;transition:border 0.2s;}
+.fg input:focus,.fg select:focus{border-color:var(--accent);}
+.fg select option{background:var(--bg3);}
+.btn{width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-top:6px;letter-spacing:0.5px;}
+.btn:hover{background:#c73652;}
+.err{color:#ff4466;font-size:12px;text-align:center;margin-top:8px;display:none;}
+.demo{margin-top:18px;padding:12px;background:var(--bg3);border-radius:8px;font-size:11px;color:var(--text2);}
+.demo strong{color:var(--text);display:block;margin-bottom:6px;}
+.du{display:flex;justify-content:space-between;padding:4px 0;cursor:pointer;border-radius:4px;}
+.du:hover{color:var(--accent);}
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="logo">
+    <div class="icon">🗺</div>
+    <h1>INTELIGENCIA ELECTORAL</h1>
+    <p>Sistema de Gestión — Colima 2027</p>
+  </div>
+  <div class="fg"><label>Usuario</label><input type="text" id="inp-user" placeholder="Usuario" onkeydown="if(event.key==='Enter')login()"></div>
+  <div class="fg"><label>Contraseña</label><input type="password" id="inp-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()"></div>
+  <div class="fg">
+    <label>Licencia / Candidatura</label>
+    <select id="inp-lic">
+      <option value="gubernatura">Gubernatura — Estado de Colima</option>
+      <option value="federal">Diputado Federal</option>
+      <option value="local">Diputado Local</option>
+      <option value="ayuntamiento">Ayuntamiento</option>
+    </select>
+  </div>
+  <button class="btn" onclick="login()">Iniciar Sesión</button>
+  <div class="err" id="err">Usuario o contraseña incorrectos</div>
+  <div class="demo">
+    <strong>👥 Usuarios de demostración (clic para llenar):</strong>
+    <div class="du" onclick="fill('admin','admin123')">👑 admin / admin123 — Administrador</div>
+    <div class="du" onclick="fill('coord','coord123')">🗺 coord / coord123 — Coordinador</div>
+    <div class="du" onclick="fill('lider','lider123')">🏅 lider / lider123 — Líder de Sección</div>
+    <div class="du" onclick="fill('capturista','cap123')">👤 capturista / cap123 — Capturista</div>
+  </div>
+</div>
+<script>
+const USERS = {
+  admin:      {pass:'admin123',nombre:'Administrador General',rol:'administrador',licencia:'Gubernatura',territorio:'Todo el Estado de Colima',color:'#e94560'},
+  coord:      {pass:'coord123',nombre:'Coord. Territorial',   rol:'coordinador',  licencia:'Gubernatura',territorio:'Estado de Colima',         color:'#00cc66'},
+  lider:      {pass:'lider123',nombre:'Líder Sección 12',     rol:'lider',        licencia:'Local',      territorio:'Sección 12 — Colima',       color:'#ffaa00'},
+  capturista: {pass:'cap123',  nombre:'Capturista Sección 12',rol:'capturista',   licencia:'Local',      territorio:'Sección 12 — Colima',       color:'#4ecdc4'},
+};
+
+function fill(u,p){document.getElementById('inp-user').value=u;document.getElementById('inp-pass').value=p;}
+
+function login(){
+  const u=document.getElementById('inp-user').value.trim().toLowerCase();
+  const p=document.getElementById('inp-pass').value;
+  if(USERS[u]&&USERS[u].pass===p){
+    SIE.setUser({...USERS[u],username:u});
+    window.location.href='dashboard.html';
+  } else {
+    document.getElementById('err').style.display='block';
+  }
+}
+</script>
+</body>
+</html>

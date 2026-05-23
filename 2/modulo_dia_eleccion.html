@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>DÍA DE ELECCIÓN — REPRESENTANTE DE CASILLA</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+:root{
+  --bg:#080c18;--bg2:#0c1124;--bg3:#111828;--bg4:#1a2238;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.14);
+  --text:#e8edf5;--text2:#8a9ab5;--text3:#4a5a75;
+  --accent:#3b82f6;--green:#22c55e;--red:#ef4444;
+  --amber:#f59e0b;--cyan:#06b6d4;--purple:#a855f7;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;}
+
+/* TOPBAR */
+.topbar{background:var(--bg2);border-bottom:1px solid rgba(239,68,68,0.3);padding:0 16px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;}
+.topbar-left{display:flex;align-items:center;gap:10px;}
+.dia-badge{background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);border-radius:6px;padding:4px 10px;font-family:var(--mono);font-size:11px;font-weight:600;color:var(--red);display:flex;align-items:center;gap:6px;}
+.dia-dot{width:7px;height:7px;border-radius:50%;background:var(--red);animation:blink .8s ease infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.topbar-title{font-size:13px;font-weight:600;}
+.topbar-sub{font-size:10px;color:var(--text3);font-family:var(--mono);}
+.reloj-badge{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--amber);background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);padding:4px 10px;border-radius:6px;}
+
+/* TABS */
+.tabs{display:flex;background:var(--bg3);border-bottom:1px solid var(--border);position:sticky;top:54px;z-index:199;}
+.tab{flex:1;padding:12px 4px;text-align:center;font-size:11px;font-family:var(--mono);color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;}
+.tab.active{color:var(--red);border-bottom-color:var(--red);}
+.tab-icon{font-size:16px;display:block;margin-bottom:2px;}
+
+/* SCREENS */
+.screen{display:none;padding:14px;padding-bottom:100px;}
+.screen.active{display:block;}
+
+/* CONTADOR PRINCIPAL */
+.contador-wrap{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:16px;margin-bottom:14px;}
+.contador-title{font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;}
+.contador-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px;}
+.cnt-box{background:var(--bg3);border-radius:10px;padding:12px;text-align:center;border:1px solid var(--border);}
+.cnt-val{font-size:28px;font-weight:700;font-family:var(--mono);line-height:1;margin-bottom:3px;}
+.cnt-lbl{font-size:9px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;}
+.prog-bar{height:10px;background:rgba(255,255,255,0.06);border-radius:99px;overflow:hidden;}
+.prog-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#16a34a,#22c55e);transition:width .5s ease;}
+.prog-label{display:flex;justify-content:space-between;font-size:10px;font-family:var(--mono);color:var(--text3);margin-top:5px;}
+
+/* HORA CORTE */
+.hora-corte{background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:8px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;}
+.hc-info{font-size:12px;color:var(--amber);}
+.hc-tiempo{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--amber);}
+
+/* BUSCADOR */
+.search-wrap{position:relative;margin-bottom:12px;}
+.search-input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:16px;padding:13px 14px 13px 46px;outline:none;-webkit-appearance:none;}
+.search-input:focus{border-color:var(--accent);}
+.search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:18px;color:var(--text3);}
+.search-clear{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:var(--bg4);border:none;color:var(--text3);font-size:14px;cursor:pointer;padding:4px 8px;border-radius:5px;display:none;}
+
+/* FILTRO SECCIONES */
+.sec-filter{display:flex;gap:8px;margin-bottom:12px;overflow-x:auto;padding-bottom:4px;}
+.sec-chip{flex-shrink:0;padding:6px 12px;border-radius:99px;border:1px solid var(--border2);font-size:11px;cursor:pointer;color:var(--text2);font-family:var(--mono);white-space:nowrap;background:var(--bg3);}
+.sec-chip.active{background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.4);color:var(--red);}
+
+/* LISTA SIMPATIZANTES */
+.simp-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;transition:all .2s;}
+.simp-card.votado{opacity:.45;border-color:rgba(34,197,94,0.2);}
+.simp-avatar{width:40px;height:40px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;font-family:var(--mono);flex-shrink:0;}
+.simp-info{flex:1;min-width:0;}
+.simp-nombre{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.simp-meta{font-size:10px;font-family:var(--mono);color:var(--text3);margin-top:2px;}
+.simp-status{flex-shrink:0;}
+.btn-votar{background:var(--green);color:#fff;border:none;border-radius:8px;padding:9px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;}
+.btn-votado{background:rgba(34,197,94,0.1);color:var(--green);border:1px solid rgba(34,197,94,0.3);border-radius:8px;padding:9px 10px;font-size:11px;font-family:var(--mono);white-space:nowrap;}
+.btn-desvotar{background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:6px 8px;font-size:11px;cursor:pointer;margin-top:4px;display:block;width:100%;font-family:var(--mono);}
+
+/* CONFIRMAR VOTO MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:500;align-items:flex-end;justify-content:center;}
+.modal-bg.show{display:flex;}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:16px 16px 0 0;padding:24px;width:100%;max-width:480px;}
+.modal-handle{width:40px;height:4px;background:var(--border2);border-radius:99px;margin:0 auto 18px;}
+.modal-icon{font-size:48px;text-align:center;margin-bottom:12px;}
+.modal-title{font-size:18px;font-weight:600;text-align:center;margin-bottom:6px;}
+.modal-sub{font-size:13px;color:var(--text2);text-align:center;margin-bottom:20px;line-height:1.5;}
+.modal-data{background:var(--bg3);border-radius:8px;padding:12px 14px;margin-bottom:18px;}
+.modal-row{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:1px solid var(--border);}
+.modal-row:last-child{border-bottom:none;}
+.modal-key{color:var(--text2);}
+.modal-val{font-family:var(--mono);font-weight:500;}
+.btn-confirmar{width:100%;background:var(--green);color:#fff;border:none;border-radius:10px;padding:15px;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:10px;}
+.btn-cancelar{width:100%;background:var(--bg3);color:var(--text2);border:1px solid var(--border2);border-radius:10px;padding:13px;font-size:14px;cursor:pointer;}
+
+/* REGISTRO SORPRESA */
+.sorpresa-form{background:var(--bg2);border:1px solid rgba(245,158,11,0.3);border-radius:12px;padding:16px;margin-bottom:14px;}
+.form-label{font-size:11px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px;}
+.form-input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:15px;padding:12px 14px;outline:none;-webkit-appearance:none;margin-bottom:10px;}
+.form-input:focus{border-color:var(--amber);}
+.btn-registrar{width:100%;background:var(--amber);color:#000;border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;}
+
+/* LOG DE ACTIVIDAD */
+.log-item{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);align-items:flex-start;}
+.log-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+.log-texto{flex:1;font-size:12px;}
+.log-hora{font-size:10px;font-family:var(--mono);color:var(--text3);white-space:nowrap;}
+
+/* BADGES */
+.comp-badge{font-size:10px;font-family:var(--mono);padding:2px 7px;border-radius:99px;}
+
+/* NO RESULTS */
+.no-results{text-align:center;padding:40px 20px;color:var(--text3);font-family:var(--mono);font-size:12px;}
+
+/* FAB */
+.fab{position:fixed;bottom:24px;right:20px;background:var(--amber);border:none;border-radius:50%;width:56px;height:56px;font-size:22px;color:#000;cursor:pointer;box-shadow:0 4px 20px rgba(245,158,11,0.4);z-index:300;display:flex;align-items:center;justify-content:center;}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="dia-badge"><div class="dia-dot"></div>DÍA E</div>
+    <div>
+      <div class="topbar-title">Representante de Casilla</div>
+      <div class="topbar-sub" id="topbar-casilla">Sección — · Cargando...</div>
+    </div>
+  </div>
+  <div class="reloj-badge" id="reloj">00:00</div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" id="tab-votar" onclick="showTab('votar')">
+    <span class="tab-icon">✅</span>Marcar votos
+  </div>
+  <div class="tab" id="tab-sorpresa" onclick="showTab('sorpresa')">
+    <span class="tab-icon">➕</span>Voto sorpresa
+  </div>
+  <div class="tab" id="tab-resumen" onclick="showTab('resumen')">
+    <span class="tab-icon">📊</span>Mi casilla
+  </div>
+  <div class="tab" id="tab-log" onclick="showTab('log')">
+    <span class="tab-icon">📋</span>Registro
+  </div>
+</div>
+
+<!-- ══════════ MARCAR VOTOS ══════════ -->
+<div class="screen active" id="sc-votar">
+
+  <!-- Contador -->
+  <div class="contador-wrap">
+    <div class="contador-title">
+      <span>Avance de votación — Mi casilla</span>
+      <span id="pct-casilla" style="color:var(--green);font-family:var(--mono)">0%</span>
+    </div>
+    <div class="contador-grid">
+      <div class="cnt-box">
+        <div class="cnt-val" style="color:var(--green)" id="cnt-votaron">0</div>
+        <div class="cnt-lbl">Ya votaron</div>
+      </div>
+      <div class="cnt-box">
+        <div class="cnt-val" style="color:var(--red)" id="cnt-pendientes">0</div>
+        <div class="cnt-lbl">Pendientes</div>
+      </div>
+      <div class="cnt-box">
+        <div class="cnt-val" style="color:var(--amber)" id="cnt-total">0</div>
+        <div class="cnt-lbl">Total base</div>
+      </div>
+    </div>
+    <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+    <div class="prog-label">
+      <span>Simpatizantes confirmados</span>
+      <span id="prog-nums">0 / 0</span>
+    </div>
+  </div>
+
+  <!-- Hora del próximo corte -->
+  <div class="hora-corte">
+    <div class="hc-info">⏰ Próximo corte de lista pendientes</div>
+    <div class="hc-tiempo" id="tiempo-corte">—</div>
+  </div>
+
+  <!-- Buscador -->
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input class="search-input" id="search-votar" type="search"
+      placeholder="Buscar por nombre..." autocomplete="off"
+      oninput="buscarSimpatizante(this.value)">
+    <button class="search-clear" id="search-clear" onclick="limpiarBusqueda()">✕</button>
+  </div>
+
+  <!-- Filtro por sección -->
+  <div class="sec-filter" id="sec-filter"></div>
+
+  <!-- Lista -->
+  <div id="lista-simpatizantes"></div>
+
+</div>
+
+<!-- ══════════ VOTO SORPRESA ══════════ -->
+<div class="screen" id="sc-sorpresa">
+
+  <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:var(--amber);line-height:1.6;">
+    <b>¿Para qué sirve esto?</b><br>
+    Cuando un ciudadano llega a votar pero <b>no está en tu base de simpatizantes</b>, regístralo aquí. No sabremos por quién votó, pero sí que acudió a las urnas.
+  </div>
+
+  <div class="sorpresa-form">
+    <div style="font-size:13px;font-weight:600;margin-bottom:14px;color:var(--amber)">➕ Registrar voto sorpresa</div>
+    <label class="form-label">Nombre completo <span style="color:var(--red)">*</span></label>
+    <input class="form-input" id="s-nombre" type="text" placeholder="Nombre del ciudadano" autocomplete="off">
+    <label class="form-label">Sección electoral</label>
+    <input class="form-input" id="s-seccion" type="number" placeholder="Ej. 138" id="s-seccion">
+    <label class="form-label">Observación (opcional)</label>
+    <input class="form-input" id="s-obs" type="text" placeholder="Ej. Se identificó con credencial">
+    <button class="btn-registrar" onclick="registrarSorpresa()">✓ Registrar voto sorpresa</button>
+    <div id="sorpresa-msg" style="display:none;margin-top:10px;padding:10px;border-radius:8px;font-size:12px;font-family:var(--mono);text-align:center;"></div>
+  </div>
+
+  <!-- Sorpresas registradas hoy -->
+  <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">
+    Votos sorpresa registrados hoy (<span id="cnt-sorpresas">0</span>)
+  </div>
+  <div id="lista-sorpresas"></div>
+
+</div>
+
+<!-- ══════════ RESUMEN MI CASILLA ══════════ -->
+<div class="screen" id="sc-resumen">
+
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px;">
+    <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px">Mi casilla — resumen en tiempo real</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px" id="resumen-kpis"></div>
+  </div>
+
+  <!-- Por nivel de compromiso pendientes -->
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px;">
+    <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">Pendientes por nivel de compromiso</div>
+    <div id="resumen-compromiso"></div>
+  </div>
+
+  <!-- Descargar mi lista pendiente -->
+  <div style="background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.2);border-radius:12px;padding:16px;">
+    <div style="font-size:13px;font-weight:600;margin-bottom:6px">⬇ Descargar pendientes de mi casilla</div>
+    <div style="font-size:11px;color:var(--text2);font-family:var(--mono);margin-bottom:12px">Solo nombre + teléfono + sección + coordinador</div>
+    <button style="width:100%;background:var(--accent);color:#fff;border:none;border-radius:10px;padding:13px;font-size:14px;font-weight:600;cursor:pointer;" onclick="descargarPendientes('casilla')">
+      ⬇ Descargar lista pendientes
+    </button>
+  </div>
+
+</div>
+
+<!-- ══════════ REGISTRO DE ACTIVIDAD ══════════ -->
+<div class="screen" id="sc-log">
+  <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">Registro de actividad — hoy</div>
+  <div id="log-lista"></div>
+</div>
+
+<!-- MODAL CONFIRMAR VOTO -->
+<div class="modal-bg" id="modal-voto">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-icon">🗳</div>
+    <div class="modal-title">¿Confirmar voto?</div>
+    <div class="modal-sub" id="modal-sub">Confirma que este simpatizante ya ejerció su voto.</div>
+    <div class="modal-data" id="modal-data"></div>
+    <button class="btn-confirmar" id="btn-confirmar" onclick="confirmarVoto()">✓ Sí, ya votó</button>
+    <button class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>
+  </div>
+</div>
+
+<!-- FAB: registro rápido -->
+<button class="fab" onclick="showTab('sorpresa')" title="Voto sorpresa">➕</button>
+
+<script>
+// ══════════════════════════════════════════════════════
+// DATOS — en producción vienen de Supabase + localStorage offline
+// ══════════════════════════════════════════════════════
+const SESION = (() => {
+  try { return JSON.parse(localStorage.getItem('electoral_sesion') || 'null'); } catch(e) { return null; }
+})();
+
+const CAPTURISTA_ID = SESION?.id       || 'CAP-017';
+const MUNICIPIO     = SESION?.municipio|| 'VILLA DE ALVAREZ';
+const SECCION_BASE  = SESION?.seccion  || 138;
+
+// Simpatizantes de la base (Fase 1) — en producción: query a Supabase por sección
+let SIMPATIZANTES = [
+  {id:'REG-001',nombre:'María García López',   tel:'312-111-0001',seccion:138,municipio:'VILLA DE ALVAREZ',compromiso:3,coordinador:'CORD-VDA',votó:false,hora_voto:null},
+  {id:'REG-002',nombre:'José Martínez Ruiz',   tel:'312-111-0002',seccion:138,municipio:'VILLA DE ALVAREZ',compromiso:4,coordinador:'CORD-VDA',votó:false,hora_voto:null},
+  {id:'REG-003',nombre:'Ana Torres Mendoza',   tel:'312-111-0003',seccion:139,municipio:'VILLA DE ALVAREZ',compromiso:2,coordinador:'CORD-VDA',votó:false,hora_voto:null},
+  {id:'REG-004',nombre:'Carlos Pérez Silva',   tel:'312-111-0004',seccion:138,municipio:'VILLA DE ALVAREZ',compromiso:3,coordinador:'CORD-VDA',votó:false,hora_voto:null},
+  {id:'REG-005',nombre:'Laura Hernández Cruz', tel:'312-111-0005',seccion:140,municipio:'VILLA DE ALVAREZ',compromiso:1,coordinador:'CORD-VDA',votó:false,hora_voto:null},
+  {id:'REG-006',nombre:'Roberto Díaz Morales', tel:'312-111-0006',seccion:138,municipio:'VILLA DE ALVAREZ',compromiso:4,coordinador:'CORD-VDA',votó:false,hora_voto:null},
+  {id:'REG-007',nombre:'Sofía Ramírez Vega',   tel:'312-111-0007',seccion:138,municipio:'VILLA DE ALVAREZ',compromiso:2,coordinador:'CORD-VDA',votó:false,hora_voto:null},
+  {id:'REG-008',nombre:'Miguel Flores Jiménez',tel:'312-111-0008',seccion:141,municipio:'VILLA DE ALVAREZ',compromiso:3,coordinador:'CORD-VDA',votó:false,hora_voto:null},
+  {id:'REG-009',nombre:'Patricia Gómez Luna',  tel:'312-111-0009',seccion:138,municipio:'VILLA DE ALVAREZ',compromiso:3,coordinador:'CORD-VDA',votó:false,hora_voto:null},
+  {id:'REG-010',nombre:'Fernando Castro Reyes',tel:'312-111-0010',seccion:138,municipio:'VILLA DE ALVAREZ',compromiso:4,coordinador:'CORD-VDA',votó:false,hora_voto:null},
+  {id:'REG-011',nombre:'Isabel Ruiz Soto',     tel:'312-111-0011',seccion:139,municipio:'VILLA DE ALVAREZ',compromiso:3,coordinador:'CORD-VDA',votó:false,hora_voto:null},
+  {id:'REG-012',nombre:'Héctor Mendoza Vega',  tel:'312-111-0012',seccion:140,municipio:'VILLA DE ALVAREZ',compromiso:2,coordinador:'CORD-VDA',votó:false,hora_voto:null},
+];
+
+let SORPRESAS = [];
+let LOG = [];
+let pendienteConfirmar = null;
+let filtroSeccion = 'todas';
+let queryBusqueda  = '';
+
+// Cargar estado guardado (offline)
+(function() {
+  try {
+    const saved = localStorage.getItem('dia_eleccion_votos');
+    if (saved) {
+      const data = JSON.parse(saved);
+      if (data.votos) {
+        data.votos.forEach(v => {
+          const s = SIMPATIZANTES.find(x => x.id === v.id);
+          if(s) { s.votó = v.votó; s.hora_voto = v.hora_voto; }
+        });
+      }
+      if (data.sorpresas) SORPRESAS = data.sorpresas;
+      if (data.log) LOG = data.log;
+    }
+  } catch(e) {}
+})();
+
+// ══════════════════════════════════════════════════════
+// RELOJ Y CUENTA REGRESIVA AL CORTE
+// ══════════════════════════════════════════════════════
+function calcProximoCorte() {
+  const now = new Date();
+  const min = now.getMinutes();
+  const nextHour = new Date(now);
+  nextHour.setMinutes(0, 0, 0);
+  nextHour.setHours(now.getHours() + 1);
+  const diff = nextHour - now;
+  const m = Math.floor(diff / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+  return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+setInterval(() => {
+  const now = new Date();
+  document.getElementById('reloj').textContent =
+    now.toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  document.getElementById('tiempo-corte').textContent = calcProximoCorte();
+
+  // Auto-descarga en el minuto 0 de cada hora
+  if(now.getMinutes() === 0 && now.getSeconds() === 0) {
+    descargarPendientes('auto');
+  }
+}, 1000);
+
+// Topbar info
+document.getElementById('topbar-casilla').textContent =
+  `Sección ${SECCION_BASE} · ${MUNICIPIO}`;
+
+// ══════════════════════════════════════════════════════
+// TABS
+// ══════════════════════════════════════════════════════
+function showTab(tab) {
+  ['votar','sorpresa','resumen','log'].forEach(t => {
+    document.getElementById('tab-'+t).classList.toggle('active', t===tab);
+    document.getElementById('sc-'+t).classList.toggle('active', t===tab);
+  });
+  if(tab==='resumen') renderResumen();
+  if(tab==='log') renderLog();
+  if(tab==='sorpresa') renderSorpresas();
+}
+
+// ══════════════════════════════════════════════════════
+// RENDER LISTA
+// ══════════════════════════════════════════════════════
+function initFiltroSecciones() {
+  const secciones = [...new Set(SIMPATIZANTES.map(s => s.seccion))].sort((a,b)=>a-b);
+  const cont = document.getElementById('sec-filter');
+  cont.innerHTML = `<div class="sec-chip active" id="chip-todas" onclick="setFiltroSec('todas')">Todas</div>` +
+    secciones.map(s =>
+      `<div class="sec-chip" id="chip-${s}" onclick="setFiltroSec(${s})">Secc. ${s}</div>`
+    ).join('');
+}
+
+function setFiltroSec(sec) {
+  filtroSeccion = sec;
+  document.querySelectorAll('.sec-chip').forEach(c => c.classList.remove('active'));
+  document.getElementById('chip-' + sec)?.classList.add('active');
+  renderLista();
+}
+
+function buscarSimpatizante(q) {
+  queryBusqueda = q;
+  document.getElementById('search-clear').style.display = q ? 'block' : 'none';
+  renderLista();
+}
+
+function limpiarBusqueda() {
+  document.getElementById('search-votar').value = '';
+  queryBusqueda = '';
+  document.getElementById('search-clear').style.display = 'none';
+  renderLista();
+}
+
+function renderLista() {
+  let lista = [...SIMPATIZANTES];
+  if(filtroSeccion !== 'todas') lista = lista.filter(s => s.seccion === filtroSeccion);
+  if(queryBusqueda) {
+    const q = queryBusqueda.toLowerCase();
+    lista = lista.filter(s => s.nombre.toLowerCase().includes(q) || String(s.seccion).includes(q));
+  }
+
+  // Pendientes primero, luego votados
+  lista.sort((a,b) => {
+    if(a.votó !== b.votó) return a.votó ? 1 : -1;
+    return b.compromiso - a.compromiso;
+  });
+
+  actualizarContador();
+
+  if(!lista.length) {
+    document.getElementById('lista-simpatizantes').innerHTML =
+      '<div class="no-results">Sin resultados para esta búsqueda</div>';
+    return;
+  }
+
+  const compColors = ['','#64748b','#3b82f6','#22c55e','#a855f7'];
+  const compLabels = ['','Contacto','Simpatiza','Seg. vota','Moviliza'];
+
+  document.getElementById('lista-simpatizantes').innerHTML = lista.map(s => {
+    const cc = compColors[s.compromiso] || '#64748b';
+    const ini = s.nombre.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+    return `
+    <div class="simp-card ${s.votó ? 'votado' : ''}" id="card-${s.id}">
+      <div class="simp-avatar" style="background:${cc}22;color:${cc};border:1px solid ${cc}44">${ini}</div>
+      <div class="simp-info">
+        <div class="simp-nombre">${s.nombre}</div>
+        <div class="simp-meta">
+          Secc. ${s.seccion}
+          &nbsp;·&nbsp;
+          <span class="comp-badge" style="background:${cc}18;color:${cc};border:1px solid ${cc}30">${s.compromiso} ${compLabels[s.compromiso]}</span>
+          ${s.votó ? `&nbsp;·&nbsp;<span style="color:var(--green);font-family:var(--mono);font-size:10px">✓ ${s.hora_voto}</span>` : ''}
+        </div>
+      </div>
+      <div class="simp-status">
+        ${s.votó
+          ? `<div>
+               <div class="btn-votado">✓ Votó</div>
+               <button class="btn-desvotar" onclick="desmarcarVoto('${s.id}')">↩ Desmarcar</button>
+             </div>`
+          : `<button class="btn-votar" onclick="abrirModal('${s.id}')">✓ Votó</button>`
+        }
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════
+// CONTADOR
+// ══════════════════════════════════════════════════════
+function actualizarContador() {
+  const total     = SIMPATIZANTES.length;
+  const votaron   = SIMPATIZANTES.filter(s => s.votó).length;
+  const pendientes= total - votaron;
+  const pct       = total ? Math.round(votaron/total*100) : 0;
+
+  document.getElementById('cnt-votaron').textContent   = votaron;
+  document.getElementById('cnt-pendientes').textContent= pendientes;
+  document.getElementById('cnt-total').textContent     = total;
+  document.getElementById('pct-casilla').textContent   = pct + '%';
+  document.getElementById('prog-fill').style.width     = pct + '%';
+  document.getElementById('prog-nums').textContent     = `${votaron} / ${total}`;
+
+  // Guardar en localStorage (offline)
+  guardarEstado();
+}
+
+// ══════════════════════════════════════════════════════
+// MODAL CONFIRMAR VOTO
+// ══════════════════════════════════════════════════════
+function abrirModal(id) {
+  const s = SIMPATIZANTES.find(x => x.id === id);
+  if(!s) return;
+  pendienteConfirmar = id;
+
+  document.getElementById('modal-data').innerHTML = `
+    <div class="modal-row"><span class="modal-key">Nombre</span><span class="modal-val">${s.nombre}</span></div>
+    <div class="modal-row"><span class="modal-key">Sección</span><span class="modal-val">${s.seccion}</span></div>
+    <div class="modal-row"><span class="modal-key">Compromiso</span><span class="modal-val">${s.compromiso} — ${['','Contacto','Simpatiza','Seg. vota','Moviliza'][s.compromiso]}</span></div>
+    <div class="modal-row"><span class="modal-key">Teléfono</span><span class="modal-val">${s.tel || '—'}</span></div>`;
+
+  document.getElementById('modal-bg').classList.add('show');
+}
+
+function cerrarModal() {
+  document.getElementById('modal-bg').classList.remove('show');
+  pendienteConfirmar = null;
+}
+
+function confirmarVoto() {
+  if(!pendienteConfirmar) return;
+  const s = SIMPATIZANTES.find(x => x.id === pendienteConfirmar);
+  if(!s) return;
+
+  const hora = new Date().toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'});
+  s.votó      = true;
+  s.hora_voto = hora;
+
+  // Agregar al log
+  agregarLog('green', `✓ ${s.nombre} marcado como votante · Secc. ${s.seccion} · ${hora}`);
+
+  cerrarModal();
+  renderLista();
+
+  // Vibración en móvil
+  if(navigator.vibrate) navigator.vibrate(60);
+}
+
+function desmarcarVoto(id) {
+  const s = SIMPATIZANTES.find(x => x.id === id);
+  if(!s) return;
+  if(!confirm(`¿Desmarcar el voto de ${s.nombre}?`)) return;
+  const hora = new Date().toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'});
+  s.votó      = false;
+  s.hora_voto = null;
+  agregarLog('amber', `↩ ${s.nombre} desmarcado · ${hora}`);
+  renderLista();
+}
+
+// ══════════════════════════════════════════════════════
+// VOTO SORPRESA
+// ══════════════════════════════════════════════════════
+function registrarSorpresa() {
+  const nombre  = document.getElementById('s-nombre').value.trim();
+  const seccion = parseInt(document.getElementById('s-seccion').value) || SECCION_BASE;
+  const obs     = document.getElementById('s-obs').value.trim();
+  const msg     = document.getElementById('sorpresa-msg');
+
+  if(!nombre) {
+    msg.style.display = 'block';
+    msg.style.cssText += 'background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:var(--red);';
+    msg.textContent = 'El nombre es obligatorio.';
+    return;
+  }
+
+  const hora = new Date().toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'});
+  const nuevo = {
+    id: 'SRP-' + String(SORPRESAS.length+1).padStart(3,'0'),
+    nombre, seccion, obs, hora,
+    registrado_por: CAPTURISTA_ID,
+  };
+  SORPRESAS.push(nuevo);
+  agregarLog('amber', `➕ Voto sorpresa: ${nombre} · Secc. ${seccion} · ${hora}`);
+
+  // Limpiar
+  document.getElementById('s-nombre').value  = '';
+  document.getElementById('s-seccion').value = '';
+  document.getElementById('s-obs').value     = '';
+
+  msg.style.display = 'block';
+  msg.style.cssText += 'background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);color:var(--green);';
+  msg.textContent = `✓ Voto sorpresa registrado: ${nombre}`;
+  setTimeout(() => msg.style.display = 'none', 3000);
+
+  renderSorpresas();
+  guardarEstado();
+
+  if(navigator.vibrate) navigator.vibrate(40);
+}
+
+function renderSorpresas() {
+  document.getElementById('cnt-sorpresas').textContent = SORPRESAS.length;
+  if(!SORPRESAS.length) {
+    document.getElementById('lista-sorpresas').innerHTML =
+      '<div class="no-results">Sin votos sorpresa registrados</div>';
+    return;
+  }
+  document.getElementById('lista-sorpresas').innerHTML = [...SORPRESAS].reverse().map(s => `
+    <div style="background:var(--bg2);border:1px solid rgba(245,158,11,0.2);border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px">
+      <div style="width:36px;height:36px;border-radius:8px;background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:700;color:var(--amber);flex-shrink:0">
+        ${s.nombre.substring(0,2).toUpperCase()}
+      </div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:500">${s.nombre}</div>
+        <div style="font-size:10px;font-family:var(--mono);color:var(--text3)">Secc. ${s.seccion} · ${s.hora} ${s.obs ? '· '+s.obs : ''}</div>
+      </div>
+      <span style="font-size:10px;font-family:var(--mono);background:rgba(245,158,11,0.1);color:var(--amber);border:1px solid rgba(245,158,11,0.25);padding:2px 8px;border-radius:99px">Sorpresa</span>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════════════════
+// RESUMEN
+// ══════════════════════════════════════════════════════
+function renderResumen() {
+  const total     = SIMPATIZANTES.length;
+  const votaron   = SIMPATIZANTES.filter(s => s.votó).length;
+  const pendientes= total - votaron;
+  const pct       = total ? Math.round(votaron/total*100) : 0;
+  const seguros   = SIMPATIZANTES.filter(s => s.compromiso >= 3 && !s.votó).length;
+
+  document.getElementById('resumen-kpis').innerHTML = `
+    <div style="background:var(--bg3);border-radius:10px;padding:12px;text-align:center;border:1px solid var(--border)">
+      <div style="font-size:26px;font-weight:700;font-family:var(--mono);color:var(--green)">${votaron}</div>
+      <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase">Ya votaron</div>
+    </div>
+    <div style="background:var(--bg3);border-radius:10px;padding:12px;text-align:center;border:1px solid var(--border)">
+      <div style="font-size:26px;font-weight:700;font-family:var(--mono);color:var(--red)">${pendientes}</div>
+      <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase">Pendientes</div>
+    </div>
+    <div style="background:var(--bg3);border-radius:10px;padding:12px;text-align:center;border:1px solid var(--border)">
+      <div style="font-size:26px;font-weight:700;font-family:var(--mono);color:var(--amber)">${SORPRESAS.length}</div>
+      <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase">Sorpresas</div>
+    </div>
+    <div style="background:var(--bg3);border-radius:10px;padding:12px;text-align:center;border:1px solid var(--border)">
+      <div style="font-size:26px;font-weight:700;font-family:var(--mono);color:var(--purple)">${seguros}</div>
+      <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase">Seg.vota pend.</div>
+    </div>`;
+
+  // Por compromiso
+  const niveles = [
+    {n:4, label:'Moviliza', color:'var(--purple)'},
+    {n:3, label:'Seg. vota', color:'var(--green)'},
+    {n:2, label:'Simpatiza', color:'var(--accent)'},
+    {n:1, label:'Contacto',  color:'#64748b'},
+  ];
+  document.getElementById('resumen-compromiso').innerHTML = niveles.map(nv => {
+    const total_nv = SIMPATIZANTES.filter(s => s.compromiso === nv.n).length;
+    const pend_nv  = SIMPATIZANTES.filter(s => s.compromiso === nv.n && !s.votó).length;
+    const pct_nv   = total_nv ? Math.round((total_nv - pend_nv) / total_nv * 100) : 0;
+    return `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <span style="font-family:var(--mono);font-size:11px;width:80px;color:${nv.color}">${nv.label}</span>
+      <div style="flex:1;height:7px;background:rgba(255,255,255,0.06);border-radius:99px;overflow:hidden">
+        <div style="width:${pct_nv}%;height:100%;background:${nv.color};border-radius:99px;transition:.5s"></div>
+      </div>
+      <span style="font-family:var(--mono);font-size:11px;color:var(--text3);width:60px;text-align:right">${pend_nv} pend.</span>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════
+// LOG
+// ══════════════════════════════════════════════════════
+function agregarLog(color, texto) {
+  LOG.unshift({ color, texto, hora: new Date().toLocaleTimeString('es-MX') });
+  if(LOG.length > 100) LOG.pop();
+}
+
+function renderLog() {
+  if(!LOG.length) {
+    document.getElementById('log-lista').innerHTML =
+      '<div class="no-results">Sin actividad registrada</div>';
+    return;
+  }
+  const colores = { green:'var(--green)', amber:'var(--amber)', red:'var(--red)', blue:'var(--accent)' };
+  document.getElementById('log-lista').innerHTML = LOG.map(l => `
+    <div class="log-item">
+      <div class="log-dot" style="background:${colores[l.color]||'var(--text3)'}"></div>
+      <div class="log-texto">${l.texto}</div>
+      <div class="log-hora">${l.hora}</div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════════════════
+// DESCARGAR PENDIENTES
+// ══════════════════════════════════════════════════════
+function descargarPendientes(modo) {
+  // Cargar SheetJS si no está
+  if(typeof XLSX === 'undefined') {
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    script.onload = () => _generarExcelPendientes(modo);
+    document.head.appendChild(script);
+  } else {
+    _generarExcelPendientes(modo);
+  }
+}
+
+function _generarExcelPendientes(modo) {
+  const pendientes = SIMPATIZANTES.filter(s => !s.votó);
+  const hora = new Date().toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'}).replace(':','-');
+  const fecha = new Date().toLocaleDateString('es-MX').replace(/\//g,'-');
+
+  const wb = XLSX.utils.book_new();
+
+  // Hoja principal: pendientes
+  const cols = ['NOMBRE','TELEFONO','SECCION','COORDINADOR','COMPROMISO','MUNICIPIO'];
+  const rows = [
+    cols,
+    ...pendientes.map(s => [
+      s.nombre,
+      s.tel || '—',
+      s.seccion,
+      s.coordinador,
+      `${s.compromiso} — ${['','Contacto','Simpatiza','Seg. vota','Moviliza'][s.compromiso]}`,
+      s.municipio,
+    ])
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:28},{wch:16},{wch:10},{wch:14},{wch:16},{wch:18}];
+  XLSX.utils.book_append_sheet(wb, ws, 'PENDIENTES_VOTAR');
+
+  // Hoja resumen
+  const total   = SIMPATIZANTES.length;
+  const votaron = total - pendientes.length;
+  const resumen = [
+    ['CORTE DE VOTACIÓN'],
+    ['Hora de corte', new Date().toLocaleTimeString('es-MX')],
+    ['Fecha', new Date().toLocaleDateString('es-MX')],
+    ['Sección', SECCION_BASE],
+    ['Municipio', MUNICIPIO],
+    ['Representante', CAPTURISTA_ID],
+    [''],
+    ['Total en base', total],
+    ['Ya votaron', votaron],
+    ['Pendientes', pendientes.length],
+    ['% Participación', total ? (votaron/total*100).toFixed(1)+'%' : '0%'],
+    ['Votos sorpresa', SORPRESAS.length],
+    [''],
+    ['Seg. vota pendientes (comp 3)', pendientes.filter(s=>s.compromiso===3).length],
+    ['Movilizadores pendientes (comp 4)', pendientes.filter(s=>s.compromiso===4).length],
+  ];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(resumen), 'RESUMEN_CORTE');
+
+  const fname = modo === 'auto'
+    ? `AutoCorte_Secc${SECCION_BASE}_${hora}hrs_${fecha}.xlsx`
+    : `Pendientes_Secc${SECCION_BASE}_${hora}hrs_${fecha}.xlsx`;
+
+  XLSX.writeFile(wb, fname);
+  agregarLog('blue', `⬇ ${modo==='auto'?'Corte automático':'Descarga manual'}: ${pendientes.length} pendientes · ${hora}hrs`);
+  if(modo !== 'auto') renderLog();
+}
+
+// ══════════════════════════════════════════════════════
+// PERSISTENCIA LOCAL (offline)
+// ══════════════════════════════════════════════════════
+function guardarEstado() {
+  const estado = {
+    votos:     SIMPATIZANTES.map(s => ({id:s.id, votó:s.votó, hora_voto:s.hora_voto})),
+    sorpresas: SORPRESAS,
+    log:       LOG,
+    ts:        Date.now(),
+  };
+  localStorage.setItem('dia_eleccion_votos', JSON.stringify(estado));
+}
+
+// ══════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════
+initFiltroSecciones();
+renderLista();
+renderSorpresas();
+
+// Cerrar modal al tocar fondo
+document.getElementById('modal-voto').addEventListener('click', function(e) {
+  if(e.target === this) cerrarModal();
+});
+</script>
+<script src="theme.js"></script>
+</body>
+</html>

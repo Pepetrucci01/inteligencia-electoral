@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Avance de Meta — SIE Colima 2027</title>
+<link rel="stylesheet" href="sie_styles.css">
+<script src="sie_data.js"></script>
+<script src="sie_nav.js"></script>
+</head>
+<body>
+<div id="topbar"></div>
+<div id="nav"></div>
+<div id="main">
+  <div id="role-banner"></div>
+
+  <div style="margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap;">
+    <button class="btn-export green" onclick="exportCSVMunicipios()">📥 Excel Municipios</button>
+    <button class="btn-export green" onclick="exportCSVDistritos()">📥 Excel Distritos</button>
+    <button class="btn-export green" onclick="exportCSVSecciones()">📥 Excel Secciones</button>
+    <button class="btn-export red" onclick="exportPDF()">📄 PDF Ejecutivo</button>
+  </div>
+
+  <div class="row2">
+    <div class="card">
+      <h3>📈 Avance por Municipio</h3>
+      <div id="mun-bars"></div>
+      <p style="font-size:11px;color:var(--yellow);margin-top:8px;">⚠ Conectar BD para avance real</p>
+    </div>
+    <div class="card">
+      <h3>📈 Avance por Distrito Local</h3>
+      <div id="dl-bars"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>📋 Detalle por Municipio</h3>
+    <table>
+      <thead><tr><th>Municipio</th><th>Secc.</th><th>Meta 2027</th><th>Lista Nominal</th><th>Avance</th><th>%</th><th>Fácil</th><th>Medio</th><th>Difícil</th></tr></thead>
+      <tbody id="mun-table"></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>📋 Detalle por Distrito Local</h3>
+    <table>
+      <thead><tr><th>Distrito</th><th>Secc.</th><th>Meta 2027</th><th>Avance</th><th>%</th><th>Fácil</th><th>Medio</th><th>Difícil</th></tr></thead>
+      <tbody id="dl-table"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  buildNav('avance');
+  renderBars();
+  renderTables();
+});
+
+function renderBars(){
+  const munBars = document.getElementById('mun-bars');
+  MUNICIPIOS.forEach(m=>{
+    const pct=0;
+    munBars.innerHTML+=`<div class="pw">
+      <div class="ph"><span style="font-weight:500">${m.nombre}</span><span style="color:var(--text2)">${SIE.fmt(m.avance)} / ${SIE.fmt(m.meta)} — ${pct}%</span></div>
+      <div class="pb-bg"><div class="pb-fill" style="width:${pct}%;background:${SIE.getBarColor(pct)};"></div></div>
+      <div style="font-size:10px;color:var(--text2);margin-top:2px;">${m.secciones} secc · Fácil:${m.facil} Medio:${m.medio} Difícil:${m.dificil}</div>
+    </div>`;
+  });
+  const dlBars = document.getElementById('dl-bars');
+  DISTRITOS_L.forEach(d=>{
+    const pct=0;
+    dlBars.innerHTML+=`<div class="pw">
+      <div class="ph"><span style="font-weight:500;font-size:11px">${d.nombre}</span><span style="color:var(--text2);font-size:11px">${SIE.fmt(d.meta)} meta · ${pct}%</span></div>
+      <div class="pb-bg"><div class="pb-fill" style="width:${pct}%;background:${SIE.getBarColor(pct)};"></div></div>
+    </div>`;
+  });
+}
+
+function renderTables(){
+  const mt=document.getElementById('mun-table');
+  MUNICIPIOS.forEach(m=>{
+    mt.innerHTML+=`<tr>
+      <td style="font-weight:600">${m.nombre}</td><td>${m.secciones}</td>
+      <td style="color:var(--accent);font-weight:600">${SIE.fmt(m.meta)}</td>
+      <td>${SIE.fmt(m.lista_nominal)}</td>
+      <td style="color:var(--green)">0</td><td style="color:#ff4466;font-weight:700">0%</td>
+      <td><span class="badge facil">${m.facil}</span></td>
+      <td><span class="badge medio">${m.medio}</span></td>
+      <td><span class="badge dificil">${m.dificil}</span></td>
+    </tr>`;
+  });
+  const dt=document.getElementById('dl-table');
+  DISTRITOS_L.forEach(d=>{
+    dt.innerHTML+=`<tr>
+      <td style="font-weight:600">${d.nombre}</td><td>${d.secciones}</td>
+      <td style="color:var(--accent);font-weight:600">${SIE.fmt(d.meta)}</td>
+      <td style="color:var(--green)">0</td><td style="color:#ff4466;font-weight:700">0%</td>
+      <td><span class="badge facil">${d.facil}</span></td>
+      <td><span class="badge medio">${d.medio}</span></td>
+      <td><span class="badge dificil">${d.dificil}</span></td>
+    </tr>`;
+  });
+}
+
+function dlCSV(rows,filename){
+  const bom='\uFEFF';
+  const csv=rows.map(r=>r.map(v=>{const s=String(v==null?'':v);return s.includes(',')||s.includes('"')?'"'+s.replace(/"/g,'""')+'"':s;}).join(',')).join('\n');
+  const blob=new Blob([bom+csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=filename;a.click();URL.revokeObjectURL(url);
+}
+
+function exportCSVMunicipios(){
+  const rows=[
+    ['SISTEMA DE INTELIGENCIA ELECTORAL - COLIMA 2027'],
+    ['Reporte por Municipio - '+new Date().toLocaleString('es-MX')],
+    [],
+    ['Municipio','Secciones','Meta 2027','Lista Nominal','Avance','% Avance','Facil','Medio','Dificil']
+  ];
+  MUNICIPIOS.forEach(m=>rows.push([m.nombre,m.secciones,Math.round(m.meta),m.lista_nominal,0,'0%',m.facil,m.medio,m.dificil]));
+  rows.push(['TOTAL',MUNICIPIOS.reduce((a,m)=>a+m.secciones,0),Math.round(MUNICIPIOS.reduce((a,m)=>a+m.meta,0)),MUNICIPIOS.reduce((a,m)=>a+m.lista_nominal,0),0,'0%',MUNICIPIOS.reduce((a,m)=>a+m.facil,0),MUNICIPIOS.reduce((a,m)=>a+m.medio,0),MUNICIPIOS.reduce((a,m)=>a+m.dificil,0)]);
+  dlCSV(rows,'avance_municipios_colima2027.csv');
+}
+
+function exportCSVDistritos(){
+  const rows=[
+    ['SISTEMA DE INTELIGENCIA ELECTORAL - COLIMA 2027'],
+    ['Reporte por Distrito Local - '+new Date().toLocaleString('es-MX')],
+    [],
+    ['Distrito','Num','Secciones','Meta 2027','Avance','% Avance','Facil','Medio','Dificil']
+  ];
+  DISTRITOS_L.forEach(d=>rows.push([d.nombre,d.num,d.secciones,Math.round(d.meta),0,'0%',d.facil,d.medio,d.dificil]));
+  dlCSV(rows,'avance_distritos_colima2027.csv');
+}
+
+function exportCSVSecciones(){
+  alert('Para exportar secciones abre mapa.html y usa el botón de exportar desde ahí');
+}
+
+function exportPDF(){
+  const u=SIE.getUser();
+  const fecha=new Date().toLocaleDateString('es-MX',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const munRows=MUNICIPIOS.map(m=>`<tr><td>${m.nombre}</td><td>${m.secciones}</td><td>${SIE.fmt(m.meta)}</td><td>${SIE.fmt(m.lista_nominal)}</td><td>0</td><td>0%</td><td>${m.facil}</td><td>${m.medio}</td><td>${m.dificil}</td></tr>`).join('');
+  const dlRows=DISTRITOS_L.map(d=>`<tr><td>${d.nombre}</td><td>${d.secciones}</td><td>${SIE.fmt(d.meta)}</td><td>0</td><td>0%</td><td>${d.facil}</td><td>${d.medio}</td><td>${d.dificil}</td></tr>`).join('');
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Reporte Electoral Colima 2027</title>
+  <style>body{font-family:Arial;margin:20px;font-size:12px;color:#222;}
+  .hdr{background:#1a1a2e;color:#fff;padding:16px;border-radius:8px;margin-bottom:16px;text-align:center;}
+  .hdr h1{color:#e94560;font-size:16px;margin-bottom:4px;}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
+  .kpi{background:#f8f9fa;border:1px solid #ddd;border-radius:6px;padding:10px;text-align:center;}
+  .kpi-v{font-size:20px;font-weight:700;color:#e94560;}.kpi-l{font-size:10px;color:#666;}
+  h2{font-size:13px;font-weight:700;margin:14px 0 6px;border-bottom:2px solid #e94560;padding-bottom:3px;}
+  table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:12px;}
+  th{background:#1a1a2e;color:#fff;padding:5px 7px;font-size:10px;}
+  td{padding:4px 7px;border-bottom:1px solid #eee;}tr:nth-child(even)td{background:#f8f9fa;}
+  .footer{text-align:center;color:#999;font-size:10px;margin-top:16px;border-top:1px solid #eee;padding-top:8px;}
+  @media print{body{margin:8px;}}</style></head><body>
+  <div class="hdr"><h1>SISTEMA DE INTELIGENCIA ELECTORAL — COLIMA 2027</h1>
+  <p>Reporte Ejecutivo · ${fecha}</p><p>Generado por: ${u?u.nombre:'—'}</p></div>
+  <div class="kpis">
+    <div class="kpi"><div class="kpi-v">197,297</div><div class="kpi-l">Meta Total 2027</div></div>
+    <div class="kpi"><div class="kpi-v">0</div><div class="kpi-l">Avance Actual</div></div>
+    <div class="kpi"><div class="kpi-v">0%</div><div class="kpi-l">% de Avance</div></div>
+    <div class="kpi"><div class="kpi-v">588,914</div><div class="kpi-l">Lista Nominal</div></div>
+  </div>
+  <h2>Avance por Municipio</h2>
+  <table><thead><tr><th>Municipio</th><th>Secc.</th><th>Meta</th><th>L. Nominal</th><th>Avance</th><th>%</th><th>Fácil</th><th>Medio</th><th>Difícil</th></tr></thead><tbody>${munRows}</tbody></table>
+  <h2>Avance por Distrito Local</h2>
+  <table><thead><tr><th>Distrito</th><th>Secc.</th><th>Meta</th><th>Avance</th><th>%</th><th>Fácil</th><th>Medio</th><th>Difícil</th></tr></thead><tbody>${dlRows}</tbody></table>
+  <div class="footer">Sistema de Inteligencia Electoral — Colima 2027 · ${fecha}</div>
+  </body></html>`;
+  const w=window.open('','_blank');
+  w.document.write(html);w.document.close();
+  setTimeout(()=>w.print(),500);
+}
+</script>
+</body>
+</html>
