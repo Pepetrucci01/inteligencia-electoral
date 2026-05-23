@@ -231,6 +231,7 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
           <option value="super_admin">Super admin</option>
           <option value="admin">Admin estatal</option>
           <option value="coordinador">Coordinador municipal</option>
+          <option value="lider_seccion">Líder de sección</option>
           <option value="capturista">Capturista</option>
         </select>
         <select class="form-select" id="user-status-fil" onchange="filtrarUsuarios()" style="width:140px">
@@ -562,45 +563,162 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
 
 <!-- ══════════ CONFIGURACIÓN ══════════ -->
 <div class="screen" id="sc-config">
+
+  <!-- ── NUEVO: TEMA DEL PARTIDO ── -->
+  <div class="card" style="margin-bottom:18px;border:1px solid rgba(59,130,246,0.3)">
+    <div class="card-head" style="background:rgba(59,130,246,0.06)">
+      <div class="card-title" style="color:var(--accent)">🎨 Tema del partido — Identidad visual</div>
+      <span class="badge b-blue" style="font-size:10px;font-family:var(--mono);padding:2px 10px;border-radius:99px;background:rgba(59,130,246,.12);color:var(--accent);border:1px solid rgba(59,130,246,.25)">Se aplica a todos los módulos</span>
+    </div>
+    <div class="card-body">
+      <div class="grid2" style="gap:20px">
+
+        <!-- Columna izquierda: Logo + nombre -->
+        <div>
+          <div class="config-section-title" style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">Identidad del partido</div>
+
+          <!-- Preview del logo -->
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;padding:14px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px">
+            <div id="logo-preview" style="width:52px;height:52px;border-radius:10px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:16px;font-weight:700;color:#fff;overflow:hidden;flex-shrink:0">
+              <img id="logo-preview-img" src="" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:10px">
+              <span id="logo-preview-ini">IE</span>
+            </div>
+            <div style="flex:1">
+              <div id="nombre-preview" style="font-size:14px;font-weight:600;margin-bottom:2px">Inteligencia Electoral</div>
+              <div id="slogan-preview" style="font-size:11px;font-family:var(--mono);color:var(--text3)">Sistema de control territorial 2027</div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Nombre del partido / sistema</label>
+            <input class="form-input" id="tm-nombre" value="Inteligencia Electoral" oninput="document.getElementById('nombre-preview').textContent=this.value">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Slogan o subtítulo</label>
+            <input class="form-input" id="tm-slogan" value="Sistema de control territorial 2027" oninput="document.getElementById('slogan-preview').textContent=this.value">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Iniciales (cuando no hay logo)</label>
+            <input class="form-input" id="tm-ini" value="IE" maxlength="3" style="text-transform:uppercase" oninput="document.getElementById('logo-preview-ini').textContent=this.value.toUpperCase()">
+          </div>
+
+          <!-- Upload logo -->
+          <div class="form-group">
+            <label class="form-label">Logo del partido (PNG, JPG, SVG)</label>
+            <div style="display:flex;gap:8px;align-items:center">
+              <label style="flex:1;cursor:pointer">
+                <div style="background:var(--bg3);border:1px dashed var(--border2);border-radius:6px;padding:10px 14px;font-size:12px;color:var(--text3);text-align:center;transition:all .2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)'">
+                  📁 Subir imagen del logo
+                </div>
+                <input type="file" accept="image/*" style="display:none" onchange="cargarLogo(this)">
+              </label>
+              <button class="btn" onclick="quitarLogo()" style="font-size:11px;padding:8px 12px">✕ Quitar</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">O pegar URL del logo</label>
+            <input class="form-input" id="tm-logo-url" placeholder="https://partido.mx/logo.png" oninput="prevLogoUrl(this.value)">
+          </div>
+        </div>
+
+        <!-- Columna derecha: Colores -->
+        <div>
+          <div class="config-section-title" style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">Paleta de colores del partido</div>
+
+          <!-- Color primario -->
+          <div class="form-group">
+            <label class="form-label">Color primario <span style="font-size:10px;color:var(--text3)">(botones, highlights, accent)</span></label>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input type="color" id="tm-c1" value="#3b82f6" style="width:40px;height:34px;border:1px solid var(--border2);border-radius:6px;background:var(--bg3);cursor:pointer;padding:2px" onchange="previewColor()">
+              <input class="form-input" id="tm-c1-hex" value="#3b82f6" style="flex:1;font-family:var(--mono)" oninput="syncColorPicker('tm-c1','tm-c1-hex')">
+            </div>
+            <div id="swatches-primario" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
+              <!-- Colores por partido -->
+              <div title="Azul (PAN)" onclick="setColor('tm-c1','tm-c1-hex','#0055A4')" style="width:22px;height:22px;border-radius:4px;background:#0055A4;cursor:pointer;border:2px solid transparent;transition:.15s" onmouseover="this.style.border='2px solid white'" onmouseout="this.style.border='2px solid transparent'"></div>
+              <div title="Rojo (PRI)" onclick="setColor('tm-c1','tm-c1-hex','#C8102E')" style="width:22px;height:22px;border-radius:4px;background:#C8102E;cursor:pointer;border:2px solid transparent;transition:.15s" onmouseover="this.style.border='2px solid white'" onmouseout="this.style.border='2px solid transparent'"></div>
+              <div title="Guinda (Morena)" onclick="setColor('tm-c1','tm-c1-hex','#7B1F3A')" style="width:22px;height:22px;border-radius:4px;background:#7B1F3A;cursor:pointer;border:2px solid transparent;transition:.15s" onmouseover="this.style.border='2px solid white'" onmouseout="this.style.border='2px solid transparent'"></div>
+              <div title="Naranja (MC)" onclick="setColor('tm-c1','tm-c1-hex','#F26522')" style="width:22px;height:22px;border-radius:4px;background:#F26522;cursor:pointer;border:2px solid transparent;transition:.15s" onmouseover="this.style.border='2px solid white'" onmouseout="this.style.border='2px solid transparent'"></div>
+              <div title="Amarillo (PRD)" onclick="setColor('tm-c1','tm-c1-hex','#FFCC00')" style="width:22px;height:22px;border-radius:4px;background:#FFCC00;cursor:pointer;border:2px solid transparent;transition:.15s" onmouseover="this.style.border='2px solid white'" onmouseout="this.style.border='2px solid transparent'"></div>
+              <div title="Verde (PVEM)" onclick="setColor('tm-c1','tm-c1-hex','#5fad41')" style="width:22px;height:22px;border-radius:4px;background:#5fad41;cursor:pointer;border:2px solid transparent;transition:.15s" onmouseover="this.style.border='2px solid white'" onmouseout="this.style.border='2px solid transparent'"></div>
+              <div title="Azul neutro" onclick="setColor('tm-c1','tm-c1-hex','#3b82f6')" style="width:22px;height:22px;border-radius:4px;background:#3b82f6;cursor:pointer;border:2px solid transparent;transition:.15s" onmouseover="this.style.border='2px solid white'" onmouseout="this.style.border='2px solid transparent'"></div>
+              <div title="Morado" onclick="setColor('tm-c1','tm-c1-hex','#a855f7')" style="width:22px;height:22px;border-radius:4px;background:#a855f7;cursor:pointer;border:2px solid transparent;transition:.15s" onmouseover="this.style.border='2px solid white'" onmouseout="this.style.border='2px solid transparent'"></div>
+            </div>
+          </div>
+
+          <!-- Color secundario -->
+          <div class="form-group">
+            <label class="form-label">Color secundario <span style="font-size:10px;color:var(--text3)">(etiquetas, estado activo)</span></label>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input type="color" id="tm-c2" value="#06b6d4" style="width:40px;height:34px;border:1px solid var(--border2);border-radius:6px;background:var(--bg3);cursor:pointer;padding:2px" onchange="previewColor()">
+              <input class="form-input" id="tm-c2-hex" value="#06b6d4" style="flex:1;font-family:var(--mono)" oninput="syncColorPicker('tm-c2','tm-c2-hex')">
+            </div>
+          </div>
+
+          <!-- Preview en vivo -->
+          <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:14px;margin-top:4px">
+            <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Vista previa en vivo</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+              <div id="prev-btn" style="background:var(--accent);color:#fff;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600">Botón primario</div>
+              <div id="prev-badge" style="background:rgba(59,130,246,.12);color:var(--accent);border:1px solid rgba(59,130,246,.25);padding:3px 10px;border-radius:99px;font-size:10px;font-family:var(--mono)">BADGE</div>
+              <div id="prev-bar" style="flex:1;min-width:100px;height:8px;border-radius:99px;background:linear-gradient(90deg,#1d4ed8,var(--accent))"></div>
+            </div>
+          </div>
+
+          <!-- Presets rápidos de partido -->
+          <div style="margin-top:14px">
+            <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Presets rápidos por partido</div>
+            <div style="display:flex;gap:7px;flex-wrap:wrap">
+              <button class="btn" style="font-size:11px;padding:5px 10px" onclick="aplicarPreset('pan')">🔵 PAN</button>
+              <button class="btn" style="font-size:11px;padding:5px 10px" onclick="aplicarPreset('pri')">🔴 PRI</button>
+              <button class="btn" style="font-size:11px;padding:5px 10px" onclick="aplicarPreset('morena')">🟣 Morena</button>
+              <button class="btn" style="font-size:11px;padding:5px 10px" onclick="aplicarPreset('mc')">🟠 MC</button>
+              <button class="btn" style="font-size:11px;padding:5px 10px" onclick="aplicarPreset('prd')">🟡 PRD</button>
+              <button class="btn" style="font-size:11px;padding:5px 10px" onclick="aplicarPreset('pvem')">🟢 PVEM</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Botones de acción -->
+      <div style="display:flex;gap:10px;margin-top:18px;padding-top:16px;border-top:1px solid var(--border)">
+        <button class="btn primary" style="flex:1" onclick="guardarTema()">💾 Guardar tema y aplicar a todos los módulos</button>
+        <button class="btn" onclick="resetearTema()">↩ Restablecer por defecto</button>
+      </div>
+      <div id="tm-msg" style="display:none;margin-top:10px;padding:10px 14px;border-radius:6px;font-size:12px;font-family:var(--mono)"></div>
+    </div>
+  </div>
+
+  <!-- Configuración operativa del cliente -->
   <div class="grid2">
     <div>
       <div class="card">
-        <div class="card-head"><div class="card-title">Identidad del sistema</div></div>
+        <div class="card-head"><div class="card-title">⚙️ Datos operativos del cliente</div></div>
         <div class="card-body">
-          <div class="config-section">
-            <div class="form-group">
-              <label class="form-label">Nombre del sistema</label>
-              <input class="form-input" value="Inteligencia Electoral" id="cfg-nombre">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Subtítulo / slogan</label>
-              <input class="form-input" value="Sistema de control territorial 2027" id="cfg-sub">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Estado activo</label>
-              <select class="form-select" id="cfg-estado-sel">
-                <option selected>Colima</option><option>Sonora</option><option>Veracruz</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Año de elección</label>
-              <input class="form-input" type="number" value="2027" id="cfg-year">
+          <div class="form-group">
+            <label class="form-label">Estado / entidad federativa</label>
+            <input class="form-input" id="cfg-estado" value="Colima" placeholder="Ej. Colima, Jalisco, Sonora...">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Año de la elección</label>
+            <input class="form-input" type="number" id="cfg-year" value="2027" min="2024" max="2035"
+              oninput="document.getElementById('cfg-fecha-prev').textContent='Cuenta regresiva hacia '+this.value">
+            <div style="font-size:10px;font-family:var(--mono);color:var(--text3);margin-top:4px" id="cfg-fecha-prev">Cuenta regresiva hacia 2027</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Fecha exacta de la elección</label>
+            <input class="form-input" type="date" id="cfg-fecha" value="2027-06-01">
+            <div style="font-size:10px;font-family:var(--mono);color:var(--text3);margin-top:4px">Se usa para la cuenta regresiva en todos los módulos</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Meta estatal de registros</label>
+            <input class="form-input" type="number" id="cfg-meta" value="197297" placeholder="Ej. 197297"
+              oninput="actualizarPrevMeta(this.value)">
+            <div style="font-size:10px;font-family:var(--mono);color:var(--text3);margin-top:4px">
+              Vista previa: <span id="cfg-meta-prev" style="color:var(--accent);font-weight:600">197,297</span> registros
             </div>
           </div>
-          <div class="config-section">
-            <div class="config-section-title">Color de acento del sistema</div>
-            <div class="color-swatches" id="swatches">
-              <div class="swatch sel" style="background:#3b82f6" data-c="#3b82f6" onclick="selColor(this)"></div>
-              <div class="swatch" style="background:#a855f7" data-c="#a855f7" onclick="selColor(this)"></div>
-              <div class="swatch" style="background:#22c55e" data-c="#22c55e" onclick="selColor(this)"></div>
-              <div class="swatch" style="background:#ef4444" data-c="#ef4444" onclick="selColor(this)"></div>
-              <div class="swatch" style="background:#f59e0b" data-c="#f59e0b" onclick="selColor(this)"></div>
-              <div class="swatch" style="background:#06b6d4" data-c="#06b6d4" onclick="selColor(this)"></div>
-              <div class="swatch" style="background:#ec4899" data-c="#ec4899" onclick="selColor(this)"></div>
-              <div class="swatch" style="background:#f97316" data-c="#f97316" onclick="selColor(this)"></div>
-            </div>
-          </div>
-          <button class="btn primary" style="width:100%" onclick="guardarConfig()">Guardar configuración</button>
+          <button class="btn primary" style="width:100%;margin-top:4px" onclick="guardarConfigOperativa()">💾 Guardar datos operativos</button>
+          <div id="cfg-op-msg" style="display:none;margin-top:10px;padding:8px 12px;border-radius:6px;font-size:12px;font-family:var(--mono)"></div>
         </div>
       </div>
     </div>
@@ -888,10 +1006,11 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
 <script>
 /* ─── DATOS DE USUARIOS ─── */
 const ROLES = {
-  super_admin:{label:'Super Admin',color:'var(--red)'},
-  admin:{label:'Admin Estatal',color:'var(--amber)'},
-  coordinador:{label:'Coordinador Mun.',color:'var(--accent)'},
-  capturista:{label:'Capturista',color:'var(--green)'},
+  super_admin:   {label:'Super Admin',      color:'var(--red)'},
+  admin:         {label:'Admin Estatal',    color:'var(--amber)'},
+  coordinador:   {label:'Coordinador Mun.', color:'var(--accent)'},
+  lider_seccion: {label:'Líder de Sección', color:'#a855f7'},
+  capturista:    {label:'Capturista',       color:'var(--green)'},
 };
 
 const USUARIOS = [
@@ -900,6 +1019,9 @@ const USUARIOS = [
   {id:'CORD-TCM',nombre:'Coordinador Tecomán',email:'tecoman@colima.mx',rol:'coordinador',mun:'Tecomán',sec:'62 secciones',ultimo:'Ayer 22:10',capturas:0,status:'activo'},
   {id:'CORD-COL',nombre:'Coordinador Colima',email:'colima@colima.mx',rol:'coordinador',mun:'Colima',sec:'99 secciones',ultimo:'Hoy 07:30',capturas:0,status:'activo'},
   {id:'CORD-VDA',nombre:'Coordinador V. Álvarez',email:'valvarez@colima.mx',rol:'coordinador',mun:'V. Álvarez',sec:'70 secciones',ultimo:'Ayer 20:15',capturas:0,status:'activo'},
+  {id:'LDR-138',nombre:'Líder Sección 138',email:'lider138@colima.mx',rol:'lider_seccion',mun:'Villa de Álvarez',sec:'138',ultimo:'Hoy 09:05',capturas:0,status:'activo'},
+  {id:'LDR-139',nombre:'Líder Sección 139',email:'lider139@colima.mx',rol:'lider_seccion',mun:'Villa de Álvarez',sec:'139',ultimo:'Ayer 21:30',capturas:0,status:'activo'},
+  {id:'LDR-236',nombre:'Líder Sección 236',email:'lider236@colima.mx',rol:'lider_seccion',mun:'Manzanillo',sec:'236',ultimo:'Hoy 08:50',capturas:0,status:'activo'},
   {id:'CAP-032',nombre:'Capturista 032',email:'cap032@colima.mx',rol:'capturista',mun:'Manzanillo',sec:'236',ultimo:'Hoy 09:38',capturas:52,status:'activo'},
   {id:'CAP-038',nombre:'Capturista 038',email:'cap038@colima.mx',rol:'capturista',mun:'Manzanillo',sec:'248',ultimo:'Hoy 08:12',capturas:50,status:'activo'},
   {id:'CAP-004',nombre:'Capturista 004',email:'cap004@colima.mx',rol:'capturista',mun:'Manzanillo',sec:'261',ultimo:'Ayer 18:40',capturas:48,status:'activo'},
@@ -967,6 +1089,12 @@ function showTab(t){
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
   document.getElementById('sc-'+t).classList.add('active');
   document.getElementById('tab-'+t).classList.add('active');
+  if (t === 'config') {
+    setTimeout(() => {
+      cargarTemaEnFormulario();
+      cargarConfigOperativaEnFormulario();
+    }, 50);
+  }
 }
 
 function modalNuevoUsuario(){
@@ -982,6 +1110,7 @@ function modalNuevoUsuario(){
       <div class="form-group"><label class="form-label">Rol</label>
         <select class="form-select" id="m-rol">
           <option value="capturista">Capturista</option>
+          <option value="lider_seccion">Líder de Sección</option>
           <option value="coordinador">Coordinador Municipal</option>
           <option value="admin">Admin Estatal</option>
         </select>
@@ -1082,9 +1211,189 @@ function selColor(el){
   el.classList.add('sel');
 }
 
-function guardarConfig(){
-  const nombre=document.getElementById('cfg-nombre').value;
-  alert('Configuración guardada: '+nombre+'\nLos cambios se aplicarán al recargar el sistema.');
+function guardarConfigGeneral(){
+  alert('Configuración guardada.\nLos cambios se aplicarán al recargar el sistema.');
+}
+
+// ── Configuración operativa (estado, meta, año, fecha) ──
+function actualizarPrevMeta(val) {
+  const num = parseInt(val.replace(/\D/g,'')) || 0;
+  document.getElementById('cfg-meta-prev').textContent = num.toLocaleString('es-MX');
+}
+
+function guardarConfigOperativa() {
+  const estado = document.getElementById('cfg-estado').value.trim();
+  const anio   = parseInt(document.getElementById('cfg-year').value) || 2027;
+  const fecha  = document.getElementById('cfg-fecha').value || (anio + '-06-01');
+  const meta   = parseInt(document.getElementById('cfg-meta').value.replace(/\D/g,'')) || 197297;
+
+  if (!estado) { alert('Por favor ingresa el estado.'); return; }
+
+  const config = {
+    sistemaEstado: estado,
+    sistemaAnio:   anio,
+    fechaEleccion: fecha,
+    sistemaMeta:   meta,
+  };
+
+  if (typeof saveTheme === 'function') {
+    saveTheme(config);
+  } else {
+    const current = JSON.parse(localStorage.getItem('electoral_theme_v1') || '{}');
+    localStorage.setItem('electoral_theme_v1', JSON.stringify(Object.assign(current, config)));
+  }
+
+  const msg = document.getElementById('cfg-op-msg');
+  msg.style.display = 'block';
+  msg.style.background = 'rgba(34,197,94,0.1)';
+  msg.style.border = '1px solid rgba(34,197,94,0.3)';
+  msg.style.color = '#22c55e';
+  msg.textContent = `✓ Guardado: ${estado} ${anio} · Meta ${meta.toLocaleString('es-MX')} registros · Elección ${fecha}`;
+  setTimeout(() => msg.style.display = 'none', 5000);
+}
+
+function cargarConfigOperativaEnFormulario() {
+  const t = typeof loadTheme === 'function' ? loadTheme() : {};
+  if (t.sistemaEstado) document.getElementById('cfg-estado').value = t.sistemaEstado;
+  if (t.sistemaAnio)   document.getElementById('cfg-year').value   = t.sistemaAnio;
+  if (t.fechaEleccion) document.getElementById('cfg-fecha').value  = t.fechaEleccion;
+  if (t.sistemaMeta)   {
+    document.getElementById('cfg-meta').value = t.sistemaMeta;
+    actualizarPrevMeta(String(t.sistemaMeta));
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SISTEMA DE TEMAS DEL PARTIDO
+// ══════════════════════════════════════════════════════════════════
+
+const PRESETS = {
+  pan:    { nombre:'PAN',    colorPrimario:'#0055A4', colorSecundario:'#00A3E0', logoInicial:'PAN' },
+  pri:    { nombre:'PRI',    colorPrimario:'#C8102E', colorSecundario:'#007A3D', logoInicial:'PRI' },
+  morena: { nombre:'Morena', colorPrimario:'#7B1F3A', colorSecundario:'#C8A84B', logoInicial:'MRN' },
+  mc:     { nombre:'Movimiento Ciudadano', colorPrimario:'#F26522', colorSecundario:'#FFB81C', logoInicial:'MC' },
+  prd:    { nombre:'PRD',    colorPrimario:'#FFCC00', colorSecundario:'#F26522', logoInicial:'PRD' },
+  pvem:   { nombre:'PVEM',   colorPrimario:'#5fad41', colorSecundario:'#2d8a34', logoInicial:'PVEM' },
+};
+
+function setColor(pickerId, hexId, value) {
+  document.getElementById(pickerId).value = value;
+  document.getElementById(hexId).value = value;
+  previewColor();
+}
+
+function syncColorPicker(pickerId, hexId) {
+  const val = document.getElementById(hexId).value;
+  if (/^#[0-9a-fA-F]{6}$/.test(val)) {
+    document.getElementById(pickerId).value = val;
+    previewColor();
+  }
+}
+
+function previewColor() {
+  const c1 = document.getElementById('tm-c1').value;
+  const c2 = document.getElementById('tm-c2').value;
+  // Vista previa en vivo
+  document.getElementById('prev-btn').style.background = c1;
+  document.getElementById('prev-badge').style.color = c1;
+  document.getElementById('prev-badge').style.background = c1 + '20';
+  document.getElementById('prev-badge').style.borderColor = c1 + '40';
+  document.getElementById('prev-bar').style.background = `linear-gradient(90deg, ${c2}, ${c1})`;
+  document.getElementById('logo-preview').style.background = c1;
+}
+
+function cargarLogo(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const url = e.target.result;
+    document.getElementById('tm-logo-url').value = '';
+    mostrarLogoPreview(url);
+  };
+  reader.readAsDataURL(file);
+}
+
+function prevLogoUrl(url) {
+  if (url) mostrarLogoPreview(url);
+  else quitarLogo();
+}
+
+function mostrarLogoPreview(url) {
+  const img = document.getElementById('logo-preview-img');
+  const ini = document.getElementById('logo-preview-ini');
+  img.src = url;
+  img.style.display = 'block';
+  ini.style.display = 'none';
+  document.getElementById('logo-preview').style.background = 'transparent';
+}
+
+function quitarLogo() {
+  document.getElementById('logo-preview-img').style.display = 'none';
+  document.getElementById('logo-preview-ini').style.display = 'block';
+  document.getElementById('tm-logo-url').value = '';
+  document.getElementById('logo-preview').style.background = document.getElementById('tm-c1').value;
+}
+
+function aplicarPreset(partido) {
+  const p = PRESETS[partido];
+  if (!p) return;
+  document.getElementById('tm-nombre').value = p.nombre;
+  document.getElementById('nombre-preview').textContent = p.nombre;
+  document.getElementById('tm-ini').value = p.logoInicial;
+  document.getElementById('logo-preview-ini').textContent = p.logoInicial;
+  setColor('tm-c1', 'tm-c1-hex', p.colorPrimario);
+  setColor('tm-c2', 'tm-c2-hex', p.colorSecundario);
+  previewColor();
+}
+
+function guardarTema() {
+  const logoUrl = document.getElementById('tm-logo-url').value ||
+                  (document.getElementById('logo-preview-img').style.display !== 'none'
+                    ? document.getElementById('logo-preview-img').src : '');
+
+  const config = {
+    partidoNombre:   document.getElementById('tm-nombre').value,
+    partidoSlogan:   document.getElementById('tm-slogan').value,
+    logoUrl:         logoUrl,
+    logoInicial:     document.getElementById('tm-ini').value.toUpperCase(),
+    colorPrimario:   document.getElementById('tm-c1').value,
+    colorSecundario: document.getElementById('tm-c2').value,
+  };
+
+  // Guardar usando theme.js
+  if (typeof saveTheme === 'function') {
+    saveTheme(config);
+  } else {
+    localStorage.setItem(' electoral_theme_v1', JSON.stringify(config));
+  }
+
+  // Mostrar mensaje de éxito
+  const msg = document.getElementById('tm-msg');
+  msg.style.display = 'block';
+  msg.style.background = 'rgba(34,197,94,0.1)';
+  msg.style.border = '1px solid rgba(34,197,94,0.3)';
+  msg.style.color = '#22c55e';
+  msg.textContent = '✓ Tema guardado correctamente. Se aplicará en todos los módulos al recargar.';
+  setTimeout(() => msg.style.display = 'none', 4000);
+}
+
+function resetearTema() {
+  if (!confirm('¿Restablecer el tema por defecto? Se perderán los colores actuales.')) return;
+  localStorage.removeItem(' electoral_theme_v1');
+  location.reload();
+}
+
+// Cargar tema actual en los inputs al abrir la pestaña config
+function cargarTemaEnFormulario() {
+  const t = typeof loadTheme === 'function' ? loadTheme() : {};
+  if (t.colorPrimario) { document.getElementById('tm-c1').value = t.colorPrimario; document.getElementById('tm-c1-hex').value = t.colorPrimario; }
+  if (t.colorSecundario) { document.getElementById('tm-c2').value = t.colorSecundario; document.getElementById('tm-c2-hex').value = t.colorSecundario; }
+  if (t.partidoNombre) { document.getElementById('tm-nombre').value = t.partidoNombre; document.getElementById('nombre-preview').textContent = t.partidoNombre; }
+  if (t.partidoSlogan) { document.getElementById('tm-slogan').value = t.partidoSlogan; document.getElementById('slogan-preview').textContent = t.partidoSlogan; }
+  if (t.logoInicial) { document.getElementById('tm-ini').value = t.logoInicial; document.getElementById('logo-preview-ini').textContent = t.logoInicial; }
+  if (t.logoUrl) { mostrarLogoPreview(t.logoUrl); document.getElementById('tm-logo-url').value = t.logoUrl; }
+  previewColor();
 }
 
 function exportarUsuarios(){
@@ -1386,5 +1695,6 @@ showTab = function(t){
   if(t==='candidaturas') initCandidaturas();
 };
 </script>
+<script src="theme.js"></script>
 </body>
 </html>

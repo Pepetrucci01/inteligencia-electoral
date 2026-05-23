@@ -74,6 +74,28 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 .asign-icon{font-size:20px;flex-shrink:0;}
 .asign-title{font-size:12px;font-weight:600;color:var(--cyan);margin-bottom:2px;}
 .asign-desc{font-size:11px;color:var(--text2);font-family:var(--mono);}
+/* CURP WIDGET */
+.curp-wrap{position:relative;}
+.curp-status{position:absolute;right:12px;top:14px;font-size:18px;pointer-events:none;transition:all .2s;}
+.curp-box{border-radius:10px;padding:12px 14px;margin-top:8px;font-size:12px;display:none;}
+.curp-box.show{display:block;}
+.curp-box.validando{background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);color:var(--amber);}
+.curp-box.ok{background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.3);color:var(--green);}
+.curp-box.duplicado{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);color:var(--red);}
+.curp-box.error{background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.25);color:var(--red);}
+.curp-box.offline{background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.3);color:var(--purple);}
+.curp-box-title{font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:6px;}
+.curp-box-data{font-family:var(--mono);font-size:11px;line-height:1.7;color:var(--text2);}
+.curp-autocompletado{background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.2);border-radius:8px;padding:10px 12px;margin-top:10px;font-size:11px;}
+.curp-autocompletado-title{font-size:10px;font-family:var(--mono);color:var(--green);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
+.curp-field{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.05);}
+.curp-field:last-child{border-bottom:none;}
+.curp-field-lbl{color:var(--text3);}
+.curp-field-val{font-weight:500;color:var(--text);}
+.btn-aplicar{background:var(--green);color:#fff;border:none;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;width:100%;margin-top:8px;}
+.spinner-curp{display:inline-block;width:14px;height:14px;border:2px solid rgba(245,158,11,0.3);border-top-color:var(--amber);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
 
 /* COMPROMISOS */
 .compromiso-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
@@ -275,6 +297,25 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
       </div>
     </div>
 
+    <!-- ══ CURP — Validación única + RENAPO ══ -->
+    <div class="form-section">
+      <div class="form-section-title">CURP <span style="color:var(--green);font-size:9px;font-family:var(--mono)">● VALIDACIÓN AUTOMÁTICA</span></div>
+      <div class="form-group">
+        <div class="form-label">CURP <span class="req">*</span>
+          <span style="font-size:10px;color:var(--text3);font-family:var(--mono)">— evita duplicados · autocompleta datos</span>
+        </div>
+        <div class="curp-wrap">
+          <input class="form-input" id="f-curp"
+            type="text" placeholder="GAML880101HCLLPR01"
+            maxlength="18" autocomplete="off"
+            style="text-transform:uppercase;letter-spacing:.08em;font-family:var(--mono);padding-right:44px"
+            oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'');onCurpInput(this.value)">
+          <span class="curp-status" id="curp-status"></span>
+        </div>
+        <div class="curp-box" id="curp-box"></div>
+      </div>
+    </div>
+
     <div class="form-section">
       <div class="form-section-title">Ubicación electoral</div>
       <div class="form-group">
@@ -355,10 +396,6 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 
     <div class="form-section">
       <div class="form-section-title">Datos adicionales</div>
-      <div class="form-group">
-        <div class="form-label">CURP</div>
-        <input class="form-input" id="f-curp" type="text" placeholder="GAML880101HCLLPR01" maxlength="18" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
-      </div>
       <div class="form-group">
         <div class="form-label">Clave de elector</div>
         <input class="form-input" id="f-clave" type="text" placeholder="18 dígitos" maxlength="18">
@@ -527,6 +564,20 @@ function actualizarSecciones() {}
 // ─── PASO 1 → 2 ────────────────────────────────────────────────────────────
 function irPaso2() {
   const errs = [];
+  // Validar CURP primero
+  const curpVal = (document.getElementById('f-curp').value || '').trim();
+  if (!curpVal) {
+    errs.push('CURP requerida');
+  } else if (!CURP_REGEX.test(curpVal)) {
+    errs.push('CURP con formato inválido');
+  } else {
+    // Verificar duplicado una vez más antes de continuar
+    const dup = CIUDADANOS.find(c => c.curp && c.curp.toUpperCase() === curpVal);
+    if (dup) {
+      errs.push('CURP ya registrada — ciudadano duplicado');
+      document.getElementById('curp-status').textContent = '⚠️';
+    }
+  }
   if(!document.getElementById('f-nombre').value.trim()) errs.push('Nombre requerido');
   if(!document.getElementById('f-paterno').value.trim()) errs.push('Apellido paterno requerido');
   if(!document.getElementById('f-edad').value) errs.push('Edad requerida');
@@ -822,6 +873,201 @@ function renderLista(){
 // ─── INIT ──────────────────────────────────────────────────────────────────
 buscar();
 renderLista();
+
+// ══════════════════════════════════════════════════════════════════
+// SISTEMA DE VALIDACIÓN DE CURP
+// ══════════════════════════════════════════════════════════════════
+
+// Regex oficial de formato CURP mexicana
+const CURP_REGEX = /^[A-Z]{1}[AEIOU]{1}[A-Z]{2}[0-9]{2}(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])[HM]{1}(AS|BC|BS|CC|CS|CH|CL|CM|DF|DG|GT|GR|HG|JC|MC|MN|MS|NT|NL|OC|PL|QT|QR|SP|SL|SR|TC|TS|TL|VZ|YN|ZS|NE)[B-DF-HJ-NP-TV-Z]{3}[0-9A-Z]{1}[0-9]{1}$/;
+
+let curpTimer = null;
+let curpValidada = false;
+let datosRenapo = null;
+
+function onCurpInput(val) {
+  const box = document.getElementById('curp-box');
+  const status = document.getElementById('curp-status');
+  curpValidada = false;
+  datosRenapo = null;
+
+  // Limpiar timer previo
+  clearTimeout(curpTimer);
+
+  if (val.length < 18) {
+    // Formato incompleto — solo mostrar progreso
+    if (val.length > 0) {
+      status.textContent = '✏️';
+      box.className = 'curp-box';
+      box.style.display = 'none';
+    } else {
+      status.textContent = '';
+      box.style.display = 'none';
+    }
+    return;
+  }
+
+  // CURP tiene 18 caracteres — validar formato primero
+  if (!CURP_REGEX.test(val)) {
+    status.textContent = '❌';
+    mostrarCurpBox('error', '❌ Formato inválido',
+      'La CURP no tiene un formato válido. Verifica que esté escrita correctamente.');
+    return;
+  }
+
+  // Formato OK — verificar duplicado local primero (inmediato)
+  const dup = CIUDADANOS.find(c => c.curp && c.curp.toUpperCase() === val);
+  if (dup) {
+    status.textContent = '⚠️';
+    mostrarCurpBox('duplicado', '⚠️ CURP ya registrada',
+      `Esta CURP ya existe en el sistema.<br>
+       <span style="color:var(--text)">Nombre: <b>${dup.nombre}</b></span><br>
+       <span style="color:var(--text3)">ID: ${dup.id} · Capturado por: ${dup.cap_por} · Sección: ${dup.sec}</span><br>
+       <span style="color:var(--red);font-weight:600">No se puede registrar dos veces al mismo ciudadano.</span>`
+    );
+    return;
+  }
+
+  // Formato OK, no duplicado — consultar RENAPO con debounce
+  status.textContent = '';
+  mostrarCurpBox('validando',
+    '<span class="spinner-curp"></span> Consultando RENAPO...',
+    'Verificando que la CURP sea válida y obteniendo datos oficiales...'
+  );
+
+  curpTimer = setTimeout(() => consultarRenapo(val), 800);
+}
+
+async function consultarRenapo(curp) {
+  const status = document.getElementById('curp-status');
+  try {
+    // API pública de RENAPO (CORS proxy para frontend)
+    // En producción usar: https://api.renapo.gob.mx/suap/getRCurp/?curp=
+    const url = `https://api.renapo.gob.mx/suap/getRCurp/?curp=${curp}&_=` + Date.now();
+    
+    const resp = await Promise.race([
+      fetch(url, { method: 'GET', mode: 'cors' }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
+    ]);
+
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+
+    if (data && data.message === 'OK' && data.result) {
+      const r = data.result;
+      datosRenapo = {
+        nombre:   capitalizar(r.nombres || ''),
+        paterno:  capitalizar(r.primerApellido || ''),
+        materno:  capitalizar(r.segundoApellido || ''),
+        sexo:     r.sexo === 'H' ? 'HOMBRE' : 'MUJER',
+        nacimiento: r.fechaNacimiento || '',
+        estado:   r.claveEntidad || '',
+      };
+      datosRenapo.edad = calcularEdad(datosRenapo.nacimiento);
+      curpValidada = true;
+      status.textContent = '✅';
+      mostrarCurpBox('ok', '✅ CURP verificada con RENAPO',
+        `<div class="curp-autocompletado">
+          <div class="curp-autocompletado-title">📋 Datos oficiales — se autocompletará el formulario</div>
+          <div class="curp-field"><span class="curp-field-lbl">Nombre(s)</span><span class="curp-field-val">${datosRenapo.nombre}</span></div>
+          <div class="curp-field"><span class="curp-field-lbl">Ap. Paterno</span><span class="curp-field-val">${datosRenapo.paterno}</span></div>
+          <div class="curp-field"><span class="curp-field-lbl">Ap. Materno</span><span class="curp-field-val">${datosRenapo.materno}</span></div>
+          <div class="curp-field"><span class="curp-field-lbl">Sexo</span><span class="curp-field-val">${datosRenapo.sexo}</span></div>
+          <div class="curp-field"><span class="curp-field-lbl">Edad</span><span class="curp-field-val">${datosRenapo.edad} años</span></div>
+          <div class="curp-field"><span class="curp-field-lbl">Nacimiento</span><span class="curp-field-val">${datosRenapo.nacimiento}</span></div>
+        </div>
+        <button class="btn-aplicar" onclick="aplicarDatosRenapo()">✓ Aplicar datos al formulario</button>`
+      );
+    } else {
+      throw new Error('CURP no encontrada');
+    }
+  } catch(e) {
+    // Sin internet o API no disponible — modo offline
+    if (e.message === 'timeout' || e.message.includes('fetch') || e.message.includes('Failed')) {
+      modoOfflineCurp(curp);
+    } else {
+      // CURP con formato válido pero no existe en RENAPO
+      status.textContent = '⚠️';
+      mostrarCurpBox('error', '⚠️ CURP no encontrada en RENAPO',
+        'La CURP tiene formato correcto pero no aparece en el registro nacional. ' +
+        'Verifica que esté bien escrita o pide la credencial de elector al ciudadano.'
+      );
+    }
+  }
+}
+
+function modoOfflineCurp(curp) {
+  // Sin internet: validar formato e inferir datos básicos de la CURP
+  curpValidada = true; // Permitir continuar en modo offline
+  const status = document.getElementById('curp-status');
+  status.textContent = '🔶';
+
+  // La CURP codifica: sexo (pos 10), año nac (pos 4-5), mes (6-7), día (8-9)
+  try {
+    const anio  = parseInt(curp.substring(4,6));
+    const mes   = parseInt(curp.substring(6,8));
+    const dia   = parseInt(curp.substring(8,10));
+    const sexo  = curp.substring(10,11) === 'H' ? 'HOMBRE' : 'MUJER';
+    const anioCompleto = anio >= 0 && anio <= 24 ? 2000 + anio : 1900 + anio;
+    const edad  = new Date().getFullYear() - anioCompleto;
+
+    datosRenapo = { sexo, edad, nombre:'', paterno:'', materno:'', nacimiento: `${dia}/${mes}/${anioCompleto}` };
+
+    mostrarCurpBox('offline', '🔶 Sin conexión — modo offline',
+      `Formato de CURP válido. Sin internet no se pueden obtener datos de RENAPO.<br>
+       <span style="color:var(--text2)">Datos inferidos de la CURP:</span><br>
+       <span style="font-family:var(--mono);color:var(--text)">Sexo: <b>${sexo}</b> · Edad aprox: <b>${edad} años</b> · Nac: <b>${dia}/${mes}/${anioCompleto}</b></span><br>
+       <span style="color:var(--purple)">Llena los datos manualmente. Se sincronizará cuando haya internet.</span>`
+    );
+  } catch(e2) {
+    mostrarCurpBox('offline', '🔶 Sin conexión — modo offline',
+      'No hay internet. La CURP tiene formato válido y no está duplicada en el sistema. Puedes continuar llenando los datos manualmente.');
+  }
+}
+
+function mostrarCurpBox(tipo, titulo, cuerpo) {
+  const box = document.getElementById('curp-box');
+  box.className = 'curp-box show ' + tipo;
+  box.style.display = 'block';
+  box.innerHTML = `<div class="curp-box-title">${titulo}</div><div class="curp-box-data">${cuerpo}</div>`;
+}
+
+function aplicarDatosRenapo() {
+  if (!datosRenapo) return;
+  if (datosRenapo.nombre)  { const el = document.getElementById('f-nombre');  if(el) el.value = datosRenapo.nombre; }
+  if (datosRenapo.paterno) { const el = document.getElementById('f-paterno'); if(el) el.value = datosRenapo.paterno; }
+  if (datosRenapo.materno) { const el = document.getElementById('f-materno'); if(el) el.value = datosRenapo.materno; }
+  if (datosRenapo.sexo)    { const el = document.getElementById('f-sexo');    if(el) el.value = datosRenapo.sexo; }
+  if (datosRenapo.edad)    { const el = document.getElementById('f-edad');    if(el) el.value = datosRenapo.edad; }
+
+  // Actualizar el mensaje del box
+  const box = document.getElementById('curp-box');
+  box.innerHTML = '<div class="curp-box-title">✅ Datos aplicados correctamente</div>' +
+    '<div class="curp-box-data">El formulario se ha llenado con los datos oficiales de RENAPO. Verifica y completa la información faltante.</div>';
+}
+
+function calcularEdad(fechaStr) {
+  // Soporta formatos dd/mm/yyyy y yyyy-mm-dd
+  try {
+    let d;
+    if (fechaStr.includes('/')) {
+      const [dia, mes, anio] = fechaStr.split('/');
+      d = new Date(anio, mes-1, dia);
+    } else {
+      d = new Date(fechaStr);
+    }
+    const hoy = new Date();
+    let edad = hoy.getFullYear() - d.getFullYear();
+    if (hoy.getMonth() < d.getMonth() || (hoy.getMonth() === d.getMonth() && hoy.getDate() < d.getDate())) edad--;
+    return edad;
+  } catch(e) { return '?'; }
+}
+
+function capitalizar(str) {
+  return str.toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+}
+
 </script>
+<script src="theme.js"></script>
 </body>
 </html>

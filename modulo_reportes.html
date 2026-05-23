@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>REPORTES — INTELIGENCIA ELECTORAL COLIMA 2027</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
 :root{
@@ -112,6 +113,33 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
 
 .screen{display:none;}
 .screen.active{display:block;}
+/* ── PANEL DE DESCARGAS ── */
+.descarga-panel{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:20px;}
+.descarga-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.descarga-titulo{font-size:12px;font-family:var(--mono);color:var(--text2);text-transform:uppercase;letter-spacing:.06em;}
+.rol-chip{font-size:10px;font-family:var(--mono);padding:3px 10px;border-radius:99px;}
+.descarga-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:0;}
+.descarga-card{padding:18px 20px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);}
+.descarga-card:last-child{border-right:none;}
+.dc-icon{font-size:24px;margin-bottom:8px;}
+.dc-titulo{font-size:13px;font-weight:600;margin-bottom:4px;}
+.dc-desc{font-size:11px;color:var(--text3);font-family:var(--mono);line-height:1.5;margin-bottom:12px;}
+.dc-alcance{font-size:10px;font-family:var(--mono);padding:3px 10px;border-radius:99px;display:inline-block;margin-bottom:12px;}
+.dc-campos{background:var(--bg3);border-radius:6px;padding:8px 10px;margin-bottom:12px;font-size:10px;font-family:var(--mono);color:var(--text3);line-height:1.6;}
+.dc-campos b{color:var(--text2);}
+.btn-dl{display:flex;align-items:center;gap:8px;padding:9px 16px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;border:none;width:100%;transition:all .2s;font-family:var(--sans);}
+.btn-dl:hover{opacity:.85;transform:translateY(-1px);}
+.btn-dl:active{transform:translateY(0);}
+.btn-dl.verde{background:var(--green);color:#fff;}
+.btn-dl.azul{background:var(--accent);color:#fff;}
+.btn-dl.amber{background:var(--amber);color:#000;}
+.btn-dl.bloq{background:var(--bg3);color:var(--text3);border:1px solid var(--border2);cursor:not-allowed;}
+.btn-dl.bloq:hover{transform:none;opacity:1;}
+.dl-spin{display:none;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:dlspin .7s linear infinite;}
+@keyframes dlspin{to{transform:rotate(360deg)}}
+.descarga-log{padding:10px 18px;border-top:1px solid var(--border);font-size:11px;font-family:var(--mono);color:var(--text3);min-height:34px;}
+.log-item{display:inline-flex;align-items:center;gap:6px;}
+
 </style>
 </head>
 <body>
@@ -124,9 +152,9 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
       <div class="topbar-sub">COLIMA 2027 · DATOS REALES AL 14/MAY/2026</div>
     </div>
   </div>
-  <div class="topbar-right">
-    <button class="export-btn" onclick="imprimirReporte()">⬇ Exportar PDF</button>
-    <button class="export-btn primary" onclick="exportarExcel()">⬇ Excel completo</button>
+  <div class="topbar-right" style="display:flex;align-items:center;gap:10px;">
+    <div id="rol-indicator" style="font-size:10px;font-family:var(--mono);padding:3px 10px;border-radius:99px;background:var(--bg3);border:1px solid var(--border2);color:var(--text3)">Cargando rol...</div>
+    <button class="export-btn primary" onclick="showTab('descargas')">⬇ Descargar datos</button>
   </div>
 </div>
 
@@ -137,6 +165,8 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
   <div class="rtab" id="tab-municipal" onclick="showTab('municipal')">🏙 Por municipio</div>
   <div class="rtab" id="tab-estructura" onclick="showTab('estructura')">👥 Estructura de campo</div>
   <div class="rtab" id="tab-perfil" onclick="showTab('perfil')">👤 Perfil del votante</div>
+  <div class="rtab" id="tab-descargas" onclick="showTab('descargas')" style="color:var(--green)">⬇ Descargas</div>
+  <div class="rtab" id="tab-diae" onclick="showTab('diae')" style="color:var(--red);font-weight:600">🗳 Día E</div>
 </div>
 
 <div class="main">
@@ -403,6 +433,256 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
   </div>
 </div>
 
+<!-- ═══════════ DESCARGAS ═══════════ -->
+<div class="screen" id="sc-descargas">
+
+  <div id="descarga-acceso-denegado" style="display:none" class="kpi re" style="padding:20px">
+    <div class="kpi-lbl">Acceso denegado</div>
+    <div class="kpi-val" style="font-size:16px">🔒</div>
+  </div>
+
+  <!-- ── BLOQUE COORDINADOR DE CAMPAÑA ── -->
+  <div id="bloque-coordinador" style="display:none">
+    <div class="descarga-panel">
+      <div class="descarga-header">
+        <div class="descarga-titulo">📥 Descargas — Coordinador de campaña</div>
+        <span class="rol-chip" style="background:rgba(59,130,246,0.12);color:var(--accent);border:1px solid rgba(59,130,246,0.25)">🏛 Acceso total — todo el estado</span>
+      </div>
+      <div class="descarga-grid">
+
+        <div class="descarga-card">
+          <div class="dc-icon">👥</div>
+          <div class="dc-titulo">Base completa de simpatizantes</div>
+          <div class="dc-desc">Todos los registros capturados en el estado, todos los municipios y secciones.</div>
+          <div class="dc-alcance" style="background:rgba(59,130,246,0.1);color:var(--accent);border:1px solid rgba(59,130,246,0.2)">📍 Todo el estado</div>
+          <div class="dc-campos"><b>Campos incluidos:</b><br>ID · Nombre completo · CURP · Edad · Sexo · Municipio · Sección · Teléfono · Domicilio · Email · Compromiso · Origen · Capturista · Responsable territorial · Validado · Riesgo · Apoyo · Influencia · Duplicado · Observaciones · Fecha captura</div>
+          <button class="btn-dl azul" onclick="descargar('simpatizantes','coordinador')">
+            <span>⬇</span> <span>Descargar base completa</span>
+            <div class="dl-spin" id="spin-sc"></div>
+          </button>
+        </div>
+
+        <div class="descarga-card">
+          <div class="dc-icon">🧑‍💼</div>
+          <div class="dc-titulo">Estructura de capturistas</div>
+          <div class="dc-desc">Todos los capturistas del estado con sus métricas de avance, sección asignada y coordinador.</div>
+          <div class="dc-alcance" style="background:rgba(59,130,246,0.1);color:var(--accent);border:1px solid rgba(59,130,246,0.2)">📍 Todo el estado</div>
+          <div class="dc-campos"><b>Campos incluidos:</b><br>ID · Nombre · Municipio · Sección base · Meta individual · Capturas realizadas · % Avance · Coordinador · Email · Teléfono · Último acceso · Estatus</div>
+          <button class="btn-dl azul" onclick="descargar('capturistas','coordinador')">
+            <span>⬇</span> <span>Descargar estructura de campo</span>
+            <div class="dl-spin" id="spin-cc"></div>
+          </button>
+        </div>
+
+        <div class="descarga-card">
+          <div class="dc-icon">📊</div>
+          <div class="dc-titulo">Reporte ejecutivo consolidado</div>
+          <div class="dc-desc">Resumen por municipio, avance vs meta, ritmo semanal y proyecciones.</div>
+          <div class="dc-alcance" style="background:rgba(59,130,246,0.1);color:var(--accent);border:1px solid rgba(59,130,246,0.2)">📍 Todo el estado</div>
+          <div class="dc-campos"><b>Pestañas incluidas:</b><br>Resumen ejecutivo · Por municipio · Ritmo semanal · Estructura · Proyección a elección</div>
+          <button class="btn-dl verde" onclick="descargar('reporte','coordinador')">
+            <span>⬇</span> <span>Descargar reporte ejecutivo</span>
+            <div class="dl-spin" id="spin-rc"></div>
+          </button>
+        </div>
+
+      </div>
+      <div class="descarga-log" id="log-coordinador">Listo para descargar.</div>
+    </div>
+  </div>
+
+  <!-- ── BLOQUE LÍDER DE SECCIÓN ── -->
+  <div id="bloque-lider" style="display:none">
+    <div class="descarga-panel">
+      <div class="descarga-header">
+        <div class="descarga-titulo">📥 Descargas — Líder de sección / Coordinador municipal</div>
+        <span class="rol-chip" style="background:rgba(6,182,212,0.12);color:var(--cyan);border:1px solid rgba(6,182,212,0.25)" id="lider-municipio-badge">📍 Su municipio</span>
+      </div>
+      <div class="descarga-grid">
+
+        <div class="descarga-card">
+          <div class="dc-icon">👥</div>
+          <div class="dc-titulo">Simpatizantes de mi municipio</div>
+          <div class="dc-desc">Todos los registros de simpatizantes capturados en las secciones de su municipio.</div>
+          <div class="dc-alcance" style="background:rgba(6,182,212,0.1);color:var(--cyan);border:1px solid rgba(6,182,212,0.2)" id="lider-alcance-simp">📍 Su municipio</div>
+          <div class="dc-campos"><b>Campos incluidos:</b><br>ID · Nombre completo · CURP · Edad · Sexo · Municipio · Sección · Teléfono · Domicilio · Email · Compromiso · Origen · Capturista · Responsable territorial · Validado · Riesgo · Apoyo · Influencia · Duplicado · Observaciones · Fecha captura</div>
+          <button class="btn-dl azul" onclick="descargar('simpatizantes','lider')">
+            <span>⬇</span> <span>Descargar mis simpatizantes</span>
+            <div class="dl-spin" id="spin-sl"></div>
+          </button>
+        </div>
+
+        <div class="descarga-card">
+          <div class="dc-icon">🧑‍💼</div>
+          <div class="dc-titulo">Mis capturistas</div>
+          <div class="dc-desc">Los capturistas bajo su coordinación con su avance individual vs meta.</div>
+          <div class="dc-alcance" style="background:rgba(6,182,212,0.1);color:var(--cyan);border:1px solid rgba(6,182,212,0.2)" id="lider-alcance-caps">📍 Su municipio</div>
+          <div class="dc-campos"><b>Campos incluidos:</b><br>ID · Nombre · Municipio · Sección base · Meta individual · Capturas realizadas · % Avance · Email · Teléfono · Último acceso · Estatus</div>
+          <button class="btn-dl azul" onclick="descargar('capturistas','lider')">
+            <span>⬇</span> <span>Descargar mis capturistas</span>
+            <div class="dl-spin" id="spin-cl"></div>
+          </button>
+        </div>
+
+        <div class="descarga-card">
+          <div class="dc-icon">📊</div>
+          <div class="dc-titulo">Reporte de mi municipio</div>
+          <div class="dc-desc">Avance por sección, ritmo de captura y estadísticas del municipio.</div>
+          <div class="dc-alcance" style="background:rgba(6,182,212,0.1);color:var(--cyan);border:1px solid rgba(6,182,212,0.2)">📍 Su municipio</div>
+          <div class="dc-campos"><b>Pestañas incluidas:</b><br>Avance por sección · Capturistas · Ritmo semanal · Proyección municipal</div>
+          <button class="btn-dl verde" onclick="descargar('reporte','lider')">
+            <span>⬇</span> <span>Descargar reporte municipal</span>
+            <div class="dl-spin" id="spin-rl"></div>
+          </button>
+        </div>
+
+      </div>
+      <div class="descarga-log" id="log-lider">Listo para descargar.</div>
+    </div>
+  </div>
+
+  <!-- ── BLOQUE CAPTURISTA ── -->
+  <div id="bloque-capturista" style="display:none">
+    <div class="descarga-panel">
+      <div class="descarga-header">
+        <div class="descarga-titulo">📥 Descargas — Capturista</div>
+        <span class="rol-chip" style="background:rgba(34,197,94,0.12);color:var(--green);border:1px solid rgba(34,197,94,0.25)" id="cap-seccion-badge">📍 Sus registros</span>
+      </div>
+      <div class="descarga-grid">
+
+        <div class="descarga-card">
+          <div class="dc-icon">👥</div>
+          <div class="dc-titulo">Mis simpatizantes capturados</div>
+          <div class="dc-desc">Solo los registros que tú has capturado. No incluye registros de otros capturistas.</div>
+          <div class="dc-alcance" style="background:rgba(34,197,94,0.1);color:var(--green);border:1px solid rgba(34,197,94,0.2)" id="cap-alcance">📍 Sección —</div>
+          <div class="dc-campos"><b>Campos incluidos:</b><br>ID · Nombre completo · CURP · Edad · Sexo · Municipio · Sección · Teléfono · Domicilio · Email · Compromiso · Origen · Validado · Riesgo · Apoyo · Influencia · Observaciones · Fecha captura</div>
+          <button class="btn-dl verde" onclick="descargar('simpatizantes','capturista')">
+            <span>⬇</span> <span>Descargar mis registros</span>
+            <div class="dl-spin" id="spin-sca"></div>
+          </button>
+        </div>
+
+        <div class="descarga-card" style="opacity:.5">
+          <div class="dc-icon">🧑‍💼</div>
+          <div class="dc-titulo">Estructura de capturistas</div>
+          <div class="dc-desc">Esta descarga no está disponible para el rol de capturista.</div>
+          <div class="dc-alcance" style="background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.2)">🔒 Sin acceso</div>
+          <div class="dc-campos" style="color:var(--text3)">Solo disponible para coordinadores y administradores.</div>
+          <button class="btn-dl bloq" disabled>🔒 No disponible para tu rol</button>
+        </div>
+
+        <div class="descarga-card">
+          <div class="dc-icon">📊</div>
+          <div class="dc-titulo">Mi reporte personal</div>
+          <div class="dc-desc">Tu avance vs tu meta individual, tus secciones y estadísticas de campo.</div>
+          <div class="dc-alcance" style="background:rgba(34,197,94,0.1);color:var(--green);border:1px solid rgba(34,197,94,0.2)">📍 Mis registros</div>
+          <div class="dc-campos"><b>Pestañas incluidas:</b><br>Mi avance · Mis simpatizantes · Mi sección · Estadísticas personales</div>
+          <button class="btn-dl verde" onclick="descargar('reporte','capturista')">
+            <span>⬇</span> <span>Descargar mi reporte</span>
+            <div class="dl-spin" id="spin-rca"></div>
+          </button>
+        </div>
+
+      </div>
+      <div class="descarga-log" id="log-capturista">Listo para descargar.</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════ DÍA DE ELECCIÓN ═══════════ -->
+<div class="screen" id="sc-diae">
+
+  <!-- Banner día E -->
+  <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:10px;padding:14px 18px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:10px;height:10px;border-radius:50%;background:var(--red);animation:blink2 .8s ease infinite"></div>
+      <div>
+        <div style="font-size:14px;font-weight:600;color:var(--red)">DÍA DE LA ELECCIÓN — MONITOREO EN TIEMPO REAL</div>
+        <div style="font-size:11px;font-family:var(--mono);color:var(--text3);margin-top:2px" id="diae-hora-actual">Cargando...</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="export-btn" onclick="descargarPendientesCoordi('manual')" style="background:rgba(239,68,68,0.12);border-color:rgba(239,68,68,0.3);color:var(--red);font-weight:600">
+        ⬇ Descargar pendientes ahora
+      </button>
+      <button class="export-btn" id="btn-auto-toggle" onclick="toggleAutoDescarga()" style="background:var(--bg3)">
+        ⏰ Auto-descarga: OFF
+      </button>
+    </div>
+  </div>
+  <style>@keyframes blink2{0%,100%{opacity:1}50%{opacity:.2}}</style>
+
+  <!-- KPIs en tiempo real -->
+  <div class="kpi-row" id="diae-kpis">
+    <div class="kpi gr"><div class="kpi-lbl">Ya votaron</div><div class="kpi-val" id="diae-votaron">—</div></div>
+    <div class="kpi re"><div class="kpi-lbl">Pendientes</div><div class="kpi-val" id="diae-pendientes">—</div></div>
+    <div class="kpi am"><div class="kpi-lbl">% Participación</div><div class="kpi-val" id="diae-pct">—</div></div>
+    <div class="kpi pu"><div class="kpi-lbl">Votos sorpresa</div><div class="kpi-val" id="diae-sorpresas">—</div></div>
+    <div class="kpi bl"><div class="kpi-lbl">Casillas reportando</div><div class="kpi-val" id="diae-casillas">—</div></div>
+    <div class="kpi cy"><div class="kpi-lbl">Próximo corte</div><div class="kpi-val" id="diae-corte">—</div></div>
+  </div>
+
+  <!-- Filtros de descarga -->
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-head">
+      <div class="card-title">⬇ Descargar lista de pendientes por ámbito</div>
+      <div style="font-size:10px;font-family:var(--mono);color:var(--text3)">Nombre + Teléfono + Sección + Coordinador</div>
+    </div>
+    <div class="card-body">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:14px">
+
+        <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:14px">
+          <div style="font-size:12px;font-weight:600;margin-bottom:4px">🏛 Todo el estado</div>
+          <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:10px">Todos los simpatizantes pendientes de la candidatura</div>
+          <button class="export-btn primary" style="width:100%;padding:9px" onclick="descargarPendientesCoordi('estado')">⬇ Descargar estado completo</button>
+        </div>
+
+        <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:14px">
+          <div style="font-size:12px;font-weight:600;margin-bottom:4px">📍 Por municipio</div>
+          <select id="diae-mun-sel" style="width:100%;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:12px;padding:7px 10px;outline:none;margin-bottom:8px">
+            <option value="">-- Seleccionar municipio --</option>
+            <option>MANZANILLO</option><option>COLIMA</option><option>VILLA DE ALVAREZ</option>
+            <option>TECOMAN</option><option>ARMERIA</option><option>COMALA</option>
+            <option>COQUIMATLAN</option><option>CUAUHTEMOC</option><option>MINATITLAN</option><option>IXTLAHUACAN</option>
+          </select>
+          <button class="export-btn" style="width:100%;padding:9px;background:rgba(6,182,212,0.12);border-color:rgba(6,182,212,0.3);color:var(--cyan)" onclick="descargarPendientesCoordi('municipio')">⬇ Descargar municipio</button>
+        </div>
+
+        <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:14px">
+          <div style="font-size:12px;font-weight:600;margin-bottom:4px">🗂 Por sección</div>
+          <input type="number" id="diae-sec-inp" placeholder="Número de sección" style="width:100%;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:12px;padding:7px 10px;outline:none;margin-bottom:8px">
+          <button class="export-btn" style="width:100%;padding:9px;background:rgba(168,85,247,0.12);border-color:rgba(168,85,247,0.3);color:var(--purple)" onclick="descargarPendientesCoordi('seccion')">⬇ Descargar sección</button>
+        </div>
+
+      </div>
+
+      <!-- Log de descargas -->
+      <div style="background:var(--bg3);border-radius:6px;padding:10px 14px;">
+        <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Historial de descargas de hoy</div>
+        <div id="diae-log" style="font-size:11px;font-family:var(--mono);color:var(--text3)">Sin descargas registradas.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Avance por sección -->
+  <div class="card">
+    <div class="card-head"><div class="card-title">Avance por sección en tiempo real</div></div>
+    <div class="card-body" style="padding:0">
+      <div class="table-wrap">
+        <table class="rt">
+          <thead><tr>
+            <th>Sección</th><th>Municipio</th><th>Total base</th>
+            <th>Ya votaron</th><th>Pendientes</th><th>%</th><th>Último reporte</th>
+          </tr></thead>
+          <tbody id="diae-tabla"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
 </div><!-- /main -->
 
 <script>
@@ -611,10 +891,478 @@ function exportarExcel(){
       ['Ritmo semanal actual',574],['Ritmo requerido',2531],
     ];
     XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(resumen),'Resumen Ejecutivo');
-    XLSX.writeFile(wb,'Reporte_Electoral_Colima_2027.xlsx');
-  };
-  document.head.appendChild(script);
+    // Función legacy mantenida por compatibilidad
+  console.log('Usa el panel de Descargas para exportar datos con control de permisos.');
 }
+
+// ══════════════════════════════════════════════════════════════════
+// SISTEMA DE DESCARGAS POR ROL
+// ══════════════════════════════════════════════════════════════════
+
+// Datos simulados de simpatizantes (en producción vienen de Supabase)
+const SIMPATIZANTES = [
+  {id:'REG-001',nombre:'María García López',curp:'GALM901230MCLRPR01',edad:34,sexo:'MUJER',municipio:'VILLA DE ALVAREZ',seccion:138,tel:'312-111-0001',domicilio:'Av. Principal 123',email:'',compromiso:3,origen:'Casa por casa',capturista:'CAP-017',responsable:'LDR-138',validado:true,riesgo:false,apoyo:false,influencia:true,duplicado:false,obs:'',fecha:'2027-03-15'},
+  {id:'REG-002',nombre:'José Martínez Ruiz',curp:'MARJ720415HCLRRZ09',edad:52,sexo:'HOMBRE',municipio:'VILLA DE ALVAREZ',seccion:138,tel:'312-111-0002',domicilio:'Calle 2 #456',email:'jose@gmail.com',compromiso:4,origen:'Referido',capturista:'CAP-017',responsable:'LDR-138',validado:true,riesgo:false,apoyo:true,influencia:true,duplicado:false,obs:'Líder de colonia',fecha:'2027-03-16'},
+  {id:'REG-003',nombre:'Ana Torres Mendoza',curp:'TOMA980612MCLRNN06',edad:28,sexo:'MUJER',municipio:'VILLA DE ALVAREZ',seccion:139,tel:'312-111-0003',domicilio:'',email:'',compromiso:2,origen:'Digital',capturista:'CAP-017',responsable:'LDR-139',validado:false,riesgo:false,apoyo:false,influencia:false,duplicado:false,obs:'',fecha:'2027-03-17'},
+  {id:'REG-004',nombre:'Carlos Pérez Silva',curp:'PESC791103HCLRLR03',edad:45,sexo:'HOMBRE',municipio:'VILLA DE ALVAREZ',seccion:138,tel:'312-111-0004',domicilio:'Privada Los Pinos 7',email:'',compromiso:3,origen:'Evento',capturista:'CAP-017',responsable:'LDR-138',validado:true,riesgo:true,apoyo:false,influencia:false,duplicado:false,obs:'Indeciso, requiere seguimiento',fecha:'2027-03-18'},
+  {id:'REG-005',nombre:'Laura Hernández Cruz',curp:'HECL950222MCLRRR08',edad:31,sexo:'MUJER',municipio:'VILLA DE ALVAREZ',seccion:140,tel:'312-111-0005',domicilio:'',email:'',compromiso:1,origen:'Casa por casa',capturista:'CAP-017',responsable:'LDR-140',validado:false,riesgo:false,apoyo:true,influencia:false,duplicado:false,obs:'',fecha:'2027-03-19'},
+  {id:'REG-006',nombre:'Roberto Díaz Morales',curp:'DIMR640815HCLRZB02',edad:60,sexo:'HOMBRE',municipio:'MANZANILLO',seccion:236,tel:'314-111-0001',domicilio:'Col. Centro 45',email:'',compromiso:4,origen:'Referido',capturista:'CAP-032',responsable:'LDR-236',validado:true,riesgo:false,apoyo:false,influencia:true,duplicado:false,obs:'',fecha:'2027-03-20'},
+  {id:'REG-007',nombre:'Sofía Ramírez Vega',curp:'RAVS020318MCLRMF05',edad:22,sexo:'MUJER',municipio:'MANZANILLO',seccion:236,tel:'314-111-0002',domicilio:'',email:'sofia@gmail.com',compromiso:2,origen:'Digital',capturista:'CAP-032',responsable:'LDR-236',validado:false,riesgo:false,apoyo:false,influencia:false,duplicado:true,obs:'Posible duplicado',fecha:'2027-03-21'},
+  {id:'REG-008',nombre:'Miguel Flores Jiménez',curp:'FOJM760930HCLRLG07',edad:48,sexo:'HOMBRE',municipio:'COLIMA',seccion:291,tel:'312-222-0001',domicilio:'Blvd. Camino Real 88',email:'',compromiso:3,origen:'Casa por casa',capturista:'CAP-041',responsable:'LDR-291',validado:true,riesgo:true,apoyo:true,influencia:false,duplicado:false,obs:'',fecha:'2027-03-22'},
+  {id:'REG-009',nombre:'Patricia Gómez Luna',curp:'GOLP851115MCLRMN01',edad:39,sexo:'MUJER',municipio:'TECOMAN',seccion:74,tel:'313-111-0001',domicilio:'',email:'',compromiso:3,origen:'Evento',capturista:'CAP-020',responsable:'CAP-020',validado:true,riesgo:false,apoyo:false,influencia:true,duplicado:false,obs:'',fecha:'2027-03-23'},
+  {id:'REG-010',nombre:'Fernando Castro Reyes',curp:'CARF690728HCLLRN04',edad:55,sexo:'HOMBRE',municipio:'COLIMA',seccion:308,tel:'312-222-0002',domicilio:'Jardines del Sol 12',email:'fcastro@mail.com',compromiso:4,origen:'Referido',capturista:'CAP-041',responsable:'LDR-291',validado:true,riesgo:false,apoyo:false,influencia:true,duplicado:false,obs:'Promotor del voto',fecha:'2027-03-24'},
+];
+
+const CAPTURISTAS_DATA = [
+  {id:'CAP-017',nombre:'Capturista 017',municipio:'VILLA DE ALVAREZ',seccion:138,meta:50,capturas:10,email:'cap017@colima.mx',tel:'312-111-0017',coordinador:'CORD-VDA',ultimo:'Hoy 09:38',status:'activo'},
+  {id:'CAP-005',nombre:'Capturista 005',municipio:'VILLA DE ALVAREZ',seccion:139,meta:45,capturas:8,email:'cap005@colima.mx',tel:'312-111-0005',coordinador:'CORD-VDA',ultimo:'Ayer 18:00',status:'activo'},
+  {id:'CAP-033',nombre:'Capturista 033',municipio:'VILLA DE ALVAREZ',seccion:140,meta:40,capturas:5,email:'cap033@colima.mx',tel:'312-111-0033',coordinador:'CORD-VDA',ultimo:'Hoy 07:20',status:'activo'},
+  {id:'CAP-032',nombre:'Capturista 032',municipio:'MANZANILLO',seccion:236,meta:60,capturas:52,email:'cap032@colima.mx',tel:'314-111-0032',coordinador:'CORD-MZL',ultimo:'Hoy 09:38',status:'activo'},
+  {id:'CAP-038',nombre:'Capturista 038',municipio:'MANZANILLO',seccion:248,meta:55,capturas:50,email:'cap038@colima.mx',tel:'314-111-0038',coordinador:'CORD-MZL',ultimo:'Hoy 08:12',status:'activo'},
+  {id:'CAP-041',nombre:'Capturista 041',municipio:'COLIMA',seccion:291,meta:48,capturas:45,email:'cap041@colima.mx',tel:'312-222-0041',coordinador:'CORD-COL',ultimo:'Hoy 10:00',status:'activo'},
+  {id:'CAP-020',nombre:'Capturista 020',municipio:'TECOMAN',seccion:74,meta:50,capturas:38,email:'cap020@colima.mx',tel:'313-111-0020',coordinador:'CORD-TCM',ultimo:'Ayer 20:00',status:'activo'},
+];
+
+// Leer sesión activa
+function getSesion() {
+  try {
+    return JSON.parse(localStorage.getItem('electoral_sesion') || 'null');
+  } catch(e) { return null; }
+}
+
+// Inicializar panel de descargas según rol
+function initDescargas() {
+  const sesion = getSesion();
+
+  // Determinar rol — si no hay sesión usar rol demo por defecto
+  let rol      = sesion?.rol      || 'coordinador';
+  let nombre   = sesion?.nombre   || 'Usuario Demo';
+  let municipio= sesion?.municipio|| 'Manzanillo';
+  let id       = sesion?.id       || 'CAP-017';
+  let seccion  = sesion?.seccion  || 138;
+
+  // Actualizar indicador de rol en topbar
+  const colores = {
+    superadmin:  {bg:'rgba(239,68,68,0.12)',color:'#ef4444',label:'🔒 Super Admin'},
+    admin:       {bg:'rgba(59,130,246,0.12)',color:'#3b82f6',label:'🏛 Admin Estatal'},
+    coordinador: {bg:'rgba(6,182,212,0.12)',color:'#06b6d4',label:'📍 Coordinador'},
+    capturista:  {bg:'rgba(34,197,94,0.12)',color:'#22c55e',label:'✏️ Capturista'},
+  };
+  const rc = colores[rol] || colores.coordinador;
+  const ind = document.getElementById('rol-indicator');
+  if(ind) {
+    ind.textContent = rc.label;
+    ind.style.background = rc.bg;
+    ind.style.color = rc.color;
+    ind.style.border = `1px solid ${rc.color}40`;
+  }
+
+  // Mostrar bloque según rol
+  if (rol === 'superadmin' || rol === 'admin' || rol === 'coordinador') {
+    document.getElementById('bloque-coordinador').style.display = 'block';
+    // También mostrar bloque líder si es coordinador municipal
+    if (rol === 'coordinador') {
+      document.getElementById('bloque-lider').style.display = 'block';
+      document.getElementById('lider-municipio-badge').textContent = `📍 ${municipio}`;
+      document.getElementById('lider-alcance-simp').textContent = `📍 ${municipio}`;
+      document.getElementById('lider-alcance-caps').textContent = `📍 ${municipio}`;
+    }
+  } else if (rol === 'capturista') {
+    document.getElementById('bloque-capturista').style.display = 'block';
+    document.getElementById('cap-seccion-badge').textContent = `📍 Sección ${seccion}`;
+    document.getElementById('cap-alcance').textContent = `📍 Sección ${seccion} · ${municipio}`;
+  }
+
+  // Guardar en window para uso en descargar()
+  window._sesionDescarga = { rol, nombre, municipio, id, seccion };
+}
+
+// ── Motor de descarga ──
+async function descargar(tipo, nivelRol) {
+  const s = window._sesionDescarga || { rol:'coordinador', nombre:'Demo', municipio:'Manzanillo', id:'CAP-017', seccion:138 };
+
+  // Spinner
+  const spinIds = {
+    'simpatizantes-coordinador':'spin-sc', 'capturistas-coordinador':'spin-cc', 'reporte-coordinador':'spin-rc',
+    'simpatizantes-lider':'spin-sl',       'capturistas-lider':'spin-cl',       'reporte-lider':'spin-rl',
+    'simpatizantes-capturista':'spin-sca', 'reporte-capturista':'spin-rca',
+  };
+  const spinId = spinIds[tipo+'-'+nivelRol];
+  if(spinId) { const sp = document.getElementById(spinId); if(sp) { sp.style.display='block'; sp.parentElement.style.opacity='.7'; } }
+
+  await sleep(600); // simular carga
+
+  try {
+    const wb = XLSX.utils.book_new();
+    const fechaHoy = new Date().toLocaleDateString('es-MX');
+    const estado = typeof getTheme === 'function' ? getTheme().sistemaEstado : 'Colima';
+
+    if (tipo === 'simpatizantes') {
+      // Filtrar según nivel
+      let datos = [...SIMPATIZANTES];
+      let alcance = '';
+
+      if (nivelRol === 'coordinador') {
+        alcance = `Todo el estado — ${datos.length} registros`;
+      } else if (nivelRol === 'lider') {
+        datos = datos.filter(r => r.municipio.toUpperCase() === s.municipio.toUpperCase());
+        alcance = `${s.municipio} — ${datos.length} registros`;
+      } else if (nivelRol === 'capturista') {
+        datos = datos.filter(r => r.capturista === s.id);
+        alcance = `${s.id} — ${datos.length} registros`;
+        // Capturista NO ve: capturista asignado de otros ni coordinador
+      }
+
+      const cols = nivelRol === 'capturista'
+        ? ['ID','NOMBRE','CURP','EDAD','SEXO','MUNICIPIO','SECCION','TELEFONO','DOMICILIO','EMAIL','COMPROMISO','ORIGEN','VALIDADO','RIESGO','APOYO','INFLUENCIA','DUPLICADO','OBSERVACIONES','FECHA']
+        : ['ID','NOMBRE','CURP','EDAD','SEXO','MUNICIPIO','SECCION','TELEFONO','DOMICILIO','EMAIL','COMPROMISO','ORIGEN','CAPTURISTA','RESPONSABLE','VALIDADO','RIESGO','APOYO','INFLUENCIA','DUPLICADO','OBSERVACIONES','FECHA'];
+
+      const rows = [cols, ...datos.map(r => nivelRol === 'capturista'
+        ? [r.id,r.nombre,r.curp,r.edad,r.sexo,r.municipio,r.seccion,r.tel,r.domicilio,r.email,r.compromiso,r.origen,r.validado?'SÍ':'NO',r.riesgo?'SÍ':'NO',r.apoyo?'SÍ':'NO',r.influencia?'SÍ':'NO',r.duplicado?'SÍ':'NO',r.obs,r.fecha]
+        : [r.id,r.nombre,r.curp,r.edad,r.sexo,r.municipio,r.seccion,r.tel,r.domicilio,r.email,r.compromiso,r.origen,r.capturista,r.responsable,r.validado?'SÍ':'NO',r.riesgo?'SÍ':'NO',r.apoyo?'SÍ':'NO',r.influencia?'SÍ':'NO',r.duplicado?'SÍ':'NO',r.obs,r.fecha]
+      )];
+
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      ws['!cols'] = cols.map(() => ({wch:18}));
+      XLSX.utils.book_append_sheet(wb, ws, 'SIMPATIZANTES');
+
+      // Pestaña de metadatos
+      const meta = [
+        ['REPORTE DE SIMPATIZANTES'],
+        [''],
+        ['Generado por', s.nombre],
+        ['Rol', s.rol],
+        ['Alcance', alcance],
+        ['Estado', estado],
+        ['Fecha de descarga', fechaHoy],
+        ['Total registros', datos.length],
+        ['Voto seguro (compromiso 3-4)', datos.filter(r=>r.compromiso>=3).length],
+        ['Validados', datos.filter(r=>r.validado).length],
+        ['Con riesgo', datos.filter(r=>r.riesgo).length],
+        ['Duplicados', datos.filter(r=>r.duplicado).length],
+      ];
+      const wsMeta = XLSX.utils.aoa_to_sheet(meta);
+      wsMeta['!cols'] = [{wch:28},{wch:40}];
+      XLSX.utils.book_append_sheet(wb, wsMeta, 'INFO_DESCARGA');
+
+      const fname = nivelRol === 'capturista'
+        ? `Mis_Simpatizantes_${s.id}_${fechaHoy.replace(/\//g,'-')}.xlsx`
+        : nivelRol === 'lider'
+        ? `Simpatizantes_${s.municipio}_${fechaHoy.replace(/\//g,'-')}.xlsx`
+        : `Simpatizantes_${estado}_${fechaHoy.replace(/\//g,'-')}.xlsx`;
+
+      XLSX.writeFile(wb, fname);
+      setLog(nivelRol, `✓ Descargado: ${fname} · ${datos.length} registros · ${fechaHoy}`);
+
+    } else if (tipo === 'capturistas') {
+      let datos = [...CAPTURISTAS_DATA];
+      if (nivelRol === 'lider') {
+        datos = datos.filter(r => r.municipio.toUpperCase() === s.municipio.toUpperCase());
+      }
+
+      const cols = ['ID','NOMBRE','MUNICIPIO','SECCION_BASE','META_INDIVIDUAL','CAPTURAS','%_AVANCE','COORDINADOR','EMAIL','TELEFONO','ULTIMO_ACCESO','ESTATUS'];
+      const rows = [cols, ...datos.map(r => [
+        r.id, r.nombre, r.municipio, r.seccion, r.meta, r.capturas,
+        r.meta > 0 ? parseFloat((r.capturas/r.meta*100).toFixed(1)) : 0,
+        r.coordinador, r.email, r.tel, r.ultimo, r.status
+      ])];
+
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      ws['!cols'] = cols.map(()=>({wch:18}));
+      XLSX.utils.book_append_sheet(wb, ws, 'CAPTURISTAS');
+
+      const fname = nivelRol === 'lider'
+        ? `Capturistas_${s.municipio}_${fechaHoy.replace(/\//g,'-')}.xlsx`
+        : `Capturistas_${estado}_${fechaHoy.replace(/\//g,'-')}.xlsx`;
+
+      XLSX.writeFile(wb, fname);
+      setLog(nivelRol, `✓ Descargado: ${fname} · ${datos.length} capturistas · ${fechaHoy}`);
+
+    } else if (tipo === 'reporte') {
+      // Reporte ejecutivo
+      const simps = nivelRol === 'capturista'
+        ? SIMPATIZANTES.filter(r => r.capturista === s.id)
+        : nivelRol === 'lider'
+        ? SIMPATIZANTES.filter(r => r.municipio.toUpperCase() === s.municipio.toUpperCase())
+        : SIMPATIZANTES;
+
+      // Pestaña resumen
+      const resumen = [
+        ['REPORTE EJECUTIVO', nivelRol === 'capturista' ? s.id : nivelRol === 'lider' ? s.municipio : estado],
+        ['Generado', fechaHoy], [''],
+        ['INDICADOR', 'VALOR'],
+        ['Total simpatizantes', simps.length],
+        ['Voto seguro (comp 3-4)', simps.filter(r=>r.compromiso>=3).length],
+        ['Movilizadores (comp 4)', simps.filter(r=>r.compromiso===4).length],
+        ['Validados', simps.filter(r=>r.validado).length],
+        ['Con riesgo', simps.filter(r=>r.riesgo).length],
+        ['Necesitan transporte', simps.filter(r=>r.apoyo).length],
+        ['Con influencia', simps.filter(r=>r.influencia).length],
+        ['Duplicados', simps.filter(r=>r.duplicado).length],
+      ];
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(resumen), 'RESUMEN');
+
+      // Por municipio (solo coordinador)
+      if (nivelRol === 'coordinador') {
+        const porMun = {};
+        simps.forEach(r => { if(!porMun[r.municipio]) porMun[r.municipio]={n:0,seg:0,rie:0}; porMun[r.municipio].n++; if(r.compromiso>=3)porMun[r.municipio].seg++; if(r.riesgo)porMun[r.municipio].rie++; });
+        const munRows = [['MUNICIPIO','TOTAL','VOTO SEGURO','EN RIESGO','% SEGURO'],
+          ...Object.entries(porMun).map(([m,v])=>[m,v.n,v.seg,v.rie,parseFloat((v.seg/v.n*100).toFixed(1))])];
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(munRows), 'POR_MUNICIPIO');
+      }
+
+      // Por sección
+      const porSec = {};
+      simps.forEach(r => { if(!porSec[r.seccion]) porSec[r.seccion]={n:0,mun:r.municipio,seg:0}; porSec[r.seccion].n++; if(r.compromiso>=3)porSec[r.seccion].seg++; });
+      const secRows = [['SECCION','MUNICIPIO','TOTAL','VOTO SEGURO'],
+        ...Object.entries(porSec).map(([sec,v])=>[sec,v.mun,v.n,v.seg])];
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(secRows), 'POR_SECCION');
+
+      const fname = nivelRol === 'capturista'
+        ? `MiReporte_${s.id}_${fechaHoy.replace(/\//g,'-')}.xlsx`
+        : nivelRol === 'lider'
+        ? `Reporte_${s.municipio}_${fechaHoy.replace(/\//g,'-')}.xlsx`
+        : `ReporteEjecutivo_${estado}_${fechaHoy.replace(/\//g,'-')}.xlsx`;
+
+      XLSX.writeFile(wb, fname);
+      setLog(nivelRol, `✓ Descargado: ${fname} · ${fechaHoy}`);
+    }
+
+  } catch(err) {
+    setLog(nivelRol, `❌ Error al generar el archivo: ${err.message}`);
+  }
+
+  // Quitar spinner
+  if(spinId) { const sp = document.getElementById(spinId); if(sp) { sp.style.display='none'; sp.parentElement.style.opacity='1'; } }
+}
+
+function setLog(nivelRol, msg) {
+  const logIds = { coordinador:'log-coordinador', lider:'log-lider', capturista:'log-capturista' };
+  const el = document.getElementById(logIds[nivelRol]);
+  if(el) el.innerHTML = `<span class="log-item"><span style="color:var(--green)">●</span> ${msg}</span>`;
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+
+// ══════════════════════════════════════════════════════
+// DÍA DE ELECCIÓN — COORDINADOR
+// ══════════════════════════════════════════════════════
+
+// Datos simulados de votación en tiempo real
+// En producción: polling a Supabase cada 60s o realtime subscription
+const VOTOS_REALTIME = [
+  {seccion:138, municipio:'VILLA DE ALVAREZ', total:10, votaron:6, sorpresas:2, ts:'10:15'},
+  {seccion:139, municipio:'VILLA DE ALVAREZ', total:8,  votaron:3, sorpresas:1, ts:'10:10'},
+  {seccion:140, municipio:'VILLA DE ALVAREZ', total:5,  votaron:2, sorpresas:0, ts:'09:55'},
+  {seccion:236, municipio:'MANZANILLO',       total:12, votaron:8, sorpresas:3, ts:'10:20'},
+  {seccion:248, municipio:'MANZANILLO',       total:9,  votaron:5, sorpresas:1, ts:'10:05'},
+  {seccion:291, municipio:'COLIMA',           total:11, votaron:4, sorpresas:2, ts:'09:50'},
+  {seccion:308, municipio:'COLIMA',           total:7,  votaron:6, sorpresas:0, ts:'10:18'},
+  {seccion:74,  municipio:'TECOMAN',          total:8,  votaron:3, sorpresas:1, ts:'09:45'},
+];
+
+const PENDIENTES_REALTIME = [
+  {nombre:'María García López',   tel:'312-111-0001',seccion:138,coordinador:'CORD-VDA',municipio:'VILLA DE ALVAREZ',compromiso:3},
+  {nombre:'José Martínez Ruiz',   tel:'312-111-0002',seccion:138,coordinador:'CORD-VDA',municipio:'VILLA DE ALVAREZ',compromiso:4},
+  {nombre:'Ana Torres Mendoza',   tel:'312-111-0003',seccion:139,coordinador:'CORD-VDA',municipio:'VILLA DE ALVAREZ',compromiso:2},
+  {nombre:'Carlos Pérez Silva',   tel:'312-111-0004',seccion:138,coordinador:'CORD-VDA',municipio:'VILLA DE ALVAREZ',compromiso:3},
+  {nombre:'Laura Hernández Cruz', tel:'312-111-0005',seccion:140,coordinador:'CORD-VDA',municipio:'VILLA DE ALVAREZ',compromiso:1},
+  {nombre:'Sofía Ramírez Vega',   tel:'312-111-0007',seccion:138,coordinador:'CORD-VDA',municipio:'VILLA DE ALVAREZ',compromiso:2},
+  {nombre:'Miguel Flores Jiménez',tel:'314-111-0001',seccion:236,coordinador:'CORD-MZL',municipio:'MANZANILLO',     compromiso:3},
+  {nombre:'Patricia Gómez Luna',  tel:'313-111-0001',seccion:74, coordinador:'CORD-TCM',municipio:'TECOMAN',        compromiso:3},
+  {nombre:'Roberto Díaz Morales', tel:'314-111-0002',seccion:248,coordinador:'CORD-MZL',municipio:'MANZANILLO',     compromiso:4},
+  {nombre:'Fernando Castro Reyes',tel:'312-222-0002',seccion:291,coordinador:'CORD-COL',municipio:'COLIMA',         compromiso:4},
+];
+
+let autoDescargaActiva = false;
+let autoDescargaTimer  = null;
+let diaeLog = [];
+
+function initDiaE() {
+  actualizarKpisDiaE();
+  renderTablaDiaE();
+  setInterval(actualizarKpisDiaE, 30000); // refrescar cada 30s
+  setInterval(() => {
+    document.getElementById('diae-hora-actual').textContent =
+      'Hora actual: ' + new Date().toLocaleTimeString('es-MX') +
+      ' · Datos actualizados cada 30 segundos';
+    document.getElementById('diae-corte').textContent = calcProxCorte();
+  }, 1000);
+}
+
+function calcProxCorte() {
+  const now = new Date();
+  const next = new Date(now);
+  next.setMinutes(0,0,0);
+  next.setHours(now.getHours()+1);
+  const d = next - now;
+  const m = Math.floor(d/60000);
+  const s = Math.floor((d%60000)/1000);
+  return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+function actualizarKpisDiaE() {
+  const total    = VOTOS_REALTIME.reduce((s,r)=>s+r.total,0);
+  const votaron  = VOTOS_REALTIME.reduce((s,r)=>s+r.votaron,0);
+  const sorpresas= VOTOS_REALTIME.reduce((s,r)=>s+r.sorpresas,0);
+  const pend     = total - votaron;
+  const pct      = total ? (votaron/total*100).toFixed(1)+'%' : '0%';
+
+  document.getElementById('diae-votaron').textContent   = votaron;
+  document.getElementById('diae-pendientes').textContent = pend;
+  document.getElementById('diae-pct').textContent       = pct;
+  document.getElementById('diae-sorpresas').textContent = sorpresas;
+  document.getElementById('diae-casillas').textContent  = VOTOS_REALTIME.length;
+}
+
+function renderTablaDiaE() {
+  document.getElementById('diae-tabla').innerHTML = VOTOS_REALTIME.map(r => {
+    const pend = r.total - r.votaron;
+    const pct  = r.total ? Math.round(r.votaron/r.total*100) : 0;
+    const col  = pct >= 60 ? 'var(--green)' : pct >= 30 ? 'var(--amber)' : 'var(--red)';
+    return `<tr>
+      <td style="font-family:var(--mono);font-weight:500">${r.seccion}</td>
+      <td>${r.municipio}</td>
+      <td class="cell-num">${r.total}</td>
+      <td class="cell-num" style="color:var(--green)">${r.votaron}</td>
+      <td class="cell-num" style="color:var(--red)">${pend}</td>
+      <td><div style="display:flex;align-items:center;gap:8px">
+        <div style="flex:1;max-width:60px;height:5px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden">
+          <div style="width:${pct}%;height:100%;background:${col};border-radius:99px"></div>
+        </div>
+        <span style="font-family:var(--mono);font-size:11px;color:${col}">${pct}%</span>
+      </div></td>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--text3)">${r.ts} hrs</td>
+    </tr>`;
+  }).join('');
+}
+
+function descargarPendientesCoordi(tipo) {
+  if(typeof XLSX === 'undefined') {
+    alert('Cargando motor Excel, intenta en 2 segundos...');
+    return;
+  }
+
+  let datos = [...PENDIENTES_REALTIME];
+  let alcance = '';
+  const hora  = new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}).replace(':','-');
+  const fecha = new Date().toLocaleDateString('es-MX').replace(/\//g,'-');
+
+  if(tipo === 'municipio') {
+    const mun = document.getElementById('diae-mun-sel').value;
+    if(!mun) { alert('Selecciona un municipio.'); return; }
+    datos = datos.filter(r => r.municipio === mun);
+    alcance = mun;
+  } else if(tipo === 'seccion') {
+    const sec = parseInt(document.getElementById('diae-sec-inp').value);
+    if(!sec) { alert('Ingresa el número de sección.'); return; }
+    datos = datos.filter(r => r.seccion === sec);
+    alcance = 'Sección ' + sec;
+  } else {
+    alcance = 'Estado completo';
+  }
+
+  const wb = XLSX.utils.book_new();
+
+  // Hoja principal: solo nombre + tel + sección + coordinador (como pediste)
+  const cols = ['NOMBRE','TELEFONO','SECCION','COORDINADOR','MUNICIPIO','COMPROMISO'];
+  const rows = [cols, ...datos.map(r => [
+    r.nombre, r.tel || '—', r.seccion, r.coordinador, r.municipio,
+    ['','Contacto','Simpatiza','Seg. vota','Moviliza'][r.compromiso] || r.compromiso
+  ])];
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:28},{wch:16},{wch:10},{wch:14},{wch:18},{wch:14}];
+  XLSX.utils.book_append_sheet(wb, ws, 'PENDIENTES_VOTAR');
+
+  // Resumen del corte
+  const total_base = VOTOS_REALTIME.reduce((s,r)=>s+r.total,0);
+  const ya_votaron = VOTOS_REALTIME.reduce((s,r)=>s+r.votaron,0);
+  const resumen = [
+    ['CORTE HORARIO — PENDIENTES DE VOTAR'],
+    ['Hora de corte', new Date().toLocaleTimeString('es-MX')],
+    ['Alcance', alcance],
+    ['Total en lista', datos.length],
+    ['Ya votaron (estado)', ya_votaron],
+    ['Pendientes (estado)', total_base - ya_votaron],
+    ['% Participación', total_base ? ((ya_votaron/total_base)*100).toFixed(1)+'%' : '0%'],
+    [''],
+    ['Seg. vota pendientes', datos.filter(r=>r.compromiso===3).length],
+    ['Movilizadores pendientes', datos.filter(r=>r.compromiso===4).length],
+    [''],
+    ['INSTRUCCIÓN: Llamar o enviar WhatsApp para movilizar al voto'],
+  ];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(resumen), 'RESUMEN_CORTE');
+
+  const fname = tipo === 'auto'
+    ? `AutoCorte_${hora}hrs_${fecha}.xlsx`
+    : tipo === 'municipio'
+    ? `Pendientes_${alcance.replace(/ /g,'_')}_${hora}hrs_${fecha}.xlsx`
+    : tipo === 'seccion'
+    ? `Pendientes_${alcance.replace(/ /g,'_')}_${hora}hrs_${fecha}.xlsx`
+    : `Pendientes_EstadoCompleto_${hora}hrs_${fecha}.xlsx`;
+
+  XLSX.writeFile(wb, fname);
+
+  // Log
+  const logMsg = `${tipo==='auto'?'⏰ Auto':'⬇ Manual'} · ${alcance} · ${datos.length} pendientes · ${hora}hrs`;
+  diaeLog.unshift(logMsg);
+  if(diaeLog.length > 20) diaeLog.pop();
+  const logEl = document.getElementById('diae-log');
+  if(logEl) logEl.innerHTML = diaeLog.map(l =>
+    `<div style="padding:4px 0;border-bottom:1px solid var(--border);display:flex;gap:8px">
+      <span style="color:var(--green)">●</span> ${l}
+    </div>`).join('');
+}
+
+function toggleAutoDescarga() {
+  autoDescargaActiva = !autoDescargaActiva;
+  const btn = document.getElementById('btn-auto-toggle');
+
+  if(autoDescargaActiva) {
+    btn.style.background = 'rgba(34,197,94,0.12)';
+    btn.style.borderColor = 'rgba(34,197,94,0.3)';
+    btn.style.color = 'var(--green)';
+    btn.textContent = '⏰ Auto-descarga: ON (cada hora)';
+
+    // Calcular ms al próximo cambio de hora
+    const now = new Date();
+    const next = new Date(now);
+    next.setMinutes(0,0,0);
+    next.setHours(now.getHours()+1);
+    const msToNext = next - now;
+
+    autoDescargaTimer = setTimeout(() => {
+      descargarPendientesCoordi('auto');
+      // Después repetir cada hora exacta
+      autoDescargaTimer = setInterval(() => descargarPendientesCoordi('auto'), 3600000);
+    }, msToNext);
+
+    alert(`✓ Auto-descarga activada.\nLa primera descarga automática será a las ${next.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})} hrs.\nDespués se descargará al inicio de cada hora.`);
+  } else {
+    btn.style.background = 'var(--bg3)';
+    btn.style.borderColor = 'var(--border2)';
+    btn.style.color = 'var(--text2)';
+    btn.textContent = '⏰ Auto-descarga: OFF';
+    clearTimeout(autoDescargaTimer);
+    clearInterval(autoDescargaTimer);
+  }
+}
+
+// Hook al showTab para inicializar
+const _showTabOrig2 = showTab;
+showTab = function(tab) {
+  _showTabOrig2(tab);
+  if(tab === 'diae') initDiaE();
+};
+
+// Inicializar descargas cuando se muestra esa pantalla
+const _origShowTab = showTab;
+showTab = function(tab) {
+  _origShowTab(tab);
+  if (tab === 'descargas') initDescargas();
+};
 </script>
+<script src="theme.js"></script>
 </body>
 </html>
