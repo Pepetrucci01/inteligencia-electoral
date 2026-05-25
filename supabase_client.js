@@ -245,10 +245,10 @@ const SDB = {
         .from('audit_log')
         .insert([{
           accion,
-          tabla,
-          registro_id: registroId,
-          datos_nuevo: datosNuevo,
-          usuario_id: user?.id || null
+          tabla:        tabla || null,
+          registro_id:  registroId || null,
+          detalle:      datosNuevo ? JSON.stringify(datosNuevo) : null,
+          usuario_id:   user?.id || null,
         }]);
     } catch(e) {
       console.warn('Audit log skipped:', e.message);
