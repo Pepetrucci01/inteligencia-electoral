@@ -53,8 +53,15 @@ const SDB = {
 
   // ── CIUDADANOS / SIMPATIZANTES ──────────────────────────────
 
+  /** Esperar a que el cliente esté listo */
+  async waitReady() {
+    if(window.supabase) return;
+    await new Promise(resolve => document.addEventListener('supabase-ready', resolve, {once:true}));
+  },
+
   /** Buscar ciudadano por CURP (anti-duplicados) */
   async buscarPorCURP(curp) {
+    await this.waitReady();
     const { data, error } = await window.supabase
       .from('ciudadanos')
       .select('id, nombre, apellido_paterno, apellido_materno, curp')
@@ -65,6 +72,7 @@ const SDB = {
 
   /** Buscar ciudadano por teléfono */
   async buscarPorTel(telefono) {
+    await this.waitReady();
     const { data, error } = await window.supabase
       .from('ciudadanos')
       .select('id, nombre, apellido_paterno, telefono')
@@ -75,6 +83,7 @@ const SDB = {
 
   /** Guardar nuevo ciudadano */
   async guardarCiudadano(datos) {
+    await this.waitReady();
     const { data, error } = await window.supabase
       .from('ciudadanos')
       .insert([datos])
@@ -85,6 +94,7 @@ const SDB = {
 
   /** Guardar vínculo ciudadano ↔ candidatura */
   async guardarCandidatura(datos) {
+    await this.waitReady();
     const { data, error } = await window.supabase
       .from('ciudadanos_candidaturas')
       .insert([datos])
