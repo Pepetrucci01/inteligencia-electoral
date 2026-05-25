@@ -1230,8 +1230,7 @@ async function guardarEnSupabase(nuevo) {
     if(nuevo.tel && nuevo.tel.length >= 10) {
       const { data: dupTel } = await SDB.buscarPorTel(nuevo.tel);
       if(dupTel) {
-        const confirmar = confirm('⚠️ TELÉFONO DUPLICADO: ' + dupTel.nombre + ' ya tiene este número.
-¿Deseas continuar de todas formas?');
+        const confirmar = confirm('⚠️ TELÉFONO DUPLICADO: ' + dupTel.nombre + ' ya tiene este número. ¿Deseas continuar de todas formas?');
         if(!confirmar) {
           if(btnGuardar) { btnGuardar.textContent = '✅ Guardar registro'; btnGuardar.disabled = false; }
           return false;
