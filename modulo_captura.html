@@ -1213,6 +1213,11 @@ function mostrarEstadoCURP(curp) {
 
 // ── Guardar en Supabase ──────────────────────────────────────
 async function guardarEnSupabase(nuevo) {
+  // Esperar a que Supabase esté listo
+  if(!window.supabase) {
+    await new Promise(resolve => document.addEventListener('supabase-ready', resolve, {once:true}));
+  }
+
   // Mostrar loading
   const btnGuardar = document.querySelector('.btn-save') || document.querySelector('[onclick*="guardarRegistro"]');
   if(btnGuardar) { btnGuardar.textContent = '⏳ Guardando...'; btnGuardar.disabled = true; }
