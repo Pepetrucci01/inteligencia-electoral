@@ -66,7 +66,7 @@ const SDB = {
       .from('ciudadanos')
       .select('id, nombre, apellido_paterno, apellido_materno, curp')
       .eq('curp', curp)
-      .single();
+      .maybeSingle();
     return { data, error };
   },
 
@@ -238,16 +238,21 @@ const SDB = {
 
   /** Registrar acción en auditoría */
   async log(accion, tabla, registroId, datosNuevo = null) {
-    const { data: { user } } = await window.supabase.auth.getUser();
-    await window.supabase
-      .from('audit_log')
-      .insert([{
-        accion,
-        tabla,
-        registro_id: registroId,
-        datos_nuevo: datosNuevo,
-        usuario_id: user?.id
-      }]);
+    try {
+      await this.waitReady();
+      const { data: { user } } = await window.supabase.auth.getUser();
+      await window.supabase
+        .from('audit_log')
+        .insert([{
+          accion,
+          tabla,
+          registro_id: registroId,
+          datos_nuevo: datosNuevo,
+          usuario_id: user?.id || null
+        }]);
+    } catch(e) {
+      console.warn('Audit log skipped:', e.message);
+    }
   }
 };
 
