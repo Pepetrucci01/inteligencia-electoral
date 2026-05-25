@@ -1261,8 +1261,9 @@ async function guardarEnSupabase(nuevo) {
       es_influencia:      nuevo.influencia || false,
       notas:              nuevo.obs || null,
       compromiso:         nuevo.comp ? parseInt(nuevo.comp) : null,
-      capturista_id:      null, // se asigna desde sesión Supabase Auth cuando esté activo
-      responsable_id:     null, // se asigna desde tabla responsables cuando esté activo
+      licencia_id:        window.LICENCIA_ACTIVA_ID || 'a1b2c3d4-0001-0000-0000-000000000001',
+      capturista_id:      null,
+      responsable_id:     null,
       validado:           false,
       duplicado:          false,
       sync_status:        'synced',
