@@ -710,6 +710,8 @@ function guardarRegistro() {
     cap_por: CAPTURISTA.id, resp: resp,
   };
   CIUDADANOS.push(nuevo);
+  // Guardar en Supabase
+  guardarEnSupabase(nuevo);
   // Mostrar paso 3
   document.getElementById('paso2').style.display='none';
   document.getElementById('paso3').style.display='block';
