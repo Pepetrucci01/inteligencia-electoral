@@ -401,7 +401,7 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
   <div class="jornada-bar">
     <div>
       <div class="j-title">🗳 JORNADA ELECTORAL EN CURSO — 1 JUNIO 2027</div>
-      <div class="j-sub">1,060 casillas · 08:00–18:00 hrs · Colima</div>
+      <div class="j-sub">1,023 casillas · 08:00–18:00 hrs · Colima</div>
     </div>
     <div class="j-reloj" id="f2-reloj">--:--:--</div>
     <button class="sim-btn" onclick="simActualizar()">⟳ Simular actualización</button>
@@ -496,16 +496,16 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
 // DATOS BASE
 // ══════════════════════════════════════════════════
 const MUNS = [
-  {id:'TEC',n:'Tecomán',      cap:4475,meta:29211,secs:62, df:'DF2',cas:220,v24:6820,g24:'Partido A',p24:61.7},
-  {id:'MIN',n:'Minatitlán',   cap:625, meta:4329, secs:14, df:'DF2',cas:15, v24:1440,g24:'Partido A',p24:64.1},
-  {id:'IXT',n:'Ixtlahuacán',  cap:310, meta:2593, secs:12, df:'DF2',cas:11, v24:1280,g24:'Partido A',p24:61.4},
-  {id:'CML',n:'Comala',       cap:631, meta:6292, secs:22, df:'DF1',cas:34, v24:1640,g24:'Partido A',p24:47.7},
-  {id:'ARM',n:'Armería',      cap:688, meta:7337, secs:21, df:'DF2',cas:16, v24:2030,g24:'Partido A',p24:60.4},
-  {id:'VDA',n:'Villa de Álvarez',cap:1393,meta:34952,secs:70,df:'DF1',cas:169,v24:5220,g24:'Partido A',p24:47.0},
-  {id:'MAN',n:'Manzanillo',   cap:2108,meta:49083,secs:79, df:'DF2',cas:316,v24:8420,g24:'Partido A',p24:47.9},
-  {id:'COL',n:'Colima',       cap:1620,meta:48030,secs:99, df:'DF1',cas:203,v24:5180,g24:'Partido A',p24:45.4},
-  {id:'CUA',n:'Cuauhtémoc',   cap:619, meta:8061, secs:32, df:'DF1',cas:47, v24:2310,g24:'Partido A',p24:50.4},
-  {id:'COQ',n:'Coquimatlán',  cap:469, meta:6700, secs:23, df:'DF1',cas:29, v24:1820,g24:'Partido B',p24:52.7},
+  {id:'TEC',n:'Tecomán',      cap:4475,meta:29211,secs:62, df:'DF2',cas:153,v24:6820,g24:'Partido A',p24:61.7},
+  {id:'MIN',n:'Minatitlán',   cap:625, meta:4329, secs:14, df:'DF2',cas:19, v24:1440,g24:'Partido A',p24:64.1},
+  {id:'IXT',n:'Ixtlahuacán',  cap:310, meta:2593, secs:12, df:'DF2',cas:12, v24:1280,g24:'Partido A',p24:61.4},
+  {id:'CML',n:'Comala',       cap:631, meta:6292, secs:22, df:'DF1',cas:35, v24:1640,g24:'Partido A',p24:47.7},
+  {id:'ARM',n:'Armería',      cap:688, meta:7337, secs:21, df:'DF2',cas:41, v24:2030,g24:'Partido A',p24:60.4},
+  {id:'VDA',n:'Villa de Álvarez',cap:1393,meta:34952,secs:70,df:'DF1',cas:189,v24:5220,g24:'Partido A',p24:47.0},
+  {id:'MAN',n:'Manzanillo',   cap:2108,meta:49083,secs:79, df:'DF2',cas:252,v24:8420,g24:'Partido A',p24:47.9},
+  {id:'COL',n:'Colima',       cap:1620,meta:48030,secs:99, df:'DF1',cas:247,v24:5180,g24:'Partido A',p24:45.4},
+  {id:'CUA',n:'Cuauhtémoc',   cap:619, meta:8061, secs:32, df:'DF1',cas:45, v24:2310,g24:'Partido A',p24:50.4},
+  {id:'COQ',n:'Coquimatlán',  cap:469, meta:6700, secs:23, df:'DF1',cas:30, v24:1820,g24:'Partido B',p24:52.7},
 ];
 const DFS = [
   {id:'DF1',n:'Distrito Federal 1',munIds:['CML','VDA','COL','CUA','COQ']},
