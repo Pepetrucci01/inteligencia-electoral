@@ -1279,7 +1279,7 @@ async function guardarEnSupabase(nuevo) {
 
     // 4. Guardar vínculo con candidatura + voto parejo
     // candidatura_id: se obtiene del contexto global de candidatura activa
-    const candidaturaActualId = window.CANDIDATURA_ACTIVA_ID || null;
+    const candidaturaActualId = window.CANDIDATURA_ACTIVA_ID || 'a1b2c3d4-0001-0000-0000-000000000101';
     const candidaturaData = {
       ciudadano_id:     ciudadano.id,
       candidatura_id:   candidaturaActualId,
