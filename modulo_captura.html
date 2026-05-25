@@ -205,6 +205,28 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 
 /* FAB */
 .fab{position:fixed;bottom:24px;right:20px;width:56px;height:56px;background:var(--accent);border-radius:50%;border:none;font-size:26px;color:#fff;cursor:pointer;box-shadow:0 4px 20px rgba(59,130,246,0.4);z-index:300;display:flex;align-items:center;justify-content:center;}
+
+/* ── Back button (solo visible fuera del iframe) ── */
+#btn-back-menu {
+  display: none;
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9999;
+  background: var(--accent, #3b82f6);
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  letter-spacing: 0.5px;
+  transition: all 0.2s;
+}
+#btn-back-menu:hover { transform: scale(1.05); }
+
 </style>
 </head>
 <body>
@@ -382,6 +404,36 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
           <div class="comp-desc">Trae a otros a votar</div>
         </div>
       </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">¿Vota parejo por el partido? <span style="color:var(--red)">*</span></div>
+      <div class="compromiso-grid">
+        <div class="comp-btn" id="vp-si" onclick="selVotoParejo('si')">
+          <div class="comp-num" style="color:#22c55e;font-size:16px;font-weight:700;">SI</div>
+          <div class="comp-label">Sí, vota parejo</div>
+          <div class="comp-desc">Vota por todas las candidaturas</div>
+        </div>
+        <div class="comp-btn" id="vp-parcial" onclick="selVotoParejo('parcial')">
+          <div class="comp-num" style="color:#f59e0b;font-size:16px;font-weight:700;">~</div>
+          <div class="comp-label">Parcial</div>
+          <div class="comp-desc">Solo por algunas candidaturas</div>
+        </div>
+        <div class="comp-btn" id="vp-no" onclick="selVotoParejo('no')">
+          <div class="comp-num" style="color:#ef4444;font-size:16px;font-weight:700;">NO</div>
+          <div class="comp-label">No vota parejo</div>
+          <div class="comp-desc">Solo por una candidatura</div>
+        </div>
+      </div>
+      <div id="vp-detalle" style="display:none;margin-top:10px;padding:12px;background:var(--bg4,#1a2238);border-radius:8px;">
+        <div style="font-size:11px;color:var(--text3,#8b949e);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em;">¿Por cuáles candidaturas SÍ vota?</div>
+        <label style="display:flex;gap:8px;margin-bottom:6px;cursor:pointer;font-size:13px;align-items:center;"><input type="checkbox" id="vp-gobernador" style="accent-color:var(--accent,#3b82f6);"> Gobernador</label>
+        <label style="display:flex;gap:8px;margin-bottom:6px;cursor:pointer;font-size:13px;align-items:center;"><input type="checkbox" id="vp-senador" style="accent-color:var(--accent,#3b82f6);"> Senador</label>
+        <label style="display:flex;gap:8px;margin-bottom:6px;cursor:pointer;font-size:13px;align-items:center;"><input type="checkbox" id="vp-dip-federal" style="accent-color:var(--accent,#3b82f6);"> Diputado Federal</label>
+        <label style="display:flex;gap:8px;margin-bottom:6px;cursor:pointer;font-size:13px;align-items:center;"><input type="checkbox" id="vp-dip-local" style="accent-color:var(--accent,#3b82f6);"> Diputado Local</label>
+        <label style="display:flex;gap:8px;cursor:pointer;font-size:13px;align-items:center;"><input type="checkbox" id="vp-ayuntamiento" style="accent-color:var(--accent,#3b82f6);"> Ayuntamiento</label>
+      </div>
+      <div id="vp-error" style="color:#ef4444;font-size:12px;margin-top:6px;display:none;">⚠️ Selecciona una opción</div>
     </div>
 
     <div class="form-section">
@@ -626,6 +678,12 @@ function toggleSwitch(k) {
 
 // ─── GUARDAR ───────────────────────────────────────────────────────────────
 function guardarRegistro() {
+  if(!votoParejo) {
+    var ve=document.getElementById('vp-error');
+    if(ve) { ve.textContent='⚠️ Indica si vota parejo o no'; ve.style.display='block'; ve.scrollIntoView({block:'center',behavior:'smooth'}); }
+    if(typeof paso2Errors !== 'undefined') paso2Errors.textContent='Indica si vota parejo o no';
+    return;
+  }
   if(!compSel) { document.getElementById('paso2-errors').textContent='Selecciona el nivel de compromiso'; return; }
   if(!origenSel) { document.getElementById('paso2-errors').textContent='Selecciona el origen de contacto'; return; }
   document.getElementById('paso2-errors').textContent='';
@@ -646,6 +704,7 @@ function guardarRegistro() {
     comp: compSel,
     origen: {casa:'Casa por casa',ref:'Referido',evento:'Evento',digital:'Digital'}[origenSel],
     riesgo: toggles.riesgo, apoyo: toggles.apoyo, influencia: toggles.influencia,
+    voto_parejo: votoParejo, candidaturas_vota: getVotosParejos(),
     curp: document.getElementById('f-curp').value,
     validado: false, duplicado: false,
     cap_por: CAPTURISTA.id, resp: resp,
@@ -681,7 +740,7 @@ function nuevoRegistro() {
     const el = document.getElementById(id);
     if(el) el.value='';
   });
-  compSel=0; origenSel=''; toggles={riesgo:false,apoyo:false,influencia:false};
+  compSel=0; origenSel=''; toggles={riesgo:false,apoyo:false,influencia:false}; votoParejo='';
   [1,2,3,4].forEach(i=>document.getElementById('comp-'+i).className='comp-btn');
   ['casa','ref','evento','digital'].forEach(x=>document.getElementById('orig-'+x).classList.remove('selected'));
   ['riesgo','apoyo','influencia'].forEach(k=>document.getElementById('tog-'+k).classList.remove('on'));
@@ -1069,5 +1128,179 @@ function capitalizar(str) {
 
 </script>
 <script src="theme.js"></script>
+<script src="supabase_client.js"></script>
+<script>
+// ─── VOTO PAREJO ──────────────────────────────────────────────────────────
+let votoParejo = '';
+
+function selVotoParejo(opcion) {
+  votoParejo = opcion;
+  var bgs = {si:'rgba(34,197,94,0.2)', parcial:'rgba(245,158,11,0.2)', no:'rgba(239,68,68,0.2)'};
+  var brs = {si:'2px solid #22c55e', parcial:'2px solid #f59e0b', no:'2px solid #ef4444'};
+  ['si','parcial','no'].forEach(function(op) {
+    var el = document.getElementById('vp-'+op);
+    if(!el) return;
+    el.style.background = op===opcion ? bgs[op] : '';
+    el.style.border     = op===opcion ? brs[op] : '';
+  });
+  var det = document.getElementById('vp-detalle');
+  if(det) det.style.display = (opcion==='parcial'||opcion==='no') ? 'block' : 'none';
+  var err = document.getElementById('vp-error');
+  if(err) err.style.display = 'none';
+}
+
+function getVotosParejos() {
+  if(votoParejo==='si') return ['gobernador','senador','diputado_federal','diputado_local','ayuntamiento'];
+  var r = [];
+  ['gobernador','senador','dip-federal','dip-local','ayuntamiento'].forEach(function(id) {
+    var el = document.getElementById('vp-'+id);
+    if(el && el.checked) r.push(id.replace('dip-','diputado_'));
+  });
+  return r;
+}
+
+// ─── VALIDACIÓN CURP ──────────────────────────────────────────────────────
+function validarCURP(curp) {
+  if(!curp || curp.length===0) return {ok:true, msg:''};
+  if(curp.length!==18) return {ok:false, msg:'Debe tener 18 caracteres (tiene '+curp.length+')'};
+  var patron = /^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[A-Z0-9][0-9]$/;
+  if(!patron.test(curp)) return {ok:false, msg:'Formato inválido'};
+  var m = parseInt(curp.substring(6,8));
+  var d = parseInt(curp.substring(8,10));
+  if(m<1||m>12) return {ok:false, msg:'Mes inválido ('+m+')'};
+  if(d<1||d>31) return {ok:false, msg:'Día inválido ('+d+')'};
+  return {ok:true, msg:'válida'};
+}
+
+function mostrarEstadoCURP(curp) {
+  var el = document.getElementById('curp-status');
+  if(!el) return;
+  if(!curp || curp.length===0) { el.innerHTML=''; return; }
+  var v = validarCURP(curp);
+  if(!v.ok) {
+    el.innerHTML = '<span style="color:#ef4444;font-size:11px;">⚠️ CURP '+v.msg+'</span>';
+    return;
+  }
+  var yr = parseInt(curp.substring(4,6));
+  var yearFull = yr<=29 ? 2000+yr : 1900+yr;
+  var sexo = curp[10]==='H' ? 'HOMBRE' : 'MUJER';
+  // Check duplicates in existing list
+  var dup = CIUDADANOS ? CIUDADANOS.find(function(c){return c.curp&&c.curp===curp;}) : null;
+  if(dup) {
+    el.innerHTML = '<span style="color:#ef4444;font-size:11px;">⛔ DUPLICADO: ya existe como '+dup.nombre+'</span>';
+  } else {
+    el.innerHTML = '<span style="color:#22c55e;font-size:11px;">✅ CURP válida · '+sexo+' · Nac. '+yearFull+'</span>';
+  }
+}
+
+
+// Mostrar botón de menú solo si NO está en iframe
+(function() {
+  try {
+    if (window.self === window.top) {
+      // No está en iframe - mostrar botón de regreso
+      var btn = document.getElementById('btn-back-menu');
+      if (btn) btn.style.display = 'block';
+    }
+  } catch(e) {
+    var btn = document.getElementById('btn-back-menu');
+    if (btn) btn.style.display = 'block';
+  }
+})();
+
+
+// ── Guardar en Supabase ──────────────────────────────────────
+async function guardarEnSupabase(nuevo) {
+  // Mostrar loading
+  const btnGuardar = document.querySelector('.btn-save') || document.querySelector('[onclick*="guardarRegistro"]');
+  if(btnGuardar) { btnGuardar.textContent = '⏳ Guardando...'; btnGuardar.disabled = true; }
+
+  try {
+    // 1. Verificar duplicado por CURP
+    if(nuevo.curp && nuevo.curp.length === 18) {
+      const { data: dup } = await SDB.buscarPorCURP(nuevo.curp);
+      if(dup) {
+        alert('⛔ DUPLICADO: Esta CURP ya está registrada como ' + dup.nombre + ' ' + (dup.apellido_paterno || ''));
+        if(btnGuardar) { btnGuardar.textContent = '✅ Guardar registro'; btnGuardar.disabled = false; }
+        return false;
+      }
+    }
+
+    // 2. Verificar duplicado por teléfono
+    if(nuevo.tel && nuevo.tel.length >= 10) {
+      const { data: dupTel } = await SDB.buscarPorTel(nuevo.tel);
+      if(dupTel) {
+        const confirmar = confirm('⚠️ TELÉFONO DUPLICADO: ' + dupTel.nombre + ' ya tiene este número.
+¿Deseas continuar de todas formas?');
+        if(!confirmar) {
+          if(btnGuardar) { btnGuardar.textContent = '✅ Guardar registro'; btnGuardar.disabled = false; }
+          return false;
+        }
+      }
+    }
+
+    // 3. Guardar ciudadano
+    const nombreSolo = document.getElementById('f-nombre')?.value.trim() || nuevo.nombre || null;
+    const apellidoPat = document.getElementById('f-paterno')?.value.trim() || null;
+    const apellidoMat = document.getElementById('f-materno')?.value.trim() || null;
+    const ciudadanoData = {
+      nombre:             nombreSolo,
+      apellido_paterno:   apellidoPat,
+      apellido_materno:   apellidoMat,
+      edad:               nuevo.edad ? parseInt(nuevo.edad) : null,
+      sexo:               nuevo.sexo || null,
+      telefono:           nuevo.tel || null,
+      curp:               nuevo.curp || null,
+      clave_elector:      document.getElementById('f-clave')?.value.trim() || null,
+      seccion_electoral:  nuevo.sec ? parseInt(nuevo.sec) : null,
+      municipio:          nuevo.mun || null,
+      origen:             nuevo.origen || null,
+      es_riesgo:          nuevo.riesgo || false,
+      es_apoyo:           nuevo.apoyo || false,
+      es_influencia:      nuevo.influencia || false,
+      notas:              nuevo.obs || null,
+      compromiso:         nuevo.comp ? parseInt(nuevo.comp) : null,
+      capturista_id:      null, // se asigna desde sesión Supabase Auth cuando esté activo
+      responsable_id:     null, // se asigna desde tabla responsables cuando esté activo
+      validado:           false,
+      duplicado:          false,
+      sync_status:        'synced',
+    };
+
+    const { data: ciudadano, error: errCiudadano } = await SDB.guardarCiudadano(ciudadanoData);
+    if(errCiudadano) throw new Error('Error al guardar: ' + errCiudadano.message);
+
+    // 4. Guardar vínculo con candidatura + voto parejo
+    // candidatura_id: se obtiene del contexto global de candidatura activa
+    const candidaturaActualId = window.CANDIDATURA_ACTIVA_ID || null;
+    const candidaturaData = {
+      ciudadano_id:     ciudadano.id,
+      candidatura_id:   candidaturaActualId,
+      compromiso:       nuevo.comp ? parseInt(nuevo.comp) : null,
+      voto_parejo:      (nuevo.voto_parejo || 'SI').toUpperCase(),
+      vota_gubernatura: (nuevo.candidaturas_vota || []).includes('gobernador'),
+      vota_senador:     (nuevo.candidaturas_vota || []).includes('senador'),
+      vota_dip_federal: (nuevo.candidaturas_vota || []).includes('diputado_federal'),
+      vota_dip_local:   (nuevo.candidaturas_vota || []).includes('diputado_local'),
+      vota_ayuntamiento:(nuevo.candidaturas_vota || []).includes('ayuntamiento'),
+    };
+
+    await SDB.guardarCandidatura(candidaturaData);
+
+    // 5. Registrar en auditoría
+    await SDB.log('CAPTURA_CIUDADANO', 'ciudadanos', ciudadano.id, ciudadanoData);
+
+    if(btnGuardar) { btnGuardar.textContent = '✅ Guardar registro'; btnGuardar.disabled = false; }
+    return true;
+
+  } catch(err) {
+    console.error('Error Supabase:', err);
+    alert('⚠️ Error al guardar en la base de datos: ' + err.message + '\n\nEl registro se guardó localmente.');
+    if(btnGuardar) { btnGuardar.textContent = '✅ Guardar registro'; btnGuardar.disabled = false; }
+    return false;
+  }
+}
+
+</script>
 </body>
 </html>

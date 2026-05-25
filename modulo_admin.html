@@ -172,6 +172,28 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
 .search-input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:13px;padding:9px 12px 9px 36px;outline:none;}
 .search-input:focus{border-color:var(--accent);}
 .search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px;}
+
+/* ── Botón regreso al menú ── */
+#btn-back-menu {
+  display: none;
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9999;
+  background: var(--accent, #3b82f6);
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  letter-spacing: 0.5px;
+  transition: all 0.2s;
+}
+#btn-back-menu:hover { transform: scale(1.05); }
+
 </style>
 </head>
 <body>
@@ -1190,8 +1212,23 @@ function modalNuevaLicencia(){
     </div>
     <div class="form-group"><label class="form-label">Email de contacto</label><input class="form-input" type="email" placeholder="cliente@partido.mx"></div>
     <div class="form-group"><label class="form-label">Notas de contrato</label><textarea class="form-textarea" rows="2" placeholder="Condiciones especiales, descuentos..."></textarea></div>
-    <div class="btn-row" style="margin-top:6px">
-      <button class="btn primary" style="flex:1" onclick="alert('Licencia creada. Se enviará email de acceso al cliente.');cerrarModal()">Crear licencia</button>
+
+    <div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.3);border-radius:8px;padding:14px;margin-top:10px;">
+      <div style="font-size:12px;font-weight:700;color:var(--accent,#3b82f6);margin-bottom:10px;">🛡️ ACUERDO DE EXCLUSIVIDAD Y CONFIDENCIALIDAD</div>
+      <div style="font-size:11px;color:var(--text2,#8b949e);line-height:1.6;margin-bottom:10px;">
+        Al crear esta licencia, el sistema se compromete a <strong style="color:var(--text,#e6edf3)">NO vender ni compartir</strong> este servicio 
+        a ningún otro partido o candidato que compita en el mismo cargo y elección. 
+        Los datos capturados son <strong style="color:var(--text,#e6edf3)">propiedad exclusiva</strong> del contratante 
+        y serán eliminados del sistema al término del contrato.
+      </div>
+      <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;font-size:12px;color:var(--text2,#8b949e);">
+        <input type="checkbox" id="chk-terminos-lic" style="accent-color:var(--accent,#3b82f6);margin-top:2px;width:14px;height:14px;" onchange="checkTerminosLic()">
+        <span>Confirmo haber leído y aceptado los <strong style="color:var(--accent,#3b82f6)">Términos de Exclusividad y Confidencialidad</strong> en nombre del contratante.</span>
+      </label>
+    </div>
+
+    <div class="btn-row" style="margin-top:10px">
+      <button class="btn primary" id="btn-crear-lic" style="flex:1;opacity:0.4;cursor:not-allowed;" disabled onclick="crearLicenciaConTerminos()">✅ Crear Licenciao al cliente.');cerrarModal()">Crear licencia</button>
       <button class="btn" onclick="cerrarModal()">Cancelar</button>
     </div>`;
   document.getElementById('modal-bg').style.display='flex';
@@ -1695,6 +1732,49 @@ showTab = function(t){
   if(t==='candidaturas') initCandidaturas();
 };
 </script>
-<script src="theme.js"></script>
+<script src="theme.js">
+function checkTerminosLic() {
+  var chk = document.getElementById('chk-terminos-lic');
+  var btn = document.getElementById('btn-crear-lic');
+  if(!btn) return;
+  if(chk && chk.checked) {
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    btn.style.cursor = 'pointer';
+  } else {
+    btn.disabled = true;
+    btn.style.opacity = '0.4';
+    btn.style.cursor = 'not-allowed';
+  }
+}
+
+function crearLicenciaConTerminos() {
+  var fecha = new Date().toLocaleString('es-MX', {
+    year:'numeric', month:'long', day:'numeric',
+    hour:'2-digit', minute:'2-digit'
+  });
+  alert('✅ Licencia creada exitosamente\n\nFecha de activación: ' + fecha + '\n\nLos términos de exclusividad han sido registrados.\nSe enviará confirmación al cliente por email.');
+  closeModal();
+}
+
+
+(function() {
+  try {
+    if (window.self === window.top) {
+      var btn = document.getElementById('btn-back-menu');
+      if (btn) btn.style.display = 'block';
+    }
+  } catch(e) {
+    var btn = document.getElementById('btn-back-menu');
+    if (btn) btn.style.display = 'block';
+  }
+})();
+</script>
+
+<!-- Botón regreso al menú principal -->
+<button id="btn-back-menu" onclick="window.location.href='index.html'">
+  ☰ Menú Principal
+</button>
+
 </body>
 </html>

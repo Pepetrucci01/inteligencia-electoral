@@ -137,6 +137,28 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
   .form-row{grid-template-columns:1fr;}
   .kpi-row{grid-template-columns:repeat(2,1fr);}
 }
+
+/* ── Back button (solo visible fuera del iframe) ── */
+#btn-back-menu {
+  display: none;
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9999;
+  background: var(--accent, #3b82f6);
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  letter-spacing: 0.5px;
+  transition: all 0.2s;
+}
+#btn-back-menu:hover { transform: scale(1.05); }
+
 </style>
 </head>
 <body>
@@ -990,6 +1012,21 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
   if (tema.fechaEleccion) document.getElementById('cfg-fecha').value  = tema.fechaEleccion;
 })();
 </script>
-<script src="theme.js"></script>
+<script src="theme.js">
+// Mostrar botón de menú solo si NO está en iframe
+(function() {
+  try {
+    if (window.self === window.top) {
+      // No está en iframe - mostrar botón de regreso
+      var btn = document.getElementById('btn-back-menu');
+      if (btn) btn.style.display = 'block';
+    }
+  } catch(e) {
+    var btn = document.getElementById('btn-back-menu');
+    if (btn) btn.style.display = 'block';
+  }
+})();
+
+</script>
 </body>
 </html>
