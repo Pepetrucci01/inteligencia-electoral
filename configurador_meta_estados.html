@@ -215,7 +215,7 @@ table.rtable tr:hover td{background:rgba(255,255,255,0.02);}
         </div>
         <div class="cfg-item">
           <div class="cfg-label">Estructura de campo</div>
-          <input class="cfg-input" id="cfg-estructura" type="number" value="1500" min="50" max="100000" step="100" oninput="calcularEstimado()">
+          <input class="cfg-input" id="cfg-estructura" type="number" value="1800" min="50" max="100000" step="100" oninput="calcularEstimado()">
         </div>
         <div class="cfg-item">
           <div class="cfg-label">Meta estimada (estructura)</div>
@@ -232,7 +232,7 @@ table.rtable tr:hover td{background:rgba(255,255,255,0.02);}
             <span style="font-size:11px;color:var(--text3)">Afluencia &gt;</span>
             <input class="cfg-input" id="cfg-umbral-facil" type="number" value="60" min="40" max="80" style="width:60px;padding:4px 6px;font-size:12px" oninput="calcularEstimado()">
             <span style="font-size:11px;color:var(--text3)">% → factor ×</span>
-            <input class="cfg-input" id="cfg-factor-facil" type="number" value="0.77" min="0.3" max="1.5" step="0.01" style="width:64px;padding:4px 6px;font-size:12px" oninput="calcularEstimado()">
+            <input class="cfg-input" id="cfg-factor-facil" type="number" value="0.88" min="0.3" max="1.5" step="0.01" style="width:64px;padding:4px 6px;font-size:12px" oninput="calcularEstimado()">
           </div>
         </div>
         <div class="factor-card">
@@ -241,14 +241,14 @@ table.rtable tr:hover td{background:rgba(255,255,255,0.02);}
             <span style="font-size:11px;color:var(--text3)">Afluencia 50–</span>
             <span style="font-size:11px;color:var(--text3)" id="lbl-medio">60%</span>
             <span style="font-size:11px;color:var(--text3)"> → ×</span>
-            <input class="cfg-input" id="cfg-factor-medio" type="number" value="0.97" min="0.3" max="1.5" step="0.01" style="width:64px;padding:4px 6px;font-size:12px" oninput="calcularEstimado()">
+            <input class="cfg-input" id="cfg-factor-medio" type="number" value="0.98" min="0.3" max="1.5" step="0.01" style="width:64px;padding:4px 6px;font-size:12px" oninput="calcularEstimado()">
           </div>
         </div>
         <div class="factor-card">
           <div class="factor-title" style="color:var(--red)">Difícil</div>
           <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
             <span style="font-size:11px;color:var(--text3)">Afluencia &lt; 50% → ×</span>
-            <input class="cfg-input" id="cfg-factor-dificil" type="number" value="1.17" min="0.3" max="2.0" step="0.01" style="width:64px;padding:4px 6px;font-size:12px" oninput="calcularEstimado()">
+            <input class="cfg-input" id="cfg-factor-dificil" type="number" value="1.08" min="0.3" max="2.0" step="0.01" style="width:64px;padding:4px 6px;font-size:12px" oninput="calcularEstimado()">
           </div>
         </div>
       </div>
@@ -526,9 +526,9 @@ function procesarMeta(){
   const reqs=CAMPOS.filter(f=>f.req&&!map[f.key]);
   if(reqs.length){alert('Faltan columnas requeridas:\n'+reqs.map(f=>f.label).join('\n'));return;}
 
-  const fFacil=cfg.facFacil||0.77;
-  const fMedio=cfg.facMedio||0.97;
-  const fDificil=cfg.facDificil||1.17;
+  const fFacil=cfg.facFacil||0.88;
+  const fMedio=cfg.facMedio||0.98;
+  const fDificil=cfg.facDificil||1.08;
   const umbral=cfg.umbralFacil||0.60;
 
   const secciones=excelData.map(row=>{
