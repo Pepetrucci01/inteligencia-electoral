@@ -115,6 +115,43 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 /* FAB */
 .fab{position:fixed;bottom:24px;right:20px;background:var(--amber);border:none;border-radius:50%;width:56px;height:56px;font-size:22px;color:#000;cursor:pointer;box-shadow:0 4px 20px rgba(245,158,11,0.4);z-index:300;display:flex;align-items:center;justify-content:center;}
 
+/* INSTALACIÓN / CIERRE */
+.inst-section{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:16px;margin-bottom:14px;}
+.inst-section-title{font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.inst-section-title span{font-size:14px;}
+.tipo-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.tipo-btn{background:var(--bg3);border:1px solid var(--border2);border-radius:9px;padding:12px 8px;text-align:center;cursor:pointer;transition:all .2s;}
+.tipo-btn.selected-basica{background:rgba(59,130,246,0.15);border-color:rgba(59,130,246,0.5);}
+.tipo-btn.selected-contigua{background:rgba(6,182,212,0.15);border-color:rgba(6,182,212,0.5);}
+.tipo-btn.selected-extraordinaria{background:rgba(168,85,247,0.15);border-color:rgba(168,85,247,0.5);}
+.tipo-btn.selected-especial{background:rgba(245,158,11,0.15);border-color:rgba(245,158,11,0.5);}
+.tipo-icon{font-size:20px;margin-bottom:4px;}
+.tipo-label{font-size:10px;font-family:var(--mono);font-weight:600;text-transform:uppercase;letter-spacing:.05em;}
+.tipo-desc{font-size:9px;color:var(--text3);margin-top:2px;line-height:1.3;}
+.estatus-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;}
+.estatus-btn{background:var(--bg3);border:1px solid var(--border2);border-radius:9px;padding:10px 6px;text-align:center;cursor:pointer;transition:all .2s;font-family:var(--mono);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;}
+.estatus-btn.sel-instalada{background:rgba(34,197,94,0.15);border-color:rgba(34,197,94,0.5);color:var(--green);}
+.estatus-btn.sel-no_instalada{background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.5);color:var(--red);}
+.estatus-btn.sel-suspendida{background:rgba(245,158,11,0.15);border-color:rgba(245,158,11,0.5);color:var(--amber);}
+.campo-bloqueado{opacity:.35;pointer-events:none;}
+.na-badge{display:inline-block;font-family:var(--mono);font-size:10px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:4px;padding:2px 7px;color:var(--text3);margin-left:8px;}
+.inst-confirmado{background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.3);border-radius:10px;padding:14px;margin-bottom:14px;}
+.inst-confirmado-row{display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.05);}
+.inst-confirmado-row:last-child{border-bottom:none;}
+.inst-key{color:var(--text3);font-family:var(--mono);font-size:10px;text-transform:uppercase;}
+.inst-val{font-weight:600;font-size:13px;}
+.btn-inst-primario{width:100%;border:none;border-radius:10px;padding:15px;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:8px;}
+.btn-verde{background:var(--green);color:#fff;}
+.btn-rojo{background:var(--red);color:#fff;}
+.btn-gris{background:var(--bg4);color:var(--text2);border:1px solid var(--border2);}
+.partido-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.partido-nombre{font-size:12px;color:var(--text2);width:130px;flex-shrink:0;font-family:var(--mono);}
+.partido-input{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:16px;padding:10px 12px;outline:none;text-align:right;-webkit-appearance:none;}
+.partido-input:focus{border-color:var(--green);}
+.votos-total{background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;margin-top:4px;}
+.sql-block{background:#0a0f1e;border:1px solid rgba(59,130,246,0.2);border-radius:10px;padding:14px;margin-bottom:10px;overflow-x:auto;}
+.sql-block pre{font-family:var(--mono);font-size:10px;color:#7dd3fc;line-height:1.7;white-space:pre-wrap;word-break:break-word;}
+
 /* ── Back button (solo visible fuera del iframe) ── */
 #btn-back-menu {
   display: none;
@@ -159,6 +196,12 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
   </div>
   <div class="tab" id="tab-sorpresa" onclick="showTab('sorpresa')">
     <span class="tab-icon">➕</span>Voto sorpresa
+  </div>
+  <div class="tab" id="tab-instalacion" onclick="showTab('instalacion')">
+    <span class="tab-icon">🏛</span>Instalación
+  </div>
+  <div class="tab" id="tab-cierre" onclick="showTab('cierre')">
+    <span class="tab-icon">🔒</span>Cierre
   </div>
   <div class="tab" id="tab-resumen" onclick="showTab('resumen')">
     <span class="tab-icon">📊</span>Mi casilla
@@ -280,6 +323,178 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
   <div id="log-lista"></div>
 </div>
 
+<!-- ══════════ INSTALACIÓN DE CASILLA ══════════ -->
+<div class="screen" id="sc-instalacion">
+
+  <!-- Alerta si ya está instalada -->
+  <div id="inst-ya-confirmada" style="display:none">
+    <div style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.35);border-radius:12px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;">
+      <span style="font-size:24px">✅</span>
+      <div>
+        <div style="font-size:13px;font-weight:600;color:var(--green)">Casilla registrada como instalada</div>
+        <div id="inst-hora-confirmada" style="font-size:11px;font-family:var(--mono);color:var(--text3);margin-top:2px;"></div>
+      </div>
+    </div>
+    <div class="inst-confirmado" id="inst-resumen-datos"></div>
+    <button class="btn-inst-primario btn-gris" onclick="editarInstalacion()">✏️ Editar datos de instalación</button>
+  </div>
+
+  <!-- Formulario instalación -->
+  <div id="inst-formulario">
+
+    <!-- 1. Tipo de casilla -->
+    <div class="inst-section">
+      <div class="inst-section-title"><span>🏷</span>Tipo de casilla</div>
+      <div class="tipo-grid">
+        <div class="tipo-btn" id="tipo-basica" onclick="selTipo('basica')">
+          <div class="tipo-icon">🟦</div>
+          <div class="tipo-label" style="color:var(--accent)">Básica</div>
+          <div class="tipo-desc">Casilla normal asignada a una sección</div>
+        </div>
+        <div class="tipo-btn" id="tipo-contigua" onclick="selTipo('contigua')">
+          <div class="tipo-icon">🟣</div>
+          <div class="tipo-label" style="color:var(--cyan)">Contigua</div>
+          <div class="tipo-desc">Segunda casilla en la misma sección por exceso de lista</div>
+        </div>
+        <div class="tipo-btn" id="tipo-extraordinaria" onclick="selTipo('extraordinaria')">
+          <div class="tipo-icon">🟪</div>
+          <div class="tipo-label" style="color:var(--purple)">Extraordinaria</div>
+          <div class="tipo-desc">Sustitución de casilla no instalada el día E</div>
+        </div>
+        <div class="tipo-btn" id="tipo-especial" onclick="selTipo('especial')">
+          <div class="tipo-icon">🟡</div>
+          <div class="tipo-label" style="color:var(--amber)">Especial</div>
+          <div class="tipo-desc">Para ciudadanos en tránsito — sin lista nominal</div>
+        </div>
+      </div>
+      <div id="tipo-aviso-especial" style="display:none;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--amber);line-height:1.6;">
+        ⚠️ <b>Casilla especial:</b> No tiene lista nominal propia. Los campos de % participación y abstención aparecerán como N/A en el sistema. Solo se capturará el total de votos obtenidos.
+      </div>
+    </div>
+
+    <!-- 2. Estatus -->
+    <div class="inst-section">
+      <div class="inst-section-title"><span>🚦</span>Estatus de instalación</div>
+      <div class="estatus-grid">
+        <div class="estatus-btn" id="est-instalada" onclick="selEstatus('instalada')">✅ Instalada</div>
+        <div class="estatus-btn" id="est-no_instalada" onclick="selEstatus('no_instalada')">❌ No instalada</div>
+        <div class="estatus-btn" id="est-suspendida" onclick="selEstatus('suspendida')">⚠️ Suspendida</div>
+      </div>
+      <div id="estatus-aviso-no" style="display:none;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--red);line-height:1.6;">
+        ❌ Al registrar como <b>no instalada</b>, el War Room recibirá alerta inmediata. Describe la causa en el campo de incidencias.
+      </div>
+      <div id="estatus-aviso-susp" style="display:none;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--amber);line-height:1.6;">
+        ⚠️ Casilla <b>suspendida</b>: fue instalada pero debió detenerse. Registra hora y motivo.
+      </div>
+    </div>
+
+    <!-- 3. Datos generales -->
+    <div class="inst-section" id="sec-datos-generales">
+      <div class="inst-section-title"><span>📋</span>Datos de instalación</div>
+
+      <label class="form-label">Hora de apertura <span style="color:var(--red)">*</span></label>
+      <input class="form-input" id="inst-hora-apertura" type="time" style="margin-bottom:10px;">
+
+      <label class="form-label">Sección electoral <span style="color:var(--red)">*</span></label>
+      <input class="form-input" id="inst-seccion" type="number" placeholder="Ej. 138" style="margin-bottom:10px;">
+
+      <label class="form-label">Municipio <span style="color:var(--red)">*</span></label>
+      <input class="form-input" id="inst-municipio" type="text" placeholder="Ej. VILLA DE ALVAREZ" style="margin-bottom:10px;">
+
+      <label class="form-label">Ubicación / Dirección exacta</label>
+      <input class="form-input" id="inst-direccion" type="text" placeholder="Calle, número, colonia" style="margin-bottom:10px;">
+
+      <!-- GPS -->
+      <label class="form-label">Ubicación GPS <span id="gps-badge-ok" style="display:none;font-family:var(--mono);font-size:10px;background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.4);border-radius:4px;padding:2px 8px;color:var(--green);margin-left:6px;">✓ Capturada</span></label>
+      <div style="display:flex;gap:8px;margin-bottom:10px;align-items:stretch;">
+        <div style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:11px 12px;font-family:var(--mono);font-size:11px;color:var(--text3);" id="gps-display">Sin coordenadas aún</div>
+        <button onclick="capturarGPS()" id="btn-gps" style="background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.4);border-radius:8px;padding:0 14px;color:var(--accent);font-size:13px;cursor:pointer;white-space:nowrap;font-weight:600;">📍 GPS</button>
+      </div>
+      <div id="gps-error" style="display:none;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:7px;padding:8px 12px;font-size:11px;color:var(--red);margin-bottom:10px;font-family:var(--mono);"></div>
+
+      <label class="form-label">Presidente de casilla (nombre)</label>
+      <input class="form-input" id="inst-presidente" type="text" placeholder="Nombre del presidente de casilla" style="margin-bottom:10px;">
+
+      <!-- Lista nominal — se bloquea si es casilla especial -->
+      <div id="sec-lista-nominal">
+        <label class="form-label">Lista nominal <span id="na-lista" class="na-badge" style="display:none">N/A para especial</span></label>
+        <input class="form-input" id="inst-lista-nominal" type="number" placeholder="Número de electores en lista" style="margin-bottom:10px;">
+      </div>
+
+      <label class="form-label">Incidencias al instalar (opcional)</label>
+      <input class="form-input" id="inst-incidencias" type="text" placeholder="Ej. Llegó tarde el presidente de casilla" style="margin-bottom:0;">
+    </div>
+
+    <!-- 4. Botón confirmar -->
+    <button class="btn-inst-primario btn-verde" onclick="confirmarInstalacion()">
+      ✅ Registrar instalación de casilla
+    </button>
+    <div id="inst-error-msg" style="display:none;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:10px 12px;font-size:12px;font-family:var(--mono);color:var(--red);text-align:center;margin-top:6px;"></div>
+
+  </div><!-- /inst-formulario -->
+
+</div>
+
+<!-- ══════════ CIERRE DE CASILLA ══════════ -->
+<div class="screen" id="sc-cierre">
+
+  <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:12px;color:var(--red);line-height:1.6;">
+    🔒 <b>Cierre de jornada.</b> Registra los resultados finales del acta de escrutinio. Este registro es definitivo y se enviará al War Room.
+  </div>
+
+  <!-- Alerta si ya está cerrada -->
+  <div id="cierre-ya-confirmado" style="display:none;">
+    <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.4);border-radius:12px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;">
+      <span style="font-size:24px">🔒</span>
+      <div>
+        <div style="font-size:13px;font-weight:600;color:var(--red)">Casilla cerrada y resultados registrados</div>
+        <div id="cierre-hora-confirmada" style="font-size:11px;font-family:var(--mono);color:var(--text3);margin-top:2px;"></div>
+      </div>
+    </div>
+    <div class="inst-confirmado" id="cierre-resumen-datos"></div>
+  </div>
+
+  <!-- Formulario cierre -->
+  <div id="cierre-formulario">
+
+    <!-- Hora de cierre -->
+    <div class="inst-section">
+      <div class="inst-section-title"><span>⏰</span>Hora de cierre</div>
+      <label class="form-label">Hora oficial de cierre de casilla <span style="color:var(--red)">*</span></label>
+      <input class="form-input" id="cierre-hora" type="time" style="margin-bottom:0;">
+    </div>
+
+    <!-- Resultados por partido -->
+    <div class="inst-section">
+      <div class="inst-section-title"><span>🗳</span>Votos por partido / candidato</div>
+      <div id="partidos-lista">
+        <div class="partido-row"><span class="partido-nombre">Nuestro partido</span><input class="partido-input" id="vp-nuestro" type="number" placeholder="0" min="0" oninput="calcTotalVotos()"></div>
+        <div class="partido-row"><span class="partido-nombre">Partido A</span><input class="partido-input" id="vp-a" type="number" placeholder="0" min="0" oninput="calcTotalVotos()"></div>
+        <div class="partido-row"><span class="partido-nombre">Partido B</span><input class="partido-input" id="vp-b" type="number" placeholder="0" min="0" oninput="calcTotalVotos()"></div>
+        <div class="partido-row"><span class="partido-nombre">Partido C</span><input class="partido-input" id="vp-c" type="number" placeholder="0" min="0" oninput="calcTotalVotos()"></div>
+        <div class="partido-row"><span class="partido-nombre">Nulos</span><input class="partido-input" id="vp-nulos" type="number" placeholder="0" min="0" oninput="calcTotalVotos()"></div>
+      </div>
+      <div class="votos-total">
+        <span style="font-size:11px;font-family:var(--mono);color:var(--text3);text-transform:uppercase">Total votos computados</span>
+        <span style="font-family:var(--mono);font-size:20px;font-weight:700;color:var(--green)" id="total-votos-cierre">0</span>
+      </div>
+    </div>
+
+    <!-- Incidencias cierre -->
+    <div class="inst-section">
+      <div class="inst-section-title"><span>📝</span>Incidencias al cierre</div>
+      <input class="form-input" id="cierre-incidencias" type="text" placeholder="Ej. Protesta de representante de Partido A" style="margin-bottom:0;">
+    </div>
+
+    <button class="btn-inst-primario btn-rojo" onclick="confirmarCierre()">
+      🔒 Registrar cierre y resultados
+    </button>
+    <div id="cierre-error-msg" style="display:none;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:10px 12px;font-size:12px;font-family:var(--mono);color:var(--red);text-align:center;margin-top:6px;"></div>
+
+  </div><!-- /cierre-formulario -->
+
+</div>
+
 <!-- MODAL CONFIRMAR VOTO -->
 <div class="modal-bg" id="modal-voto">
   <div class="modal">
@@ -383,7 +598,7 @@ document.getElementById('topbar-casilla').textContent =
 // TABS
 // ══════════════════════════════════════════════════════
 function showTab(tab) {
-  ['votar','sorpresa','resumen','log'].forEach(t => {
+  ['votar','sorpresa','instalacion','cierre','resumen','log'].forEach(t => {
     document.getElementById('tab-'+t).classList.toggle('active', t===tab);
     document.getElementById('sc-'+t).classList.toggle('active', t===tab);
   });
@@ -777,6 +992,279 @@ renderSorpresas();
 document.getElementById('modal-voto').addEventListener('click', function(e) {
   if(e.target === this) cerrarModal();
 });
+
+// ══════════════════════════════════════════════════════
+// DATOS INSTALACIÓN Y CIERRE
+// ══════════════════════════════════════════════════════
+let INSTALACION = {
+  tipo: null,
+  estatus: null,
+  hora_apertura: null,
+  seccion: null,
+  municipio: null,
+  direccion: null,
+  presidente: null,
+  lista_nominal: null,
+  incidencias: null,
+  lat: null,
+  lng: null,
+  gps_precision: null,
+  registrado: false,
+  ts: null,
+};
+
+let CIERRE = {
+  hora: null,
+  votos: {},
+  total_votos: 0,
+  incidencias: null,
+  registrado: false,
+  ts: null,
+};
+
+// ── GPS ──
+function capturarGPS() {
+  const btn     = document.getElementById('btn-gps');
+  const display = document.getElementById('gps-display');
+  const errEl   = document.getElementById('gps-error');
+  const badge   = document.getElementById('gps-badge-ok');
+
+  errEl.style.display = 'none';
+
+  if(!navigator.geolocation) {
+    errEl.textContent = 'Este dispositivo no soporta geolocalización.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  btn.textContent  = '⏳ Buscando...';
+  btn.style.opacity = '.6';
+  btn.disabled     = true;
+  display.textContent = 'Obteniendo coordenadas...';
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const lat = pos.coords.latitude.toFixed(6);
+      const lng = pos.coords.longitude.toFixed(6);
+      const acc = Math.round(pos.coords.accuracy);
+
+      INSTALACION.lat          = parseFloat(lat);
+      INSTALACION.lng          = parseFloat(lng);
+      INSTALACION.gps_precision = acc;
+
+      display.textContent   = `${lat}, ${lng}  ±${acc}m`;
+      display.style.color   = 'var(--green)';
+      badge.style.display   = 'inline-block';
+      btn.textContent       = '🔄 Recapturar';
+      btn.style.opacity     = '1';
+      btn.disabled          = false;
+
+      agregarLog('blue', `📍 GPS capturado · ${lat}, ${lng} · Precisión ±${acc}m`);
+    },
+    (err) => {
+      btn.textContent   = '📍 GPS';
+      btn.style.opacity = '1';
+      btn.disabled      = false;
+      display.textContent = 'Sin coordenadas';
+
+      const msgs = {
+        1: 'Permiso de ubicación denegado. Actívalo en configuración del navegador.',
+        2: 'No se pudo obtener la posición. Verifica que el GPS esté activo.',
+        3: 'Tiempo de espera agotado. Intenta de nuevo en campo abierto.',
+      };
+      errEl.textContent   = msgs[err.code] || 'Error al obtener ubicación.';
+      errEl.style.display = 'block';
+    },
+    { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+  );
+}
+
+// ── Tipo de casilla ──
+function selTipo(tipo) {
+  ['basica','contigua','extraordinaria','especial'].forEach(t => {
+    document.getElementById('tipo-'+t).className = 'tipo-btn';
+  });
+  document.getElementById('tipo-'+tipo).className = 'tipo-btn selected-'+tipo;
+  INSTALACION.tipo = tipo;
+
+  // Aviso especial
+  document.getElementById('tipo-aviso-especial').style.display = tipo === 'especial' ? 'block' : 'none';
+
+  // Bloquear lista nominal si es especial
+  const listaInput = document.getElementById('inst-lista-nominal');
+  const naBadge    = document.getElementById('na-lista');
+  if(tipo === 'especial') {
+    listaInput.value = '';
+    listaInput.disabled = true;
+    listaInput.style.opacity = '.35';
+    naBadge.style.display = 'inline-block';
+  } else {
+    listaInput.disabled = false;
+    listaInput.style.opacity = '1';
+    naBadge.style.display = 'none';
+  }
+}
+
+// ── Estatus ──
+function selEstatus(est) {
+  ['instalada','no_instalada','suspendida'].forEach(e => {
+    document.getElementById('est-'+e).className = 'estatus-btn';
+  });
+  document.getElementById('est-'+est).className = 'estatus-btn sel-'+est;
+  INSTALACION.estatus = est;
+  document.getElementById('estatus-aviso-no').style.display   = est === 'no_instalada' ? 'block' : 'none';
+  document.getElementById('estatus-aviso-susp').style.display = est === 'suspendida'   ? 'block' : 'none';
+}
+
+// ── Confirmar instalación ──
+function confirmarInstalacion() {
+  const errEl = document.getElementById('inst-error-msg');
+  errEl.style.display = 'none';
+
+  if(!INSTALACION.tipo)   { mostrarError(errEl, 'Selecciona el tipo de casilla.'); return; }
+  if(!INSTALACION.estatus){ mostrarError(errEl, 'Selecciona el estatus de instalación.'); return; }
+
+  const hora  = document.getElementById('inst-hora-apertura').value;
+  const secc  = document.getElementById('inst-seccion').value;
+  const mun   = document.getElementById('inst-municipio').value.trim();
+  if(!hora){ mostrarError(errEl, 'Ingresa la hora de apertura.'); return; }
+  if(!secc){ mostrarError(errEl, 'Ingresa la sección electoral.'); return; }
+  if(!mun) { mostrarError(errEl, 'Ingresa el municipio.'); return; }
+
+  INSTALACION.hora_apertura = hora;
+  INSTALACION.seccion       = parseInt(secc);
+  INSTALACION.municipio     = mun.toUpperCase();
+  INSTALACION.direccion     = document.getElementById('inst-direccion').value.trim() || '—';
+  INSTALACION.presidente    = document.getElementById('inst-presidente').value.trim() || '—';
+  INSTALACION.lista_nominal = INSTALACION.tipo === 'especial' ? null : (parseInt(document.getElementById('inst-lista-nominal').value) || null);
+  INSTALACION.incidencias   = document.getElementById('inst-incidencias').value.trim() || '—';
+  INSTALACION.registrado    = true;
+  INSTALACION.ts            = new Date().toLocaleTimeString('es-MX');
+
+  const gpsTexto = INSTALACION.lat
+    ? `${INSTALACION.lat}, ${INSTALACION.lng}  ±${INSTALACION.gps_precision}m`
+    : '⚠️ Sin GPS — captura manual';
+
+  // Guardar en localStorage
+  localStorage.setItem('dia_eleccion_instalacion', JSON.stringify(INSTALACION));
+
+  const tipoLabels = {basica:'Básica',contigua:'Contigua',extraordinaria:'Extraordinaria',especial:'Especial'};
+  const estLabels  = {instalada:'✅ Instalada',no_instalada:'❌ No instalada',suspendida:'⚠️ Suspendida'};
+
+  // Mostrar resumen confirmado
+  document.getElementById('inst-hora-confirmada').textContent = `Registrado a las ${INSTALACION.ts}`;
+  document.getElementById('inst-resumen-datos').innerHTML = `
+    <div class="inst-confirmado-row"><span class="inst-key">Tipo</span><span class="inst-val">${tipoLabels[INSTALACION.tipo]}</span></div>
+    <div class="inst-confirmado-row"><span class="inst-key">Estatus</span><span class="inst-val">${estLabels[INSTALACION.estatus]}</span></div>
+    <div class="inst-confirmado-row"><span class="inst-key">Hora apertura</span><span class="inst-val">${INSTALACION.hora_apertura} hrs</span></div>
+    <div class="inst-confirmado-row"><span class="inst-key">Sección</span><span class="inst-val">${INSTALACION.seccion}</span></div>
+    <div class="inst-confirmado-row"><span class="inst-key">Municipio</span><span class="inst-val">${INSTALACION.municipio}</span></div>
+    <div class="inst-confirmado-row"><span class="inst-key">Dirección</span><span class="inst-val">${INSTALACION.direccion}</span></div>
+    <div class="inst-confirmado-row"><span class="inst-key">GPS</span><span class="inst-val" style="font-family:var(--mono);font-size:11px;color:${INSTALACION.lat ? 'var(--green)' : 'var(--amber)'}">${gpsTexto}</span></div>
+    <div class="inst-confirmado-row"><span class="inst-key">Presidente casilla</span><span class="inst-val">${INSTALACION.presidente}</span></div>
+    <div class="inst-confirmado-row"><span class="inst-key">Lista nominal</span><span class="inst-val">${INSTALACION.lista_nominal !== null ? INSTALACION.lista_nominal : 'N/A (casilla especial)'}</span></div>
+    <div class="inst-confirmado-row"><span class="inst-key">Incidencias</span><span class="inst-val">${INSTALACION.incidencias}</span></div>
+  `;
+
+  document.getElementById('inst-formulario').style.display = 'none';
+  document.getElementById('inst-ya-confirmada').style.display = 'block';
+
+  agregarLog('green', `🏛 Casilla ${tipoLabels[INSTALACION.tipo]} registrada · Secc. ${INSTALACION.seccion} · ${estLabels[INSTALACION.estatus]} · ${hora} hrs`);
+  if(navigator.vibrate) navigator.vibrate([40,20,40]);
+}
+
+function editarInstalacion() {
+  document.getElementById('inst-ya-confirmada').style.display = 'none';
+  document.getElementById('inst-formulario').style.display = 'block';
+}
+
+// ── Total votos cierre ──
+function calcTotalVotos() {
+  const ids = ['vp-nuestro','vp-a','vp-b','vp-c','vp-nulos'];
+  const total = ids.reduce((s,id) => s + (parseInt(document.getElementById(id).value)||0), 0);
+  document.getElementById('total-votos-cierre').textContent = total;
+}
+
+// ── Confirmar cierre ──
+function confirmarCierre() {
+  const errEl = document.getElementById('cierre-error-msg');
+  errEl.style.display = 'none';
+
+  const hora = document.getElementById('cierre-hora').value;
+  if(!hora){ mostrarError(errEl, 'Ingresa la hora de cierre.'); return; }
+
+  const ids = ['vp-nuestro','vp-a','vp-b','vp-c','vp-nulos'];
+  const labels = ['Nuestro partido','Partido A','Partido B','Partido C','Nulos'];
+  CIERRE.votos = {};
+  let total = 0;
+  ids.forEach((id,i) => {
+    const v = parseInt(document.getElementById(id).value)||0;
+    CIERRE.votos[labels[i]] = v;
+    total += v;
+  });
+
+  if(total === 0){ mostrarError(errEl, 'Registra al menos un voto para cerrar.'); return; }
+
+  CIERRE.hora        = hora;
+  CIERRE.total_votos = total;
+  CIERRE.incidencias = document.getElementById('cierre-incidencias').value.trim() || '—';
+  CIERRE.registrado  = true;
+  CIERRE.ts          = new Date().toLocaleTimeString('es-MX');
+
+  localStorage.setItem('dia_eleccion_cierre', JSON.stringify(CIERRE));
+
+  const votosHtml = Object.entries(CIERRE.votos).map(([p,v]) =>
+    `<div class="inst-confirmado-row"><span class="inst-key">${p}</span><span class="inst-val">${v}</span></div>`
+  ).join('');
+
+  document.getElementById('cierre-hora-confirmada').textContent = `Registrado a las ${CIERRE.ts}`;
+  document.getElementById('cierre-resumen-datos').innerHTML = `
+    <div class="inst-confirmado-row"><span class="inst-key">Hora cierre</span><span class="inst-val">${CIERRE.hora} hrs</span></div>
+    ${votosHtml}
+    <div class="inst-confirmado-row"><span class="inst-key">Total votos</span><span class="inst-val" style="color:var(--green)">${CIERRE.total_votos}</span></div>
+    <div class="inst-confirmado-row"><span class="inst-key">Incidencias</span><span class="inst-val">${CIERRE.incidencias}</span></div>
+  `;
+
+  document.getElementById('cierre-formulario').style.display = 'none';
+  document.getElementById('cierre-ya-confirmado').style.display = 'block';
+
+  agregarLog('red', `🔒 Casilla cerrada · ${hora} hrs · Total votos: ${CIERRE.total_votos}`);
+  if(navigator.vibrate) navigator.vibrate([60,30,60,30,60]);
+}
+
+function mostrarError(el, msg) {
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 4000);
+}
+
+// ── Cargar datos guardados al iniciar ──
+(function() {
+  try {
+    const inst = JSON.parse(localStorage.getItem('dia_eleccion_instalacion'));
+    if(inst && inst.registrado) {
+      INSTALACION = inst;
+      // Pre-llenar formulario
+      if(inst.tipo)           { selTipo(inst.tipo); }
+      if(inst.estatus)        { selEstatus(inst.estatus); }
+      if(inst.hora_apertura)  document.getElementById('inst-hora-apertura').value = inst.hora_apertura;
+      if(inst.seccion)        document.getElementById('inst-seccion').value = inst.seccion;
+      if(inst.municipio)      document.getElementById('inst-municipio').value = inst.municipio;
+      if(inst.direccion && inst.direccion !== '—') document.getElementById('inst-direccion').value = inst.direccion;
+      if(inst.presidente && inst.presidente !== '—') document.getElementById('inst-presidente').value = inst.presidente;
+      if(inst.lista_nominal)  document.getElementById('inst-lista-nominal').value = inst.lista_nominal;
+      if(inst.incidencias && inst.incidencias !== '—') document.getElementById('inst-incidencias').value = inst.incidencias;
+      // Mostrar confirmado
+      setTimeout(() => confirmarInstalacion(), 100);
+    }
+    const cierreGuardado = JSON.parse(localStorage.getItem('dia_eleccion_cierre'));
+    if(cierreGuardado && cierreGuardado.registrado) {
+      CIERRE = cierreGuardado;
+      document.getElementById('cierre-formulario').style.display = 'none';
+      document.getElementById('cierre-ya-confirmado').style.display = 'block';
+    }
+  } catch(e) {}
+})();
 </script>
 <script src="theme.js">
 // Mostrar botón de menú solo si NO está en iframe
@@ -794,5 +1282,74 @@ document.getElementById('modal-voto').addEventListener('click', function(e) {
 })();
 
 </script>
+<!-- 
+═══════════════════════════════════════════════════════════════
+SQL — ESTRUCTURA DE BASE DE DATOS (Supabase / PostgreSQL)
+═══════════════════════════════════════════════════════════════
+
+-- TABLA: casillas
+CREATE TABLE casillas (
+  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  candidatura_id    UUID REFERENCES candidaturas(id),
+  seccion           INTEGER NOT NULL,
+  municipio         TEXT NOT NULL,
+
+  -- Tipo y estatus
+  tipo_casilla      TEXT NOT NULL CHECK (tipo_casilla IN ('basica','contigua','extraordinaria','especial')),
+  estatus_casilla   TEXT NOT NULL DEFAULT 'no_instalada'
+                    CHECK (estatus_casilla IN ('instalada','no_instalada','suspendida')),
+
+  -- Datos de instalación
+  hora_apertura     TIME,
+  hora_cierre       TIME,
+  direccion         TEXT,
+  lat               NUMERIC(10,6),   -- Latitud GPS del representante al instalar
+  lng               NUMERIC(10,6),   -- Longitud GPS del representante al instalar
+  gps_precision_m   INTEGER,         -- Precisión en metros del GPS capturado
+  presidente_casilla TEXT,
+  lista_nominal     INTEGER,       -- NULL si tipo = 'especial'
+  incidencias_apertura TEXT,
+  incidencias_cierre   TEXT,
+
+  -- Resultados (se llenan al cierre)
+  votos_nuestro_partido INTEGER DEFAULT 0,
+  votos_partido_a       INTEGER DEFAULT 0,
+  votos_partido_b       INTEGER DEFAULT 0,
+  votos_partido_c       INTEGER DEFAULT 0,
+  votos_nulos           INTEGER DEFAULT 0,
+  total_votos_computados INTEGER GENERATED ALWAYS AS (
+    votos_nuestro_partido + votos_partido_a + votos_partido_b +
+    votos_partido_c + votos_nulos
+  ) STORED,
+
+  -- Métricas calculadas (NULL para casillas especiales)
+  pct_participacion NUMERIC(5,2) GENERATED ALWAYS AS (
+    CASE WHEN lista_nominal IS NOT NULL AND lista_nominal > 0
+         THEN ROUND((total_votos_computados::NUMERIC / lista_nominal) * 100, 2)
+         ELSE NULL END
+  ) STORED,
+
+  -- Representante / capturista asignado
+  representante_id  UUID REFERENCES usuarios(id),
+
+  -- Auditoría
+  created_at        TIMESTAMPTZ DEFAULT now(),
+  updated_at        TIMESTAMPTZ DEFAULT now(),
+  registrado_por    UUID REFERENCES usuarios(id)
+);
+
+-- ÍNDICES útiles
+CREATE INDEX idx_casillas_seccion    ON casillas(seccion);
+CREATE INDEX idx_casillas_municipio  ON casillas(municipio);
+CREATE INDEX idx_casillas_tipo       ON casillas(tipo_casilla);
+CREATE INDEX idx_casillas_estatus    ON casillas(estatus_casilla);
+
+-- NOTAS:
+-- 1. lista_nominal = NULL cuando tipo_casilla = 'especial' (sin lista nominal propia)
+-- 2. pct_participacion = NULL automáticamente cuando lista_nominal es NULL
+-- 3. tipo 'extraordinaria' se crea en tiempo real el día E desde el War Room
+-- 4. estatus se actualiza en tiempo real desde el módulo del representante
+═══════════════════════════════════════════════════════════════
+-->
 </body>
 </html>
