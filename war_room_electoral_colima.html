@@ -1106,7 +1106,7 @@ function setFase(f){
   document.getElementById('sc-f2').classList.toggle('active',f===2);
   document.getElementById('fb-f1').classList.toggle('active',f===1);
   document.getElementById('fb-f2').classList.toggle('active',f===2);
-  if(f===2){updateF2KPIs();renderMunF2();buildAlertasF2();renderCuadF2();}
+  if(f===2){updateF2KPIs();renderMunF2();buildAlertasF2();renderCuadF2();setTimeout(iniciarMapa,200);}
 }
 
 // ── RELOJ ──
@@ -1244,9 +1244,30 @@ function actualizarContadores(){
 
 document.addEventListener('DOMContentLoaded',()=>{
   const f2=document.getElementById('sc-f2');
-  if(f2) new MutationObserver(()=>{
+  if(!f2) return;
+  // Intentar iniciar si ya está activo
+  if(f2.classList.contains('active')) setTimeout(iniciarMapa,300);
+  // Observar cambios de clase
+  new MutationObserver(()=>{
     if(f2.classList.contains('active')) setTimeout(iniciarMapa,150);
   }).observe(f2,{attributes:true,attributeFilter:['class']});
+});
+
+// También exponer función para llamarla manualmente al cambiar de fase
+const _origSetFaseWR = typeof window.setFase !== 'undefined' ? window.setFase : null;
+window.addEventListener('load', ()=>{
+  const orig = window.setFase;
+  if(orig) {
+    window.setFase = function(f) {
+      orig(f);
+      if(f===2) setTimeout(iniciarMapa, 200);
+    };
+  }
+  // Intentar también directamente
+  setTimeout(()=>{
+    const f2=document.getElementById('sc-f2');
+    if(f2 && f2.classList.contains('active')) iniciarMapa();
+  }, 500);
 });
 </script>
 
