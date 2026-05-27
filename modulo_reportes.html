@@ -913,8 +913,9 @@ function exportarExcel(){
       ['Ritmo semanal actual',574],['Ritmo requerido',2531],
     ];
     XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(resumen),'Resumen Ejecutivo');
-    // Función legacy mantenida por compatibilidad
-  console.log('Usa el panel de Descargas para exportar datos con control de permisos.');
+    XLSX.writeFile(wb,'Reporte_Inteligencia_Electoral.xlsx');
+  };
+  document.head.appendChild(script);
 }
 
 // ══════════════════════════════════════════════════════════════════
