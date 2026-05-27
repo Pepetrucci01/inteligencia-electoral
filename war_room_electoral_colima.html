@@ -488,13 +488,223 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
 
     <div id="cuad-f2"></div>
 
+  <!-- ══ MAPA DE CASILLAS ══ -->
+  <div style="margin-top:20px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+      <div style="font-size:11px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;">🗺 Mapa de casillas — Colima</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button onclick="filtrarMapa('todas')" id="mapa-btn-todas" style="font-family:var(--mono);font-size:10px;padding:3px 10px;border-radius:4px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.1);color:#fff;cursor:pointer;">Todas</button>
+        <button onclick="filtrarMapa('instalada')" id="mapa-btn-instalada" style="font-family:var(--mono);font-size:10px;padding:3px 10px;border-radius:4px;border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.1);color:#22c55e;cursor:pointer;">🟢 Instaladas</button>
+        <button onclick="filtrarMapa('no_instalada')" id="mapa-btn-no_instalada" style="font-family:var(--mono);font-size:10px;padding:3px 10px;border-radius:4px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#ef4444;cursor:pointer;">🔴 No instaladas</button>
+        <button onclick="filtrarMapa('suspendida')" id="mapa-btn-suspendida" style="font-family:var(--mono);font-size:10px;padding:3px 10px;border-radius:4px;border:1px solid rgba(245,158,11,0.4);background:rgba(245,158,11,0.1);color:#f59e0b;cursor:pointer;">🟡 Suspendidas</button>
+        <button onclick="filtrarMapa('sin_reporte')" id="mapa-btn-sin_reporte" style="font-family:var(--mono);font-size:10px;padding:3px 10px;border-radius:4px;border:1px solid rgba(100,116,139,0.4);background:rgba(100,116,139,0.1);color:#94a3b8;cursor:pointer;">⚪ Sin reporte</button>
+      </div>
+    </div>
+
+    <!-- Leyenda -->
+    <div style="display:flex;gap:16px;margin-bottom:8px;flex-wrap:wrap;">
+      <span style="font-size:10px;font-family:var(--mono);color:#22c55e">🟢 Instalada</span>
+      <span style="font-size:10px;font-family:var(--mono);color:#ef4444">🔴 No instalada</span>
+      <span style="font-size:10px;font-family:var(--mono);color:#f59e0b">🟡 Suspendida</span>
+      <span style="font-size:10px;font-family:var(--mono);color:#94a3b8">⚪ Sin reporte</span>
+      <span style="font-size:10px;font-family:var(--mono);color:var(--text3)">· Clic en punto para ver detalle</span>
+    </div>
+
+    <div id="mapa-casillas" style="height:480px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);overflow:hidden;"></div>
+
+    <!-- Contador por estatus -->
+    <div style="display:flex;gap:12px;margin-top:10px;flex-wrap:wrap;">
+      <div style="font-family:var(--mono);font-size:10px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:5px;padding:4px 10px;color:#22c55e">Instaladas: <span id="cnt-instalada">0</span></div>
+      <div style="font-family:var(--mono);font-size:10px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:5px;padding:4px 10px;color:#ef4444">No instaladas: <span id="cnt-no_instalada">0</span></div>
+      <div style="font-family:var(--mono);font-size:10px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:5px;padding:4px 10px;color:#f59e0b">Suspendidas: <span id="cnt-suspendida">0</span></div>
+      <div style="font-family:var(--mono);font-size:10px;background:rgba(100,116,139,0.08);border:1px solid rgba(100,116,139,0.2);border-radius:5px;padding:4px 10px;color:#94a3b8">Sin reporte: <span id="cnt-sin_reporte">0</span></div>
+      <div style="font-family:var(--mono);font-size:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:5px;padding:4px 10px;color:var(--text2)">Total: <span id="cnt-total">0</span></div>
+    </div>
+  </div>
+
   </div>
 </div><!-- /f2 -->
 
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 // ══════════════════════════════════════════════════
-// DATOS BASE
+// MAPA DE CASILLAS — DATOS DE PRUEBA COLIMA
+// En producción estos datos vienen de Supabase:
+// SELECT id, seccion, municipio, tipo_casilla,
+//        estatus_casilla, lat, lng, hora_apertura,
+//        presidente_casilla, total_votos_computados
+// FROM casillas WHERE candidatura_id = ?
 // ══════════════════════════════════════════════════
+const CASILLAS_DEMO = [
+  // COLIMA
+  {id:'CAS-001',seccion:1,  municipio:'Colima',        tipo:'basica',        estatus:'instalada',    lat:19.2452,lng:-103.7241,hora:'08:02',rep:'Juan Pérez',votos:142},
+  {id:'CAS-002',seccion:5,  municipio:'Colima',        tipo:'basica',        estatus:'instalada',    lat:19.2478,lng:-103.7198,hora:'08:05',rep:'Ana López',votos:138},
+  {id:'CAS-003',seccion:12, municipio:'Colima',        tipo:'basica',        estatus:'no_instalada', lat:19.2431,lng:-103.7312,hora:null,   rep:'Carlos Ruiz',votos:0},
+  {id:'CAS-004',seccion:18, municipio:'Colima',        tipo:'contigua',      estatus:'instalada',    lat:19.2501,lng:-103.7189,hora:'08:10',rep:'Rosa Mora',votos:89},
+  {id:'CAS-005',seccion:29, municipio:'Colima',        tipo:'basica',        estatus:'sin_reporte',  lat:19.2389,lng:-103.7267,hora:null,   rep:'Luis Vega',votos:0},
+  // VILLA DE ALVAREZ
+  {id:'CAS-006',seccion:138,municipio:'Villa de Álvarez',tipo:'basica',      estatus:'instalada',    lat:19.2714,lng:-103.7389,hora:'08:01',rep:'María Hdz.',votos:201},
+  {id:'CAS-007',seccion:139,municipio:'Villa de Álvarez',tipo:'basica',      estatus:'instalada',    lat:19.2689,lng:-103.7412,hora:'08:03',rep:'Pedro Gtz.',votos:178},
+  {id:'CAS-008',seccion:140,municipio:'Villa de Álvarez',tipo:'basica',      estatus:'suspendida',   lat:19.2741,lng:-103.7356,hora:'08:00',rep:'Sara Díaz',votos:0},
+  {id:'CAS-009',seccion:145,municipio:'Villa de Álvarez',tipo:'basica',      estatus:'sin_reporte',  lat:19.2658,lng:-103.7445,hora:null,   rep:'Tomás Ríos',votos:0},
+  // MANZANILLO
+  {id:'CAS-010',seccion:236,municipio:'Manzanillo',    tipo:'basica',        estatus:'instalada',    lat:19.0521,lng:-104.3189,hora:'08:04',rep:'Elena Cano',votos:165},
+  {id:'CAS-011',seccion:248,municipio:'Manzanillo',    tipo:'basica',        estatus:'instalada',    lat:19.0489,lng:-104.3212,hora:'08:06',rep:'Jorge Soto',votos:143},
+  {id:'CAS-012',seccion:261,municipio:'Manzanillo',    tipo:'basica',        estatus:'no_instalada', lat:19.0556,lng:-104.3145,hora:null,   rep:'Irma Cruz',votos:0},
+  {id:'CAS-013',seccion:264,municipio:'Manzanillo',    tipo:'contigua',      estatus:'instalada',    lat:19.0612,lng:-104.3098,hora:'08:08',rep:'Raúl Mtz.',votos:112},
+  {id:'CAS-014',seccion:271,municipio:'Manzanillo',    tipo:'especial',      estatus:'instalada',    lat:19.0478,lng:-104.3267,hora:'08:00',rep:'N/A tránsito',votos:34},
+  // TECOMÁN
+  {id:'CAS-015',seccion:74, municipio:'Tecomán',       tipo:'basica',        estatus:'instalada',    lat:18.9012,lng:-103.8789,hora:'08:03',rep:'Claudia Nv.',votos:189},
+  {id:'CAS-016',seccion:78, municipio:'Tecomán',       tipo:'basica',        estatus:'instalada',    lat:18.8978,lng:-103.8812,hora:'08:05',rep:'Miguel Fl.',votos:201},
+  {id:'CAS-017',seccion:83, municipio:'Tecomán',       tipo:'basica',        estatus:'sin_reporte',  lat:18.9045,lng:-103.8756,hora:null,   rep:'Norma Ag.',votos:0},
+  {id:'CAS-018',seccion:91, municipio:'Tecomán',       tipo:'extraordinaria',estatus:'instalada',    lat:18.8934,lng:-103.8867,hora:'09:15',rep:'Hctor Vz.',votos:67},
+  // ARMERÍA
+  {id:'CAS-019',seccion:14, municipio:'Armería',       tipo:'basica',        estatus:'instalada',    lat:18.9234,lng:-103.9678,hora:'08:02',rep:'Patricia Lr.',votos:156},
+  {id:'CAS-020',seccion:19, municipio:'Armería',       tipo:'basica',        estatus:'sin_reporte',  lat:18.9201,lng:-103.9712,hora:null,   rep:'Arturo Rz.',votos:0},
+  // COMALA
+  {id:'CAS-021',seccion:92, municipio:'Comala',        tipo:'basica',        estatus:'instalada',    lat:19.3234,lng:-103.7612,hora:'08:04',rep:'Silvia Mn.',votos:98},
+  {id:'CAS-022',seccion:95, municipio:'Comala',        tipo:'basica',        estatus:'instalada',    lat:19.3267,lng:-103.7589,hora:'08:06',rep:'Ricardo Ep.',votos:87},
+  // CUAUHTÉMOC
+  {id:'CAS-023',seccion:120,municipio:'Cuauhtémoc',    tipo:'basica',        estatus:'instalada',    lat:19.1789,lng:-103.6234,hora:'08:03',rep:'Verónica Pr.',votos:134},
+  {id:'CAS-024',seccion:125,municipio:'Cuauhtémoc',    tipo:'basica',        estatus:'no_instalada', lat:19.1812,lng:-103.6198,hora:null,   rep:'Fernando Sc.',votos:0},
+  // COQUIMATLÁN
+  {id:'CAS-025',seccion:105,municipio:'Coquimatlán',   tipo:'basica',        estatus:'instalada',    lat:19.1978,lng:-103.8123,hora:'08:05',rep:'Gabriela Cr.',votos:112},
+  // MINATITLÁN
+  {id:'CAS-026',seccion:167,municipio:'Minatitlán',    tipo:'basica',        estatus:'instalada',    lat:19.3645,lng:-104.0123,hora:'08:07',rep:'Alejandro Nt.',votos:78},
+  // IXTLAHUACÁN
+  {id:'CAS-027',seccion:178,municipio:'Ixtlahuacán',   tipo:'basica',        estatus:'sin_reporte',  lat:18.8234,lng:-103.6789,hora:null,   rep:'Isabel Vg.',votos:0},
+];
+
+let mapaIniciado = false;
+let mapaLeaflet = null;
+let mapaMarkers = [];
+let mapaFiltro = 'todas';
+
+const MAPA_COLORES = {
+  instalada:    '#22c55e',
+  no_instalada: '#ef4444',
+  suspendida:   '#f59e0b',
+  sin_reporte:  '#94a3b8',
+};
+
+const TIPO_LABELS = {
+  basica:'Básica', contigua:'Contigua',
+  extraordinaria:'Extraordinaria', especial:'Especial'
+};
+
+function iniciarMapa() {
+  if(mapaIniciado) return;
+  mapaIniciado = true;
+
+  // Centrar en Colima
+  mapaLeaflet = L.map('mapa-casillas', {
+    center: [19.12, -103.94],
+    zoom: 9,
+    zoomControl: true,
+  });
+
+  // Tile oscuro compatible con el tema del War Room
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap © CARTO',
+    subdomains: 'abcd',
+    maxZoom: 19
+  }).addTo(mapaLeaflet);
+
+  renderMapaMarkers();
+  actualizarContadores();
+}
+
+function crearIcono(estatus) {
+  const color = MAPA_COLORES[estatus] || '#94a3b8';
+  return L.divIcon({
+    className: '',
+    html: `<div style="
+      width:14px;height:14px;
+      background:${color};
+      border:2px solid rgba(255,255,255,0.6);
+      border-radius:50%;
+      box-shadow:0 0 6px ${color}99;
+    "></div>`,
+    iconSize: [14,14],
+    iconAnchor: [7,7],
+    popupAnchor: [0,-10],
+  });
+}
+
+function renderMapaMarkers() {
+  if(!mapaLeaflet) return;
+
+  // Limpiar markers anteriores
+  mapaMarkers.forEach(m => mapaLeaflet.removeLayer(m));
+  mapaMarkers = [];
+
+  const filtradas = mapaFiltro === 'todas'
+    ? CASILLAS_DEMO
+    : CASILLAS_DEMO.filter(c => c.estatus === mapaFiltro);
+
+  filtradas.forEach(c => {
+    const marker = L.marker([c.lat, c.lng], {icon: crearIcono(c.estatus)});
+    const color = MAPA_COLORES[c.estatus];
+    const horaStr = c.hora ? `⏰ Apertura: ${c.hora} hrs` : '⏰ Sin apertura registrada';
+    const votosStr = c.votos > 0 ? `🗳 Votos: ${c.votos}` : '🗳 Sin votos aún';
+
+    marker.bindPopup(`
+      <div style="font-family:monospace;font-size:11px;min-width:180px;">
+        <div style="font-weight:700;font-size:12px;margin-bottom:6px;color:${color}">${c.id} — Secc. ${c.seccion}</div>
+        <div style="margin-bottom:3px">📍 ${c.municipio}</div>
+        <div style="margin-bottom:3px">🏷 ${TIPO_LABELS[c.tipo]}</div>
+        <div style="margin-bottom:3px;color:${color};font-weight:600">● ${c.estatus.replace('_',' ').toUpperCase()}</div>
+        <div style="margin-bottom:3px">${horaStr}</div>
+        <div style="margin-bottom:3px">👤 ${c.rep}</div>
+        <div>${votosStr}</div>
+      </div>
+    `, {maxWidth: 220});
+
+    marker.addTo(mapaLeaflet);
+    mapaMarkers.push(marker);
+  });
+}
+
+function filtrarMapa(filtro) {
+  mapaFiltro = filtro;
+
+  // Actualizar botones
+  ['todas','instalada','no_instalada','suspendida','sin_reporte'].forEach(f => {
+    const btn = document.getElementById('mapa-btn-'+f);
+    if(!btn) return;
+    btn.style.fontWeight = f === filtro ? '700' : '400';
+    btn.style.outline = f === filtro ? '1px solid currentColor' : 'none';
+  });
+
+  renderMapaMarkers();
+}
+
+function actualizarContadores() {
+  const counts = {instalada:0, no_instalada:0, suspendida:0, sin_reporte:0};
+  CASILLAS_DEMO.forEach(c => { if(counts[c.estatus]!==undefined) counts[c.estatus]++; });
+  Object.entries(counts).forEach(([k,v]) => {
+    const el = document.getElementById('cnt-'+k);
+    if(el) el.textContent = v;
+  });
+  const total = document.getElementById('cnt-total');
+  if(total) total.textContent = CASILLAS_DEMO.length;
+}
+
+// Iniciar mapa cuando se activa Fase 2
+const _origSetFase = typeof setFase !== 'undefined' ? setFase : null;
+document.addEventListener('DOMContentLoaded', () => {
+  // Observar cambio a Fase 2
+  const observer = new MutationObserver(() => {
+    const f2 = document.getElementById('sc-f2');
+    if(f2 && f2.classList.contains('active')) {
+      setTimeout(iniciarMapa, 100);
+    }
+  });
+  const f2 = document.getElementById('sc-f2');
+  if(f2) observer.observe(f2, {attributes:true, attributeFilter:['class']});
+});
+</script>
 const MUNS = [
   {id:'TEC',n:'Tecomán',      cap:4475,meta:29211,secs:62, df:'DF2',cas:153,v24:6820,g24:'Partido A',p24:61.7},
   {id:'MIN',n:'Minatitlán',   cap:625, meta:4329, secs:14, df:'DF2',cas:19, v24:1440,g24:'Partido A',p24:64.1},
