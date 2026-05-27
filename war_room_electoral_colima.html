@@ -316,13 +316,13 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
           <div class="tw">
             <table class="t" id="mun-table">
               <thead><tr>
-                <th>Municipio</th>
-                <th class="r">Capturados</th>
-                <th class="r">Meta 2027</th>
-                <th class="r">% Avance</th>
+                <th onclick="sortWR('n')" style="cursor:pointer;user-select:none">Municipio <span id="sort-wr-n" style="color:var(--text3)">↕</span></th>
+                <th class="r" onclick="sortWR('cap')" style="cursor:pointer;user-select:none">Capturados <span id="sort-wr-cap" style="color:var(--text3)">↕</span></th>
+                <th class="r" onclick="sortWR('meta')" style="cursor:pointer;user-select:none">Meta 2027 <span id="sort-wr-meta" style="color:var(--text3)">↕</span></th>
+                <th class="r" onclick="sortWR('pct')" style="cursor:pointer;user-select:none">% Avance <span id="sort-wr-pct" style="color:var(--text3)">↕</span></th>
                 <th>Progreso</th>
                 <th>Semáforo</th>
-                <th class="r">2024</th>
+                <th class="r" onclick="sortWR('v24')" style="cursor:pointer;user-select:none" title="Votos obtenidos en elección 2024 — referencia histórica">2024 <span id="sort-wr-v24" style="color:var(--text3)">↕</span></th>
               </tr></thead>
               <tbody id="mun-tbody"></tbody>
             </table>
@@ -600,7 +600,16 @@ let f1s={nivel:'candidato',df:null,mun:null,dl:null,sec:null};
 
 function renderMunF1(){
   const p=parseFloat(document.getElementById('cfg-pct').value)||6;
-  document.getElementById('mun-tbody').innerHTML=MUNS.map(m=>{
+  const munsSorted = WR_SORT.col ? [...MUNS].sort((a,b)=>{
+    const pa = pct(a.cap, Math.round(a.meta*(p/6)));
+    const pb = pct(b.cap, Math.round(b.meta*(p/6)));
+    const va = WR_SORT.col==='pct' ? parseFloat(pa) : WR_SORT.col==='n' ? a.n : a[WR_SORT.col];
+    const vb = WR_SORT.col==='pct' ? parseFloat(pb) : WR_SORT.col==='n' ? b.n : b[WR_SORT.col];
+    if(typeof va==='string') return WR_SORT.asc ? va.localeCompare(vb) : vb.localeCompare(va);
+    return WR_SORT.asc ? va-vb : vb-va;
+  }) : MUNS;
+
+  document.getElementById('mun-tbody').innerHTML=munsSorted.map(m=>{
     const meta=Math.round(m.meta*(p/6));
     const pv=pct(m.cap,meta);const c=semC(pv);
     return`<tr onclick="drillF1('mun','${m.id}')" class="${f1s.mun===m.id?'sel':''}">
@@ -610,9 +619,24 @@ function renderMunF1(){
       <td class="mono r" style="color:${c};font-weight:600">${pv}%</td>
       <td><div class="mbar" style="max-width:90px"><div class="mbar-f" style="width:${Math.min(pv/20*100,100)}%;background:${c}"></div></div></td>
       <td style="text-align:center;font-size:14px">${semI(pv)}</td>
-      <td class="mono r" style="color:${m.g24==='Partido A'?'var(--green)':'var(--red)'};font-size:10px">${m.p24}%</td>
+      <td class="mono r" style="color:${m.g24==='Partido A'?'var(--green)':'var(--red)'};font-size:10px" title="Votos 2024: ${fmt(m.v24)} (${m.p24}% · ganó ${m.g24})">${m.p24}%</td>
     </tr>`;
   }).join('');
+}
+
+let WR_SORT = {col: null, asc: true};
+
+function sortWR(col) {
+  if(WR_SORT.col === col) { WR_SORT.asc = !WR_SORT.asc; }
+  else { WR_SORT.col = col; WR_SORT.asc = col === 'n'; }
+
+  ['n','cap','meta','pct','v24'].forEach(c => {
+    const el = document.getElementById('sort-wr-'+c);
+    if(el){ el.textContent='↕'; el.style.color='var(--text3)'; }
+  });
+  const activeEl = document.getElementById('sort-wr-'+col);
+  if(activeEl){ activeEl.textContent = WR_SORT.asc ? '↑' : '↓'; activeEl.style.color='var(--green)'; }
+  renderMunF1();
 }
 
 function recalc(){
