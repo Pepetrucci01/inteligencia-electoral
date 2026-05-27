@@ -867,7 +867,7 @@ function buildCharts(tab){
 
         // Actualizar gráfica semanal con semanas de ese mes
         if (window._chartSemanal) window._chartSemanal.destroy();
-        window._chartSemanal = new Chart(document.getElementById('ch-semanal'),{
+        window._chartSemanal = new Chart(document.getElementById('ch-semanas'),{
           type:'bar',
           data:{
             labels: m.semanas,
@@ -884,7 +884,7 @@ function buildCharts(tab){
         badge.style.display = 'none';
         // Restaurar gráfica semanal original
         if (window._chartSemanal) window._chartSemanal.destroy();
-        window._chartSemanal = new Chart(document.getElementById('ch-semanal'),{
+        window._chartSemanal = new Chart(document.getElementById('ch-semanas'),{
           type:'bar',
           data:{
             labels:['9-15 feb','16-22 feb','23 feb-1 mar','2-8 mar','9-15 mar','16-22 mar','23-29 mar','30 mar-5 abr','6-12 abr','13-19 abr','20-26 abr','27 abr-3 may'],
