@@ -488,16 +488,44 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
 
     <div id="cuad-f2"></div>
 
-  <!-- MAPA DE CASILLAS — usa el visor electoral existente -->
+  <!-- TABLA DE CASILLAS -->
   <div style="margin-top:20px;">
-    <div style="font-size:11px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">🗺 Mapa de casillas — Colima</div>
-    <div style="border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);">
-      <iframe
-        src="visor_electoral_colima_v4.html"
-        style="width:100%;height:520px;border:none;display:block;"
-        title="Mapa Electoral Colima"
-        sandbox="allow-scripts allow-same-origin">
-      </iframe>
+
+    <!-- Encabezado + filtros -->
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+      <div style="font-size:11px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;">🏛 Casillas instaladas</div>
+      <select id="cas-fil-mun" onchange="filtrarCasillas()" style="font-family:var(--mono);font-size:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:5px;padding:4px 8px;cursor:pointer;">
+        <option value="">Todos los municipios</option>
+        <option>Colima</option><option>Villa de Alvarez</option><option>Manzanillo</option>
+        <option>Tecoman</option><option>Armeria</option><option>Comala</option>
+        <option>Cuauhtemoc</option><option>Coquimatlan</option><option>Minatitlan</option><option>Ixtlahuacan</option>
+      </select>
+      <input id="cas-fil-sec" type="text" placeholder="Sección..." oninput="filtrarCasillas()" style="font-family:var(--mono);font-size:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:4px 8px;width:90px;outline:none;">
+      <div style="display:flex;gap:5px;flex-wrap:wrap;">
+        <button onclick="filtrarCasillasPorEstatus('')"    id="cbtn-todas"       style="font-family:var(--mono);font-size:10px;padding:3px 9px;border-radius:4px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.1);color:#fff;cursor:pointer;font-weight:700;">Todas</button>
+        <button onclick="filtrarCasillasPorEstatus('instalada')"    id="cbtn-instalada"    style="font-family:var(--mono);font-size:10px;padding:3px 9px;border-radius:4px;border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.08);color:#22c55e;cursor:pointer;">🟢 Instaladas</button>
+        <button onclick="filtrarCasillasPorEstatus('no_instalada')" id="cbtn-no_instalada" style="font-family:var(--mono);font-size:10px;padding:3px 9px;border-radius:4px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.08);color:#ef4444;cursor:pointer;">🔴 No instaladas</button>
+        <button onclick="filtrarCasillasPorEstatus('suspendida')"   id="cbtn-suspendida"   style="font-family:var(--mono);font-size:10px;padding:3px 9px;border-radius:4px;border:1px solid rgba(245,158,11,0.4);background:rgba(245,158,11,0.08);color:#f59e0b;cursor:pointer;">🟡 Suspendidas</button>
+        <button onclick="filtrarCasillasPorEstatus('sin_reporte')"  id="cbtn-sin_reporte"  style="font-family:var(--mono);font-size:10px;padding:3px 9px;border-radius:4px;border:1px solid rgba(100,116,139,0.4);background:rgba(100,116,139,0.08);color:#94a3b8;cursor:pointer;">⚪ Sin reporte</button>
+      </div>
+      <div id="cas-contador" style="margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--text3);"></div>
+    </div>
+
+    <!-- Tabla -->
+    <div style="overflow-x:auto;border-radius:8px;border:1px solid var(--border);">
+      <table class="t" id="tbl-casillas-f2">
+        <thead><tr>
+          <th onclick="sortCasillas('id')"      style="cursor:pointer;user-select:none">Casilla <span id="scs-id"      style="color:var(--text3)">↕</span></th>
+          <th onclick="sortCasillas('seccion')" style="cursor:pointer;user-select:none">Sección <span id="scs-seccion" style="color:var(--text3)">↕</span></th>
+          <th onclick="sortCasillas('municipio')" style="cursor:pointer;user-select:none">Municipio <span id="scs-municipio" style="color:var(--text3)">↕</span></th>
+          <th onclick="sortCasillas('tipo')"    style="cursor:pointer;user-select:none">Tipo <span id="scs-tipo"    style="color:var(--text3)">↕</span></th>
+          <th onclick="sortCasillas('estatus')" style="cursor:pointer;user-select:none">Estatus <span id="scs-estatus" style="color:var(--text3)">↕</span></th>
+          <th onclick="sortCasillas('hora')"    style="cursor:pointer;user-select:none">Apertura <span id="scs-hora"    style="color:var(--text3)">↕</span></th>
+          <th>Representante</th>
+          <th class="r" onclick="sortCasillas('votos')" style="cursor:pointer;user-select:none">Votos <span id="scs-votos" style="color:var(--text3)">↕</span></th>
+        </tr></thead>
+        <tbody id="tb-casillas-f2"></tbody>
+      </table>
     </div>
   </div>
 
@@ -1104,7 +1132,113 @@ function setFase(f){
   if(f===2){updateF2KPIs();renderMunF2();buildAlertasF2();renderCuadF2();}
 }
 
-// ── RELOJ ──
+// ══════════════════════════════════════════════════
+// TABLA DE CASILLAS — FASE 2
+// En producción estos datos vienen de Supabase
+// ══════════════════════════════════════════════════
+const CASILLAS_F2 = [
+  {id:'CAS-001',seccion:1,  municipio:'Colima',          tipo:'Básica',        estatus:'instalada',    hora:'08:02',rep:'Juan Pérez',votos:142},
+  {id:'CAS-002',seccion:5,  municipio:'Colima',          tipo:'Básica',        estatus:'instalada',    hora:'08:05',rep:'Ana López',votos:138},
+  {id:'CAS-003',seccion:12, municipio:'Colima',          tipo:'Básica',        estatus:'no_instalada', hora:'—',    rep:'Carlos Ruiz',votos:0},
+  {id:'CAS-004',seccion:18, municipio:'Colima',          tipo:'Contigua',      estatus:'instalada',    hora:'08:10',rep:'Rosa Mora',votos:89},
+  {id:'CAS-005',seccion:29, municipio:'Colima',          tipo:'Básica',        estatus:'sin_reporte',  hora:'—',    rep:'Luis Vega',votos:0},
+  {id:'CAS-006',seccion:138,municipio:'Villa de Alvarez',tipo:'Básica',        estatus:'instalada',    hora:'08:01',rep:'María Hdz.',votos:201},
+  {id:'CAS-007',seccion:139,municipio:'Villa de Alvarez',tipo:'Básica',        estatus:'instalada',    hora:'08:03',rep:'Pedro Gtz.',votos:178},
+  {id:'CAS-008',seccion:140,municipio:'Villa de Alvarez',tipo:'Básica',        estatus:'suspendida',   hora:'08:00',rep:'Sara Díaz',votos:0},
+  {id:'CAS-009',seccion:145,municipio:'Villa de Alvarez',tipo:'Básica',        estatus:'sin_reporte',  hora:'—',    rep:'Tomás Ríos',votos:0},
+  {id:'CAS-010',seccion:236,municipio:'Manzanillo',      tipo:'Básica',        estatus:'instalada',    hora:'08:04',rep:'Elena Cano',votos:165},
+  {id:'CAS-011',seccion:248,municipio:'Manzanillo',      tipo:'Básica',        estatus:'instalada',    hora:'08:06',rep:'Jorge Soto',votos:143},
+  {id:'CAS-012',seccion:261,municipio:'Manzanillo',      tipo:'Básica',        estatus:'no_instalada', hora:'—',    rep:'Irma Cruz',votos:0},
+  {id:'CAS-013',seccion:264,municipio:'Manzanillo',      tipo:'Contigua',      estatus:'instalada',    hora:'08:08',rep:'Raúl Mtz.',votos:112},
+  {id:'CAS-014',seccion:271,municipio:'Manzanillo',      tipo:'Especial',      estatus:'instalada',    hora:'08:00',rep:'N/A tránsito',votos:34},
+  {id:'CAS-015',seccion:74, municipio:'Tecoman',         tipo:'Básica',        estatus:'instalada',    hora:'08:03',rep:'Claudia Nv.',votos:189},
+  {id:'CAS-016',seccion:78, municipio:'Tecoman',         tipo:'Básica',        estatus:'instalada',    hora:'08:05',rep:'Miguel Fl.',votos:201},
+  {id:'CAS-017',seccion:83, municipio:'Tecoman',         tipo:'Básica',        estatus:'sin_reporte',  hora:'—',    rep:'Norma Ag.',votos:0},
+  {id:'CAS-018',seccion:91, municipio:'Tecoman',         tipo:'Extraordinaria',estatus:'instalada',    hora:'09:15',rep:'Héctor Vz.',votos:67},
+  {id:'CAS-019',seccion:14, municipio:'Armeria',         tipo:'Básica',        estatus:'instalada',    hora:'08:02',rep:'Patricia Lr.',votos:156},
+  {id:'CAS-020',seccion:19, municipio:'Armeria',         tipo:'Básica',        estatus:'sin_reporte',  hora:'—',    rep:'Arturo Rz.',votos:0},
+  {id:'CAS-021',seccion:92, municipio:'Comala',          tipo:'Básica',        estatus:'instalada',    hora:'08:04',rep:'Silvia Mn.',votos:98},
+  {id:'CAS-022',seccion:95, municipio:'Comala',          tipo:'Básica',        estatus:'instalada',    hora:'08:06',rep:'Ricardo Ep.',votos:87},
+  {id:'CAS-023',seccion:120,municipio:'Cuauhtemoc',      tipo:'Básica',        estatus:'instalada',    hora:'08:03',rep:'Verónica Pr.',votos:134},
+  {id:'CAS-024',seccion:125,municipio:'Cuauhtemoc',      tipo:'Básica',        estatus:'no_instalada', hora:'—',    rep:'Fernando Sc.',votos:0},
+  {id:'CAS-025',seccion:105,municipio:'Coquimatlan',     tipo:'Básica',        estatus:'instalada',    hora:'08:05',rep:'Gabriela Cr.',votos:112},
+  {id:'CAS-026',seccion:167,municipio:'Minatitlan',      tipo:'Básica',        estatus:'instalada',    hora:'08:07',rep:'Alejandro Nt.',votos:78},
+  {id:'CAS-027',seccion:178,municipio:'Ixtlahuacan',     tipo:'Básica',        estatus:'sin_reporte',  hora:'—',    rep:'Isabel Vg.',votos:0},
+];
+
+let CAS_SORT   = {col:null, asc:true};
+let CAS_ESTATUS = '';
+
+const ESTATUS_COL = {instalada:'#22c55e', no_instalada:'#ef4444', suspendida:'#f59e0b', sin_reporte:'#94a3b8'};
+const ESTATUS_LABEL = {instalada:'✅ Instalada', no_instalada:'❌ No instalada', suspendida:'⚠️ Suspendida', sin_reporte:'⚪ Sin reporte'};
+
+function filtrarCasillasPorEstatus(est) {
+  CAS_ESTATUS = est;
+  ['todas','instalada','no_instalada','suspendida','sin_reporte'].forEach(e => {
+    const btn = document.getElementById('cbtn-'+(e===''?'todas':e));
+    if(btn) { btn.style.fontWeight = (est===e) ? '700' : '400'; btn.style.outline = (est===e) ? '1px solid currentColor' : 'none'; }
+  });
+  renderCasillas();
+}
+
+function filtrarCasillas() { renderCasillas(); }
+
+function sortCasillas(col) {
+  if(CAS_SORT.col===col){CAS_SORT.asc=!CAS_SORT.asc;}
+  else{CAS_SORT.col=col;CAS_SORT.asc=col==='municipio'||col==='tipo'||col==='estatus'||col==='id';}
+  ['id','seccion','municipio','tipo','estatus','hora','votos'].forEach(c=>{
+    const el=document.getElementById('scs-'+c);
+    if(el){el.textContent='↕';el.style.color='var(--text3)';}
+  });
+  const ae=document.getElementById('scs-'+col);
+  if(ae){ae.textContent=CAS_SORT.asc?'↑':'↓';ae.style.color='var(--red)';}
+  renderCasillas();
+}
+
+function renderCasillas() {
+  const mun  = (document.getElementById('cas-fil-mun')  || {}).value  || '';
+  const sec  = (document.getElementById('cas-fil-sec')  || {}).value  || '';
+  const tb   = document.getElementById('tb-casillas-f2');
+  const cnt  = document.getElementById('cas-contador');
+  if(!tb) return;
+
+  let data = [...CASILLAS_F2];
+  if(CAS_ESTATUS) data = data.filter(c => c.estatus === CAS_ESTATUS);
+  if(mun)         data = data.filter(c => c.municipio === mun);
+  if(sec)         data = data.filter(c => String(c.seccion).includes(sec.trim()));
+
+  if(CAS_SORT.col) {
+    data.sort((a,b) => {
+      let va = a[CAS_SORT.col], vb = b[CAS_SORT.col];
+      if(typeof va==='string') return CAS_SORT.asc ? va.localeCompare(vb) : vb.localeCompare(va);
+      return CAS_SORT.asc ? va-vb : vb-va;
+    });
+  }
+
+  if(cnt) cnt.textContent = data.length + ' casillas';
+
+  tb.innerHTML = data.map(c => {
+    const col   = ESTATUS_COL[c.estatus]  || '#94a3b8';
+    const label = ESTATUS_LABEL[c.estatus] || c.estatus;
+    return `<tr>
+      <td class="mono" style="font-size:11px">${c.id}</td>
+      <td class="mono r">${c.seccion}</td>
+      <td style="font-size:11px">${c.municipio}</td>
+      <td style="font-size:10px;color:var(--text2)">${c.tipo}</td>
+      <td><span style="font-family:var(--mono);font-size:10px;font-weight:600;color:${col}">${label}</span></td>
+      <td class="mono" style="font-size:11px;color:${c.hora!=='—'?'var(--text)':'var(--text3)'}">${c.hora}</td>
+      <td style="font-size:11px;color:var(--text2)">${c.rep}</td>
+      <td class="mono r" style="color:${c.votos>0?'var(--green)':'var(--text3)'}">${c.votos>0?c.votos:'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// Inicializar al activar Fase 2
+const _origSetFase2 = setFase;
+setFase = function(f) {
+  _origSetFase2(f);
+  if(f===2) setTimeout(renderCasillas, 100);
+};
 function tick(){
   const t=new Date().toLocaleTimeString('es-MX');
   document.getElementById('clock').textContent=t;
