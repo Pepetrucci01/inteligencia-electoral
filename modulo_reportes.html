@@ -1371,26 +1371,18 @@ function toggleAutoDescarga() {
   }
 }
 
-// Hook al showTab para inicializar
-const _showTabOrig2 = showTab;
+// Hook único al showTab para inicializar secciones lazy
+const _showTabBase = showTab;
 showTab = function(tab) {
-  _showTabOrig2(tab);
-  if(tab === 'diae') initDiaE();
+  _showTabBase(tab);
+  if(tab === 'diae')      initDiaE();
+  if(tab === 'descargas') initDescargas();
 };
 
-// Inicializar descargas cuando se muestra esa pantalla
-const _origShowTab = showTab;
-showTab = function(tab) {
-  _origShowTab(tab);
-  if (tab === 'descargas') initDescargas();
-};
-</script>
-<script src="theme.js">
 // Mostrar botón de menú solo si NO está en iframe
 (function() {
   try {
     if (window.self === window.top) {
-      // No está en iframe - mostrar botón de regreso
       var btn = document.getElementById('btn-back-menu');
       if (btn) btn.style.display = 'block';
     }
@@ -1399,7 +1391,6 @@ showTab = function(tab) {
     if (btn) btn.style.display = 'block';
   }
 })();
-
 </script>
 </body>
 </html>
