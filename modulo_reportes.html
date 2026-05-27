@@ -454,19 +454,17 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
     <div class="card-head"><div class="card-title">Análisis de influencia y riesgo por grupo de edad</div></div>
     <div class="card-body">
       <div class="table-wrap">
-        <table class="rt">
+        <table class="rt" id="tbl-perfil">
           <thead><tr>
-            <th>Grupo edad</th><th class="r">Total</th><th class="r">% del padrón</th>
-            <th class="r">Seg. votan</th><th class="r">En riesgo</th><th class="r">Nec. apoyo</th><th>Prioridad</th>
+            <th onclick="sortPerfil('grupo')" style="cursor:pointer;user-select:none">Grupo edad <span id="sort-p-grupo" style="color:var(--text3)">↕</span></th>
+            <th class="r" onclick="sortPerfil('total')" style="cursor:pointer;user-select:none">Total <span id="sort-p-total" style="color:var(--text3)">↕</span></th>
+            <th class="r" onclick="sortPerfil('pct')" style="cursor:pointer;user-select:none">% del padrón <span id="sort-p-pct" style="color:var(--text3)">↕</span></th>
+            <th class="r" onclick="sortPerfil('seg')" style="cursor:pointer;user-select:none">Seg. votan <span id="sort-p-seg" style="color:var(--text3)">↕</span></th>
+            <th class="r" onclick="sortPerfil('rie')" style="cursor:pointer;user-select:none">En riesgo <span id="sort-p-rie" style="color:var(--text3)">↕</span></th>
+            <th class="r" onclick="sortPerfil('apo')" style="cursor:pointer;user-select:none">Nec. apoyo <span id="sort-p-apo" style="color:var(--text3)">↕</span></th>
+            <th onclick="sortPerfil('pri')" style="cursor:pointer;user-select:none">Prioridad <span id="sort-p-pri" style="color:var(--text3)">↕</span></th>
           </tr></thead>
-          <tbody>
-            <tr><td><div class="cell-name">18–29 años</div></td><td class="cell-num">1,887</td><td class="cell-num">18.9%</td><td class="cell-num" style="color:var(--green)">680</td><td class="cell-num" style="color:var(--amber)">320</td><td class="cell-num">280</td><td><span class="badge-sm b-amber">Media</span></td></tr>
-            <tr><td><div class="cell-name">30–39 años</div></td><td class="cell-num">1,448</td><td class="cell-num">14.5%</td><td class="cell-num" style="color:var(--green)">620</td><td class="cell-num" style="color:var(--amber)">290</td><td class="cell-num">180</td><td><span class="badge-sm b-blue">Alta</span></td></tr>
-            <tr><td><div class="cell-name">40–49 años</div></td><td class="cell-num">1,530</td><td class="cell-num">15.3%</td><td class="cell-num" style="color:var(--green)">740</td><td class="cell-num" style="color:var(--red)">380</td><td class="cell-num">210</td><td><span class="badge-sm b-green">Muy alta</span></td></tr>
-            <tr><td><div class="cell-name">50–59 años</div></td><td class="cell-num">1,547</td><td class="cell-num">15.5%</td><td class="cell-num" style="color:var(--green)">790</td><td class="cell-num" style="color:var(--amber)">310</td><td class="cell-num">340</td><td><span class="badge-sm b-green">Muy alta</span></td></tr>
-            <tr><td><div class="cell-name">60–69 años</div></td><td class="cell-num">1,541</td><td class="cell-num">15.4%</td><td class="cell-num" style="color:var(--green)">820</td><td class="cell-num" style="color:var(--amber)">290</td><td class="cell-num">490</td><td><span class="badge-sm b-green">Muy alta</span></td></tr>
-            <tr><td><div class="cell-name">70+ años</div></td><td class="cell-num">2,047</td><td class="cell-num">20.5%</td><td class="cell-num" style="color:var(--green)">951</td><td class="cell-num" style="color:var(--amber)">613</td><td class="cell-num">845</td><td><span class="badge-sm b-amber">Media — apoyo logístico</span></td></tr>
-          </tbody>
+          <tbody id="tb-perfil"></tbody>
         </table>
       </div>
     </div>
@@ -1521,6 +1519,62 @@ function renderProyeccion(data) {
       <td><span class="badge-sm ${r.cls}">${r.semaforo}</span></td>
     </tr>`).join('');
 }
+
+// ══════════════════════════════════════════════════════
+// PERFIL DEL VOTANTE — TABLA ORDENABLE
+// ══════════════════════════════════════════════════════
+const PERFIL_DATA = [
+  {grupo:'18–29 años', total:1887, pct:18.9, seg:680,  rie:320, apo:280, prioridad:'Media',              pri_ord:1, rie_col:'var(--amber)', cls:'b-amber'},
+  {grupo:'30–39 años', total:1448, pct:14.5, seg:620,  rie:290, apo:180, prioridad:'Alta',               pri_ord:2, rie_col:'var(--amber)', cls:'b-blue'},
+  {grupo:'40–49 años', total:1530, pct:15.3, seg:740,  rie:380, apo:210, prioridad:'Muy alta',           pri_ord:3, rie_col:'var(--red)',   cls:'b-green'},
+  {grupo:'50–59 años', total:1547, pct:15.5, seg:790,  rie:310, apo:340, prioridad:'Muy alta',           pri_ord:3, rie_col:'var(--amber)', cls:'b-green'},
+  {grupo:'60–69 años', total:1541, pct:15.4, seg:820,  rie:290, apo:490, prioridad:'Muy alta',           pri_ord:3, rie_col:'var(--amber)', cls:'b-green'},
+  {grupo:'70+ años',   total:2047, pct:20.5, seg:951,  rie:613, apo:845, prioridad:'Media — apoyo logístico', pri_ord:1, rie_col:'var(--amber)', cls:'b-amber'},
+];
+let PERFIL_SORT = {col: null, asc: true};
+
+function sortPerfil(col) {
+  if(PERFIL_SORT.col === col) { PERFIL_SORT.asc = !PERFIL_SORT.asc; }
+  else { PERFIL_SORT.col = col; PERFIL_SORT.asc = true; }
+
+  ['grupo','total','pct','seg','rie','apo','pri'].forEach(c => {
+    const el = document.getElementById('sort-p-'+c);
+    if(el){ el.textContent='↕'; el.style.color='var(--text3)'; }
+  });
+  const activeEl = document.getElementById('sort-p-'+col);
+  if(activeEl){ activeEl.textContent = PERFIL_SORT.asc ? '↑' : '↓'; activeEl.style.color='var(--accent)'; }
+
+  const sorted = [...PERFIL_DATA].sort((a,b) => {
+    let va, vb;
+    if(col==='grupo'){ va=a.grupo; vb=b.grupo; }
+    else if(col==='total'){ va=a.total; vb=b.total; }
+    else if(col==='pct'){   va=a.pct;   vb=b.pct; }
+    else if(col==='seg'){   va=a.seg;   vb=b.seg; }
+    else if(col==='rie'){   va=a.rie;   vb=b.rie; }
+    else if(col==='apo'){   va=a.apo;   vb=b.apo; }
+    else if(col==='pri'){   va=a.pri_ord; vb=b.pri_ord; }
+    if(typeof va==='string') return PERFIL_SORT.asc ? va.localeCompare(vb) : vb.localeCompare(va);
+    return PERFIL_SORT.asc ? va-vb : vb-va;
+  });
+  renderPerfil(sorted);
+}
+
+function renderPerfil(data) {
+  const tb = document.getElementById('tb-perfil');
+  if(!tb) return;
+  tb.innerHTML = data.map(r=>`
+    <tr>
+      <td><div class="cell-name">${r.grupo}</div></td>
+      <td class="cell-num">${r.total.toLocaleString()}</td>
+      <td class="cell-num">${r.pct}%</td>
+      <td class="cell-num" style="color:var(--green)">${r.seg.toLocaleString()}</td>
+      <td class="cell-num" style="color:${r.rie_col}">${r.rie.toLocaleString()}</td>
+      <td class="cell-num">${r.apo.toLocaleString()}</td>
+      <td><span class="badge-sm ${r.cls}">${r.prioridad}</span></td>
+    </tr>`).join('');
+}
+
+renderPerfil(PERFIL_DATA);
 
 // ══════════════════════════════════════════════════════
 // CALIDAD DEL PADRÓN — FILTRO POR MUNICIPIO
