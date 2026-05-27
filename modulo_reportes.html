@@ -835,91 +835,14 @@ function buildCharts(tab){
       options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
         scales:{x:{ticks:{color:TICK,font:FONT,maxRotation:45},grid:{color:GRID}},y:{ticks:{color:TICK,font:FONT},grid:{color:GRID}}}}
     });
-    const MESES_DATA = [
-      {mes:'Enero',  cap:2549, semanas:['9-15 ene','16-22 ene','23-29 ene','30 ene-5 feb'], vals:[637,612,648,652]},
-      {mes:'Febrero',cap:2288, semanas:['6-12 feb','13-19 feb','20-26 feb','27 feb-5 mar'], vals:[586,524,614,564]},
-      {mes:'Marzo',  cap:2622, semanas:['6-12 mar','13-19 mar','20-26 mar','27 mar-2 abr'], vals:[585,561,614,862]},
-      {mes:'Abril',  cap:2462, semanas:['3-9 abr','10-16 abr','17-23 abr','24-30 abr'],    vals:[590,579,582,711]},
-      {mes:'Mayo',   cap:79,   semanas:['1-7 may'], vals:[79]},
-    ];
-    let MES_SELECTED = null;
-
-    function resaltarMes(idx) {
-      MES_SELECTED = MES_SELECTED === idx ? null : idx;
-      const m = MES_SELECTED !== null ? MESES_DATA[MES_SELECTED] : null;
-
-      // Actualizar badge
-      let badge = document.getElementById('mes-filtro-badge');
-      if (!badge) {
-        badge = document.createElement('div');
-        badge.id = 'mes-filtro-badge';
-        badge.style.cssText = 'display:none;align-items:center;gap:10px;margin-bottom:12px;padding:9px 14px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:8px;font-family:var(--mono);font-size:11px;';
-        const sc = document.getElementById('sc-avance');
-        if (sc) sc.insertBefore(badge, sc.firstChild);
-      }
-      if (m) {
-        badge.style.display = 'flex';
-        badge.innerHTML = `<span style="color:var(--accent)">📅 ${m.mes}:</span>
-          <span style="color:var(--green);font-weight:700">${m.cap.toLocaleString()} capturas</span>
-          <span style="color:var(--text3)">·</span>
-          <span style="color:var(--text2)">Prom. semanal: ${Math.round(m.cap/m.semanas.length).toLocaleString()}</span>
-          <button onclick="resaltarMes(${MES_SELECTED})" style="margin-left:auto;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);border-radius:5px;color:var(--red);padding:3px 10px;cursor:pointer;font-size:10px;font-family:var(--mono);">✕ Quitar filtro</button>`;
-
-        // Actualizar gráfica semanal con semanas de ese mes
-        if (window._chartSemanal) window._chartSemanal.destroy();
-        window._chartSemanal = new Chart(document.getElementById('ch-semanas'),{
-          type:'bar',
-          data:{
-            labels: m.semanas,
-            datasets:[{label:'Capturas',data:m.vals,
-              backgroundColor:'#3b82f6bb',borderRadius:4}]
-          },
-          options:{responsive:true,maintainAspectRatio:false,
-            plugins:{legend:{display:false},
-              title:{display:true,text:`Semanas de ${m.mes} — ${m.cap.toLocaleString()} capturas total`,color:'#8a9ab5',font:FONT}},
-            scales:{x:{ticks:{color:TICK,font:FONT},grid:{color:GRID}},
-                    y:{ticks:{color:TICK,font:FONT},grid:{color:GRID}}}}
-        });
-      } else {
-        badge.style.display = 'none';
-        // Restaurar gráfica semanal original
-        if (window._chartSemanal) window._chartSemanal.destroy();
-        window._chartSemanal = new Chart(document.getElementById('ch-semanas'),{
-          type:'bar',
-          data:{
-            labels:['9-15 feb','16-22 feb','23 feb-1 mar','2-8 mar','9-15 mar','16-22 mar','23-29 mar','30 mar-5 abr','6-12 abr','13-19 abr','20-26 abr','27 abr-3 may'],
-            datasets:[{label:'Capturas',data:[586,524,614,585,561,614,590,579,582,573,574,421],
-              backgroundColor:'#3b82f6bb',borderRadius:4}]
-          },
-          options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-            scales:{x:{ticks:{color:TICK,font:FONT},grid:{color:GRID}},y:{ticks:{color:TICK,font:FONT},grid:{color:GRID}}}}
-        });
-      }
-
-      // Actualizar colores de barras del gráfico de meses
-      const colors = MESES_DATA.map((_,i) =>
-        MES_SELECTED === null ? '#3b82f6bb' :
-        i === MES_SELECTED ? '#22c55ebb' : '#1e3a5f88'
-      );
-      colors[4] = MES_SELECTED === null ? '#64748bbb' : (MES_SELECTED === 4 ? '#22c55ebb' : '#1e3a5f88');
-      if (window._chartMeses) {
-        window._chartMeses.data.datasets[0].backgroundColor = colors;
-        window._chartMeses.update();
-      }
-    }
-
-    if (window._chartMeses) window._chartMeses.destroy();
-    window._chartMeses = new Chart(document.getElementById('ch-meses'),{
+    new Chart(document.getElementById('ch-meses'),{
       type:'bar',
       data:{
         labels:['Enero','Febrero','Marzo','Abril','Mayo'],
         datasets:[{label:'Capturas',data:[2549,2288,2622,2462,79],
           backgroundColor:['#3b82f6bb','#3b82f6bb','#22c55ebb','#3b82f6bb','#64748bbb'],borderRadius:4}]
       },
-      options:{responsive:true,maintainAspectRatio:false,
-        onClick:(evt,elements)=>{ if(elements.length>0) resaltarMes(elements[0].index); },
-        plugins:{legend:{display:false},
-          tooltip:{callbacks:{title:items=>items[0].label+' — clic para ver semanas'}}},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
         scales:{x:{ticks:{color:TICK,font:FONT},grid:{color:GRID}},y:{ticks:{color:TICK,font:FONT},grid:{color:GRID}}}}
     });
     new Chart(document.getElementById('ch-diario'),{
