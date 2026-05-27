@@ -247,15 +247,15 @@ table.cap-table tr.selected{background:rgba(59,130,246,0.1);}
           <thead>
             <tr>
               <th>#</th>
-              <th>Capturista</th>
-              <th>Municipio</th>
-              <th class="right">Capturas</th>
+              <th onclick="sortPanel('CAPTURADO_POR')" style="cursor:pointer;user-select:none">Capturista <span id="sort-p-CAPTURADO_POR" style="color:var(--text3)">↕</span></th>
+              <th onclick="sortPanel('MUNICIPIO')" style="cursor:pointer;user-select:none">Municipio <span id="sort-p-MUNICIPIO" style="color:var(--text3)">↕</span></th>
+              <th class="right" onclick="sortPanel('total')" style="cursor:pointer;user-select:none">Capturas <span id="sort-p-total" style="color:var(--text3)">↕</span></th>
               <th>Avance</th>
-              <th class="right">% Meta</th>
-              <th class="right">Validados</th>
-              <th class="right">Seg. vota</th>
-              <th class="right">Score</th>
-              <th class="right">Última cap.</th>
+              <th class="right" onclick="sortPanel('pct_meta')" style="cursor:pointer;user-select:none">% Meta <span id="sort-p-pct_meta" style="color:var(--text3)">↕</span></th>
+              <th class="right" onclick="sortPanel('pct_val')" style="cursor:pointer;user-select:none">Validados <span id="sort-p-pct_val" style="color:var(--text3)">↕</span></th>
+              <th class="right" onclick="sortPanel('seguros')" style="cursor:pointer;user-select:none">Seg. vota <span id="sort-p-seguros" style="color:var(--text3)">↕</span></th>
+              <th class="right" onclick="sortPanel('score')" style="cursor:pointer;user-select:none">Score <span id="sort-p-score" style="color:var(--text3)">↕</span></th>
+              <th class="right" onclick="sortPanel('ultima_str')" style="cursor:pointer;user-select:none">Última cap. <span id="sort-p-ultima_str" style="color:var(--text3)">↕</span></th>
             </tr>
           </thead>
           <tbody id="cap-tbody"></tbody>
@@ -544,14 +544,40 @@ function aplicarFiltros(){
   renderTable(d);
 }
 
+let PANEL_SORT = {col: null, asc: true};
+
+function sortPanel(col) {
+  if(PANEL_SORT.col === col) { PANEL_SORT.asc = !PANEL_SORT.asc; }
+  else { PANEL_SORT.col = col; PANEL_SORT.asc = col === 'CAPTURADO_POR' || col === 'MUNICIPIO' || col === 'ultima_str'; }
+
+  ['CAPTURADO_POR','MUNICIPIO','total','pct_meta','pct_val','seguros','score','ultima_str'].forEach(c => {
+    const el = document.getElementById('sort-p-'+c);
+    if(el){ el.textContent='↕'; el.style.color='var(--text3)'; }
+  });
+  const activeEl = document.getElementById('sort-p-'+col);
+  if(activeEl){ activeEl.textContent = PANEL_SORT.asc ? '↑' : '↓'; activeEl.style.color='var(--cyan)'; }
+
+  aplicarFiltros();
+}
+
+// Override getDatos to include sort
+const _getDatosOrig = getDatos;
+getDatos = function() {
+  let d = _getDatosOrig();
+  if(!PANEL_SORT.col) return d;
+  return [...d].sort((a,b) => {
+    let va = a[PANEL_SORT.col], vb = b[PANEL_SORT.col];
+    if(typeof va === 'string') return PANEL_SORT.asc ? va.localeCompare(vb) : vb.localeCompare(va);
+    return PANEL_SORT.asc ? va-vb : vb-va;
+  });
+};
+
 aplicarFiltros();
 </script>
-<script src="theme.js">
-// Mostrar botón de menú solo si NO está en iframe
+<script>
 (function() {
   try {
     if (window.self === window.top) {
-      // No está en iframe - mostrar botón de regreso
       var btn = document.getElementById('btn-back-menu');
       if (btn) btn.style.display = 'block';
     }
@@ -560,7 +586,6 @@ aplicarFiltros();
     if (btn) btn.style.display = 'block';
   }
 })();
-
 </script>
 </body>
 </html>
