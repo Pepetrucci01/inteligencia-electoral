@@ -268,8 +268,13 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
       <table class="at">
         <thead>
           <tr>
-            <th>Usuario</th><th>Rol</th><th>Municipio / Sección</th>
-            <th>Último acceso</th><th>Capturas</th><th>Estatus</th><th>Acciones</th>
+            <th onclick="sortUsuarios('nombre')" style="cursor:pointer;user-select:none">Usuario <span id="sort-u-nombre" style="color:var(--text3)">↕</span></th>
+            <th onclick="sortUsuarios('rol')" style="cursor:pointer;user-select:none">Rol <span id="sort-u-rol" style="color:var(--text3)">↕</span></th>
+            <th onclick="sortUsuarios('mun')" style="cursor:pointer;user-select:none">Municipio / Sección <span id="sort-u-mun" style="color:var(--text3)">↕</span></th>
+            <th onclick="sortUsuarios('ultimo')" style="cursor:pointer;user-select:none">Último acceso <span id="sort-u-ultimo" style="color:var(--text3)">↕</span></th>
+            <th onclick="sortUsuarios('capturas')" style="cursor:pointer;user-select:none">Capturas <span id="sort-u-capturas" style="color:var(--text3)">↕</span></th>
+            <th onclick="sortUsuarios('status')" style="cursor:pointer;user-select:none">Estatus <span id="sort-u-status" style="color:var(--text3)">↕</span></th>
+            <th>Acciones</th>
           </tr>
         </thead>
         <tbody id="users-tbody"></tbody>
@@ -1086,6 +1091,34 @@ function renderUsuarios(lista){
   }).join('');
 }
 renderUsuarios(USUARIOS);
+
+let USUARIOS_SORT = {col: null, asc: true};
+
+function sortUsuarios(col) {
+  if(USUARIOS_SORT.col === col) { USUARIOS_SORT.asc = !USUARIOS_SORT.asc; }
+  else { USUARIOS_SORT.col = col; USUARIOS_SORT.asc = true; }
+
+  ['nombre','rol','mun','ultimo','capturas','status'].forEach(c => {
+    const el = document.getElementById('sort-u-'+c);
+    if(el){ el.textContent='↕'; el.style.color='var(--text3)'; }
+  });
+  const activeEl = document.getElementById('sort-u-'+col);
+  if(activeEl){ activeEl.textContent = USUARIOS_SORT.asc ? '↑' : '↓'; activeEl.style.color='#3b82f6'; }
+
+  const lista = usuariosFiltrados.length ? [...usuariosFiltrados] : [...USUARIOS];
+  lista.sort((a,b) => {
+    let va, vb;
+    if(col==='nombre')   { va=a.nombre;   vb=b.nombre; }
+    else if(col==='rol') { va=a.rol;      vb=b.rol; }
+    else if(col==='mun') { va=a.mun;      vb=b.mun; }
+    else if(col==='ultimo')   { va=a.ultimo;   vb=b.ultimo; }
+    else if(col==='capturas') { va=a.capturas; vb=b.capturas; }
+    else if(col==='status')   { va=a.status;   vb=b.status; }
+    if(typeof va==='string') return USUARIOS_SORT.asc ? va.localeCompare(vb) : vb.localeCompare(va);
+    return USUARIOS_SORT.asc ? va-vb : vb-va;
+  });
+  renderUsuarios(lista);
+}
 
 function filtrarUsuarios(){
   const q=(document.getElementById('user-search').value||'').toLowerCase();
