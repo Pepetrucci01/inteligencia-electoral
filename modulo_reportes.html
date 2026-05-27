@@ -893,7 +893,17 @@ function buildCharts(tab){
         ]
       },
       options:{responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:true,labels:{color:'#8a9ab5',font:FONT,boxWidth:10,padding:14}}},
+        onClick:(evt, elements) => {
+          if(elements.length > 0) {
+            const idx = elements[0].index;
+            const nombre = sorted[idx].n;
+            seleccionarMunicipio(nombre);
+          }
+        },
+        plugins:{
+          legend:{display:true,labels:{color:'#8a9ab5',font:FONT,boxWidth:10,padding:14}},
+          tooltip:{callbacks:{title: items => items[0].label + ' — clic para filtrar'}}
+        },
         scales:{
           x:{ticks:{color:TICK,font:FONT},grid:{color:GRID}},
           y:{ticks:{color:TICK,font:FONT,callback:v=>v+'%'},grid:{color:GRID},title:{display:true,text:'% Avance',color:TICK,font:FONT}},
