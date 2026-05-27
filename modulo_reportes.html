@@ -725,13 +725,75 @@ function semCol(p){ return p>=10?'var(--green)':p>=5?'var(--amber)':'var(--red)'
 function semLabel(p){ return p>=10?'Alto':p>=5?'Bajo':'Crítico'; }
 function semClass(p){ return p>=10?'b-green':p>=5?'b-amber':'b-red'; }
 
+let MUN_SELECTED = null;
+
+function seleccionarMunicipio(nombre) {
+  if (MUN_SELECTED === nombre) {
+    MUN_SELECTED = null; // segundo clic = deseleccionar
+  } else {
+    MUN_SELECTED = nombre;
+  }
+  buildMunTable();
+  actualizarKPIsMunicipio();
+}
+
+function actualizarKPIsMunicipio() {
+  const data = MUN_SELECTED
+    ? MUN_DATA.filter(m => m.n === MUN_SELECTED)
+    : MUN_DATA;
+
+  const totalCap  = data.reduce((s,m) => s+m.cap, 0);
+  const totalMeta = data.reduce((s,m) => s+m.meta, 0);
+  const totalVal  = data.reduce((s,m) => s+m.val, 0);
+  const totalSeg  = data.reduce((s,m) => s+m.seg, 0);
+  const totalRie  = data.reduce((s,m) => s+m.rie, 0);
+  const totalDup  = data.reduce((s,m) => s+m.dup, 0);
+  const pct = totalMeta > 0 ? (totalCap/totalMeta*100).toFixed(1) : '0.0';
+
+  // Actualizar badge de filtro activo
+  let badge = document.getElementById('mun-filtro-badge');
+  if (!badge) {
+    badge = document.createElement('div');
+    badge.id = 'mun-filtro-badge';
+    badge.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:10px 14px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:8px;font-family:var(--mono);font-size:11px;';
+    const sc = document.getElementById('sc-municipal');
+    if (sc) sc.insertBefore(badge, sc.firstChild);
+  }
+
+  if (MUN_SELECTED) {
+    badge.style.display = 'flex';
+    badge.innerHTML = `
+      <span style="color:var(--accent)">🔍 Filtrando:</span>
+      <span style="font-weight:700;color:var(--text)">${MUN_SELECTED}</span>
+      <span style="color:var(--text3)">·</span>
+      <span style="color:var(--green)">${totalCap.toLocaleString()} capturados</span>
+      <span style="color:var(--text3)">·</span>
+      <span style="color:var(--accent)">${pct}% avance</span>
+      <span style="color:var(--text3)">·</span>
+      <span style="color:var(--green)">${totalVal.toLocaleString()} validados</span>
+      <span style="color:var(--red)">${totalRie} en riesgo</span>
+      <button onclick="seleccionarMunicipio('${MUN_SELECTED}')" style="margin-left:auto;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);border-radius:5px;color:var(--red);padding:3px 10px;cursor:pointer;font-size:10px;font-family:var(--mono);">✕ Quitar filtro</button>
+    `;
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
 function buildMunTable(){
   const tb = document.getElementById('tb-mun');
-  tb.innerHTML = MUN_DATA.map(m=>{
+  const data = MUN_SELECTED
+    ? MUN_DATA.filter(m => m.n === MUN_SELECTED)
+    : MUN_DATA;
+
+  tb.innerHTML = data.map(m=>{
     const pct = (m.cap/m.meta*100).toFixed(1);
     const sc = semCol(parseFloat(pct));
-    return `<tr>
-      <td><div class="cell-name">${m.n}</div>
+    const isSelected = MUN_SELECTED === m.n;
+    const rowStyle = isSelected
+      ? 'background:rgba(59,130,246,0.1);outline:1px solid rgba(59,130,246,0.35);'
+      : '';
+    return `<tr onclick="seleccionarMunicipio('${m.n}')" style="cursor:pointer;${rowStyle}" title="Clic para filtrar por ${m.n}">
+      <td><div class="cell-name" style="${isSelected ? 'color:var(--accent);font-weight:700' : ''}">${isSelected ? '🔍 ' : ''}${m.n}</div>
         <div class="mini-bar" style="width:100px"><div class="mini-fill" style="width:${Math.min(parseFloat(pct)/15*100,100)}%;background:${sc}"></div></div>
       </td>
       <td class="cell-num" style="color:var(--text)">${m.cap.toLocaleString()}</td>
