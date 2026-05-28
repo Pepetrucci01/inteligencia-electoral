@@ -730,7 +730,6 @@ function descargarPlantilla(){
 (function() {
   try {
     if (window.self === window.top) {
-      // No está en iframe - mostrar botón de regreso
       var btn = document.getElementById('btn-back-menu');
       if (btn) btn.style.display = 'block';
     }
@@ -739,7 +738,8 @@ function descargarPlantilla(){
     if (btn) btn.style.display = 'block';
   }
 })();
-
+</script>
+<script>
 // ── AYUDA ──────────────────────────────────────────────────────────────────
 function abrirAyuda(){
   if(document.getElementById('ayuda-overlay')) {
