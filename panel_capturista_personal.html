@@ -200,6 +200,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 }
 #btn-back-menu:hover { transform: scale(1.05); }
 
+@keyframes pulse-red{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0)}50%{box-shadow:0 0 0 4px rgba(239,68,68,.15)}}
 </style>
 </head>
 <body>
@@ -237,6 +238,21 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
     <span>Demo — Simular fase:</span>
     <label><input type="radio" name="fase" value="1" checked onchange="setFase(1)"> Fase 1 (captura)</label>
     <label><input type="radio" name="fase" value="2" onchange="setFase(2)"> Fase 2 (elección)</label>
+  </div>
+
+  <!-- Banner alerta coordinador -->
+  <div id="banner-alerta-coord" style="display:none;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px;animation:pulse-red 2s infinite">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+      <div style="display:flex;align-items:flex-start;gap:12px">
+        <div style="font-size:22px;flex-shrink:0">🚨</div>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:#f87171;margin-bottom:4px">Alerta del coordinador</div>
+          <div id="alerta-coord-msg" style="font-size:12px;color:#fca5a5;line-height:1.5"></div>
+          <div id="alerta-coord-fecha" style="font-size:10px;font-family:monospace;color:rgba(248,113,113,.6);margin-top:4px"></div>
+        </div>
+      </div>
+      <button onclick="marcarAlertaLeida()" style="flex-shrink:0;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);border-radius:6px;padding:5px 10px;color:#f87171;font-size:11px;font-family:monospace;cursor:pointer;white-space:nowrap">✓ Entendido</button>
+    </div>
   </div>
 
   <!-- Banner de fase -->
@@ -1071,6 +1087,46 @@ marcarVoto = function(id, desdeficha){
     if(pctEl) pctEl.textContent = pct+'%';
   }, 100);
 };
+
+// ── SISTEMA DE ALERTAS DEL COORDINADOR ──────────────────────────────────────
+function verificarAlertasCoordinador(){
+  try{
+    const alertas=JSON.parse(localStorage.getItem('IE_alertas_capturistas')||'[]');
+    const noLeidas=alertas.filter(a=>!a.leida);
+    if(!noLeidas.length) return;
+    const ultima=noLeidas[0];
+    const banner=document.getElementById('banner-alerta-coord');
+    const msg=document.getElementById('alerta-coord-msg');
+    const fecha=document.getElementById('alerta-coord-fecha');
+    if(banner&&msg&&fecha){
+      msg.textContent=ultima.mensaje;
+      fecha.textContent='Enviada: '+ultima.fecha+' · Toca "Entendido" para confirmar';
+      banner.style.display='block';
+      // Guardar ID de alerta actual
+      banner.dataset.alertaId=ultima.id;
+    }
+  }catch(e){}
+}
+
+function marcarAlertaLeida(){
+  try{
+    const banner=document.getElementById('banner-alerta-coord');
+    const id=parseInt(banner.dataset.alertaId);
+    const alertas=JSON.parse(localStorage.getItem('IE_alertas_capturistas')||'[]');
+    const idx=alertas.findIndex(a=>a.id===id);
+    if(idx>=0) alertas[idx].leida=true;
+    localStorage.setItem('IE_alertas_capturistas',JSON.stringify(alertas));
+    banner.style.display='none';
+    // Ver si hay más alertas no leídas
+    const pendientes=alertas.filter(a=>!a.leida);
+    if(pendientes.length) verificarAlertasCoordinador();
+  }catch(e){}
+}
+
+// Verificar al cargar y cada 30 segundos
+verificarAlertasCoordinador();
+setInterval(verificarAlertasCoordinador, 30000);
+
 </script>
 <script src="theme.js">
 // Mostrar botón de menú solo si NO está en iframe
