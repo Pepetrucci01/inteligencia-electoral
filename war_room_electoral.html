@@ -451,52 +451,17 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
           <div id="f2-alertas-list"></div>
         </div>
         <div class="card">
-          <div class="card-h"><span class="card-title">⚡ Enviar alerta a capturistas</span></div>
+          <div class="card-h"><span class="card-title">Alerta masiva</span></div>
           <div class="card-b">
-            <div style="font-size:11px;color:var(--text2);margin-bottom:10px">Notifica a los capturistas que van en rojo o sin reporte. El mensaje llega dentro del sistema y por WhatsApp.</div>
-
-            <!-- Destinatarios -->
-            <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Destinatarios</div>
-            <select id="alerta-dest" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:7px 10px;outline:none;margin-bottom:8px" onchange="actualizarConteoAlerta()">
-              <option value="rojos">Solo secciones en rojo (bajo meta)</option>
-              <option value="sinreporte">Sin reporte de avance</option>
-              <option value="municipio">Por municipio</option>
-              <option value="todos">Todos los capturistas</option>
-            </select>
-            <select id="alerta-mun" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:7px 10px;outline:none;margin-bottom:10px;display:none" onchange="actualizarConteoAlerta()">
+            <div style="font-size:11px;color:var(--text2);margin-bottom:10px">Enviar recordatorio a representantes sin reporte</div>
+            <select id="alerta-mun" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:7px 10px;outline:none;margin-bottom:8px">
               <option value="">Todos los municipios</option>
               <option>Armería</option><option>Colima</option><option>Comala</option>
               <option>Coquimatlán</option><option>Cuauhtémoc</option><option>Ixtlahuacán</option>
               <option>Manzanillo</option><option>Minatitlán</option><option>Tecomán</option>
               <option>Villa de Álvarez</option>
             </select>
-
-            <!-- Contador -->
-            <div id="alerta-conteo" style="font-size:11px;font-family:var(--mono);color:var(--amber);margin-bottom:10px;padding:6px 10px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:6px">
-              ● Calculando destinatarios...
-            </div>
-
-            <!-- Mensaje -->
-            <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Mensaje</div>
-            <textarea id="alerta-msg" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:8px 10px;outline:none;resize:vertical;min-height:72px;font-family:var(--mono);line-height:1.5" placeholder="Escribe el mensaje de alerta...">⚠️ ALERTA: Tu sección va por debajo de la meta. Se requiere acelerar la captura de simpatizantes de inmediato. Reporta tu avance al coordinador.</textarea>
-            <div style="display:flex;gap:6px;margin-top:6px;margin-bottom:10px;flex-wrap:wrap">
-              <button onclick="msgRapido('⚠️ ALERTA: Tu sección va por debajo de la meta. Se requiere acelerar la captura de simpatizantes de inmediato. Reporta tu avance al coordinador.')" style="font-size:10px;font-family:var(--mono);padding:4px 8px;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);border-radius:5px;cursor:pointer">Alerta meta</button>
-              <button onclick="msgRapido('🔴 URGENTE: Necesitamos tu reporte de avance. Marca cuántos simpatizantes has contactado hoy y actualiza tu panel ahora.')" style="font-size:10px;font-family:var(--mono);padding:4px 8px;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);border-radius:5px;cursor:pointer">Sin reporte</button>
-              <button onclick="msgRapido('📋 Recordatorio: Verifica que todos tus simpatizantes con compromiso alto estén confirmados para el día de la elección.')" style="font-size:10px;font-family:var(--mono);padding:4px 8px;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);border-radius:5px;cursor:pointer">Recordatorio</button>
-            </div>
-
-            <!-- Botón enviar -->
-            <button onclick="enviarAlertaCompleta()" style="width:100%;font-family:var(--mono);font-size:12px;font-weight:600;padding:9px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:var(--red);border-radius:6px;cursor:pointer;transition:background .15s" onmouseover="this.style.background='rgba(239,68,68,.25)'" onmouseout="this.style.background='rgba(239,68,68,.15)'">
-              🚨 Enviar alerta ahora
-            </button>
-          </div>
-        </div>
-
-        <!-- Historial de alertas enviadas -->
-        <div class="card" style="margin-top:10px">
-          <div class="card-h"><span class="card-title">Historial de alertas</span><span id="alerta-hist-count" style="font-size:10px;font-family:var(--mono);color:var(--text3)">0 enviadas</span></div>
-          <div id="alerta-historial" style="max-height:160px;overflow-y:auto">
-            <div style="font-size:11px;color:var(--text3);padding:10px;text-align:center">Sin alertas enviadas</div>
+            <button onclick="enviarAlertaMasiva()" style="width:100%;font-family:var(--mono);font-size:11px;padding:7px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);color:var(--amber);border-radius:6px;cursor:pointer">⚡ Enviar alerta masiva</button>
           </div>
         </div>
       </div>
@@ -1120,147 +1085,18 @@ function detalleCasilla(cas){
 
 function alertarCas(id){
   const c=Object.values(CAS_SEC).flat().find(x=>x.id===id);if(!c)return;
-  abrirModalAlerta([{nombre:c.rep, seccion:c.secNum, municipio:c.munNombre, tel:'312-000-0000'}], `⚠️ ALERTA: La casilla ${c.id} (Secc.${c.secNum}, ${c.munNombre}) requiere atención inmediata. ${c.incidencia||'Sin reporte de apertura'}. Reporta tu situación de inmediato.`);
+  if(confirm(`Enviar alerta a ${c.rep}\nCasilla ${c.id} · Secc.${c.secNum} · ${c.munNombre}\n${c.incidencia||'Sin reporte de apertura'}\n\n¿Confirmas?`))
+    alert(`✓ Alerta enviada a ${c.rep}\n\nEn producción: WhatsApp automático.`);
 }
 
 function enviarAlertaMasiva(){
-  const dest=document.getElementById('alerta-dest').value;
   const mun=document.getElementById('alerta-mun').value;
-  const msg=document.getElementById('alerta-msg').value.trim();
-  if(!msg){alert('Escribe el mensaje antes de enviar.');return;}
-  const destinatarios=calcularDestinatarios(dest,mun);
-  if(!destinatarios.length){alert('No hay capturistas que cumplan el criterio seleccionado.');return;}
-  abrirModalAlerta(destinatarios, msg);
+  const all=Object.values(CAS_SEC).flat();
+  const sin=all.filter(c=>c.estatus==='sinreporte'&&(!mun||c.munNombre===mun));
+  if(!sin.length){alert('No hay casillas sin reporte en la selección.');return;}
+  if(confirm(`Enviar alerta a ${sin.length} representantes${mun?' en '+mun:''}.\n¿Confirmas?`))
+    alert(`✓ ${sin.length} alertas enviadas. En producción: WhatsApp API masivo.`);
 }
-
-// Renombrar para compatibilidad
-function enviarAlertaCompleta(){ enviarAlertaMasiva(); }
-
-function calcularDestinatarios(dest, mun){
-  // Simulación de capturistas registrados con sus datos
-  const todos=[
-    {nombre:'Carlos Mendoza',seccion:138,municipio:'Villa de Álvarez',tel:'312-100-0001',avance:22},
-    {nombre:'Rosa Jiménez',seccion:145,municipio:'Villa de Álvarez',tel:'312-100-0002',avance:45},
-    {nombre:'Pedro Soto',seccion:207,municipio:'Manzanillo',tel:'312-100-0003',avance:0},
-    {nombre:'Ana Flores',seccion:212,municipio:'Manzanillo',tel:'312-100-0004',avance:15},
-    {nombre:'Luis Torres',seccion:98,municipio:'Comala',tel:'312-100-0005',avance:0},
-    {nombre:'María Ruiz',seccion:114,municipio:'Coquimatlán',tel:'312-100-0006',avance:8},
-    {nombre:'Jorge Díaz',seccion:170,municipio:'Armería',tel:'312-100-0007',avance:35},
-    {nombre:'Elena Vega',seccion:320,municipio:'Tecomán',tel:'312-100-0008',avance:18},
-  ];
-  let filtrados=todos;
-  if(dest==='rojos') filtrados=todos.filter(c=>c.avance<30);
-  else if(dest==='sinreporte') filtrados=todos.filter(c=>c.avance===0);
-  else if(dest==='municipio'&&mun) filtrados=todos.filter(c=>c.municipio===mun);
-  return filtrados;
-}
-
-function actualizarConteoAlerta(){
-  const dest=document.getElementById('alerta-dest').value;
-  const munSel=document.getElementById('alerta-mun');
-  munSel.style.display=dest==='municipio'?'block':'none';
-  const mun=munSel.value;
-  const n=calcularDestinatarios(dest,mun).length;
-  const conteo=document.getElementById('alerta-conteo');
-  if(conteo) conteo.textContent=`● ${n} capturista${n!==1?'s':''} ${n===0?'— ninguno cumple el criterio seleccionado':'recibirán esta alerta'}`;
-}
-
-function msgRapido(txt){
-  const ta=document.getElementById('alerta-msg');
-  if(ta) ta.value=txt;
-}
-
-function abrirModalAlerta(destinatarios, msgPredefinido){
-  if(document.getElementById('modal-alerta')) document.getElementById('modal-alerta').remove();
-  const modal=document.createElement('div');
-  modal.id='modal-alerta';
-  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
-  modal.innerHTML=`
-  <div style="width:100%;max-width:520px;background:#161618;border:1px solid #2a2f45;border-radius:14px;overflow:hidden">
-    <div style="padding:16px 20px;border-bottom:1px solid #1e2130;display:flex;align-items:center;justify-content:space-between">
-      <div>
-        <div style="font-size:14px;font-weight:600;color:#f1f5f9">🚨 Confirmar envío de alerta</div>
-        <div style="font-size:12px;color:#64748b;margin-top:2px">${destinatarios.length} capturista${destinatarios.length!==1?'s':''} recibirán esta alerta</div>
-      </div>
-      <button onclick="document.getElementById('modal-alerta').remove()" style="background:none;border:none;color:#64748b;font-size:18px;cursor:pointer;padding:4px">✕</button>
-    </div>
-
-    <div style="padding:16px 20px">
-      <div style="font-size:11px;font-family:monospace;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Mensaje a enviar</div>
-      <div style="background:#0d0d0f;border:1px solid #1e2130;border-radius:8px;padding:10px 12px;font-size:12px;color:#94a3b8;font-family:monospace;line-height:1.5;margin-bottom:14px">${msgPredefinido}</div>
-
-      <div style="font-size:11px;font-family:monospace;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Destinatarios (${destinatarios.length})</div>
-      <div style="max-height:160px;overflow-y:auto;border:1px solid #1e2130;border-radius:8px;margin-bottom:14px">
-        ${destinatarios.map((c,i)=>`
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid #1e2130;${i%2?'background:#0d0d0f':''}">
-          <div>
-            <div style="font-size:12px;color:#f1f5f9;font-weight:500">${c.nombre}</div>
-            <div style="font-size:11px;color:#64748b">Secc. ${c.seccion} · ${c.municipio}</div>
-          </div>
-          <div style="display:flex;gap:4px">
-            <span style="font-size:10px;background:rgba(59,130,246,.12);color:#60a5fa;padding:2px 7px;border-radius:99px">Sistema</span>
-            <span style="font-size:10px;background:rgba(34,197,94,.12);color:#4ade80;padding:2px 7px;border-radius:99px">WhatsApp</span>
-          </div>
-        </div>`).join('')}
-      </div>
-
-      <div style="display:flex;gap:8px">
-        <button onclick="document.getElementById('modal-alerta').remove()" style="flex:1;padding:10px;background:#1e2130;border:1px solid #2a2f45;border-radius:8px;color:#94a3b8;font-size:13px;font-family:monospace;cursor:pointer">Cancelar</button>
-        <button onclick="confirmarEnvioAlerta(${JSON.stringify(destinatarios).replace(/"/g,'&quot;')}, '${msgPredefinido.replace(/'/g,"\\'")}')" style="flex:2;padding:10px;background:rgba(239,68,68,.2);border:1px solid rgba(239,68,68,.4);border-radius:8px;color:#f87171;font-size:13px;font-weight:600;font-family:monospace;cursor:pointer">🚨 Confirmar y enviar alerta</button>
-      </div>
-    </div>
-  </div>`;
-  document.body.appendChild(modal);
-}
-
-function confirmarEnvioAlerta(destinatarios, mensaje){
-  // Guardar alerta en localStorage para que el panel del capturista la lea
-  const alertas = JSON.parse(localStorage.getItem('IE_alertas_capturistas')||'[]');
-  const nuevaAlerta = {
-    id: Date.now(),
-    mensaje: mensaje,
-    fecha: new Date().toLocaleString('es-MX'),
-    destinatarios: destinatarios.map(d=>d.nombre),
-    secciones: destinatarios.map(d=>d.seccion),
-    leida: false
-  };
-  alertas.unshift(nuevaAlerta);
-  localStorage.setItem('IE_alertas_capturistas', JSON.stringify(alertas.slice(0,50)));
-
-  // Cerrar modal
-  document.getElementById('modal-alerta').remove();
-
-  // Actualizar historial
-  actualizarHistorialAlertas();
-
-  // Confirmar visualmente
-  const toast=document.createElement('div');
-  toast.style.cssText='position:fixed;bottom:24px;right:24px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);color:#4ade80;font-size:12px;font-family:monospace;padding:12px 18px;border-radius:8px;z-index:9999;display:flex;align-items:center;gap:8px';
-  toast.innerHTML=`<span style="font-size:16px">✓</span> ${destinatarios.length} alerta${destinatarios.length!==1?'s':''} enviada${destinatarios.length!==1?'s':''}. Notificación activa en panel de capturistas.`;
-  document.body.appendChild(toast);
-  setTimeout(()=>toast.remove(),4000);
-}
-
-function actualizarHistorialAlertas(){
-  const alertas=JSON.parse(localStorage.getItem('IE_alertas_capturistas')||'[]');
-  const cont=document.getElementById('alerta-historial');
-  const count=document.getElementById('alerta-hist-count');
-  if(count) count.textContent=alertas.length+' enviada'+(alertas.length!==1?'s':'');
-  if(!cont) return;
-  if(!alertas.length){
-    cont.innerHTML='<div style="font-size:11px;color:var(--text3);padding:10px;text-align:center">Sin alertas enviadas</div>';
-    return;
-  }
-  cont.innerHTML=alertas.slice(0,5).map(a=>`
-    <div style="padding:8px 12px;border-bottom:1px solid var(--border2);font-size:11px">
-      <div style="display:flex;justify-content:space-between;margin-bottom:2px">
-        <span style="color:var(--red);font-family:var(--mono)">🚨 ${a.destinatarios.length} capturistas</span>
-        <span style="color:var(--text3);font-size:10px">${a.fecha}</span>
-      </div>
-      <div style="color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.mensaje.substring(0,60)}...</div>
-    </div>`).join('');
-}
-
 
 function updateBcF2(){
   ['df','mun','dl','sec','cas'].forEach(id=>{
@@ -1411,7 +1247,7 @@ function tick(){
 setInterval(tick,1000);tick();
 
 // ── INIT ──
-document.addEventListener('DOMContentLoaded',()=>{renderMunF1();renderCuadF1();actualizarConteoAlerta();actualizarHistorialAlertas();});
+document.addEventListener('DOMContentLoaded',()=>{renderMunF1();renderCuadF1();});
 </script>
 <script src="theme.js">
 // Mostrar botón de menú solo si NO está en iframe
