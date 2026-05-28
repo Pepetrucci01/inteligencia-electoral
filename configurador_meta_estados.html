@@ -155,26 +155,31 @@ table.rtable tr:hover td{background:rgba(255,255,255,0.02);}
 <div class="main">
 
   <!-- STEPS -->
-  <div class="steps-bar" id="steps-bar">
-    <div class="step-item">
-      <div class="step-circle active" id="sn1">1</div>
-      <div class="step-label active" id="sl1">Estado</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;">
+    <div class="steps-bar" id="steps-bar" style="margin-bottom:0;flex:1;">
+      <div class="step-item">
+        <div class="step-circle active" id="sn1">1</div>
+        <div class="step-label active" id="sl1">Estado</div>
+      </div>
+      <div class="step-line"></div>
+      <div class="step-item">
+        <div class="step-circle idle" id="sn2">2</div>
+        <div class="step-label" id="sl2">Excel</div>
+      </div>
+      <div class="step-line"></div>
+      <div class="step-item">
+        <div class="step-circle idle" id="sn3">3</div>
+        <div class="step-label" id="sl3">Columnas</div>
+      </div>
+      <div class="step-line"></div>
+      <div class="step-item">
+        <div class="step-circle idle" id="sn4">✓</div>
+        <div class="step-label" id="sl4">Meta</div>
+      </div>
     </div>
-    <div class="step-line"></div>
-    <div class="step-item">
-      <div class="step-circle idle" id="sn2">2</div>
-      <div class="step-label" id="sl2">Excel</div>
-    </div>
-    <div class="step-line"></div>
-    <div class="step-item">
-      <div class="step-circle idle" id="sn3">3</div>
-      <div class="step-label" id="sl3">Columnas</div>
-    </div>
-    <div class="step-line"></div>
-    <div class="step-item">
-      <div class="step-circle idle" id="sn4">✓</div>
-      <div class="step-label" id="sl4">Meta</div>
-    </div>
+    <button onclick="abrirAyuda()" style="display:flex;align-items:center;gap:6px;padding:7px 14px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.25);border-radius:8px;color:var(--accent);font-size:12px;font-family:var(--mono);cursor:pointer;white-space:nowrap;margin-left:16px;transition:background .15s" onmouseover="this.style.background='rgba(59,130,246,.18)'" onmouseout="this.style.background='rgba(59,130,246,.08)'">
+      <span style="font-size:15px;font-weight:700">?</span> Ayuda
+    </button>
   </div>
 
   <!-- PANTALLA 1: ESTADO -->
@@ -735,6 +740,120 @@ function descargarPlantilla(){
   }
 })();
 
+// ── AYUDA ──────────────────────────────────────────────────────────────────
+function abrirAyuda(){
+  if(document.getElementById('ayuda-overlay')) {
+    document.getElementById('ayuda-overlay').style.display='flex';
+    return;
+  }
+  const o = document.createElement('div');
+  o.id = 'ayuda-overlay';
+  o.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:24px 16px';
+  o.innerHTML=`
+  <div style="width:100%;max-width:700px;background:#161618;border:1px solid #1e2130;border-radius:14px;overflow:hidden;margin:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #1e2130">
+      <div>
+        <div style="font-size:15px;font-weight:600;color:#f1f5f9">Guía del configurador</div>
+        <div style="font-size:12px;color:#64748b;margin-top:2px">Cómo usar el configurador de meta electoral</div>
+      </div>
+      <button onclick="cerrarAyuda()" style="padding:7px 16px;background:#1e2130;border:1px solid #2a2f45;border-radius:8px;color:#94a3b8;font-size:12px;font-family:monospace;cursor:pointer">← Regresar</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:#1e2130">
+      ${[['⚙️','Paso 1','Configura'],['📂','Paso 2','Sube tu Excel'],['🗂️','Paso 3','Confirma columnas'],['📊','Paso 4','Obtén tu meta']].map(s=>`
+      <div style="background:#161618;padding:14px;text-align:center">
+        <div style="font-size:20px;margin-bottom:6px">${s[0]}</div>
+        <div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">${s[1]}</div>
+        <div style="font-size:12px;font-weight:500;color:#f1f5f9">${s[2]}</div>
+      </div>`).join('')}
+    </div>
+
+    <div style="display:flex;border-bottom:1px solid #1e2130" id="ay-tabs">
+      <button onclick="ayudaTab('excel')" id="ayt-excel" style="padding:10px 20px;font-size:12px;font-family:monospace;background:none;border:none;border-bottom:2px solid #3b82f6;color:#f1f5f9;cursor:pointer">Tu Excel</button>
+      <button onclick="ayudaTab('params')" id="ayt-params" style="padding:10px 20px;font-size:12px;font-family:monospace;background:none;border:none;border-bottom:2px solid transparent;color:#64748b;cursor:pointer">Parámetros</button>
+      <button onclick="ayudaTab('resultados')" id="ayt-resultados" style="padding:10px 20px;font-size:12px;font-family:monospace;background:none;border:none;border-bottom:2px solid transparent;color:#64748b;cursor:pointer">Resultados</button>
+    </div>
+
+    <div id="ayp-excel" style="padding:20px">
+      <p style="font-size:13px;color:#94a3b8;margin-bottom:14px">Sube un archivo Excel con una fila por sección. El sistema detecta las columnas automáticamente.</p>
+      <div style="background:#111113;border:1px solid #1e2130;border-radius:8px;overflow:hidden;margin-bottom:12px">
+        <div style="padding:8px 12px;background:#1e2130;font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.06em">Columnas requeridas</div>
+        ${[['Número de sección','Identificador único de cada sección electoral del INE'],['Municipio','Nombre del municipio al que pertenece la sección'],['Votos por fuerza política','Resultados 2024: C. MORENA, C. PRIAND, MC'],['Total votos y lista nominal','Para calcular la participación real de cada sección']].map((r,i)=>`
+        <div style="display:flex;gap:10px;padding:10px 14px;border-top:1px solid #1e2130;${i%2?'background:#0d0d0f':''}">
+          <span style="background:rgba(239,68,68,.12);color:#f87171;font-size:10px;padding:2px 7px;border-radius:99px;white-space:nowrap;align-self:flex-start;margin-top:1px">Requerida</span>
+          <div><div style="font-size:13px;color:#f1f5f9">${r[0]}</div><div style="font-size:12px;color:#64748b;margin-top:2px">${r[1]}</div></div>
+        </div>`).join('')}
+      </div>
+      <div style="background:#111113;border:1px solid #1e2130;border-radius:8px;overflow:hidden;margin-bottom:12px">
+        <div style="padding:8px 12px;background:#1e2130;font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.06em">Columnas opcionales</div>
+        ${[['Distrito federal y local','Filtra reportes por distrito'],['Coordenadas GPS','Activa el mapa territorial georreferenciado'],['Refuerzo prioritario','Marca secciones estratégicas en el War Room']].map((r,i)=>`
+        <div style="display:flex;gap:10px;padding:10px 14px;border-top:1px solid #1e2130;${i%2?'background:#0d0d0f':''}">
+          <span style="color:#64748b;font-size:16px;align-self:flex-start;margin-top:-2px">+</span>
+          <div><div style="font-size:13px;color:#94a3b8">${r[0]}</div><div style="font-size:12px;color:#64748b;margin-top:2px">${r[1]}</div></div>
+        </div>`).join('')}
+      </div>
+      <div style="background:#1e2130;border-radius:7px;padding:9px 12px;font-size:12px;color:#64748b">💡 No importa cómo se llame la columna — el sistema la detecta automáticamente.</div>
+    </div>
+
+    <div id="ayp-params" style="padding:20px;display:none">
+      <p style="font-size:13px;color:#94a3b8;margin-bottom:14px">Ajusta estos valores según las características y capacidad real de tu partido.</p>
+      ${[
+        ['👥','Estructura de campo','rgba(239,68,68,.12)','#f87171','El más importante','El número total de personas disponibles para trabajar en campo. El sistema distribuye toda tu estructura en base a este número — si pones 1,500 el reparto siempre sumará exactamente 1,500.','💡 Si tu estructura crece, vuelve a correr el configurador y recalcula automáticamente.','rgba(59,130,246,.08)','#3b82f6'],
+        ['%','% sobre voto ganador','rgba(234,179,8,.12)','#facc15','','Define qué tan ambiciosa es la meta. A mayor porcentaje, más simpatizantes hay que conseguir en total.','💡 Recomendado: entre 3% y 10% según el margen de victoria en 2024.','rgba(234,179,8,.06)','#facc15'],
+        ['≈','Factores de afluencia','rgba(34,197,94,.12)','#4ade80','','El sistema clasifica cada sección según su participación en 2024. Fácil &gt;60% · Medio 50-60% · Difícil &lt;50%.','💡 Ajusta los factores para calibrar el esfuerzo requerido en cada tipo de sección.','rgba(34,197,94,.06)','#4ade80'],
+        ['🎯','Simpatizantes por capturista','rgba(59,130,246,.12)','#60a5fa','','Define la carga de trabajo de cada persona según la dificultad de su zona. El sistema usa este valor para distribuir equitativamente la estructura entre todas las secciones.','💡 En zonas fáciles el capturista puede manejar más personas. En difíciles se le pide menos.','rgba(59,130,246,.06)','#60a5fa']
+      ].map(p=>`
+      <div style="border:1px solid #1e2130;border-radius:10px;padding:14px;margin-bottom:10px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <div style="width:26px;height:26px;background:${p[2]};border-radius:5px;display:flex;align-items:center;justify-content:center;color:${p[3]};font-size:13px">${p[0]}</div>
+          <span style="font-size:13px;font-weight:500;color:#f1f5f9">${p[1]}</span>
+          ${p[4]?`<span style="background:rgba(239,68,68,.12);color:#f87171;font-size:10px;padding:1px 7px;border-radius:99px">${p[4]}</span>`:''}
+        </div>
+        <p style="font-size:12px;color:#94a3b8;line-height:1.5;margin-bottom:8px">${p[5]}</p>
+        <div style="background:${p[7]};border-radius:6px;padding:7px 10px;font-size:12px;color:${p[8]}">${p[6]}</div>
+      </div>`).join('')}
+    </div>
+
+    <div id="ayp-resultados" style="padding:20px;display:none">
+      <p style="font-size:13px;color:#94a3b8;margin-bottom:14px">Al procesar tu Excel el sistema genera automáticamente estos resultados para cada sección.</p>
+      <div style="border:1px solid #1e2130;border-radius:10px;overflow:hidden;margin-bottom:14px">
+        ${[['#3b82f6','Clasificación de la sección','Fácil, Medio o Difícil según la participación histórica de sus votantes en 2024.'],
+           ['#22c55e','Estructura real asignada','Cuántas personas de tu estructura le corresponden a esta sección. La suma siempre iguala tu estructura total.'],
+           ['#f59e0b','Meta de simpatizantes','Los simpatizantes que hay que conseguir en esta sección para alcanzar el objetivo del partido.'],
+           ['#ef4444','Meta por capturista','Cuántos simpatizantes le toca conseguir a cada persona asignada a esta sección.']
+        ].map((r,i)=>`
+        <div style="display:flex;gap:12px;padding:12px 14px;border-bottom:1px solid #1e2130;${i%2?'background:#0d0d0f':''}">
+          <div style="width:10px;height:10px;background:${r[0]};border-radius:50%;flex-shrink:0;margin-top:4px"></div>
+          <div><div style="font-size:13px;font-weight:500;color:#f1f5f9;margin-bottom:2px">${r[1]}</div><div style="font-size:12px;color:#64748b;line-height:1.5">${r[2]}</div></div>
+        </div>`).join('')}
+      </div>
+      <div style="background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.15);border-radius:8px;padding:11px 14px;font-size:12px;color:#60a5fa;display:flex;gap:8px">
+        <span style="flex-shrink:0">🔒</span> La metodología de cálculo es propietaria del sistema de Inteligencia Electoral. Los resultados son generados automáticamente por el motor interno.
+      </div>
+    </div>
+
+    <div style="padding:14px 20px;border-top:1px solid #1e2130;display:flex;justify-content:flex-end">
+      <button onclick="cerrarAyuda()" style="padding:8px 20px;background:#3b82f6;border:none;border-radius:8px;color:#fff;font-size:13px;font-family:monospace;cursor:pointer">← Regresar al configurador</button>
+    </div>
+  </div>`;
+  document.body.appendChild(o);
+}
+
+function cerrarAyuda(){
+  const o = document.getElementById('ayuda-overlay');
+  if(o) o.style.display='none';
+}
+
+function ayudaTab(name){
+  ['excel','params','resultados'].forEach(t=>{
+    document.getElementById('ayp-'+t).style.display = t===name ? 'block' : 'none';
+    const btn = document.getElementById('ayt-'+t);
+    if(btn){
+      btn.style.borderBottom = t===name ? '2px solid #3b82f6' : '2px solid transparent';
+      btn.style.color = t===name ? '#f1f5f9' : '#64748b';
+    }
+  });
+}
 </script>
 </body>
 </html>
