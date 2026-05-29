@@ -375,6 +375,36 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
     <div class="divider"></div>
     <div class="section-title">📍 Navegación territorial por cuadrantes — clic en cualquier nivel para profundizar</div>
 
+    <!-- FILTROS RÁPIDOS -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;margin-bottom:14px;align-items:end">
+      <div>
+        <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">Municipio</div>
+        <select id="flt-mun" onchange="aplicarFiltros()" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:12px;padding:7px 10px;outline:none">
+          <option value="">Todos</option>
+          ${MUNS.map(m=>`<option value="${m.id}">${m.n}</option>`).join('')}
+        </select>
+      </div>
+      <div>
+        <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">Sección</div>
+        <select id="flt-sec" onchange="aplicarFiltros()" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:12px;padding:7px 10px;outline:none">
+          <option value="">Todas</option>
+        </select>
+      </div>
+      <div>
+        <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">Semáforo</div>
+        <select id="flt-sem" onchange="aplicarFiltros()" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:12px;padding:7px 10px;outline:none">
+          <option value="">Todos</option>
+          <option value="verde">🟢 En meta</option>
+          <option value="amarillo">🟡 En riesgo</option>
+          <option value="rojo">🔴 Bajo meta</option>
+        </select>
+      </div>
+      <button onclick="limpiarFiltros()" style="padding:7px 14px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text3);font-size:11px;font-family:var(--mono);cursor:pointer;white-space:nowrap">✕ Limpiar</button>
+    </div>
+
+    <!-- RESUMEN SEMÁFORO GLOBAL -->
+    <div id="semaforo-global" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px"></div>
+
     <!-- BREADCRUMB F1 -->
     <div class="bc" id="bc-f1">
       <span class="bc-item active" onclick="drillF1('candidato',null)">🏛 Candidato</span>
@@ -386,6 +416,8 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
       <span class="bc-item" id="bc1-dl" onclick="if(f1s.dl)drillF1('dl',f1s.dl)">Dist. Local</span>
       <span class="bc-sep">›</span>
       <span class="bc-item" id="bc1-sec" onclick="if(f1s.sec)drillF1('sec',f1s.sec)">Sección</span>
+      <span class="bc-sep">›</span>
+      <span class="bc-item" id="bc1-cap" onclick="if(f1s.cap)drillF1('cap',f1s.cap)">Capturista</span>
     </div>
 
     <div id="cuad-f1"></div>
@@ -654,7 +686,29 @@ Object.values(SECS).flat().forEach(sec=>{
   }
 });
 
-// ── HELPERS ──
+// ── CAPTURISTAS ──────────────────────────────────────────────────────────────
+const NOMBRES = ['Carlos Mendoza','Rosa Jiménez','Pedro Soto','Ana Flores','Luis Torres',
+  'María Ruiz','Jorge Díaz','Elena Vega','Roberto Cruz','Carmen López','Arturo Reyes',
+  'Silvia Morales','David Herrera','Patricia Núñez','Miguel Ángel Ríos'];
+const CAPS = {};
+Object.values(SECS).flat().forEach(sec=>{
+  const n = Math.max(1, Math.round(sec.cap / 25));
+  CAPS[sec.id] = [];
+  for(let i=0;i<n;i++){
+    const metaCap = Math.round(sec.meta / n);
+    const capCap  = Math.round(sec.cap  / n * (0.4 + Math.random()*0.8));
+    CAPS[sec.id].push({
+      id: `CAP-${sec.id}-${i}`,
+      nombre: NOMBRES[Math.floor(Math.random()*NOMBRES.length)],
+      seccion: sec.id, secNum: sec.num,
+      mun: sec.mun, munNombre: sec.munNombre,
+      tel: `312-${String(Math.floor(Math.random()*9000000)+1000000)}`,
+      meta: metaCap, cap: capCap,
+      votosF2: Math.floor(capCap * 0.6 * Math.random()),
+    });
+  }
+});
+
 function pct(c,m){return m>0?Math.min(parseFloat((c/m*100).toFixed(1)),100):0;}
 function semC(p){return p>=10?'var(--green)':p>=5?'var(--amber)':'var(--red)';}
 function semI(p){return p>=10?'🟢':p>=5?'🟡':'🔴';}
@@ -672,7 +726,7 @@ function munSecIds(munId){
 // ══════════════════════════════════════════════════
 // FASE 1
 // ══════════════════════════════════════════════════
-let f1s={nivel:'candidato',df:null,mun:null,dl:null,sec:null};
+let f1s={nivel:'candidato',df:null,mun:null,dl:null,sec:null,cap:null};
 
 function renderMunF1(){
   const p=parseFloat(document.getElementById('cfg-pct').value)||6;
@@ -854,9 +908,9 @@ function detalleSecF1(sec){
 }
 
 function updateBcF1(){
-  ['df','mun','dl','sec'].forEach(id=>{
+  ['df','mun','dl','sec','cap'].forEach(id=>{
     const el=document.getElementById('bc1-'+id);
-    if(el){el.classList.remove('active');el.textContent={df:'Dist. Federal',mun:'Municipio',dl:'Dist. Local',sec:'Sección'}[id];}
+    if(el){el.classList.remove('active');el.textContent={df:'Dist. Federal',mun:'Municipio',dl:'Dist. Local',sec:'Sección',cap:'Capturista'}[id];}
   });
   document.querySelectorAll('#bc-f1 .bc-item').forEach(e=>e.classList.remove('active'));
   document.querySelectorAll('#bc-f1 .bc-item')[0].classList.add('active');
@@ -864,10 +918,166 @@ function updateBcF1(){
   if(f1s.mun){const e=document.getElementById('bc1-mun');const m=MUNS.find(x=>x.id===f1s.mun);if(e&&m){e.classList.add('active');e.textContent=m.n;}}
   if(f1s.dl){const e=document.getElementById('bc1-dl');if(e){e.classList.add('active');e.textContent='DL '+f1s.dl.replace('DL','');}}
   if(f1s.sec){const s=Object.values(SECS).flat().find(x=>x.id===f1s.sec);const e=document.getElementById('bc1-sec');if(e&&s){e.classList.add('active');e.textContent='Secc. '+s.num;}}
+  if(f1s.cap){const cap=Object.values(CAPS).flat().find(c=>c.id===f1s.cap);const e=document.getElementById('bc1-cap');if(e&&cap){e.classList.add('active');e.textContent=cap.nombre.split(' ')[0];}}
 }
 
 // ══════════════════════════════════════════════════
+// ══════════════════════════════════════════════════
 // FASE 2
+  const cols=Math.min(caps.length,4);
+  return`<div style="margin-bottom:14px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em">👤 Cuadrante Capturistas — ${caps.length} asignados</div>
+      <div style="display:flex;gap:6px">
+        <span style="font-size:10px;color:var(--green)">🟢 ${caps.filter(c=>pct(c.cap,c.meta)>=70).length}</span>
+        <span style="font-size:10px;color:var(--amber)">🟡 ${caps.filter(c=>{const p=pct(c.cap,c.meta);return p>=40&&p<70;}).length}</span>
+        <span style="font-size:10px;color:var(--red)">🔴 ${caps.filter(c=>pct(c.cap,c.meta)<40).length}</span>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:8px">
+    ${caps.map(cap=>{
+      const p=pct(cap.cap,cap.meta); const c=semC(p);
+      return`<div style="background:var(--bg2);border:1px solid ${c.replace('var(','rgba(').replace(')',', .25)')};border-left:3px solid ${c};border-radius:8px;padding:12px;cursor:pointer" onclick="drillF1('cap','${cap.id}')">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div style="width:28px;height:28px;background:${c.replace('var(','rgba(').replace(')',', .15)')};border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:${c}">${cap.nombre.split(' ').map(w=>w[0]).slice(0,2).join('')}</div>
+          <span style="font-size:16px">${semI(p)}</span>
+        </div>
+        <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${cap.nombre}</div>
+        <div style="font-size:10px;color:var(--text3);margin-bottom:8px;font-family:var(--mono)">Secc. ${cap.secNum}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:8px">
+          <div style="background:rgba(255,255,255,.03);border-radius:5px;padding:5px;text-align:center">
+            <div style="font-size:13px;font-weight:600;color:var(--green);font-family:var(--mono)">${fmt(cap.cap)}</div>
+            <div style="font-size:9px;color:var(--text3)">Capturas F1</div>
+          </div>
+          <div style="background:rgba(255,255,255,.03);border-radius:5px;padding:5px;text-align:center">
+            <div style="font-size:13px;font-weight:600;color:var(--accent);font-family:var(--mono)">${fmt(cap.votosF2)}</div>
+            <div style="font-size:9px;color:var(--text3)">Votos F2</div>
+          </div>
+        </div>
+        <div style="font-size:13px;font-weight:700;color:${c};font-family:var(--mono);text-align:center;margin-bottom:6px">${p}% <span style="font-size:10px;font-weight:400;color:var(--text3)">de ${fmt(cap.meta)} meta</span></div>
+        <div style="height:5px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden;margin-bottom:8px">
+          <div style="width:${p}%;height:100%;background:${c};border-radius:99px"></div>
+        </div>
+        <div style="display:flex;gap:4px">
+          <button onclick="event.stopPropagation();drillF1('cap','${cap.id}')" style="flex:1;font-size:10px;font-family:var(--mono);padding:4px;background:rgba(255,255,255,.04);border:1px solid var(--border2);border-radius:5px;color:var(--text2);cursor:pointer">Ver detalle</button>
+          <button onclick="event.stopPropagation();alertarCapturista('${cap.id}')" style="flex:1;font-size:10px;font-family:var(--mono);padding:4px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:5px;color:var(--red);cursor:pointer">🚨 Alertar</button>
+        </div>
+      </div>`;
+    }).join('')}
+    </div>
+  </div>`;
+}
+
+function buildCuadCapturistas(caps){
+  const cols=Math.min(caps.length,4);
+  return`<div style="margin-bottom:14px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em">👤 Cuadrante Capturistas — ${caps.length} asignados</div>
+      <div style="display:flex;gap:6px">
+        <span style="font-size:10px;color:var(--green)">🟢 ${caps.filter(c=>pct(c.cap,c.meta)>=70).length}</span>
+        <span style="font-size:10px;color:var(--amber)">🟡 ${caps.filter(c=>{const p=pct(c.cap,c.meta);return p>=40&&p<70;}).length}</span>
+        <span style="font-size:10px;color:var(--red)">🔴 ${caps.filter(c=>pct(c.cap,c.meta)<40).length}</span>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:8px">
+    ${caps.map(cap=>{
+      const p=pct(cap.cap,cap.meta); const c=semC(p);
+      return`<div style="background:var(--bg2);border:1px solid ${c.replace('var(','rgba(').replace(')',', .25)')};border-left:3px solid ${c};border-radius:8px;padding:12px;cursor:pointer" onclick="drillF1('cap','${cap.id}')">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div style="width:28px;height:28px;background:${c.replace('var(','rgba(').replace(')',', .15)')};border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:${c}">${cap.nombre.split(' ').map(w=>w[0]).slice(0,2).join('')}</div>
+          <span style="font-size:16px">${semI(p)}</span>
+        </div>
+        <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${cap.nombre}</div>
+        <div style="font-size:10px;color:var(--text3);margin-bottom:8px;font-family:var(--mono)">Secc. ${cap.secNum}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:8px">
+          <div style="background:rgba(255,255,255,.03);border-radius:5px;padding:5px;text-align:center">
+            <div style="font-size:13px;font-weight:600;color:var(--green);font-family:var(--mono)">${fmt(cap.cap)}</div>
+            <div style="font-size:9px;color:var(--text3)">Capturas F1</div>
+          </div>
+          <div style="background:rgba(255,255,255,.03);border-radius:5px;padding:5px;text-align:center">
+            <div style="font-size:13px;font-weight:600;color:var(--accent);font-family:var(--mono)">${fmt(cap.votosF2)}</div>
+            <div style="font-size:9px;color:var(--text3)">Votos F2</div>
+          </div>
+        </div>
+        <div style="font-size:13px;font-weight:700;color:${c};font-family:var(--mono);text-align:center;margin-bottom:6px">${p}% <span style="font-size:10px;font-weight:400;color:var(--text3)">de ${fmt(cap.meta)} meta</span></div>
+        <div style="height:5px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden;margin-bottom:8px">
+          <div style="width:${p}%;height:100%;background:${c};border-radius:99px"></div>
+        </div>
+        <div style="display:flex;gap:4px">
+          <button onclick="event.stopPropagation();drillF1('cap','${cap.id}')" style="flex:1;font-size:10px;font-family:var(--mono);padding:4px;background:rgba(255,255,255,.04);border:1px solid var(--border2);border-radius:5px;color:var(--text2);cursor:pointer">Ver detalle</button>
+          <button onclick="event.stopPropagation();alertarCapturista('${cap.id}')" style="flex:1;font-size:10px;font-family:var(--mono);padding:4px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:5px;color:var(--red);cursor:pointer">🚨 Alertar</button>
+        </div>
+      </div>`;
+    }).join('')}
+    </div>
+  </div>`;
+}
+
+function detalleCapturista(cap){
+  const p=pct(cap.cap,cap.meta); const c=semC(p);
+  return`<div class="dp">
+    <div class="dp-head">
+      <div>
+        <div class="dp-title">👤 ${cap.nombre}</div>
+        <div class="dp-sub">Secc. ${cap.secNum} · ${cap.munNombre} · ${cap.tel}</div>
+      </div>
+      <button class="dp-close" onclick="drillF1('sec','${cap.seccion}')">×</button>
+    </div>
+    <div class="dp-kpis">
+      <div class="dp-kpi"><div class="dp-kv" style="color:${c}">${p}%</div><div class="dp-kl">Avance F1</div></div>
+      <div class="dp-kpi"><div class="dp-kv" style="color:var(--green)">${fmt(cap.cap)}</div><div class="dp-kl">Capturados</div></div>
+      <div class="dp-kpi"><div class="dp-kv" style="color:var(--text2)">${fmt(cap.meta)}</div><div class="dp-kl">Meta F1</div></div>
+      <div class="dp-kpi"><div class="dp-kv" style="color:var(--amber)">${fmt(cap.meta-cap.cap)}</div><div class="dp-kl">Faltantes</div></div>
+      <div class="dp-kpi"><div class="dp-kv" style="color:var(--accent)">${fmt(cap.votosF2)}</div><div class="dp-kl">Votos F2</div></div>
+    </div>
+    <div style="height:7px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden;margin-bottom:14px">
+      <div style="width:${p}%;height:100%;background:${c};border-radius:99px"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:12px">
+        <div style="font-size:11px;font-weight:500;color:var(--text2);margin-bottom:8px">📊 Fase 1 — Captura</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          <div style="text-align:center;padding:8px;background:rgba(34,197,94,.08);border-radius:6px">
+            <div style="font-size:18px;font-weight:700;color:var(--green);font-family:var(--mono)">${fmt(cap.cap)}</div>
+            <div style="font-size:10px;color:var(--green)">Capturados</div>
+          </div>
+          <div style="text-align:center;padding:8px;background:rgba(245,158,11,.08);border-radius:6px">
+            <div style="font-size:18px;font-weight:700;color:var(--amber);font-family:var(--mono)">${fmt(cap.meta-cap.cap)}</div>
+            <div style="font-size:10px;color:var(--amber)">Faltantes</div>
+          </div>
+        </div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:12px">
+        <div style="font-size:11px;font-weight:500;color:var(--text2);margin-bottom:8px">🗳️ Fase 2 — Votos</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          <div style="text-align:center;padding:8px;background:rgba(59,130,246,.08);border-radius:6px">
+            <div style="font-size:18px;font-weight:700;color:var(--accent);font-family:var(--mono)">${fmt(cap.votosF2)}</div>
+            <div style="font-size:10px;color:var(--accent)">Marcados</div>
+          </div>
+          <div style="text-align:center;padding:8px;background:rgba(255,255,255,.04);border-radius:6px">
+            <div style="font-size:18px;font-weight:700;color:var(--text2);font-family:var(--mono)">${pct(cap.votosF2,cap.cap)}%</div>
+            <div style="font-size:10px;color:var(--text3)">Conversión</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px">
+      <button onclick="alertarCapturista('${cap.id}')" style="flex:1;padding:9px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:7px;color:var(--red);font-size:12px;font-family:var(--mono);cursor:pointer">🚨 Enviar alerta</button>
+      <a href="https://wa.me/52${cap.tel.replace(/-/g,'')}" target="_blank" style="flex:1;padding:9px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:7px;color:var(--green);font-size:12px;font-family:var(--mono);cursor:pointer;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px">📱 WhatsApp</a>
+    </div>
+  </div>`;
+}
+
+function alertarCapturista(capId){
+  const cap=Object.values(CAPS).flat().find(c=>c.id===capId);
+  if(!cap) return;
+  const p=pct(cap.cap,cap.meta);
+  const msg=`⚠️ ALERTA: Tu sección ${cap.secNum} va al ${p}% de la meta (${fmt(cap.cap)} de ${fmt(cap.meta)}). Se requiere acelerar la captura. Reporta tu avance al coordinador.`;
+  document.getElementById('alerta-msg').value=msg;
+  abrirModalAlerta([{nombre:cap.nombre,seccion:cap.secNum,municipio:cap.munNombre,tel:cap.tel}],msg);
+}
+
+
 // ══════════════════════════════════════════════════
 let f2s={nivel:'candidato',df:null,mun:null,dl:null,sec:null,cas:null};
 
@@ -1118,8 +1328,75 @@ function detalleCasilla(cas){
   </div>`;
 }
 
+// ── FILTROS ──────────────────────────────────────────────────────────────────
+let filtros = { mun:'', sec:'', sem:'' };
+
+function aplicarFiltros(){
+  filtros.mun = document.getElementById('flt-mun').value;
+  filtros.sec = document.getElementById('flt-sec').value;
+  filtros.sem = document.getElementById('flt-sem').value;
+
+  // Actualizar opciones de sección según municipio
+  const secSel = document.getElementById('flt-sec');
+  const munId = filtros.mun;
+  const secsPorMun = munId
+    ? DLS.filter(dl=>dl.mun===munId).flatMap(dl=>SECS[dl.id]||[])
+    : Object.values(SECS).flat();
+  const prevSec = secSel.value;
+  secSel.innerHTML = '<option value="">Todas</option>' +
+    secsPorMun.map(s=>`<option value="${s.id}" ${s.id===prevSec?'selected':''}>Secc. ${s.num} — ${s.munNombre}</option>`).join('');
+
+  // Si hay filtro de sección, hacer drill hasta esa sección
+  if(filtros.sec){
+    const sec = Object.values(SECS).flat().find(s=>s.id===filtros.sec);
+    if(sec){ f1s={nivel:'sec',df:null,mun:sec.mun,dl:sec.dl,sec:sec.id,cap:null}; }
+  } else if(filtros.mun){
+    f1s={nivel:'mun',df:null,mun:filtros.mun,dl:null,sec:null,cap:null};
+  } else {
+    f1s={nivel:'candidato',df:null,mun:null,dl:null,sec:null,cap:null};
+  }
+
+  renderCuadF1(); renderMunF1(); updateBcF1(); renderSemaforoGlobal();
+}
+
+function limpiarFiltros(){
+  document.getElementById('flt-mun').value='';
+  document.getElementById('flt-sec').innerHTML='<option value="">Todas</option>';
+  document.getElementById('flt-sem').value='';
+  filtros={mun:'',sec:'',sem:''};
+  drillF1('candidato',null);
+  renderSemaforoGlobal();
+}
+
+function renderSemaforoGlobal(){
+  const el = document.getElementById('semaforo-global');
+  if(!el) return;
+  let secs = Object.values(SECS).flat();
+  if(filtros.mun) secs = secs.filter(s=>s.mun===filtros.mun);
+  const verde   = secs.filter(s=>pct(s.cap,s.meta)>=70).length;
+  const amarillo = secs.filter(s=>{const p=pct(s.cap,s.meta);return p>=40&&p<70;}).length;
+  const rojo    = secs.filter(s=>pct(s.cap,s.meta)<40).length;
+  const total   = secs.length;
+  el.innerHTML = [
+    ['🟢','En meta','≥70%',verde,total,'var(--green)','rgba(34,197,94,.08)','rgba(34,197,94,.2)'],
+    ['🟡','En riesgo','40–69%',amarillo,total,'var(--amber)','rgba(234,179,8,.08)','rgba(234,179,8,.2)'],
+    ['🔴','Bajo meta','<40%',rojo,total,'var(--red)','rgba(239,68,68,.08)','rgba(239,68,68,.2)'],
+  ].map(([ic,lb,rng,n,tot,color,bg,border])=>`
+    <div style="background:${bg};border:1px solid ${border};border-radius:8px;padding:12px 14px;cursor:pointer" onclick="document.getElementById('flt-sem').value='${lb==='En meta'?'verde':lb==='En riesgo'?'amarillo':'rojo'}';aplicarFiltros()">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <span style="font-size:11px;font-weight:500;color:${color}">${ic} ${lb}</span>
+        <span style="font-size:10px;color:${color};font-family:var(--mono)">${rng}</span>
+      </div>
+      <div style="font-size:22px;font-weight:700;color:${color};font-family:var(--mono)">${n}</div>
+      <div style="font-size:10px;color:${color};opacity:.7">${tot>0?Math.round(n/tot*100):0}% de ${tot} secciones</div>
+      <div style="height:3px;background:rgba(255,255,255,.06);border-radius:99px;margin-top:8px;overflow:hidden">
+        <div style="width:${tot>0?Math.round(n/tot*100):0}%;height:100%;background:${color};border-radius:99px"></div>
+      </div>
+    </div>`).join('');
+}
+
+
 function alertarCas(id){
-  const c=Object.values(CAS_SEC).flat().find(x=>x.id===id);if(!c)return;
   abrirModalAlerta([{nombre:c.rep, seccion:c.secNum, municipio:c.munNombre, tel:'312-000-0000'}], `⚠️ ALERTA: La casilla ${c.id} (Secc.${c.secNum}, ${c.munNombre}) requiere atención inmediata. ${c.incidencia||'Sin reporte de apertura'}. Reporta tu situación de inmediato.`);
 }
 
@@ -1411,7 +1688,7 @@ function tick(){
 setInterval(tick,1000);tick();
 
 // ── INIT ──
-document.addEventListener('DOMContentLoaded',()=>{renderMunF1();renderCuadF1();actualizarConteoAlerta();actualizarHistorialAlertas();});
+document.addEventListener('DOMContentLoaded',()=>{renderMunF1();renderCuadF1();actualizarConteoAlerta();actualizarHistorialAlertas();renderSemaforoGlobal();});
 </script>
 <script src="theme.js">
 // Mostrar botón de menú solo si NO está en iframe
