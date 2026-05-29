@@ -970,51 +970,8 @@ function updateBcF1(){
 }
 
 // ══════════════════════════════════════════════════
-// ══════════════════════════════════════════════════
 // FASE 2
-  const cols=Math.min(caps.length,4);
-  return`<div style="margin-bottom:14px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-      <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em">👤 Cuadrante Capturistas — ${caps.length} asignados</div>
-      <div style="display:flex;gap:6px">
-        <span style="font-size:10px;color:var(--green)">🟢 ${caps.filter(c=>pct(c.cap,c.meta)>=70).length}</span>
-        <span style="font-size:10px;color:var(--amber)">🟡 ${caps.filter(c=>{const p=pct(c.cap,c.meta);return p>=40&&p<70;}).length}</span>
-        <span style="font-size:10px;color:var(--red)">🔴 ${caps.filter(c=>pct(c.cap,c.meta)<40).length}</span>
-      </div>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:8px">
-    ${caps.map(cap=>{
-      const p=pct(cap.cap,cap.meta); const c=semC(p);
-      return`<div style="background:var(--bg2);border:1px solid ${c.replace('var(','rgba(').replace(')',', .25)')};border-left:3px solid ${c};border-radius:8px;padding:12px;cursor:pointer" onclick="drillF1('cap','${cap.id}')">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-          <div style="width:28px;height:28px;background:${c.replace('var(','rgba(').replace(')',', .15)')};border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:${c}">${cap.nombre.split(' ').map(w=>w[0]).slice(0,2).join('')}</div>
-          <span style="font-size:16px">${semI(p)}</span>
-        </div>
-        <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${cap.nombre}</div>
-        <div style="font-size:10px;color:var(--text3);margin-bottom:8px;font-family:var(--mono)">Secc. ${cap.secNum}</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:8px">
-          <div style="background:rgba(255,255,255,.03);border-radius:5px;padding:5px;text-align:center">
-            <div style="font-size:13px;font-weight:600;color:var(--green);font-family:var(--mono)">${fmt(cap.cap)}</div>
-            <div style="font-size:9px;color:var(--text3)">Capturas F1</div>
-          </div>
-          <div style="background:rgba(255,255,255,.03);border-radius:5px;padding:5px;text-align:center">
-            <div style="font-size:13px;font-weight:600;color:var(--accent);font-family:var(--mono)">${fmt(cap.votosF2)}</div>
-            <div style="font-size:9px;color:var(--text3)">Votos F2</div>
-          </div>
-        </div>
-        <div style="font-size:13px;font-weight:700;color:${c};font-family:var(--mono);text-align:center;margin-bottom:6px">${p}% <span style="font-size:10px;font-weight:400;color:var(--text3)">de ${fmt(cap.meta)} meta</span></div>
-        <div style="height:5px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden;margin-bottom:8px">
-          <div style="width:${p}%;height:100%;background:${c};border-radius:99px"></div>
-        </div>
-        <div style="display:flex;gap:4px">
-          <button onclick="event.stopPropagation();drillF1('cap','${cap.id}')" style="flex:1;font-size:10px;font-family:var(--mono);padding:4px;background:rgba(255,255,255,.04);border:1px solid var(--border2);border-radius:5px;color:var(--text2);cursor:pointer">Ver detalle</button>
-          <button onclick="event.stopPropagation();alertarCapturista('${cap.id}')" style="flex:1;font-size:10px;font-family:var(--mono);padding:4px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:5px;color:var(--red);cursor:pointer">🚨 Alertar</button>
-        </div>
-      </div>`;
-    }).join('')}
-    </div>
-  </div>`;
-}
+// ══════════════════════════════════════════════════
 
 function buildCuadCapturistas(caps){
   const cols=Math.min(caps.length,4);
