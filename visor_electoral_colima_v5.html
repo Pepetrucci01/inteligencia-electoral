@@ -284,7 +284,7 @@ function getColor(props, layer){
     return getMetaColor(pct);
   }
   if(layer==='ganador') return getGanadorColor(props.ganador);
-  if(layer==='estatus') return getEstatusColor(props.estatus);
+  if(layer==='estatus') return props.estatus ? getEstatusColor(props.estatus) : '#2a2a4a';
   return '#888';
 }
 
@@ -312,7 +312,8 @@ function buildLegend(layer){
   } else if(layer==='estatus'){
     html=`<div class="leg-item"><div class="leg-col" style="background:#00cc66"></div>FÁCIL</div>
     <div class="leg-item"><div class="leg-col" style="background:#ffaa00"></div>MEDIO</div>
-    <div class="leg-item"><div class="leg-col" style="background:#ff4466"></div>DIFÍCIL</div>`;
+    <div class="leg-item"><div class="leg-col" style="background:#ff4466"></div>DIFÍCIL</div>
+    <div class="leg-item"><div class="leg-col" style="background:#2a2a4a;border:1px solid #555"></div>Sin datos</div>`;
   }
   document.getElementById('leg-items').innerHTML=html;
 }
@@ -334,7 +335,7 @@ function renderSecciones(layer){
         tip+=`<br>Capturados: ${cap.toLocaleString()} / Meta: ${Math.round(metaRef).toLocaleString()} (${pct}%)`;
       }
       if(layer==='ganador') tip+=`<br>Ganador: ${p.ganador||'—'}`;
-      if(layer==='estatus') tip+=`<br>Dificultad: ${p.estatus||'—'}`;
+      if(layer==='estatus') tip+=`<br>Dificultad: ${p.estatus||'Sin datos'}`;
       if(layer==='diputado_local') tip+=`<br>${p.nom_dl}`;
       if(layer==='diputado_federal') tip+=`<br>${p.nom_df}`;
       l.bindTooltip(tip,{sticky:true});
