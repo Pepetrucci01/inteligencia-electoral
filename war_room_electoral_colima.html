@@ -313,6 +313,31 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
             <span class="card-title">Avance por municipio vs. meta 2027</span>
             <span style="font-size:10px;font-family:var(--mono);color:var(--text3)">10 municipios · 393 secciones</span>
           </div>
+
+          <!-- FILTROS SOBRE LA TABLA -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border2)">
+            <div>
+              <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Municipio</div>
+              <select id="flt-mun" onchange="aplicarFiltros()" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:5px 8px;outline:none"></select>
+            </div>
+            <div>
+              <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Sección</div>
+              <select id="flt-sec" onchange="aplicarFiltros()" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:5px 8px;outline:none">
+                <option value="">Todas</option>
+              </select>
+            </div>
+            <div>
+              <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Semáforo</div>
+              <select id="flt-sem" onchange="aplicarFiltros()" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:5px 8px;outline:none">
+                <option value="">Todos</option>
+                <option value="verde">🟢 En meta</option>
+                <option value="amarillo">🟡 En riesgo</option>
+                <option value="rojo">🔴 Bajo meta</option>
+              </select>
+            </div>
+            <button onclick="limpiarFiltros()" style="margin-top:18px;padding:5px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text3);font-size:11px;font-family:var(--mono);cursor:pointer;white-space:nowrap">✕ Limpiar</button>
+          </div>
+
           <div class="tw">
             <table class="t" id="mun-table">
               <thead><tr>
@@ -374,32 +399,6 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
     <!-- DIVIDER CUADRANTES F1 -->
     <div class="divider"></div>
     <div class="section-title">📍 Navegación territorial por cuadrantes — clic en cualquier nivel para profundizar</div>
-
-    <!-- FILTROS RÁPIDOS -->
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;margin-bottom:14px;align-items:end">
-      <div>
-        <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">Municipio</div>
-        <select id="flt-mun" onchange="aplicarFiltros()" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:12px;padding:7px 10px;outline:none">
-          <option value="">Todos</option>
-        </select>
-      </div>
-      <div>
-        <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">Sección</div>
-        <select id="flt-sec" onchange="aplicarFiltros()" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:12px;padding:7px 10px;outline:none">
-          <option value="">Todas</option>
-        </select>
-      </div>
-      <div>
-        <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">Semáforo</div>
-        <select id="flt-sem" onchange="aplicarFiltros()" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:12px;padding:7px 10px;outline:none">
-          <option value="">Todos</option>
-          <option value="verde">🟢 En meta</option>
-          <option value="amarillo">🟡 En riesgo</option>
-          <option value="rojo">🔴 Bajo meta</option>
-        </select>
-      </div>
-      <button onclick="limpiarFiltros()" style="padding:7px 14px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text3);font-size:11px;font-family:var(--mono);cursor:pointer;white-space:nowrap">✕ Limpiar</button>
-    </div>
 
     <!-- RESUMEN SEMÁFORO GLOBAL -->
     <div id="semaforo-global" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px"></div>
@@ -759,14 +758,29 @@ let f1s={nivel:'candidato',df:null,mun:null,dl:null,sec:null,cap:null};
 
 function renderMunF1(){
   const p=parseFloat(document.getElementById('cfg-pct').value)||6;
-  const munsSorted = WR_SORT.col ? [...MUNS].sort((a,b)=>{
+  const munFiltro = filtros ? filtros.mun : '';
+  const semFiltro = filtros ? filtros.sem : '';
+
+  let munsBase = MUNS;
+  // Filtrar por municipio
+  if(munFiltro) munsBase = munsBase.filter(m=>m.id===munFiltro);
+  // Filtrar por semáforo
+  if(semFiltro) munsBase = munsBase.filter(m=>{
+    const pv=pct(m.cap,Math.round(m.meta*(p/6)));
+    if(semFiltro==='verde')    return pv>=10;
+    if(semFiltro==='amarillo') return pv>=5&&pv<10;
+    if(semFiltro==='rojo')     return pv<5;
+    return true;
+  });
+
+  const munsSorted = WR_SORT.col ? [...munsBase].sort((a,b)=>{
     const pa = pct(a.cap, Math.round(a.meta*(p/6)));
     const pb = pct(b.cap, Math.round(b.meta*(p/6)));
     const va = WR_SORT.col==='pct' ? parseFloat(pa) : WR_SORT.col==='n' ? a.n : a[WR_SORT.col];
     const vb = WR_SORT.col==='pct' ? parseFloat(pb) : WR_SORT.col==='n' ? b.n : b[WR_SORT.col];
     if(typeof va==='string') return WR_SORT.asc ? va.localeCompare(vb) : vb.localeCompare(va);
     return WR_SORT.asc ? va-vb : vb-va;
-  }) : MUNS;
+  }) : munsBase;
 
   document.getElementById('mun-tbody').innerHTML=munsSorted.map(m=>{
     const meta=Math.round(m.meta*(p/6));
