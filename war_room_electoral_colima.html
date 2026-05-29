@@ -1402,12 +1402,13 @@ function aplicarFiltros(){
   filtros.sec = document.getElementById('flt-sec').value;
   filtros.sem = document.getElementById('flt-sem').value;
 
-  // Actualizar opciones de sección según municipio
+  // Actualizar opciones de sección según municipio (usa datos reales si están disponibles)
   const secSel = document.getElementById('flt-sec');
   const munId = filtros.mun;
-  const secsPorMun = munId
-    ? DLS.filter(dl=>dl.mun===munId).flatMap(dl=>SECS[dl.id]||[])
-    : Object.values(SECS).flat();
+  const useReal = window.SECS_REAL && Object.keys(window.SECS_REAL).length > 0;
+  const secsPorMun = useReal
+    ? (munId ? (window.SECS_REAL[munId]||[]) : Object.values(window.SECS_REAL).flat())
+    : (munId ? DLS.filter(dl=>dl.mun===munId).flatMap(dl=>SECS[dl.id]||[]) : Object.values(SECS).flat());
   const prevSec = secSel.value;
   secSel.innerHTML = '<option value="">Todas</option>' +
     secsPorMun.map(s=>`<option value="${s.id}" ${s.id===prevSec?'selected':''}>Secc. ${s.num} — ${s.munNombre}</option>`).join('');
@@ -1969,6 +1970,103 @@ function buildCuadCapturistasF2(caps){
   </div>`;
 }
 
+// ══════════════════════════════════════════════════
+// SECCIONES REALES DESDE SUPABASE
+// ══════════════════════════════════════════════════
+const SUPA_URL = 'https://dyirhwwmykskpuvzcafx.supabase.co';
+const SUPA_KEY = 'sb_publishable_15ryvEoNMYqJr4bHm7fi0g_BcvPMMrK';
+
+// Mapa nombre municipio Supabase → id interno MUNS
+const MUN_NAME_MAP = {
+  'TECOMÁN':'TEC','MANZANILLO':'MAN','COLIMA':'COL','VILLA DE ÁLVAREZ':'VDA',
+  'VILLA DE ALVAREZ':'VDA','ARMERÍA':'ARM','ARMERIA':'ARM','COMALA':'CML',
+  'CUAUHTÉMOC':'CUA','CUAUHTEMOC':'CUA','IXTLAHUACÁN':'IXT','IXTLAHUACAN':'IXT',
+  'MINATITLÁN':'MIN','MINATITLAN':'MIN','COQUIMATLÁN':'COQ','COQUIMATLAN':'COQ'
+};
+
+// Objeto global de secciones reales: { 'TEC': [{id,num,mun,munNombre,cap,meta,cas},...], ... }
+window.SECS_REAL = {};
+
+async function cargarSeccionesSupabase() {
+  try {
+    let all = [];
+    let from = 0;
+    const pageSize = 1000;
+    while(true) {
+      const res = await fetch(
+        `${SUPA_URL}/rest/v1/secciones_electorales_colima?select=seccion,municipio,meta_proyectada&limit=${pageSize}&offset=${from}&order=municipio,seccion`,
+        { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` } }
+      );
+      if(!res.ok) break;
+      const chunk = await res.json();
+      if(!Array.isArray(chunk) || chunk.length === 0) break;
+      all = all.concat(chunk);
+      if(chunk.length < pageSize) break;
+      from += pageSize;
+    }
+
+    // Agrupar por municipio
+    const porMun = {};
+    all.forEach(s => {
+      const munId = MUN_NAME_MAP[s.municipio?.toUpperCase().trim()] || null;
+      if(!munId) return;
+      if(!porMun[munId]) porMun[munId] = [];
+      porMun[munId].push({
+        id: 'S' + s.seccion,
+        num: s.seccion,
+        mun: munId,
+        munNombre: MUNS.find(m=>m.id===munId)?.n || s.municipio,
+        cap: window.AVANCE_SECCION ? (window.AVANCE_SECCION[s.seccion] || 0) : 0,
+        meta: Math.round(s.meta_proyectada || 0),
+        cas: 1
+      });
+    });
+
+    // Reconstruir SECS con datos reales agrupados por DL simulado
+    // Limpiamos SECS y los reconstruimos por municipio
+    Object.keys(SECS).forEach(k => delete SECS[k]);
+    Object.entries(porMun).forEach(([munId, secciones]) => {
+      const dlKey = 'DL_' + munId;
+      SECS[dlKey] = secciones;
+      // Aseguramos que DLS tenga esta referencia
+      if(!DLS.find(d=>d.id===dlKey)) {
+        DLS.push({id:dlKey, n:'Dist. '+munId, mun:munId,
+          munNombre: secciones[0]?.munNombre || munId,
+          cap: secciones.reduce((s,r)=>s+r.cap,0),
+          meta: secciones.reduce((s,r)=>s+r.meta,0),
+          secs: secciones.length, cas: secciones.length});
+      }
+    });
+
+    window.SECS_REAL = porMun;
+
+    // Actualizar filtros de sección
+    poblarFiltrosSecciones();
+
+    console.log(`✅ Secciones reales cargadas: ${all.length} secciones`);
+  } catch(e) {
+    console.warn('⚠️ No se pudieron cargar secciones de Supabase:', e);
+  }
+}
+
+function poblarFiltrosSecciones() {
+  // Actualiza el select flt-sec y cap-flt-sec según municipio seleccionado
+  const munFiltro = document.getElementById('flt-mun')?.value || '';
+  const secSel = document.getElementById('flt-sec');
+  const capSecSel = document.getElementById('cap-flt-sec');
+
+  const munId = munFiltro || null;
+  const secciones = munId
+    ? (window.SECS_REAL[munId] || [])
+    : Object.values(window.SECS_REAL).flat();
+
+  const opts = '<option value="">Todas</option>' +
+    secciones.map(s=>`<option value="${s.id}">Secc. ${s.num} — ${s.munNombre}</option>`).join('');
+
+  if(secSel) secSel.innerHTML = opts;
+  if(capSecSel) capSecSel.innerHTML = opts;
+}
+
 document.addEventListener('DOMContentLoaded',()=>{
   // Poblar selectores de municipio
   const munOpts = MUNS.map(m=>`<option value="${m.id}">${m.n}</option>`).join('');
@@ -1978,6 +2076,9 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(fltMun) fltMun.innerHTML = '<option value="">Todos</option>' + munOpts;
   if(f2FltMun) f2FltMun.innerHTML = '<option value="">Todos</option>' + munOpts;
   if(capFltMun) capFltMun.innerHTML = '<option value="">Todos</option>' + munOpts;
+
+  // Cargar secciones reales de Supabase
+  cargarSeccionesSupabase();
 
   renderMunF1();
   renderCuadF1();
