@@ -396,6 +396,54 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
       </div>
     </div>
 
+    <!-- TABLA CAPTURISTAS -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-h">
+        <span class="card-title">👤 Avance por capturista</span>
+        <span id="cap-tabla-count" style="font-size:10px;font-family:var(--mono);color:var(--text3)"></span>
+      </div>
+      <!-- Filtros tabla capturistas -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border2)">
+        <div>
+          <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Municipio</div>
+          <select id="cap-flt-mun" onchange="renderTablaCapturistas()" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:5px 8px;outline:none"></select>
+        </div>
+        <div>
+          <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Sección</div>
+          <select id="cap-flt-sec" onchange="renderTablaCapturistas()" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:5px 8px;outline:none">
+            <option value="">Todas</option>
+          </select>
+        </div>
+        <div>
+          <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Semáforo</div>
+          <select id="cap-flt-sem" onchange="renderTablaCapturistas()" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:5px 8px;outline:none">
+            <option value="">Todos</option>
+            <option value="verde">🟢 En meta</option>
+            <option value="amarillo">🟡 En riesgo</option>
+            <option value="rojo">🔴 Bajo meta</option>
+          </select>
+        </div>
+        <button onclick="limpiarFiltrosCap()" style="margin-top:18px;padding:5px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text3);font-size:11px;font-family:var(--mono);cursor:pointer;white-space:nowrap">✕ Limpiar</button>
+      </div>
+      <div class="tw">
+        <table class="t" id="cap-table">
+          <thead><tr>
+            <th onclick="sortCap('nombre')" style="cursor:pointer;user-select:none">Capturista <span id="sort-cap-nombre" style="color:var(--text3)">↕</span></th>
+            <th onclick="sortCap('secNum')" style="cursor:pointer;user-select:none">Sección <span id="sort-cap-secNum" style="color:var(--text3)">↕</span></th>
+            <th onclick="sortCap('munNombre')" style="cursor:pointer;user-select:none">Municipio <span id="sort-cap-munNombre" style="color:var(--text3)">↕</span></th>
+            <th class="r" onclick="sortCap('cap')" style="cursor:pointer;user-select:none">Capturados <span id="sort-cap-cap" style="color:var(--text3)">↕</span></th>
+            <th class="r" onclick="sortCap('meta')" style="cursor:pointer;user-select:none">Meta <span id="sort-cap-meta" style="color:var(--text3)">↕</span></th>
+            <th class="r" onclick="sortCap('pct')" style="cursor:pointer;user-select:none">% Avance <span id="sort-cap-pct" style="color:var(--text3)">↕</span></th>
+            <th>Progreso</th>
+            <th class="r" onclick="sortCap('votosF2')" style="cursor:pointer;user-select:none">Votos F2 <span id="sort-cap-votosF2" style="color:var(--text3)">↕</span></th>
+            <th>Semáforo</th>
+            <th>Acción</th>
+          </tr></thead>
+          <tbody id="cap-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- DIVIDER CUADRANTES F1 -->
     <div class="divider"></div>
     <div class="section-title">📍 Navegación territorial por cuadrantes — clic en cualquier nivel para profundizar</div>
@@ -1710,7 +1758,111 @@ function tick(){
 setInterval(tick,1000);tick();
 
 // ── INIT ──
-// ── FILTROS F2 ────────────────────────────────────────────────────────────────
+// ── TABLA CAPTURISTAS ────────────────────────────────────────────────────────
+let CAP_SORT = {col: null, asc: true};
+
+function renderTablaCapturistas(){
+  const munFiltro = document.getElementById('cap-flt-mun') ? document.getElementById('cap-flt-mun').value : '';
+  const secFiltro = document.getElementById('cap-flt-sec') ? document.getElementById('cap-flt-sec').value : '';
+  const semFiltro = document.getElementById('cap-flt-sem') ? document.getElementById('cap-flt-sem').value : '';
+
+  // Actualizar secciones según municipio
+  const secSel = document.getElementById('cap-flt-sec');
+  if(secSel && munFiltro !== secSel.dataset.lastMun){
+    const secsPorMun = munFiltro
+      ? DLS.filter(dl=>dl.mun===munFiltro).flatMap(dl=>SECS[dl.id]||[])
+      : Object.values(SECS).flat();
+    secSel.innerHTML = '<option value="">Todas</option>' +
+      secsPorMun.map(s=>`<option value="${s.id}">Secc. ${s.num} — ${s.munNombre}</option>`).join('');
+    secSel.dataset.lastMun = munFiltro;
+  }
+
+  // Obtener todos los capturistas
+  let todos = Object.values(CAPS).flat();
+
+  // Filtrar
+  if(munFiltro) todos = todos.filter(c=>c.mun===munFiltro);
+  if(secFiltro) todos = todos.filter(c=>c.seccion===secFiltro);
+  if(semFiltro) todos = todos.filter(c=>{
+    const p=pct(c.cap,c.meta);
+    if(semFiltro==='verde')    return p>=10;
+    if(semFiltro==='amarillo') return p>=5&&p<10;
+    if(semFiltro==='rojo')     return p<5;
+    return true;
+  });
+
+  // Ordenar
+  if(CAP_SORT.col){
+    todos = [...todos].sort((a,b)=>{
+      let va = CAP_SORT.col==='pct' ? pct(a.cap,a.meta) : a[CAP_SORT.col];
+      let vb = CAP_SORT.col==='pct' ? pct(b.cap,b.meta) : b[CAP_SORT.col];
+      if(typeof va==='string') return CAP_SORT.asc ? va.localeCompare(vb) : vb.localeCompare(va);
+      return CAP_SORT.asc ? va-vb : vb-va;
+    });
+  }
+
+  // Actualizar contador
+  const count = document.getElementById('cap-tabla-count');
+  if(count) count.textContent = todos.length + ' capturistas';
+
+  // Render filas
+  const tbody = document.getElementById('cap-tbody');
+  if(!tbody) return;
+  if(!todos.length){
+    tbody.innerHTML=`<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--text3);font-size:12px">Sin capturistas para los filtros seleccionados</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = todos.map(cap=>{
+    const p=pct(cap.cap,cap.meta); const c=semC(p);
+    const initials=cap.nombre.split(' ').map(w=>w[0]).slice(0,2).join('');
+    return`<tr onclick="drillF1('sec','${cap.seccion}')" style="cursor:pointer">
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:26px;height:26px;background:${c.replace('var(','rgba(').replace(')',', .15)')};border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:${c};flex-shrink:0">${initials}</div>
+          <div>
+            <div style="font-size:12px;font-weight:500;color:var(--text)">${cap.nombre}</div>
+            <div style="font-size:10px;color:var(--text3);font-family:var(--mono)">${cap.tel}</div>
+          </div>
+        </div>
+      </td>
+      <td class="mono" style="font-size:12px">Secc. ${cap.secNum}</td>
+      <td style="font-size:12px;color:var(--text2)">${cap.munNombre}</td>
+      <td class="mono r" style="color:var(--green)">${fmt(cap.cap)}</td>
+      <td class="mono r" style="color:var(--text2)">${fmt(cap.meta)}</td>
+      <td class="mono r" style="color:${c};font-weight:600">${p}%</td>
+      <td><div class="mbar" style="max-width:80px"><div class="mbar-f" style="width:${Math.min(p/10*100,100)}%;background:${c}"></div></div></td>
+      <td class="mono r" style="color:var(--accent)">${fmt(cap.votosF2)}</td>
+      <td style="text-align:center;font-size:14px">${semI(p)}</td>
+      <td>
+        <button onclick="event.stopPropagation();alertarCapturista('${cap.id}')" style="font-size:10px;font-family:var(--mono);padding:3px 8px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:5px;color:var(--red);cursor:pointer;white-space:nowrap">🚨 Alertar</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function sortCap(col){
+  if(CAP_SORT.col===col){ CAP_SORT.asc=!CAP_SORT.asc; }
+  else{ CAP_SORT.col=col; CAP_SORT.asc=col==='nombre'||col==='munNombre'; }
+  ['nombre','secNum','munNombre','cap','meta','pct','votosF2'].forEach(c=>{
+    const el=document.getElementById('sort-cap-'+c);
+    if(el){el.textContent='↕';el.style.color='var(--text3)';}
+  });
+  const activeEl=document.getElementById('sort-cap-'+col);
+  if(activeEl){activeEl.textContent=CAP_SORT.asc?'↑':'↓';activeEl.style.color='var(--green)';}
+  renderTablaCapturistas();
+}
+
+function limpiarFiltrosCap(){
+  const fm=document.getElementById('cap-flt-mun');
+  const fs=document.getElementById('cap-flt-sec');
+  const fsem=document.getElementById('cap-flt-sem');
+  if(fm) fm.value='';
+  if(fs){fs.innerHTML='<option value="">Todas</option>';fs.dataset.lastMun='';}
+  if(fsem) fsem.value='';
+  renderTablaCapturistas();
+}
+
+
 let filtrosF2 = { mun:'', sec:'', est:'' };
 
 function aplicarFiltrosF2(){
@@ -1826,10 +1978,18 @@ document.addEventListener('DOMContentLoaded',()=>{
   const munOpts = MUNS.map(m=>`<option value="${m.id}">${m.n}</option>`).join('');
   const fltMun = document.getElementById('flt-mun');
   const f2FltMun = document.getElementById('f2-flt-mun');
+  const capFltMun = document.getElementById('cap-flt-mun');
   if(fltMun) fltMun.innerHTML = '<option value="">Todos</option>' + munOpts;
   if(f2FltMun) f2FltMun.innerHTML = '<option value="">Todos</option>' + munOpts;
+  if(capFltMun) capFltMun.innerHTML = '<option value="">Todos</option>' + munOpts;
 
-  renderMunF1();renderCuadF1();actualizarConteoAlerta();actualizarHistorialAlertas();renderSemaforoGlobal();renderSemaforoF2();
+  renderMunF1();
+  renderCuadF1();
+  renderTablaCapturistas();
+  actualizarConteoAlerta();
+  actualizarHistorialAlertas();
+  renderSemaforoGlobal();
+  renderSemaforoF2();
 });
 </script>
 <script src="theme.js">
