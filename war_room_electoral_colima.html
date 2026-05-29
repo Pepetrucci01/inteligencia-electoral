@@ -1994,23 +1994,26 @@ async function cargarSeccionesSupabase(munId = null) {
     return;
   }
 
+  // Nombre exacto del municipio en la BD
+  const MUN_BD_NAME = {
+    'TEC':'TECOMÁN','MIN':'MINATITLÁN','IXT':'IXTLAHUACÁN','CML':'COMALA',
+    'ARM':'ARMERÍA','VDA':'VILLA DE ALVAREZ','MAN':'MANZANILLO',
+    'COL':'COLIMA','CUA':'CUAUHTÉMOC','COQ':'COQUIMATLÁN'
+  };
+
   try {
-    const munNombre = MUNS.find(m=>m.id===munId)?.n?.toUpperCase() || '';
-    const munAlt = munNombre.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    const bdNombre = MUN_BD_NAME[munId] || '';
+    if(!bdNombre) return;
 
     const res = await fetch(
-      `${SUPA_URL}/rest/v1/secciones_electorales_colima?select=seccion,municipio,meta_proyectada&order=seccion`,
+      `${SUPA_URL}/rest/v1/secciones_electorales_colima?select=seccion,municipio,meta_proyectada&municipio=eq.${encodeURIComponent(bdNombre)}&order=seccion`,
       { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` } }
     );
     if(!res.ok) return;
     const all = await res.json();
 
-    // Filtrar por municipio
+    // Mapear secciones
     const secciones = all
-      .filter(s => {
-        const m = (s.municipio||'').toUpperCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-        return m === munAlt || MUN_NAME_MAP[s.municipio?.toUpperCase().trim()] === munId;
-      })
       .map(s => ({
         id: 'S' + s.seccion,
         num: s.seccion,
