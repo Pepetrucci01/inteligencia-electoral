@@ -1102,6 +1102,7 @@ function exportarSecciones() {
   XLSX.writeFile(wb, nombre);
 }
 
+function showTab(t){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.rtab').forEach(b=>b.classList.remove('active'));
   document.getElementById('sc-'+t).classList.add('active');
