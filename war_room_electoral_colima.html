@@ -2057,7 +2057,12 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(f2FltMun) f2FltMun.innerHTML = '<option value="">Todos</option>' + munOpts;
   if(capFltMun) capFltMun.innerHTML = '<option value="">Todos</option>' + munOpts;
 
-  // Secciones se cargan bajo demanda al seleccionar municipio
+  // Precargar secciones de todos los municipios en segundo plano
+  setTimeout(() => {
+    MUNS.forEach((m, i) => {
+      setTimeout(() => cargarSeccionesSupabase(m.id), i * 300);
+    });
+  }, 2000); // Esperar 2s para que cargue lo importante primero
 
   renderMunF1();
   renderCuadF1();
