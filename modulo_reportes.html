@@ -380,14 +380,20 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
 
     <select id="fil-df" onchange="aplicarFiltroSecciones()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:11px;padding:5px 10px;outline:none;cursor:pointer;">
       <option value="">Todos los Dist. Federales</option>
-      <option>DF-01 COLIMA</option><option>DF-02 MANZANILLO</option>
+      <option value="1">DF-01 Colima</option>
+      <option value="2">DF-02 Valle de Las Garzas</option>
     </select>
 
     <select id="fil-dl" onchange="aplicarFiltroSecciones()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:11px;padding:5px 10px;outline:none;cursor:pointer;">
       <option value="">Todos los Dist. Locales</option>
-      <option>DL-1</option><option>DL-2</option><option>DL-3</option><option>DL-4</option>
-      <option>DL-5 COQUIMATLAN</option><option>DL-6</option><option>DL-7</option>
-      <option>DL-8</option><option>DL-9</option><option>DL-10</option>
+      <option value="1">DL-01</option><option value="2">DL-02</option>
+      <option value="3">DL-03</option><option value="4">DL-04</option>
+      <option value="5">DL-05</option><option value="6">DL-06</option>
+      <option value="7">DL-07</option><option value="8">DL-08</option>
+      <option value="9">DL-09</option><option value="10">DL-10</option>
+      <option value="11">DL-11</option><option value="12">DL-12</option>
+      <option value="13">DL-13</option><option value="14">DL-14</option>
+      <option value="15">DL-15</option><option value="16">DL-16</option>
     </select>
 
     <select id="fil-semaforo" onchange="aplicarFiltroSecciones()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:11px;padding:5px 10px;outline:none;cursor:pointer;">
@@ -922,38 +928,38 @@ buildMunTable();
 // DATOS DE SECCIONES (muestra representativa Colima)
 // ══════════════════════════════════════════════════════
 const SEC_DATA = [
-  {sec:1,  municipio:'Colima',       df:'DF-01 COLIMA',    dl:'DL-1', cap:12, meta:180, dificultad:'FACIL'},
-  {sec:2,  municipio:'Colima',       df:'DF-01 COLIMA',    dl:'DL-1', cap:8,  meta:210, dificultad:'MEDIO'},
-  {sec:3,  municipio:'Colima',       df:'DF-01 COLIMA',    dl:'DL-2', cap:15, meta:195, dificultad:'FACIL'},
-  {sec:4,  municipio:'Colima',       df:'DF-01 COLIMA',    dl:'DL-2', cap:3,  meta:175, dificultad:'DIFICIL'},
-  {sec:5,  municipio:'Colima',       df:'DF-01 COLIMA',    dl:'DL-2', cap:22, meta:220, dificultad:'FACIL'},
-  {sec:24, municipio:'Villa de Álv.',df:'DF-01 COLIMA',    dl:'DL-3', cap:18, meta:240, dificultad:'FACIL'},
-  {sec:25, municipio:'Villa de Álv.',df:'DF-01 COLIMA',    dl:'DL-3', cap:5,  meta:190, dificultad:'MEDIO'},
-  {sec:26, municipio:'Villa de Álv.',df:'DF-01 COLIMA',    dl:'DL-3', cap:0,  meta:165, dificultad:'DIFICIL'},
-  {sec:27, municipio:'Villa de Álv.',df:'DF-01 COLIMA',    dl:'DL-4', cap:9,  meta:200, dificultad:'MEDIO'},
-  {sec:45, municipio:'Comala',       df:'DF-01 COLIMA',    dl:'DL-4', cap:14, meta:130, dificultad:'FACIL'},
-  {sec:46, municipio:'Comala',       df:'DF-01 COLIMA',    dl:'DL-4', cap:2,  meta:120, dificultad:'DIFICIL'},
-  {sec:60, municipio:'Cuauhtémoc',   df:'DF-01 COLIMA',    dl:'DL-6', cap:11, meta:155, dificultad:'FACIL'},
-  {sec:61, municipio:'Cuauhtémoc',   df:'DF-01 COLIMA',    dl:'DL-6', cap:4,  meta:140, dificultad:'MEDIO'},
-  {sec:80, municipio:'Minatitlán',   df:'DF-01 COLIMA',    dl:'DL-7', cap:7,  meta:95,  dificultad:'MEDIO'},
-  {sec:81, municipio:'Minatitlán',   df:'DF-01 COLIMA',    dl:'DL-7', cap:0,  meta:88,  dificultad:'DIFICIL'},
-  {sec:100,municipio:'Ixtlahuacán',  df:'DF-01 COLIMA',    dl:'DL-8', cap:6,  meta:110, dificultad:'MEDIO'},
-  {sec:101,municipio:'Ixtlahuacán',  df:'DF-01 COLIMA',    dl:'DL-8', cap:3,  meta:105, dificultad:'DIFICIL'},
-  {sec:120,municipio:'Armería',      df:'DF-02 MANZANILLO',dl:'DL-9', cap:16, meta:185, dificultad:'FACIL'},
-  {sec:121,municipio:'Armería',      df:'DF-02 MANZANILLO',dl:'DL-9', cap:9,  meta:175, dificultad:'FACIL'},
-  {sec:122,municipio:'Armería',      df:'DF-02 MANZANILLO',dl:'DL-9', cap:1,  meta:160, dificultad:'DIFICIL'},
-  {sec:138,municipio:'Villa de Álv.',df:'DF-01 COLIMA',    dl:'DL-4', cap:7,  meta:511, dificultad:'MEDIO'},
-  {sec:150,municipio:'Coquimatlán',  df:'DF-01 COLIMA',    dl:'DL-5 COQUIMATLAN', cap:8, meta:145, dificultad:'MEDIO'},
-  {sec:151,municipio:'Coquimatlán',  df:'DF-01 COLIMA',    dl:'DL-5 COQUIMATLAN', cap:2, meta:130, dificultad:'DIFICIL'},
-  {sec:200,municipio:'Tecomán',      df:'DF-02 MANZANILLO',dl:'DL-10',cap:25, meta:310, dificultad:'FACIL'},
-  {sec:201,municipio:'Tecomán',      df:'DF-02 MANZANILLO',dl:'DL-10',cap:19, meta:290, dificultad:'FACIL'},
-  {sec:202,municipio:'Tecomán',      df:'DF-02 MANZANILLO',dl:'DL-10',cap:4,  meta:275, dificultad:'MEDIO'},
-  {sec:203,municipio:'Tecomán',      df:'DF-02 MANZANILLO',dl:'DL-10',cap:0,  meta:260, dificultad:'DIFICIL'},
-  {sec:250,municipio:'Manzanillo',   df:'DF-02 MANZANILLO',dl:'DL-9', cap:30, meta:380, dificultad:'FACIL'},
-  {sec:251,municipio:'Manzanillo',   df:'DF-02 MANZANILLO',dl:'DL-9', cap:22, meta:360, dificultad:'FACIL'},
-  {sec:252,municipio:'Manzanillo',   df:'DF-02 MANZANILLO',dl:'DL-9', cap:8,  meta:340, dificultad:'MEDIO'},
-  {sec:253,municipio:'Manzanillo',   df:'DF-02 MANZANILLO',dl:'DL-9', cap:1,  meta:320, dificultad:'DIFICIL'},
-  {sec:254,municipio:'Manzanillo',   df:'DF-02 MANZANILLO',dl:'DL-9', cap:0,  meta:300, dificultad:'DIFICIL'},
+  {sec:1,  municipio:'Colima',       df:'1', dl:'1',  cap:12, meta:180, dificultad:'FACIL'},
+  {sec:2,  municipio:'Colima',       df:'1', dl:'1',  cap:8,  meta:210, dificultad:'MEDIO'},
+  {sec:3,  municipio:'Colima',       df:'1', dl:'2',  cap:15, meta:195, dificultad:'FACIL'},
+  {sec:4,  municipio:'Colima',       df:'1', dl:'2',  cap:3,  meta:175, dificultad:'DIFICIL'},
+  {sec:5,  municipio:'Colima',       df:'1', dl:'2',  cap:22, meta:220, dificultad:'FACIL'},
+  {sec:24, municipio:'Villa de Álv.',df:'1', dl:'3',  cap:18, meta:240, dificultad:'FACIL'},
+  {sec:25, municipio:'Villa de Álv.',df:'1', dl:'3',  cap:5,  meta:190, dificultad:'MEDIO'},
+  {sec:26, municipio:'Villa de Álv.',df:'1', dl:'3',  cap:0,  meta:165, dificultad:'DIFICIL'},
+  {sec:27, municipio:'Villa de Álv.',df:'1', dl:'4',  cap:9,  meta:200, dificultad:'MEDIO'},
+  {sec:45, municipio:'Comala',       df:'1', dl:'4',  cap:14, meta:130, dificultad:'FACIL'},
+  {sec:46, municipio:'Comala',       df:'1', dl:'4',  cap:2,  meta:120, dificultad:'DIFICIL'},
+  {sec:60, municipio:'Cuauhtémoc',   df:'1', dl:'6',  cap:11, meta:155, dificultad:'FACIL'},
+  {sec:61, municipio:'Cuauhtémoc',   df:'1', dl:'6',  cap:4,  meta:140, dificultad:'MEDIO'},
+  {sec:80, municipio:'Minatitlán',   df:'1', dl:'7',  cap:7,  meta:95,  dificultad:'MEDIO'},
+  {sec:81, municipio:'Minatitlán',   df:'1', dl:'7',  cap:0,  meta:88,  dificultad:'DIFICIL'},
+  {sec:100,municipio:'Ixtlahuacán',  df:'1', dl:'8',  cap:6,  meta:110, dificultad:'MEDIO'},
+  {sec:101,municipio:'Ixtlahuacán',  df:'1', dl:'8',  cap:3,  meta:105, dificultad:'DIFICIL'},
+  {sec:120,municipio:'Armería',      df:'2', dl:'9',  cap:16, meta:185, dificultad:'FACIL'},
+  {sec:121,municipio:'Armería',      df:'2', dl:'9',  cap:9,  meta:175, dificultad:'FACIL'},
+  {sec:122,municipio:'Armería',      df:'2', dl:'9',  cap:1,  meta:160, dificultad:'DIFICIL'},
+  {sec:138,municipio:'Villa de Álv.',df:'1', dl:'4',  cap:7,  meta:511, dificultad:'MEDIO'},
+  {sec:150,municipio:'Coquimatlán',  df:'1', dl:'5',  cap:8,  meta:145, dificultad:'MEDIO'},
+  {sec:151,municipio:'Coquimatlán',  df:'1', dl:'5',  cap:2,  meta:130, dificultad:'DIFICIL'},
+  {sec:200,municipio:'Tecomán',      df:'2', dl:'10', cap:25, meta:310, dificultad:'FACIL'},
+  {sec:201,municipio:'Tecomán',      df:'2', dl:'10', cap:19, meta:290, dificultad:'FACIL'},
+  {sec:202,municipio:'Tecomán',      df:'2', dl:'10', cap:4,  meta:275, dificultad:'MEDIO'},
+  {sec:203,municipio:'Tecomán',      df:'2', dl:'11', cap:0,  meta:260, dificultad:'DIFICIL'},
+  {sec:250,municipio:'Manzanillo',   df:'2', dl:'12', cap:30, meta:380, dificultad:'FACIL'},
+  {sec:251,municipio:'Manzanillo',   df:'2', dl:'12', cap:22, meta:360, dificultad:'FACIL'},
+  {sec:252,municipio:'Manzanillo',   df:'2', dl:'13', cap:8,  meta:340, dificultad:'MEDIO'},
+  {sec:253,municipio:'Manzanillo',   df:'2', dl:'13', cap:1,  meta:320, dificultad:'DIFICIL'},
+  {sec:254,municipio:'Manzanillo',   df:'2', dl:'14', cap:0,  meta:300, dificultad:'DIFICIL'},
 ];
 
 let secSortField = 'pct';
@@ -1041,8 +1047,8 @@ function buildSecTable(data) {
     return `<tr>
       <td style="font-family:var(--mono);font-weight:600;color:var(--accent)">${s.sec}</td>
       <td>${s.municipio}</td>
-      <td style="font-size:10px;color:var(--text3);font-family:var(--mono)">${s.df}</td>
-      <td style="font-size:10px;color:var(--text3);font-family:var(--mono)">${s.dl}</td>
+      <td style="font-size:10px;color:var(--text3);font-family:var(--mono)">${s.df === '1' ? 'DF-01 Colima' : 'DF-02 Valle Garzas'}</td>
+      <td style="font-size:10px;color:var(--text3);font-family:var(--mono)">DL-${s.dl.padStart(2,'0')}</td>
       <td class="cell-num" style="color:var(--text)">${s.cap.toLocaleString()}</td>
       <td class="cell-num" style="color:var(--text2)">${s.meta.toLocaleString()}</td>
       <td class="cell-num">
