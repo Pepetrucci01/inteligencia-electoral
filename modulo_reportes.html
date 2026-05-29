@@ -366,25 +366,92 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
 
 <!-- ═══════════ POR MUNICIPIO ═══════════ -->
 <div class="screen" id="sc-municipal">
-  <div class="card" style="margin-bottom:14px">
-    <div class="card-head"><div class="card-title">Avance vs meta por municipio</div><div class="card-meta">meta calculada con 6% sobre voto ganador</div></div>
-    <div class="chart-wrap" style="height:280px">
-      <canvas id="ch-municipios" role="img" aria-label="Avance por municipio: Tecomán 14.5%, Armería 7.8%, Colima 7.3%, Villa de Álvarez 6%, Manzanillo 4.3%, Comala 3.8%, Cuauhtémoc 2.6%, Ixtlahuacán 2.9%, Coquimatlán 1.7%, Minatitlán 1.5%">Avance municipal ordenado de mayor a menor.</canvas>
+
+  <!-- ── FILTROS ── -->
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;padding:12px 14px;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;">
+    <span style="font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;flex-shrink:0">🔍 Filtrar:</span>
+
+    <select id="fil-municipio" onchange="aplicarFiltroSecciones()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:11px;padding:5px 10px;outline:none;cursor:pointer;">
+      <option value="">Todos los municipios</option>
+      <option>Tecomán</option><option>Armería</option><option>Colima</option>
+      <option>Villa de Álv.</option><option>Manzanillo</option><option>Comala</option>
+      <option>Cuauhtémoc</option><option>Ixtlahuacán</option><option>Minatitlán</option><option>Coquimatlán</option>
+    </select>
+
+    <select id="fil-df" onchange="aplicarFiltroSecciones()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:11px;padding:5px 10px;outline:none;cursor:pointer;">
+      <option value="">Todos los Dist. Federales</option>
+      <option>DF-01 COLIMA</option><option>DF-02 MANZANILLO</option>
+    </select>
+
+    <select id="fil-dl" onchange="aplicarFiltroSecciones()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:11px;padding:5px 10px;outline:none;cursor:pointer;">
+      <option value="">Todos los Dist. Locales</option>
+      <option>DL-1</option><option>DL-2</option><option>DL-3</option><option>DL-4</option>
+      <option>DL-5 COQUIMATLAN</option><option>DL-6</option><option>DL-7</option>
+      <option>DL-8</option><option>DL-9</option><option>DL-10</option>
+    </select>
+
+    <select id="fil-semaforo" onchange="aplicarFiltroSecciones()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:11px;padding:5px 10px;outline:none;cursor:pointer;">
+      <option value="">Todos los semáforos</option>
+      <option value="critico">🔴 Crítico (&lt;5%)</option>
+      <option value="bajo">🟡 Bajo (5-10%)</option>
+      <option value="alto">🟢 Alto (&gt;10%)</option>
+    </select>
+
+    <button onclick="limpiarFiltrosSecciones()" style="margin-left:auto;font-family:var(--mono);font-size:10px;padding:5px 12px;border-radius:5px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;">✕ Limpiar</button>
+    <span id="fil-contador" style="font-family:var(--mono);font-size:10px;color:var(--text3)"></span>
+  </div>
+
+  <!-- ── VISTA: MUNICIPIOS (default) ── -->
+  <div id="vista-municipios">
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-head"><div class="card-title">Avance vs meta por municipio</div><div class="card-meta">meta calculada con 6% sobre voto ganador</div></div>
+      <div class="chart-wrap" style="height:280px">
+        <canvas id="ch-municipios" role="img" aria-label="Avance por municipio">Avance municipal ordenado de mayor a menor.</canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-title">Detalle por municipio</div><div class="card-meta" style="color:var(--text3);font-size:10px">Clic en fila para ver secciones del municipio</div></div>
+      <div class="table-wrap">
+        <table class="rt">
+          <thead><tr>
+            <th>Municipio</th><th class="r">Capturados</th><th class="r">Meta 2027</th><th class="r">% Avance</th>
+            <th class="r">Validados</th><th class="r">Seg. vota</th><th class="r">Riesgo</th><th class="r">Dup.</th><th>Semáforo</th>
+          </tr></thead>
+          <tbody id="tb-mun"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
-  <div class="card">
-    <div class="card-head"><div class="card-title">Detalle por municipio</div></div>
-    <div class="table-wrap">
-      <table class="rt">
-        <thead><tr>
-          <th>Municipio</th><th class="r">Capturados</th><th class="r">Meta 2027</th><th class="r">% Avance</th>
-          <th class="r">Validados</th><th class="r">Seg. vota</th><th class="r">Riesgo</th><th class="r">Dup.</th><th>Semáforo</th>
-        </tr></thead>
-        <tbody id="tb-mun"></tbody>
-      </table>
+  <!-- ── VISTA: SECCIONES (cuando hay filtro activo) ── -->
+  <div id="vista-secciones" style="display:none">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title" id="sec-vista-titulo">Avance por sección</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div id="sec-kpi-resumen" style="font-family:var(--mono);font-size:10px;color:var(--text3)"></div>
+          <button onclick="exportarSecciones()" style="font-family:var(--mono);font-size:10px;padding:4px 10px;border-radius:5px;border:1px solid rgba(34,197,94,0.3);background:rgba(34,197,94,0.1);color:var(--green);cursor:pointer;">⬇ Excel</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="rt">
+          <thead><tr>
+            <th onclick="sortSec('sec')" style="cursor:pointer;user-select:none">Sección <span id="sort-sec-sec" style="color:var(--text3)">↕</span></th>
+            <th onclick="sortSec('municipio')" style="cursor:pointer;user-select:none">Municipio <span id="sort-sec-municipio" style="color:var(--text3)">↕</span></th>
+            <th onclick="sortSec('df')" style="cursor:pointer;user-select:none">Dist. Fed. <span id="sort-sec-df" style="color:var(--text3)">↕</span></th>
+            <th onclick="sortSec('dl')" style="cursor:pointer;user-select:none">Dist. Local <span id="sort-sec-dl" style="color:var(--text3)">↕</span></th>
+            <th class="r" onclick="sortSec('cap')" style="cursor:pointer;user-select:none">Capturados <span id="sort-sec-cap" style="color:var(--text3)">↕</span></th>
+            <th class="r" onclick="sortSec('meta')" style="cursor:pointer;user-select:none">Meta <span id="sort-sec-meta" style="color:var(--text3)">↕</span></th>
+            <th class="r" onclick="sortSec('pct')" style="cursor:pointer;user-select:none">% Avance <span id="sort-sec-pct" style="color:var(--text3)">↕</span></th>
+            <th onclick="sortSec('dificultad')" style="cursor:pointer;user-select:none">Dificultad <span id="sort-sec-dificultad" style="color:var(--text3)">↕</span></th>
+            <th>Semáforo</th>
+          </tr></thead>
+          <tbody id="tb-secciones"></tbody>
+        </table>
+      </div>
     </div>
   </div>
+
 </div>
 
 <!-- ═══════════ ESTRUCTURA DE CAMPO ═══════════ -->
@@ -851,7 +918,190 @@ function buildMunTable(){
 }
 buildMunTable();
 
-function showTab(t){
+// ══════════════════════════════════════════════════════
+// DATOS DE SECCIONES (muestra representativa Colima)
+// ══════════════════════════════════════════════════════
+const SEC_DATA = [
+  {sec:1,  municipio:'Colima',       df:'DF-01 COLIMA',    dl:'DL-1', cap:12, meta:180, dificultad:'FACIL'},
+  {sec:2,  municipio:'Colima',       df:'DF-01 COLIMA',    dl:'DL-1', cap:8,  meta:210, dificultad:'MEDIO'},
+  {sec:3,  municipio:'Colima',       df:'DF-01 COLIMA',    dl:'DL-2', cap:15, meta:195, dificultad:'FACIL'},
+  {sec:4,  municipio:'Colima',       df:'DF-01 COLIMA',    dl:'DL-2', cap:3,  meta:175, dificultad:'DIFICIL'},
+  {sec:5,  municipio:'Colima',       df:'DF-01 COLIMA',    dl:'DL-2', cap:22, meta:220, dificultad:'FACIL'},
+  {sec:24, municipio:'Villa de Álv.',df:'DF-01 COLIMA',    dl:'DL-3', cap:18, meta:240, dificultad:'FACIL'},
+  {sec:25, municipio:'Villa de Álv.',df:'DF-01 COLIMA',    dl:'DL-3', cap:5,  meta:190, dificultad:'MEDIO'},
+  {sec:26, municipio:'Villa de Álv.',df:'DF-01 COLIMA',    dl:'DL-3', cap:0,  meta:165, dificultad:'DIFICIL'},
+  {sec:27, municipio:'Villa de Álv.',df:'DF-01 COLIMA',    dl:'DL-4', cap:9,  meta:200, dificultad:'MEDIO'},
+  {sec:45, municipio:'Comala',       df:'DF-01 COLIMA',    dl:'DL-4', cap:14, meta:130, dificultad:'FACIL'},
+  {sec:46, municipio:'Comala',       df:'DF-01 COLIMA',    dl:'DL-4', cap:2,  meta:120, dificultad:'DIFICIL'},
+  {sec:60, municipio:'Cuauhtémoc',   df:'DF-01 COLIMA',    dl:'DL-6', cap:11, meta:155, dificultad:'FACIL'},
+  {sec:61, municipio:'Cuauhtémoc',   df:'DF-01 COLIMA',    dl:'DL-6', cap:4,  meta:140, dificultad:'MEDIO'},
+  {sec:80, municipio:'Minatitlán',   df:'DF-01 COLIMA',    dl:'DL-7', cap:7,  meta:95,  dificultad:'MEDIO'},
+  {sec:81, municipio:'Minatitlán',   df:'DF-01 COLIMA',    dl:'DL-7', cap:0,  meta:88,  dificultad:'DIFICIL'},
+  {sec:100,municipio:'Ixtlahuacán',  df:'DF-01 COLIMA',    dl:'DL-8', cap:6,  meta:110, dificultad:'MEDIO'},
+  {sec:101,municipio:'Ixtlahuacán',  df:'DF-01 COLIMA',    dl:'DL-8', cap:3,  meta:105, dificultad:'DIFICIL'},
+  {sec:120,municipio:'Armería',      df:'DF-02 MANZANILLO',dl:'DL-9', cap:16, meta:185, dificultad:'FACIL'},
+  {sec:121,municipio:'Armería',      df:'DF-02 MANZANILLO',dl:'DL-9', cap:9,  meta:175, dificultad:'FACIL'},
+  {sec:122,municipio:'Armería',      df:'DF-02 MANZANILLO',dl:'DL-9', cap:1,  meta:160, dificultad:'DIFICIL'},
+  {sec:138,municipio:'Villa de Álv.',df:'DF-01 COLIMA',    dl:'DL-4', cap:7,  meta:511, dificultad:'MEDIO'},
+  {sec:150,municipio:'Coquimatlán',  df:'DF-01 COLIMA',    dl:'DL-5 COQUIMATLAN', cap:8, meta:145, dificultad:'MEDIO'},
+  {sec:151,municipio:'Coquimatlán',  df:'DF-01 COLIMA',    dl:'DL-5 COQUIMATLAN', cap:2, meta:130, dificultad:'DIFICIL'},
+  {sec:200,municipio:'Tecomán',      df:'DF-02 MANZANILLO',dl:'DL-10',cap:25, meta:310, dificultad:'FACIL'},
+  {sec:201,municipio:'Tecomán',      df:'DF-02 MANZANILLO',dl:'DL-10',cap:19, meta:290, dificultad:'FACIL'},
+  {sec:202,municipio:'Tecomán',      df:'DF-02 MANZANILLO',dl:'DL-10',cap:4,  meta:275, dificultad:'MEDIO'},
+  {sec:203,municipio:'Tecomán',      df:'DF-02 MANZANILLO',dl:'DL-10',cap:0,  meta:260, dificultad:'DIFICIL'},
+  {sec:250,municipio:'Manzanillo',   df:'DF-02 MANZANILLO',dl:'DL-9', cap:30, meta:380, dificultad:'FACIL'},
+  {sec:251,municipio:'Manzanillo',   df:'DF-02 MANZANILLO',dl:'DL-9', cap:22, meta:360, dificultad:'FACIL'},
+  {sec:252,municipio:'Manzanillo',   df:'DF-02 MANZANILLO',dl:'DL-9', cap:8,  meta:340, dificultad:'MEDIO'},
+  {sec:253,municipio:'Manzanillo',   df:'DF-02 MANZANILLO',dl:'DL-9', cap:1,  meta:320, dificultad:'DIFICIL'},
+  {sec:254,municipio:'Manzanillo',   df:'DF-02 MANZANILLO',dl:'DL-9', cap:0,  meta:300, dificultad:'DIFICIL'},
+];
+
+let secSortField = 'pct';
+let secSortAsc = true;
+
+function getSemaforo(pct) {
+  if(pct >= 10) return {label:'Alto',   cls:'b-green', col:'var(--green)'};
+  if(pct >= 5)  return {label:'Bajo',   cls:'b-amber', col:'var(--amber)'};
+  return             {label:'Crítico', cls:'b-red',   col:'var(--red)'};
+}
+
+function aplicarFiltroSecciones() {
+  const mun  = document.getElementById('fil-municipio').value;
+  const df   = document.getElementById('fil-df').value;
+  const dl   = document.getElementById('fil-dl').value;
+  const sem  = document.getElementById('fil-semaforo').value;
+
+  const hayFiltro = mun || df || dl || sem;
+
+  // Mostrar vista adecuada
+  document.getElementById('vista-municipios').style.display = hayFiltro ? 'none' : 'block';
+  document.getElementById('vista-secciones').style.display  = hayFiltro ? 'block' : 'none';
+
+  if(!hayFiltro) {
+    document.getElementById('fil-contador').textContent = '';
+    return;
+  }
+
+  let data = [...SEC_DATA];
+  if(mun) data = data.filter(s => s.municipio === mun);
+  if(df)  data = data.filter(s => s.df === df);
+  if(dl)  data = data.filter(s => s.dl === dl);
+  if(sem) {
+    data = data.filter(s => {
+      const pct = s.meta > 0 ? s.cap/s.meta*100 : 0;
+      if(sem === 'critico') return pct < 5;
+      if(sem === 'bajo')    return pct >= 5 && pct < 10;
+      if(sem === 'alto')    return pct >= 10;
+    });
+  }
+
+  // Título dinámico
+  let titulo = 'Avance por sección';
+  if(mun) titulo += ` — ${mun}`;
+  if(df)  titulo += ` · ${df}`;
+  if(dl)  titulo += ` · ${dl}`;
+  document.getElementById('sec-vista-titulo').textContent = titulo;
+
+  // KPI resumen
+  const totalCap  = data.reduce((s,r) => s+r.cap, 0);
+  const totalMeta = data.reduce((s,r) => s+r.meta, 0);
+  const pctTotal  = totalMeta > 0 ? (totalCap/totalMeta*100).toFixed(1) : 0;
+  const criticas  = data.filter(s => s.meta > 0 && s.cap/s.meta*100 < 5).length;
+  document.getElementById('sec-kpi-resumen').textContent =
+    `${data.length} secciones · ${totalCap.toLocaleString()} cap. / ${totalMeta.toLocaleString()} meta · ${pctTotal}% · ${criticas} críticas`;
+  document.getElementById('fil-contador').textContent = `${data.length} secciones`;
+
+  buildSecTable(data);
+}
+
+function buildSecTable(data) {
+  // Ordenar
+  data.sort((a,b) => {
+    let va, vb;
+    if(secSortField === 'pct') {
+      va = a.meta > 0 ? a.cap/a.meta : 0;
+      vb = b.meta > 0 ? b.cap/b.meta : 0;
+    } else if(secSortField === 'sec')       { va=a.sec;        vb=b.sec; }
+    else if(secSortField === 'municipio')   { va=a.municipio;  vb=b.municipio; }
+    else if(secSortField === 'df')          { va=a.df;         vb=b.df; }
+    else if(secSortField === 'dl')          { va=a.dl;         vb=b.dl; }
+    else if(secSortField === 'cap')         { va=a.cap;        vb=b.cap; }
+    else if(secSortField === 'meta')        { va=a.meta;       vb=b.meta; }
+    else if(secSortField === 'dificultad')  { va=a.dificultad; vb=b.dificultad; }
+    if(va < vb) return secSortAsc ? -1 : 1;
+    if(va > vb) return secSortAsc ? 1 : -1;
+    return 0;
+  });
+
+  const tb = document.getElementById('tb-secciones');
+  tb.innerHTML = data.map(s => {
+    const pct = s.meta > 0 ? parseFloat((s.cap/s.meta*100).toFixed(1)) : 0;
+    const sem = getSemaforo(pct);
+    const difCol = s.dificultad === 'FACIL' ? 'var(--green)' : s.dificultad === 'MEDIO' ? 'var(--amber)' : 'var(--red)';
+    return `<tr>
+      <td style="font-family:var(--mono);font-weight:600;color:var(--accent)">${s.sec}</td>
+      <td>${s.municipio}</td>
+      <td style="font-size:10px;color:var(--text3);font-family:var(--mono)">${s.df}</td>
+      <td style="font-size:10px;color:var(--text3);font-family:var(--mono)">${s.dl}</td>
+      <td class="cell-num" style="color:var(--text)">${s.cap.toLocaleString()}</td>
+      <td class="cell-num" style="color:var(--text2)">${s.meta.toLocaleString()}</td>
+      <td class="cell-num">
+        <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end">
+          <div style="width:50px;height:5px;background:rgba(255,255,255,0.06);border-radius:99px;overflow:hidden">
+            <div style="width:${Math.min(pct/15*100,100)}%;height:100%;background:${sem.col};border-radius:99px"></div>
+          </div>
+          <span style="color:${sem.col};font-weight:500">${pct}%</span>
+        </div>
+      </td>
+      <td><span style="font-size:10px;font-family:var(--mono);color:${difCol}">${s.dificultad}</span></td>
+      <td><span class="badge-sm ${sem.cls}">${sem.label}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function sortSec(field) {
+  if(secSortField === field) secSortAsc = !secSortAsc;
+  else { secSortField = field; secSortAsc = true; }
+  // Update indicators
+  ['sec','municipio','df','dl','cap','meta','pct','dificultad'].forEach(f => {
+    const el = document.getElementById('sort-sec-'+f);
+    if(el) el.textContent = f === field ? (secSortAsc ? '↑' : '↓') : '↕';
+  });
+  aplicarFiltroSecciones();
+}
+
+function limpiarFiltrosSecciones() {
+  document.getElementById('fil-municipio').value = '';
+  document.getElementById('fil-df').value = '';
+  document.getElementById('fil-dl').value = '';
+  document.getElementById('fil-semaforo').value = '';
+  aplicarFiltroSecciones();
+}
+
+function exportarSecciones() {
+  const mun  = document.getElementById('fil-municipio').value;
+  const df   = document.getElementById('fil-df').value;
+  const dl   = document.getElementById('fil-dl').value;
+
+  let data = [...SEC_DATA];
+  if(mun) data = data.filter(s => s.municipio === mun);
+  if(df)  data = data.filter(s => s.df === df);
+  if(dl)  data = data.filter(s => s.dl === dl);
+
+  const rows = [['Sección','Municipio','Dist. Federal','Dist. Local','Capturados','Meta','% Avance','Dificultad','Semáforo']];
+  data.forEach(s => {
+    const pct = s.meta > 0 ? parseFloat((s.cap/s.meta*100).toFixed(1)) : 0;
+    const sem = getSemaforo(pct);
+    rows.push([s.sec, s.municipio, s.df, s.dl, s.cap, s.meta, pct+'%', s.dificultad, sem.label]);
+  });
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb, ws, 'Secciones');
+  const nombre = `secciones${mun?'_'+mun:''}${df?'_'+df:''}${dl?'_'+dl:''}.xlsx`.replace(/\s+/g,'_');
+  XLSX.writeFile(wb, nombre);
+}
+
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.rtab').forEach(b=>b.classList.remove('active'));
   document.getElementById('sc-'+t).classList.add('active');
