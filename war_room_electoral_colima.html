@@ -305,104 +305,56 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
       <div class="kpi pu"><div class="kl">Duplicados</div><div class="kv">408</div><div class="ks">registros a depurar</div></div>
     </div>
 
-    <!-- TABLA MUNICIPIOS + COLUMNA DERECHA -->
-    <div class="g21">
-      <div>
-        <div class="card">
-          <div class="card-h">
-            <span class="card-title">Avance por municipio vs. meta 2027</span>
-            <span style="font-size:10px;font-family:var(--mono);color:var(--text3)">10 municipios · 393 secciones</span>
-          </div>
-
-          <!-- FILTROS SOBRE LA TABLA -->
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border2)">
-            <div>
-              <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Municipio</div>
-              <select id="flt-mun" onchange="aplicarFiltros()" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:5px 8px;outline:none"></select>
-            </div>
-            <div>
-              <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Sección</div>
-              <select id="flt-sec" onchange="aplicarFiltros()" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:5px 8px;outline:none">
-                <option value="">Todas</option>
-              </select>
-            </div>
-            <div>
-              <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Semáforo</div>
-              <select id="flt-sem" onchange="aplicarFiltros()" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:5px 8px;outline:none">
-                <option value="">Todos</option>
-                <option value="verde">🟢 En meta</option>
-                <option value="amarillo">🟡 En riesgo</option>
-                <option value="rojo">🔴 Bajo meta</option>
-              </select>
-            </div>
-            <button onclick="limpiarFiltros()" style="margin-top:18px;padding:5px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text3);font-size:11px;font-family:var(--mono);cursor:pointer;white-space:nowrap">✕ Limpiar</button>
-          </div>
-
-          <div class="tw">
-            <table class="t" id="mun-table">
-              <thead><tr>
-                <th onclick="sortWR('n')" style="cursor:pointer;user-select:none">Municipio <span id="sort-wr-n" style="color:var(--text3)">↕</span></th>
-                <th class="r" onclick="sortWR('cap')" style="cursor:pointer;user-select:none">Capturados <span id="sort-wr-cap" style="color:var(--text3)">↕</span></th>
-                <th class="r" onclick="sortWR('meta')" style="cursor:pointer;user-select:none">Meta 2027 <span id="sort-wr-meta" style="color:var(--text3)">↕</span></th>
-                <th class="r" onclick="sortWR('pct')" style="cursor:pointer;user-select:none">% Avance <span id="sort-wr-pct" style="color:var(--text3)">↕</span></th>
-                <th>Progreso</th>
-                <th>Semáforo</th>
-                <th class="r" onclick="sortWR('v24')" style="cursor:pointer;user-select:none" title="Votos obtenidos en elección 2024 — referencia histórica">2024 <span id="sort-wr-v24" style="color:var(--text3)">↕</span></th>
-              </tr></thead>
-              <tbody id="mun-tbody"></tbody>
-            </table>
-          </div>
-        </div>
+    <!-- TABLA MUNICIPIOS — ANCHO COMPLETO -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-h">
+        <span class="card-title">Avance por municipio vs. meta 2027</span>
+        <span style="font-size:10px;font-family:var(--mono);color:var(--text3)">10 municipios · 393 secciones</span>
       </div>
-      <div>
-        <!-- Alertas -->
-        <div class="card">
-          <div class="card-h">
-            <span class="card-title">Alertas del sistema</span>
-            <span style="font-size:10px;font-family:var(--mono);color:var(--red)">● 3 críticas</span>
-          </div>
-          <div class="al-item"><div class="al-dot" style="background:var(--red)"></div><div><div class="al-title">Secciones sin captura</div><div class="al-desc">Comala (98,99), Coquimatlán (114,119),<br>Manzanillo (207) — 0% avance</div></div></div>
-          <div class="al-item"><div class="al-dot" style="background:var(--red)"></div><div><div class="al-title">408 registros duplicados</div><div class="al-desc">4.1% de la base — requieren<br>depuración urgente</div></div></div>
-          <div class="al-item"><div class="al-dot" style="background:var(--red)"></div><div><div class="al-title">55 secciones ganadas por oposición</div><div class="al-desc">Partido B ganó 14% de secciones<br>en 2024 — zonas de mayor esfuerzo</div></div></div>
-          <div class="al-item"><div class="al-dot" style="background:var(--amber)"></div><div><div class="al-title">Ritmo insuficiente — se requiere ×4.4</div><div class="al-desc">Actual 574/sem · Req. 2,531/sem</div></div></div>
-          <div class="al-item"><div class="al-dot" style="background:var(--amber)"></div><div><div class="al-title">1,845 votantes sin apoyo asignado</div><div class="al-desc">Logística pendiente de asignar</div></div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border2)">
+        <div>
+          <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Municipio</div>
+          <select id="flt-mun" onchange="aplicarFiltros()" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:5px 8px;outline:none"></select>
         </div>
-
-        <!-- Compromiso -->
-        <div class="card">
-          <div class="card-h"><span class="card-title">Nivel de compromiso</span></div>
-          <div class="card-b">
-            <div class="comp-row"><div class="comp-lbl">4 · Moviliza</div><div class="comp-track"><div class="comp-fill" style="width:11.7%;background:var(--green)"></div></div><div class="comp-num" style="color:var(--green)">1,169</div></div>
-            <div class="comp-row"><div class="comp-lbl">3 · Seguro vota</div><div class="comp-track"><div class="comp-fill" style="width:34.3%;background:#16a34a"></div></div><div class="comp-num" style="color:#16a34a">3,432</div></div>
-            <div class="comp-row"><div class="comp-lbl">2 · Simpatiza</div><div class="comp-track"><div class="comp-fill" style="width:32.2%;background:var(--accent)"></div></div><div class="comp-num" style="color:var(--accent)">3,219</div></div>
-            <div class="comp-row"><div class="comp-lbl">1 · Contacto</div><div class="comp-track"><div class="comp-fill" style="width:21.8%;background:var(--text3)"></div></div><div class="comp-num" style="color:var(--text3)">2,180</div></div>
-            <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:11px;font-family:var(--mono)">
-              <span style="color:var(--text3)">VOTO SEGURO (3+4)</span>
-              <span style="color:var(--green);font-weight:600">4,601 — 46%</span>
-            </div>
-          </div>
+        <div>
+          <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Sección</div>
+          <select id="flt-sec" onchange="aplicarFiltros()" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:5px 8px;outline:none">
+            <option value="">Todas</option>
+          </select>
         </div>
-
-        <!-- Origen -->
-        <div class="card">
-          <div class="card-h"><span class="card-title">Origen de captura</span></div>
-          <div class="card-b">
-            <div class="or-row"><div class="or-ic" style="background:rgba(59,130,246,.12);color:var(--accent)">🚪</div><div class="or-nm">Casa por casa</div><div class="or-bar"><div class="or-fill" style="width:45.4%;background:var(--accent)"></div></div><div class="or-num">4,538</div></div>
-            <div class="or-row"><div class="or-ic" style="background:rgba(168,85,247,.12);color:var(--purple)">👥</div><div class="or-nm">Referido</div><div class="or-bar"><div class="or-fill" style="width:25.2%;background:var(--purple)"></div></div><div class="or-num">2,519</div></div>
-            <div class="or-row"><div class="or-ic" style="background:rgba(245,158,11,.12);color:var(--amber)">🎪</div><div class="or-nm">Evento</div><div class="or-bar"><div class="or-fill" style="width:17.1%;background:var(--amber)"></div></div><div class="or-num">1,711</div></div>
-            <div class="or-row"><div class="or-ic" style="background:rgba(6,182,212,.12);color:var(--cyan)">💻</div><div class="or-nm">Digital</div><div class="or-bar"><div class="or-fill" style="width:12.3%;background:var(--cyan)"></div></div><div class="or-num">1,232</div></div>
-          </div>
+        <div>
+          <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Semáforo</div>
+          <select id="flt-sem" onchange="aplicarFiltros()" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:5px 8px;outline:none">
+            <option value="">Todos</option>
+            <option value="verde">🟢 En meta</option>
+            <option value="amarillo">🟡 En riesgo</option>
+            <option value="rojo">🔴 Bajo meta</option>
+          </select>
         </div>
+        <button onclick="limpiarFiltros()" style="margin-top:18px;padding:5px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text3);font-size:11px;font-family:var(--mono);cursor:pointer;white-space:nowrap">✕ Limpiar</button>
+      </div>
+      <div class="tw">
+        <table class="t" id="mun-table">
+          <thead><tr>
+            <th onclick="sortWR('n')" style="cursor:pointer;user-select:none">Municipio <span id="sort-wr-n" style="color:var(--text3)">↕</span></th>
+            <th class="r" onclick="sortWR('cap')" style="cursor:pointer;user-select:none">Capturados <span id="sort-wr-cap" style="color:var(--text3)">↕</span></th>
+            <th class="r" onclick="sortWR('meta')" style="cursor:pointer;user-select:none">Meta 2027 <span id="sort-wr-meta" style="color:var(--text3)">↕</span></th>
+            <th class="r" onclick="sortWR('pct')" style="cursor:pointer;user-select:none">% Avance <span id="sort-wr-pct" style="color:var(--text3)">↕</span></th>
+            <th>Progreso</th>
+            <th>Semáforo</th>
+            <th class="r" onclick="sortWR('v24')" style="cursor:pointer;user-select:none" title="Votos obtenidos en elección 2024 — referencia histórica">2024 <span id="sort-wr-v24" style="color:var(--text3)">↕</span></th>
+          </tr></thead>
+          <tbody id="mun-tbody"></tbody>
+        </table>
       </div>
     </div>
 
-    <!-- TABLA CAPTURISTAS -->
+    <!-- TABLA CAPTURISTAS — ANCHO COMPLETO -->
     <div class="card" style="margin-bottom:14px">
       <div class="card-h">
         <span class="card-title">👤 Avance por capturista</span>
         <span id="cap-tabla-count" style="font-size:10px;font-family:var(--mono);color:var(--text3)"></span>
       </div>
-      <!-- Filtros tabla capturistas -->
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border2)">
         <div>
           <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Municipio</div>
@@ -442,6 +394,50 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
           <tbody id="cap-tbody"></tbody>
         </table>
       </div>
+    </div>
+
+    <!-- 3 TARJETAS EN HORIZONTAL -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
+
+      <!-- Alertas del sistema -->
+      <div class="card">
+        <div class="card-h">
+          <span class="card-title">Alertas del sistema</span>
+          <span style="font-size:10px;font-family:var(--mono);color:var(--red)">● 3 críticas</span>
+        </div>
+        <div class="al-item"><div class="al-dot" style="background:var(--red)"></div><div><div class="al-title">Secciones sin captura</div><div class="al-desc">Comala (98,99), Coquimatlán (114,119),<br>Manzanillo (207) — 0% avance</div></div></div>
+        <div class="al-item"><div class="al-dot" style="background:var(--red)"></div><div><div class="al-title">408 registros duplicados</div><div class="al-desc">4.1% de la base — requieren<br>depuración urgente</div></div></div>
+        <div class="al-item"><div class="al-dot" style="background:var(--red)"></div><div><div class="al-title">55 secciones ganadas por oposición</div><div class="al-desc">Partido B ganó 14% de secciones<br>en 2024 — zonas de mayor esfuerzo</div></div></div>
+        <div class="al-item"><div class="al-dot" style="background:var(--amber)"></div><div><div class="al-title">Ritmo insuficiente — se requiere ×4.4</div><div class="al-desc">Actual 574/sem · Req. 2,531/sem</div></div></div>
+        <div class="al-item"><div class="al-dot" style="background:var(--amber)"></div><div><div class="al-title">1,845 votantes sin apoyo asignado</div><div class="al-desc">Logística pendiente de asignar</div></div></div>
+      </div>
+
+      <!-- Nivel de compromiso -->
+      <div class="card">
+        <div class="card-h"><span class="card-title">Nivel de compromiso</span></div>
+        <div class="card-b">
+          <div class="comp-row"><div class="comp-lbl">4 · Moviliza</div><div class="comp-track"><div class="comp-fill" style="width:11.7%;background:var(--green)"></div></div><div class="comp-num" style="color:var(--green)">1,169</div></div>
+          <div class="comp-row"><div class="comp-lbl">3 · Seguro vota</div><div class="comp-track"><div class="comp-fill" style="width:34.3%;background:#16a34a"></div></div><div class="comp-num" style="color:#16a34a">3,432</div></div>
+          <div class="comp-row"><div class="comp-lbl">2 · Simpatiza</div><div class="comp-track"><div class="comp-fill" style="width:32.2%;background:var(--accent)"></div></div><div class="comp-num" style="color:var(--accent)">3,219</div></div>
+          <div class="comp-row"><div class="comp-lbl">1 · Contacto</div><div class="comp-track"><div class="comp-fill" style="width:21.8%;background:var(--text3)"></div></div><div class="comp-num" style="color:var(--text3)">2,180</div></div>
+          <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:11px;font-family:var(--mono)">
+            <span style="color:var(--text3)">VOTO SEGURO (3+4)</span>
+            <span style="color:var(--green);font-weight:600">4,601 — 46%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Origen de captura -->
+      <div class="card">
+        <div class="card-h"><span class="card-title">Origen de captura</span></div>
+        <div class="card-b">
+          <div class="or-row"><div class="or-ic" style="background:rgba(59,130,246,.12);color:var(--accent)">🚪</div><div class="or-nm">Casa por casa</div><div class="or-bar"><div class="or-fill" style="width:45.4%;background:var(--accent)"></div></div><div class="or-num">4,538</div></div>
+          <div class="or-row"><div class="or-ic" style="background:rgba(168,85,247,.12);color:var(--purple)">👥</div><div class="or-nm">Referido</div><div class="or-bar"><div class="or-fill" style="width:25.2%;background:var(--purple)"></div></div><div class="or-num">2,519</div></div>
+          <div class="or-row"><div class="or-ic" style="background:rgba(245,158,11,.12);color:var(--amber)">🎪</div><div class="or-nm">Evento</div><div class="or-bar"><div class="or-fill" style="width:17.1%;background:var(--amber)"></div></div><div class="or-num">1,711</div></div>
+          <div class="or-row"><div class="or-ic" style="background:rgba(6,182,212,.12);color:var(--cyan)">💻</div><div class="or-nm">Digital</div><div class="or-bar"><div class="or-fill" style="width:12.3%;background:var(--cyan)"></div></div><div class="or-num">1,232</div></div>
+        </div>
+      </div>
+
     </div>
 
     <!-- DIVIDER CUADRANTES F1 -->
