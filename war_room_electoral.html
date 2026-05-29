@@ -538,6 +538,37 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
     <div class="divider"></div>
     <div class="section-title">🗳 Navegación por cuadrantes — Candidato › DF › Municipio › DL › Sección › Casilla</div>
 
+    <!-- FILTROS RÁPIDOS F2 -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;margin-bottom:14px;align-items:end">
+      <div>
+        <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">Municipio</div>
+        <select id="f2-flt-mun" onchange="aplicarFiltrosF2()" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:12px;padding:7px 10px;outline:none">
+          <option value="">Todos</option>
+          ${MUNS.map(m=>`<option value="${m.id}">${m.n}</option>`).join('')}
+        </select>
+      </div>
+      <div>
+        <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">Sección</div>
+        <select id="f2-flt-sec" onchange="aplicarFiltrosF2()" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:12px;padding:7px 10px;outline:none">
+          <option value="">Todas</option>
+        </select>
+      </div>
+      <div>
+        <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">Estatus casilla</div>
+        <select id="f2-flt-est" onchange="aplicarFiltrosF2()" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:12px;padding:7px 10px;outline:none">
+          <option value="">Todos</option>
+          <option value="abierta">🟢 Abierta</option>
+          <option value="sinreporte">🔴 Sin reporte</option>
+          <option value="incidencia">🟡 Incidencia</option>
+          <option value="cerrada">⚫ Cerrada</option>
+        </select>
+      </div>
+      <button onclick="limpiarFiltrosF2()" style="padding:7px 14px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text3);font-size:11px;font-family:var(--mono);cursor:pointer;white-space:nowrap">✕ Limpiar</button>
+    </div>
+
+    <!-- SEMÁFORO GLOBAL F2 -->
+    <div id="semaforo-global-f2" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px"></div>
+
     <!-- BREADCRUMB F2 -->
     <div class="bc" id="bc-f2">
       <span class="bc-item active" onclick="drillF2('candidato',null)">🏛 Candidato</span>
@@ -1218,10 +1249,15 @@ function renderCuadF2(){
       s=>casStats([s.id]),s=>'Secc. '+s.num,s=>`${s.cas} casilla(s)`,
       s=>`drillF2('sec','${s.id}')`,f2s.sec);
   }
-  // Detalle sección con tabla de casillas
+  // Detalle sección con tabla de casillas + cuadrante capturistas F2
   if(f2s.sec){
     const sec=Object.values(SECS).flat().find(s=>s.id===f2s.sec);
-    if(sec)html+=detalleSecF2(sec);
+    if(sec){
+      html+=detalleSecF2(sec);
+      // Cuadrante capturistas en F2
+      const caps = CAPS[sec.id]||[];
+      if(caps.length) html+=buildCuadCapturistasF2(caps);
+    }
   }
   // Detalle casilla
   if(f2s.cas){
@@ -1688,7 +1724,118 @@ function tick(){
 setInterval(tick,1000);tick();
 
 // ── INIT ──
-document.addEventListener('DOMContentLoaded',()=>{renderMunF1();renderCuadF1();actualizarConteoAlerta();actualizarHistorialAlertas();renderSemaforoGlobal();});
+// ── FILTROS F2 ────────────────────────────────────────────────────────────────
+let filtrosF2 = { mun:'', sec:'', est:'' };
+
+function aplicarFiltrosF2(){
+  filtrosF2.mun = document.getElementById('f2-flt-mun').value;
+  filtrosF2.sec = document.getElementById('f2-flt-sec').value;
+  filtrosF2.est = document.getElementById('f2-flt-est').value;
+
+  // Actualizar secciones según municipio
+  const secSel = document.getElementById('f2-flt-sec');
+  const munId = filtrosF2.mun;
+  const secsPorMun = munId
+    ? DLS.filter(dl=>dl.mun===munId).flatMap(dl=>SECS[dl.id]||[])
+    : Object.values(SECS).flat();
+  const prevSec = secSel.value;
+  secSel.innerHTML = '<option value="">Todas</option>' +
+    secsPorMun.map(s=>`<option value="${s.id}" ${s.id===prevSec?'selected':''}>Secc. ${s.num} — ${s.munNombre}</option>`).join('');
+
+  // Hacer drill según filtros
+  if(filtrosF2.sec){
+    const sec = Object.values(SECS).flat().find(s=>s.id===filtrosF2.sec);
+    if(sec) f2s={nivel:'sec',df:null,mun:sec.mun,dl:sec.dl,sec:sec.id,cas:null};
+  } else if(filtrosF2.mun){
+    f2s={nivel:'mun',df:null,mun:filtrosF2.mun,dl:null,sec:null,cas:null};
+  } else {
+    f2s={nivel:'candidato',df:null,mun:null,dl:null,sec:null,cas:null};
+  }
+  renderCuadF2(); renderMunF2(); updateBcF2(); renderSemaforoF2();
+}
+
+function limpiarFiltrosF2(){
+  document.getElementById('f2-flt-mun').value='';
+  document.getElementById('f2-flt-sec').innerHTML='<option value="">Todas</option>';
+  document.getElementById('f2-flt-est').value='';
+  filtrosF2={mun:'',sec:'',est:''};
+  drillF2('candidato',null);
+  renderSemaforoF2();
+}
+
+function renderSemaforoF2(){
+  const el = document.getElementById('semaforo-global-f2');
+  if(!el) return;
+  let todasCas = Object.values(CAS_SEC).flat();
+  if(filtrosF2.mun){
+    const secIds = DLS.filter(dl=>dl.mun===filtrosF2.mun).flatMap(dl=>(SECS[dl.id]||[]).map(s=>s.id));
+    todasCas = todasCas.filter(c=>secIds.includes(c.sec));
+  }
+  const total = todasCas.length;
+  const abiertas   = todasCas.filter(c=>c.estatus==='abierta').length;
+  const sinreporte = todasCas.filter(c=>c.estatus==='sinreporte').length;
+  const incidencia = todasCas.filter(c=>c.estatus==='incidencia').length;
+  const cerradas   = todasCas.filter(c=>c.estatus==='cerrada').length;
+  el.innerHTML = [
+    ['🟢','Abiertas',abiertas,'var(--green)','rgba(34,197,94,.08)','rgba(34,197,94,.2)','abierta'],
+    ['🔴','Sin reporte',sinreporte,'var(--red)','rgba(239,68,68,.08)','rgba(239,68,68,.2)','sinreporte'],
+    ['🟡','Incidencia',incidencia,'var(--amber)','rgba(234,179,8,.08)','rgba(234,179,8,.2)','incidencia'],
+    ['⚫','Cerradas',cerradas,'var(--text2)','rgba(255,255,255,.04)','rgba(255,255,255,.1)','cerrada'],
+  ].map(([ic,lb,n,color,bg,border,val])=>`
+    <div style="background:${bg};border:1px solid ${border};border-radius:8px;padding:12px 14px;cursor:pointer" onclick="document.getElementById('f2-flt-est').value='${val}';aplicarFiltrosF2()">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <span style="font-size:11px;font-weight:500;color:${color}">${ic} ${lb}</span>
+        <span style="font-size:10px;color:${color};font-family:var(--mono)">${total>0?Math.round(n/total*100):0}%</span>
+      </div>
+      <div style="font-size:22px;font-weight:700;color:${color};font-family:var(--mono)">${n}</div>
+      <div style="font-size:10px;color:${color};opacity:.7">de ${total} casillas</div>
+      <div style="height:3px;background:rgba(255,255,255,.06);border-radius:99px;margin-top:8px;overflow:hidden">
+        <div style="width:${total>0?Math.round(n/total*100):0}%;height:100%;background:${color};border-radius:99px"></div>
+      </div>
+    </div>`).join('');
+}
+
+function buildCuadCapturistasF2(caps){
+  const cols=Math.min(caps.length,4);
+  const filtEst = filtrosF2.est;
+  return`<div style="margin-bottom:14px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em">👤 Capturistas en esta sección — Fase 2</div>
+      <div style="display:flex;gap:6px">
+        <span style="font-size:10px;color:var(--green)">🟢 ${caps.filter(c=>c.votosF2>0).length} con votos</span>
+        <span style="font-size:10px;color:var(--red)">🔴 ${caps.filter(c=>c.votosF2===0).length} sin reporte</span>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:8px">
+    ${caps.map(cap=>{
+      const pF1=pct(cap.cap,cap.meta);
+      const pF2=pct(cap.votosF2,cap.cap);
+      const cF1=semC(pF1); const cF2=cap.votosF2>0?'var(--green)':'var(--red)';
+      return`<div style="background:var(--bg2);border:1px solid var(--border2);border-left:3px solid ${cF2};border-radius:8px;padding:12px;cursor:pointer" onclick="alertarCapturista('${cap.id}')">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div style="width:28px;height:28px;background:rgba(255,255,255,.06);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--text)">${cap.nombre.split(' ').map(w=>w[0]).slice(0,2).join('')}</div>
+          <span style="font-size:14px">${cap.votosF2>0?'🟢':'🔴'}</span>
+        </div>
+        <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${cap.nombre}</div>
+        <div style="font-size:10px;color:var(--text3);margin-bottom:8px;font-family:var(--mono)">Secc. ${cap.secNum}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:8px">
+          <div style="background:rgba(255,255,255,.03);border-radius:5px;padding:5px;text-align:center">
+            <div style="font-size:13px;font-weight:600;color:${cF1};font-family:var(--mono)">${pF1}%</div>
+            <div style="font-size:9px;color:var(--text3)">Avance F1</div>
+          </div>
+          <div style="background:rgba(255,255,255,.03);border-radius:5px;padding:5px;text-align:center">
+            <div style="font-size:13px;font-weight:600;color:${cF2};font-family:var(--mono)">${fmt(cap.votosF2)}</div>
+            <div style="font-size:9px;color:var(--text3)">Votos F2</div>
+          </div>
+        </div>
+        <button onclick="event.stopPropagation();alertarCapturista('${cap.id}')" style="width:100%;font-size:10px;font-family:var(--mono);padding:4px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:5px;color:var(--red);cursor:pointer">🚨 Alertar</button>
+      </div>`;
+    }).join('')}
+    </div>
+  </div>`;
+}
+
+document.addEventListener('DOMContentLoaded',()=>{renderMunF1();renderCuadF1();actualizarConteoAlerta();actualizarHistorialAlertas();renderSemaforoGlobal();renderSemaforoF2();});
 </script>
 <script src="theme.js">
 // Mostrar botón de menú solo si NO está en iframe
