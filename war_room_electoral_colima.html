@@ -381,7 +381,6 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
         <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">Municipio</div>
         <select id="flt-mun" onchange="aplicarFiltros()" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:12px;padding:7px 10px;outline:none">
           <option value="">Todos</option>
-          ${MUNS.map(m=>`<option value="${m.id}">${m.n}</option>`).join('')}
         </select>
       </div>
       <div>
@@ -544,7 +543,6 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
         <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">Municipio</div>
         <select id="f2-flt-mun" onchange="aplicarFiltrosF2()" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:12px;padding:7px 10px;outline:none">
           <option value="">Todos</option>
-          ${MUNS.map(m=>`<option value="${m.id}">${m.n}</option>`).join('')}
         </select>
       </div>
       <div>
@@ -835,9 +833,9 @@ function renderCuadF1(){
     if(!semFiltro) return items;
     return items.filter(item=>{
       const p=pct(getCap(item),getMeta(item));
-      if(semFiltro==='verde')    return p>=70;
-      if(semFiltro==='amarillo') return p>=40&&p<70;
-      if(semFiltro==='rojo')     return p<40;
+      if(semFiltro==='verde')    return p>=10;
+      if(semFiltro==='amarillo') return p>=5&&p<10;
+      if(semFiltro==='rojo')     return p<5;
       return true;
     });
   }
@@ -1383,9 +1381,9 @@ function renderSemaforoGlobal(){
   if(!el) return;
   let secs = Object.values(SECS).flat();
   if(filtros.mun) secs = secs.filter(s=>s.mun===filtros.mun);
-  const verde   = secs.filter(s=>pct(s.cap,s.meta)>=70).length;
-  const amarillo = secs.filter(s=>{const p=pct(s.cap,s.meta);return p>=40&&p<70;}).length;
-  const rojo    = secs.filter(s=>pct(s.cap,s.meta)<40).length;
+  const verde    = secs.filter(s=>pct(s.cap,s.meta)>=10).length;
+  const amarillo = secs.filter(s=>{const p=pct(s.cap,s.meta);return p>=5&&p<10;}).length;
+  const rojo     = secs.filter(s=>pct(s.cap,s.meta)<5).length;
   const total   = secs.length;
   el.innerHTML = [
     ['🟢','En meta','≥70%',verde,total,'var(--green)','rgba(34,197,94,.08)','rgba(34,197,94,.2)'],
@@ -1809,7 +1807,16 @@ function buildCuadCapturistasF2(caps){
   </div>`;
 }
 
-document.addEventListener('DOMContentLoaded',()=>{renderMunF1();renderCuadF1();actualizarConteoAlerta();actualizarHistorialAlertas();renderSemaforoGlobal();renderSemaforoF2();});
+document.addEventListener('DOMContentLoaded',()=>{
+  // Poblar selectores de municipio
+  const munOpts = MUNS.map(m=>`<option value="${m.id}">${m.n}</option>`).join('');
+  const fltMun = document.getElementById('flt-mun');
+  const f2FltMun = document.getElementById('f2-flt-mun');
+  if(fltMun) fltMun.innerHTML = '<option value="">Todos</option>' + munOpts;
+  if(f2FltMun) f2FltMun.innerHTML = '<option value="">Todos</option>' + munOpts;
+
+  renderMunF1();renderCuadF1();actualizarConteoAlerta();actualizarHistorialAlertas();renderSemaforoGlobal();renderSemaforoF2();
+});
 </script>
 <script src="theme.js">
 // Mostrar botón de menú solo si NO está en iframe
