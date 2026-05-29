@@ -253,7 +253,112 @@ const SDB = {
     } catch(e) {
       console.warn('Audit log skipped:', e.message);
     }
-  }
+  },
+
+  // ── VISOR ELECTORAL — CAPA INSTALACIÓN DÍA E ────────────────
+
+  /**
+   * Obtener todas las casillas con su estatus de instalación.
+   * Usado por el visor para pintar la capa en tiempo real.
+   * Campos retornados: id, numero_seccion, numero_casilla, tipo_casilla,
+   *   estatus_casilla, municipio, lat, lng, hora_apertura,
+   *   incidencias_apertura, presidente_casilla, lista_nominal
+   */
+  async getCasillasInstalacion() {
+    await this.waitReady();
+    const { data, error } = await window.supabase
+      .from('casillas')
+      .select(`
+        id,
+        numero_seccion,
+        numero_casilla,
+        tipo_casilla,
+        estatus_casilla,
+        municipio,
+        lat,
+        lng,
+        hora_apertura,
+        incidencias_apertura,
+        presidente_casilla,
+        lista_nominal,
+        activo
+      `)
+      .eq('activo', true)
+      .order('municipio')
+      .order('numero_seccion');
+    return { data, error };
+  },
+
+  /**
+   * Resumen de instalación por estatus (para contadores en la barra).
+   * Retorna cuántas casillas hay en cada estado.
+   */
+  async getResumenInstalacion() {
+    await this.waitReady();
+    const { data, error } = await window.supabase
+      .from('casillas')
+      .select('estatus_casilla')
+      .eq('activo', true);
+
+    if (error) return { data: null, error };
+
+    // Agrupar por estatus en cliente
+    const resumen = {
+      total:        data.length,
+      instalada:    data.filter(c => c.estatus_casilla === 'instalada').length,
+      no_instalada: data.filter(c => c.estatus_casilla === 'no_instalada').length,
+      suspendida:   data.filter(c => c.estatus_casilla === 'suspendida').length,
+      sin_reporte:  data.filter(c => !c.estatus_casilla).length,
+    };
+    resumen.pct = resumen.total > 0
+      ? Math.round((resumen.instalada / resumen.total) * 100)
+      : 0;
+
+    return { data: resumen, error: null };
+  },
+
+  // ── VISOR ELECTORAL — SECCIONES COLIMA ──────────────────────
+
+  /**
+   * Obtener datos alfanuméricos de secciones electorales de Colima.
+   * Usado por el visor para enriquecer el GeoJSON estático con
+   * datos frescos de Supabase (meta, votos, afluencia, etc.)
+   * Campos: seccion, municipio, lista_nominal, total_votos,
+   *   votos_morena, votos_priand, votos_mc, afluencia,
+   *   estatus_afluencia, meta_proyectada, refuerzo_prioritario
+   */
+  async getSeccionesColima(municipio = null) {
+    await this.waitReady();
+    let query = window.supabase
+      .from('secciones_electorales_colima')
+      .select(`
+        id,
+        seccion,
+        municipio,
+        id_municipio,
+        distrito_federal,
+        distrito_local,
+        lat,
+        lon,
+        lista_nominal,
+        total_votos,
+        votos_morena,
+        votos_priand,
+        votos_mc,
+        afluencia,
+        estatus_afluencia,
+        meta_proyectada,
+        refuerzo_prioritario,
+        metodologia
+      `)
+      .order('seccion');
+
+    if (municipio) query = query.eq('municipio', municipio);
+
+    const { data, error } = await query;
+    return { data, error };
+  },
+
 };
 
 // ── Helper: mostrar ambiente en consola ──────────────────────
