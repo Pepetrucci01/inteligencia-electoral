@@ -829,10 +829,23 @@ function drillF1(nivel,id){
 
 function renderCuadF1(){
   let html='';
-  // Cuadrante candidato siempre
+  const semFiltro = filtros ? filtros.sem : '';
+
+  function filtrarPorSem(items, getCap, getMeta){
+    if(!semFiltro) return items;
+    return items.filter(item=>{
+      const p=pct(getCap(item),getMeta(item));
+      if(semFiltro==='verde')    return p>=70;
+      if(semFiltro==='amarillo') return p>=40&&p<70;
+      if(semFiltro==='rojo')     return p<40;
+      return true;
+    });
+  }
+
+  // Cuadrante candidato
   const capTot=MUNS.reduce((s,m)=>s+m.cap,0);
   const metaTot=MUNS.reduce((s,m)=>s+m.meta,0);
-  const pv=pct(capTot,metaTot);const c=semC(pv);
+  const pv=pct(capTot,metaTot); const c=semC(pv);
   html+=`<div style="margin-bottom:14px">
     <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">🏛 Cuadrante del candidato — Estado de Colima</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:10px">
@@ -841,10 +854,10 @@ function renderCuadF1(){
         <div style="font-size:28px;font-weight:700;font-family:var(--mono);color:${c};line-height:1;margin-bottom:4px">${pv}%</div>
         <div style="height:5px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden;margin-bottom:6px"><div style="width:${pv}%;height:100%;background:${c};border-radius:99px"></div></div>
         <div style="font-size:11px;font-family:var(--mono);color:var(--text2)">${fmt(capTot)} / ${fmt(metaTot)}</div>
-        <div style="font-size:10px;color:var(--text3);margin-top:3px">392 secciones · 10 municipios</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:3px">388 secciones · 10 municipios</div>
       </div>
-      ${DFS.map(df=>{
-        const dpv=pct(df.cap,df.meta);const dc=semC(dpv);
+      ${filtrarPorSem(DFS,d=>d.cap,d=>d.meta).map(df=>{
+        const dpv=pct(df.cap,df.meta); const dc=semC(dpv);
         return`<div style="background:var(--bg2);border:1px solid ${f1s.df===df.id?'var(--accent)':dc.replace('var(','rgba(').replace(')',', .3)')};border-left:3px solid ${dc};border-radius:8px;padding:14px;cursor:pointer" onclick="drillF1('df','${df.id}')">
           <div style="font-size:10px;font-family:var(--mono);color:var(--text3);margin-bottom:4px">${df.id}</div>
           <div style="font-size:13px;font-weight:600;margin-bottom:4px">${df.n.replace('Distrito Federal ','DF ')}</div>
@@ -858,34 +871,38 @@ function renderCuadF1(){
     </div>
   </div>`;
 
-  // Municipios del DF
   if(f1s.df){
     const df=DFS.find(d=>d.id===f1s.df);
-    const muns=MUNS.filter(m=>df.munIds.includes(m.id));
+    const muns=filtrarPorSem(MUNS.filter(m=>df.munIds.includes(m.id)),m=>m.cap,m=>m.meta);
     html+=buildCuadF1('Municipio','Municipios en '+df.n,muns,
       m=>m.cap,m=>m.meta,m=>m.n,m=>`${m.secs} secc.`,
       m=>`drillF1('mun','${m.id}')`,f1s.mun);
   }
-  // DLs del municipio
   if(f1s.mun){
     const mun=MUNS.find(m=>m.id===f1s.mun);
-    const dls=DLS.filter(dl=>dl.mun===f1s.mun);
+    const dls=filtrarPorSem(DLS.filter(dl=>dl.mun===f1s.mun),dl=>dl.cap,dl=>dl.meta);
     html+=buildCuadF1('Dist. Local','Distritos locales en '+mun.n,dls,
       dl=>dl.cap,dl=>dl.meta,dl=>dl.n,dl=>`${dl.secs} secc.`,
       dl=>`drillF1('dl','${dl.id}')`,f1s.dl);
   }
-  // Secciones del DL
   if(f1s.dl){
     const dl=DLS.find(d=>d.id===f1s.dl);
-    const secs=SECS[f1s.dl]||[];
+    const secs=filtrarPorSem(SECS[f1s.dl]||[],s=>s.cap,s=>s.meta);
     html+=buildCuadF1('Sección','Secciones en '+dl.n,secs,
-      s=>s.cap,s=>s.meta,s=>'Sección '+s.num,s=>`${s.cas} casilla(s)`,
+      s=>s.cap,s=>s.meta,s=>'Secc. '+s.num,s=>`${s.cas} casilla(s)`,
       s=>`drillF1('sec','${s.id}')`,f1s.sec);
   }
-  // Detalle sección
   if(f1s.sec){
     const sec=Object.values(SECS).flat().find(s=>s.id===f1s.sec);
-    if(sec) html+=detalleSecF1(sec);
+    if(sec){
+      html+=detalleSecF1(sec);
+      const caps=filtrarPorSem(CAPS[sec.id]||[],cap=>cap.cap,cap=>cap.meta);
+      if(caps.length) html+=buildCuadCapturistas(caps);
+    }
+  }
+  if(f1s.cap){
+    const cap=Object.values(CAPS).flat().find(c=>c.id===f1s.cap);
+    if(cap) html+=detalleCapturista(cap);
   }
   document.getElementById('cuad-f1').innerHTML=html;
 }
