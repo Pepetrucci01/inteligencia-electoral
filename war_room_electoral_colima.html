@@ -535,6 +535,13 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
           </table>
         </div>
       </div>
+
+      <style>
+      table.t th, table.t td { vertical-align:middle; }
+      #sc-f2 .g21 > div:first-child table th:not(:first-child),
+      #sc-f2 .g21 > div:first-child table td:not(:first-child) { text-align:center !important; }
+      #sc-f2 .g21 > div:first-child table td:nth-child(9) { text-align:center !important; }
+      </style>
       <div>
         <div class="card">
           <div class="card-h">
@@ -1186,14 +1193,14 @@ function renderMunF2(){
     const c=semC(pv);
     return`<tr onclick="drillF2('mun','${m.id}')" class="${f2s.mun===m.id?'sel':''}">
       <td><div class="nm">${m.n}</div></td>
-      <td class="mono r">${m.cas}</td>
-      <td class="mono r" style="color:var(--green)">${st.ab}</td>
-      <td class="mono r" style="color:var(--red)">${st.inc}</td>
-      <td class="mono r" style="color:var(--amber)">${st.sr}</td>
-      <td class="mono r" style="color:var(--green);font-weight:600">${fmt(st.votos)}</td>
-      <td class="mono r" style="color:var(--accent)">${st.nuevos}</td>
-      <td class="mono r" style="color:${c};font-weight:600">${pv}%</td>
-      <td><div class="mbar" style="max-width:80px"><div class="mbar-f" style="width:${Math.min(pv/60*100,100)}%;background:${c}"></div></div></td>
+      <td class="mono" style="text-align:center">${m.cas}</td>
+      <td class="mono" style="text-align:center;color:var(--green)">${st.ab}</td>
+      <td class="mono" style="text-align:center;color:var(--red)">${st.inc}</td>
+      <td class="mono" style="text-align:center;color:var(--amber)">${st.sr}</td>
+      <td class="mono" style="text-align:center;color:var(--green);font-weight:600">${fmt(st.votos)}</td>
+      <td class="mono" style="text-align:center;color:var(--accent)">${st.nuevos}</td>
+      <td class="mono" style="text-align:center;color:${c};font-weight:600">${pv}%</td>
+      <td style="text-align:center"><div class="mbar" style="max-width:80px;margin:0 auto"><div class="mbar-f" style="width:${Math.min(pv/60*100,100)}%;background:${c}"></div></div></td>
       <td style="text-align:center;font-size:13px">${semI(pv)}</td>
     </tr>`;
   }).join('');
