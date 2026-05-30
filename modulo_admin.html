@@ -1768,7 +1768,7 @@ function crearLicenciaConTerminos() {
 // MÓDULO DE PERMISOS — CONECTADO A SUPABASE
 // ══════════════════════════════════════════════════════════════════
 const PERM_URL = 'https://dyirhwwmykskpuvzcafx.supabase.co';
-const PERM_KEY = 'TU_ANON_KEY_AQUI'; // ← Reemplaza con tu anon key
+const PERM_KEY = 'sb_publishable_15ryvEoNMYqJr4bHm7fi0g_BcvPMMrK';
 
 const PERM_COLORES = {
   superadmin:     { bg:'rgba(239,68,68,0.15)',   color:'#ef4444' },
@@ -1784,13 +1784,21 @@ const PERM_MODULOS = { datos:'Datos', visualizacion:'Visualización', reportes:'
 let _permRoles = [], _permPermisos = [], _permRP = {}, _permCambios = {}, _permRolActual = null;
 
 async function permFetch(path, opts={}) {
-  const r = await fetch(`${PERM_URL}/rest/v1/${path}`, {
-    headers: { 'apikey': PERM_KEY, 'Authorization': `Bearer ${PERM_KEY}`,
-      'Content-Type': 'application/json', 'Prefer': 'return=representation', ...opts.headers },
-    ...opts
-  });
-  if (!r.ok) throw new Error(await r.text());
-  const t = await r.text(); return t ? JSON.parse(t) : [];
+  const headers = {
+    'apikey': PERM_KEY,
+    'Authorization': 'Bearer ' + PERM_KEY,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation',
+    ...(opts.headers || {})
+  };
+  const fetchOpts = Object.assign({}, opts, { headers });
+  const r = await fetch(PERM_URL + '/rest/v1/' + path, fetchOpts);
+  if (!r.ok) {
+    const errText = await r.text();
+    throw new Error(errText);
+  }
+  const t = await r.text();
+  return t ? JSON.parse(t) : [];
 }
 
 async function permCargar() {
