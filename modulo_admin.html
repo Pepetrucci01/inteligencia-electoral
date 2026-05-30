@@ -439,84 +439,38 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
 
 <!-- ══════════ PERMISOS ══════════ -->
 <div class="screen" id="sc-permisos">
-  <div class="card">
-    <div class="card-head"><div class="card-title">Matriz de permisos por rol</div></div>
-    <div style="overflow-x:auto;padding:14px 16px;">
-      <table class="perm-table">
-        <thead>
-          <tr>
-            <th style="width:200px">Función</th>
-            <th>Super Admin</th><th>Admin Estatal</th><th>Coordinador Mun.</th><th>Jefe de Sección</th><th>Capturista</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr style="background:var(--bg3)"><td colspan="6" style="font-size:10px;font-family:var(--mono);color:var(--text3);padding:6px 10px">WAR ROOM</td></tr>
-          <tr><td>Ver War Room estatal</td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-part">◑</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td></tr>
-          <tr><td>Modificar meta / config.</td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td></tr>
-          <tr style="background:var(--bg3)"><td colspan="6" style="font-size:10px;font-family:var(--mono);color:var(--text3);padding:6px 10px">CAPTURISTAS</td></tr>
-          <tr><td>Ver todos los capturistas</td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-part">◑</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td></tr>
-          <tr><td>Crear / editar capturistas</td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td></tr>
-          <tr style="background:var(--bg3)"><td colspan="6" style="font-size:10px;font-family:var(--mono);color:var(--text3);padding:6px 10px">MAPA TERRITORIAL</td></tr>
-          <tr><td>Ver mapa completo</td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-part">◑</span></td><td><span class="perm-part">◑</span></td><td><span class="perm-x">✗</span></td></tr>
-          <tr><td>Ver solo su municipio</td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-x">✗</span></td></tr>
-          <tr style="background:var(--bg3)"><td colspan="6" style="font-size:10px;font-family:var(--mono);color:var(--text3);padding:6px 10px">CAPTURA CIUDADANA</td></tr>
-          <tr><td>Capturar nuevos registros</td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td></tr>
-          <tr><td>Editar registros propios</td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td></tr>
-          <tr><td>Editar registros de otros</td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-part">◑</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td></tr>
-          <tr><td>Eliminar registros</td><td><span class="perm-check">✓</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td></tr>
-          <tr><td>Ver datos sensibles (CURP)</td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td></tr>
-          <tr style="background:var(--bg3)"><td colspan="6" style="font-size:10px;font-family:var(--mono);color:var(--text3);padding:6px 10px">REPORTES</td></tr>
-          <tr><td>Ver reportes estatales</td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td></tr>
-          <tr><td>Ver reporte de su municipio</td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td></tr>
-          <tr><td>Exportar a Excel / PDF</td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td></tr>
-          <tr style="background:var(--bg3)"><td colspan="6" style="font-size:10px;font-family:var(--mono);color:var(--text3);padding:6px 10px">ADMINISTRACIÓN</td></tr>
-          <tr><td>Panel de admin completo</td><td><span class="perm-check">✓</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td></tr>
-          <tr><td>Gestionar usuarios</td><td><span class="perm-check">✓</span></td><td><span class="perm-check">✓</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td></tr>
-          <tr><td>Gestionar licencias</td><td><span class="perm-check">✓</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td></tr>
-          <tr><td>Ver auditoría completa</td><td><span class="perm-check">✓</span></td><td><span class="perm-part">◑</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td><td><span class="perm-x">✗</span></td></tr>
-        </tbody>
-      </table>
-      <div style="margin-top:12px;display:flex;gap:16px;font-size:11px;font-family:var(--mono);color:var(--text3)">
-        <span><span class="perm-check">✓</span> Acceso completo</span>
-        <span><span class="perm-part">◑</span> Acceso parcial (solo su ámbito)</span>
-        <span><span class="perm-x">✗</span> Sin acceso</span>
+
+  <!-- VISTA MATRIZ -->
+  <div id="perm-matriz">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">Matriz de permisos por rol</div>
+        <div style="font-size:11px;font-family:var(--mono);color:var(--text3)">Click en un rol para editar sus permisos</div>
+      </div>
+      <div id="perm-matriz-content" style="padding:14px 16px">
+        <div style="display:flex;align-items:center;gap:10px;color:var(--text3);font-size:12px;padding:20px 0">
+          <div style="width:14px;height:14px;border:2px solid rgba(255,255,255,0.1);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite"></div>
+          Cargando permisos...
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="card">
-    <div class="card-head"><div class="card-title">Control de acceso por municipio</div></div>
-    <div class="card-body">
-      <div class="alert info"><span>ℹ</span><span>Cuando un coordinador municipal inicia sesión, solo ve los datos de su municipio asignado. Esta restricción aplica al mapa, reportes y lista de ciudadanos.</span></div>
-      <div class="grid2" style="gap:10px">
-        <div>
-          <div style="font-size:12px;font-weight:500;margin-bottom:8px">Coordinadores activos</div>
-          <table class="at">
-            <thead><tr><th>Coordinador</th><th>Municipio</th><th>Secciones</th></tr></thead>
-            <tbody>
-              <tr><td><div class="cell-name">Coord. Manzanillo</div></td><td><span class="badge b-cyan">Manzanillo</span></td><td class="cell-mono">79</td></tr>
-              <tr><td><div class="cell-name">Coord. Tecomán</div></td><td><span class="badge b-green">Tecomán</span></td><td class="cell-mono">62</td></tr>
-              <tr><td><div class="cell-name">Coord. Colima</div></td><td><span class="badge b-blue">Colima</span></td><td class="cell-mono">99</td></tr>
-              <tr><td><div class="cell-name">Coord. V. Álvarez</div></td><td><span class="badge b-purple">V. Álvarez</span></td><td class="cell-mono">70</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div>
-          <div style="font-size:12px;font-weight:500;margin-bottom:8px">Sin coordinador asignado</div>
-          <div style="display:flex;flex-wrap:wrap;gap:6px">
-            <span class="badge b-red">Armería</span>
-            <span class="badge b-red">Comala</span>
-            <span class="badge b-red">Coquimatlán</span>
-            <span class="badge b-red">Cuauhtémoc</span>
-            <span class="badge b-red">Ixtlahuacán</span>
-            <span class="badge b-red">Minatitlán</span>
-          </div>
-          <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:8px">6 municipios sin coordinador — los capturistas reportan directo al admin estatal</div>
-          <button class="btn primary" style="margin-top:10px;width:100%">+ Asignar coordinadores</button>
-        </div>
+  <!-- VISTA DETALLE ROL -->
+  <div id="perm-detalle" style="display:none">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+      <button onclick="permVolverMatriz()" style="background:none;border:1px solid var(--border2);color:var(--text2);padding:6px 12px;border-radius:5px;font-family:var(--mono);font-size:11px;cursor:pointer">← Volver</button>
+      <div id="perm-det-badge" style="width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:14px;font-weight:600"></div>
+      <div>
+        <div id="perm-det-nombre" style="font-size:15px;font-weight:500;text-transform:capitalize"></div>
+        <div id="perm-det-desc" style="font-size:11px;color:var(--text3)"></div>
       </div>
+      <div id="perm-det-nivel" style="margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--text3);background:var(--bg3);border:1px solid var(--border);padding:4px 10px;border-radius:4px"></div>
+      <button id="perm-save-btn" onclick="permGuardar()" style="display:none;background:var(--accent);color:#fff;border:none;padding:8px 16px;border-radius:6px;font-family:var(--sans);font-size:12px;font-weight:500;cursor:pointer">Guardar cambios</button>
     </div>
+    <div id="perm-detalle-content"></div>
   </div>
+
 </div>
 
 <!-- ══════════ AUDITORÍA ══════════ -->
@@ -1809,5 +1763,192 @@ function crearLicenciaConTerminos() {
   ☰ Menú Principal
 </button>
 
+<script>
+// ══════════════════════════════════════════════════════════════════
+// MÓDULO DE PERMISOS — CONECTADO A SUPABASE
+// ══════════════════════════════════════════════════════════════════
+const PERM_URL = 'https://dyirhwwmykskpuvzcafx.supabase.co';
+const PERM_KEY = 'sb_publishable_15ryvEoNMYqJr4bHm7fi0g_BcvPMMrK';
+
+const PERM_COLORES = {
+  superadmin:     { bg:'rgba(239,68,68,0.15)',   color:'#ef4444' },
+  admin_licencia: { bg:'rgba(245,158,11,0.15)',  color:'#f59e0b' },
+  coordinador:    { bg:'rgba(59,130,246,0.15)',  color:'#3b82f6' },
+  lider_seccion:  { bg:'rgba(168,85,247,0.15)',  color:'#a855f7' },
+  capturista:     { bg:'rgba(34,197,94,0.15)',   color:'#22c55e' },
+  consulta:       { bg:'rgba(90,106,133,0.15)',  color:'#5a6a85' },
+};
+
+const PERM_MODULOS = { datos:'Datos', visualizacion:'Visualización', reportes:'Reportes', admin:'Administración' };
+
+let _permRoles = [], _permPermisos = [], _permRP = {}, _permCambios = {}, _permRolActual = null;
+
+async function permFetch(path, opts={}) {
+  const r = await fetch(`${PERM_URL}/rest/v1/${path}`, {
+    headers: { 'apikey': PERM_KEY, 'Authorization': `Bearer ${PERM_KEY}`,
+      'Content-Type': 'application/json', 'Prefer': 'return=representation', ...opts.headers },
+    ...opts
+  });
+  if (!r.ok) throw new Error(await r.text());
+  const t = await r.text(); return t ? JSON.parse(t) : [];
+}
+
+async function permCargar() {
+  try {
+    [_permRoles, _permPermisos] = await Promise.all([
+      permFetch('roles?order=nivel'),
+      permFetch('permisos?order=modulo,clave'),
+    ]);
+    const rp = await permFetch('roles_permisos?select=rol_id,permiso_id,activo');
+    _permRP = {};
+    _permRoles.forEach(r => _permRP[r.id] = new Set());
+    rp.forEach(x => { if (x.activo) _permRP[x.rol_id]?.add(x.permiso_id); });
+    permRenderMatriz();
+  } catch(e) {
+    document.getElementById('perm-matriz-content').innerHTML =
+      `<div style="color:var(--red);font-size:12px;padding:10px 0">Error: ${e.message}</div>`;
+  }
+}
+
+function permRenderMatriz() {
+  const grupos = {};
+  _permPermisos.forEach(p => { if(!grupos[p.modulo]) grupos[p.modulo]=[]; grupos[p.modulo].push(p); });
+
+  let h = `<div style="overflow-x:auto">
+    <table class="perm-table">
+      <thead><tr>
+        <th style="width:190px;text-align:left">Permiso</th>
+        ${_permRoles.map(r => {
+          const c = PERM_COLORES[r.nombre] || {color:'#5a6a85'};
+          return `<th style="color:${c.color};cursor:pointer" onclick="permVerDetalle('${r.id}')" title="Click para editar">${r.nombre.replace(/_/g,' ')}</th>`;
+        }).join('')}
+      </tr></thead>
+      <tbody>`;
+
+  Object.entries(grupos).forEach(([mod, perms]) => {
+    h += `<tr style="background:var(--bg3)"><td colspan="${_permRoles.length+1}" style="font-size:10px;font-family:var(--mono);color:var(--text3);padding:6px 10px">${PERM_MODULOS[mod]||mod}</td></tr>`;
+    perms.forEach(p => {
+      h += `<tr>
+        <td style="display:flex;align-items:center;gap:6px">
+          ${p.es_critico ? '<span style="width:6px;height:6px;border-radius:50%;background:var(--red);flex-shrink:0;display:inline-block"></span>' : ''}
+          ${p.clave}
+        </td>
+        ${_permRoles.map(r => {
+          const tiene = _permRP[r.id]?.has(p.id);
+          return `<td>${tiene
+            ? '<span style="display:inline-block;width:18px;height:18px;border-radius:4px;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.35);position:relative"><span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:6px;height:6px;border-radius:50%;background:var(--green);display:block"></span></span>'
+            : '<span style="display:inline-block;width:18px;height:18px;border-radius:4px;background:rgba(255,255,255,0.03);border:1px solid var(--border)"></span>'
+          }</td>`;
+        }).join('')}
+      </tr>`;
+    });
+  });
+
+  h += `</tbody></table>
+    <div style="margin-top:12px;display:flex;gap:16px;font-size:11px;font-family:var(--mono);color:var(--text3)">
+      <span>● verde = tiene permiso &nbsp; ○ gris = sin permiso &nbsp; 🔴 = crítico</span>
+      <span style="margin-left:auto">↑ Click en nombre de rol para editar</span>
+    </div></div>`;
+
+  document.getElementById('perm-matriz-content').innerHTML = h;
+}
+
+function permVerDetalle(rolId) {
+  _permRolActual = _permRoles.find(r => r.id === rolId);
+  if (!_permRolActual) return;
+  document.getElementById('perm-matriz').style.display = 'none';
+  document.getElementById('perm-detalle').style.display = 'block';
+
+  const c = PERM_COLORES[_permRolActual.nombre] || {bg:'rgba(90,106,133,0.15)',color:'#5a6a85'};
+  const isSA = _permRolActual.nombre === 'superadmin';
+
+  document.getElementById('perm-det-badge').style.cssText = `width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:14px;font-weight:600;background:${c.bg};color:${c.color}`;
+  document.getElementById('perm-det-badge').textContent = _permRolActual.nombre[0].toUpperCase();
+  document.getElementById('perm-det-nombre').textContent = _permRolActual.nombre.replace(/_/g,' ');
+  document.getElementById('perm-det-desc').textContent = _permRolActual.descripcion || '';
+  document.getElementById('perm-det-nivel').textContent = 'nivel ' + _permRolActual.nivel;
+
+  const grupos = {};
+  _permPermisos.forEach(p => { if(!grupos[p.modulo]) grupos[p.modulo]=[]; grupos[p.modulo].push(p); });
+
+  let h = '';
+  if (isSA) h += `<div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:12px 16px;font-size:12px;color:var(--red);margin-bottom:16px">El superadmin tiene acceso total y no puede ser modificado.</div>`;
+
+  Object.entries(grupos).forEach(([mod, perms]) => {
+    h += `<div style="margin-bottom:20px">
+      <div style="font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:8px;display:flex;align-items:center;gap:8px">${PERM_MODULOS[mod]||mod}<span style="flex:1;height:1px;background:var(--border);display:inline-block"></span></div>`;
+    perms.forEach(p => {
+      const tiene = _permRP[rolId]?.has(p.id);
+      h += `<div style="display:flex;align-items:center;padding:10px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:7px;margin-bottom:5px">
+        <div style="flex:1;font-size:12px;display:flex;align-items:center;gap:8px">
+          ${p.es_critico ? '<span style="font-family:var(--mono);font-size:9px;background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.25);padding:2px 6px;border-radius:3px">🔒 CRÍTICO</span>' : ''}
+          <span style="color:var(--text2)">${p.clave}</span>
+          <span style="color:var(--text3);font-size:11px">— ${p.descripcion}</span>
+        </div>
+        <label style="position:relative;width:36px;height:20px;cursor:${isSA?'not-allowed':'pointer'};flex-shrink:0;opacity:${isSA?'0.4':'1'}">
+          <input type="checkbox" ${tiene?'checked':''} ${isSA?'disabled':''} 
+            onchange="permRegistrarCambio('${rolId}','${p.id}',this.checked)"
+            style="opacity:0;width:0;height:0;position:absolute">
+          <div style="position:absolute;inset:0;border-radius:10px;background:${tiene?'rgba(59,130,246,0.2)':'var(--bg3)'};border:1px solid ${tiene?'rgba(59,130,246,0.5)':'var(--border)'};transition:all .2s" class="tt${p.id.replace(/-/g,'')}"></div>
+          <div style="position:absolute;top:3px;left:${tiene?'19':'3'}px;width:12px;height:12px;border-radius:50%;background:${tiene?'var(--accent)':'var(--text3)'};transition:all .2s;${tiene?'box-shadow:0 0 6px rgba(59,130,246,.5)':''}" class="th${p.id.replace(/-/g,'')}"></div>
+        </label>
+      </div>`;
+    });
+    h += '</div>';
+  });
+
+  document.getElementById('perm-detalle-content').innerHTML = h;
+}
+
+function permRegistrarCambio(rolId, permisoId, activo) {
+  if (!_permCambios[rolId]) _permCambios[rolId] = {};
+  _permCambios[rolId][permisoId] = activo;
+  _permRP[rolId] = _permRP[rolId] || new Set();
+  activo ? _permRP[rolId].add(permisoId) : _permRP[rolId].delete(permisoId);
+  document.getElementById('perm-save-btn').style.display = 'block';
+  // re-render toggle visual
+  permVerDetalle(rolId);
+}
+
+async function permGuardar() {
+  const btn = document.getElementById('perm-save-btn');
+  btn.textContent = 'Guardando...';
+  try {
+    for (const [rolId, perms] of Object.entries(_permCambios)) {
+      for (const [permisoId, activo] of Object.entries(perms)) {
+        await permFetch('roles_permisos', {
+          method: 'POST',
+          headers: { 'Prefer': 'resolution=merge-duplicates' },
+          body: JSON.stringify({ rol_id: rolId, permiso_id: permisoId, activo }),
+        });
+      }
+    }
+    _permCambios = {};
+    btn.style.display = 'none';
+    btn.textContent = 'Guardar cambios';
+    // Mostrar confirmación usando el sistema de notificaciones del módulo
+    if (typeof showToast === 'function') showToast('Permisos actualizados', 'success');
+    else alert('Permisos guardados correctamente');
+  } catch(e) {
+    btn.textContent = 'Guardar cambios';
+    alert('Error al guardar: ' + e.message);
+  }
+}
+
+function permVolverMatriz() {
+  _permRolActual = null;
+  _permCambios = {};
+  document.getElementById('perm-detalle').style.display = 'none';
+  document.getElementById('perm-matriz').style.display = 'block';
+  permRenderMatriz();
+}
+
+// Cargar permisos cuando se activa la pestaña
+const _origShowTab = typeof showTab === 'function' ? showTab : null;
+function showTab(tab) {
+  if (_origShowTab) _origShowTab(tab);
+  if (tab === 'permisos' && _permRoles.length === 0) permCargar();
+}
+</script>
 </body>
 </html>
