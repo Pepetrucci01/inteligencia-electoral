@@ -1768,7 +1768,7 @@ function crearLicenciaConTerminos() {
 // MÓDULO DE PERMISOS — CONECTADO A SUPABASE
 // ══════════════════════════════════════════════════════════════════
 const PERM_URL = 'https://dyirhwwmykskpuvzcafx.supabase.co';
-const PERM_KEY = 'sb_publishable_15ryvEoNMYqJr4bHm7fi0g_BcvPMMrK';
+const PERM_KEY = 'TU_ANON_KEY_AQUI'; // ← Reemplaza con tu anon key
 
 const PERM_COLORES = {
   superadmin:     { bg:'rgba(239,68,68,0.15)',   color:'#ef4444' },
@@ -1944,11 +1944,12 @@ function permVolverMatriz() {
 }
 
 // Cargar permisos cuando se activa la pestaña
-const _origShowTab = typeof showTab === 'function' ? showTab : null;
-function showTab(tab) {
-  if (_origShowTab) _origShowTab(tab);
+// Hook en el showTab existente para cargar permisos al activar la pestaña
+const _permOrigShowTab = showTab;
+showTab = function(tab) {
+  _permOrigShowTab(tab);
   if (tab === 'permisos' && _permRoles.length === 0) permCargar();
-}
+};
 </script>
 </body>
 </html>
