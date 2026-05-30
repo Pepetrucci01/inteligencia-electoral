@@ -215,7 +215,7 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
   <div class="tab active" id="tab-usuarios" onclick="showTab('usuarios')">👤 Usuarios y roles</div>
   <div class="tab" id="tab-licencias" onclick="showTab('licencias')">🔑 Licencias</div>
   <div class="tab" id="tab-candidaturas" onclick="showTab('candidaturas')">🗳 Candidaturas</div>
-  <div class="tab" id="tab-permisos" onclick="showTab('permisos')">🛡 Permisos</div>
+  <div class="tab" id="tab-permisos" onclick="showTab('permisos');if(typeof permCargar==='function'&&_permRoles.length===0)permCargar();">🛡 Permisos</div>
   <div class="tab" id="tab-auditoria" onclick="showTab('auditoria')">📋 Auditoría</div>
   <div class="tab" id="tab-config" onclick="showTab('config')">⚙️ Configuración</div>
   <div class="tab" id="tab-sistema" onclick="showTab('sistema')">🖥 Sistema</div>
@@ -1104,6 +1104,11 @@ function showTab(t){
       cargarConfigOperativaEnFormulario();
     }, 50);
   }
+  if (t === 'permisos') {
+    setTimeout(() => {
+      if (typeof permCargar === 'function' && _permRoles.length === 0) permCargar();
+    }, 50);
+  }
 }
 
 function modalNuevoUsuario(){
@@ -1952,12 +1957,7 @@ function permVolverMatriz() {
 }
 
 // Cargar permisos cuando se activa la pestaña
-// Hook en el showTab existente para cargar permisos al activar la pestaña
-const _permOrigShowTab = showTab;
-showTab = function(tab) {
-  _permOrigShowTab(tab);
-  if (tab === 'permisos' && _permRoles.length === 0) permCargar();
-};
+// permCargar se llama directamente desde el onclick de la pestaña
 </script>
 </body>
 </html>
