@@ -1833,12 +1833,25 @@ function renderTablaCapturistas(){
     tbody.innerHTML=`<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--text3);font-size:12px">Sin capturistas para los filtros seleccionados</td></tr>`;
     return;
   }
+  // Set para controlar qué filas están expandidas
+  if(!window.CAP_EXPANDED) window.CAP_EXPANDED = new Set();
+
   tbody.innerHTML = todos.map(cap=>{
     const p=pct(cap.cap,cap.meta); const c=semC(p);
     const initials=cap.nombre.split(' ').map(w=>w[0]).slice(0,2).join('');
-    return`<tr onclick="drillF1('sec','${cap.seccion}')" style="cursor:pointer">
+    const casillas = CAS_SEC[cap.seccion] || [];
+    const isOpen = window.CAP_EXPANDED.has(cap.id);
+    const casSem = casillas.map(cas => {
+      const casMeta = Math.round(cap.meta / Math.max(casillas.length,1));
+      const casCapVal = Math.round(cap.cap / Math.max(casillas.length,1));
+      const casPct = pct(casCapVal, casMeta);
+      return {cas, casMeta, casCapVal, casPct, c: semC(casPct)};
+    });
+
+    const mainRow = `<tr onclick="toggleCapExpand('${cap.id}', event)" style="cursor:pointer">
       <td>
         <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:10px;color:var(--text3);transition:transform .2s;display:inline-block;transform:${isOpen?'rotate(90deg)':'rotate(0deg)'}" id="chv-${cap.id}">›</span>
           <div style="width:26px;height:26px;background:${c.replace('var(','rgba(').replace(')',', .15)')};border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:${c};flex-shrink:0">${initials}</div>
           <div>
             <div style="font-size:12px;font-weight:500;color:var(--text)">${cap.nombre}</div>
@@ -1846,19 +1859,58 @@ function renderTablaCapturistas(){
           </div>
         </div>
       </td>
-      <td class="mono" style="font-size:12px">Secc. ${cap.secNum}</td>
-      <td style="font-size:12px;color:var(--text2)">${cap.munNombre}</td>
-      <td class="mono r" style="color:var(--green)">${fmt(cap.cap)}</td>
-      <td class="mono r" style="color:var(--text2)">${fmt(cap.meta)}</td>
-      <td class="mono r" style="color:${c};font-weight:600">${p}%</td>
-      <td><div class="mbar" style="max-width:80px"><div class="mbar-f" style="width:${Math.min(p/10*100,100)}%;background:${c}"></div></div></td>
-      <td class="mono r" style="color:var(--accent)">${fmt(cap.votosF2)}</td>
+      <td class="mono" style="font-size:12px;text-align:center">Secc. ${cap.secNum}</td>
+      <td style="font-size:12px;color:var(--text2);text-align:center">${cap.munNombre}</td>
+      <td class="mono" style="text-align:center;color:var(--green)">${fmt(cap.cap)}</td>
+      <td class="mono" style="text-align:center;color:var(--text2)">${fmt(cap.meta)}</td>
+      <td class="mono" style="text-align:center;color:${c};font-weight:600">${p}%</td>
+      <td style="text-align:center"><div class="mbar" style="max-width:80px;margin:0 auto"><div class="mbar-f" style="width:${Math.min(p/10*100,100)}%;background:${c}"></div></div></td>
+      <td class="mono" style="text-align:center;color:var(--accent)">${fmt(cap.votosF2)}</td>
       <td style="text-align:center;font-size:14px">${semI(p)}</td>
       <td>
         <button onclick="event.stopPropagation();alertarCapturista('${cap.id}')" style="font-size:10px;font-family:var(--mono);padding:3px 8px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:5px;color:var(--red);cursor:pointer;white-space:nowrap">🚨 Alertar</button>
       </td>
     </tr>`;
+
+    const expandRow = isOpen ? `<tr id="exp-${cap.id}">
+      <td colspan="10" style="padding:0;background:var(--bg2)">
+        <div style="padding:8px 14px 10px 54px;border-left:3px solid var(--accent)">
+          <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">${casillas.length} casillas en sección ${cap.secNum}</div>
+          <table style="width:100%;border-collapse:collapse;font-size:11px">
+            <thead><tr style="border-bottom:1px solid var(--border2)">
+              <th style="text-align:left;padding:4px 8px;color:var(--text3);font-weight:500;font-size:10px;text-transform:uppercase">Casilla</th>
+              <th style="text-align:center;padding:4px 8px;color:var(--text3);font-weight:500;font-size:10px;text-transform:uppercase">Tipo</th>
+              <th style="text-align:center;padding:4px 8px;color:var(--text3);font-weight:500;font-size:10px;text-transform:uppercase">Capturados</th>
+              <th style="text-align:center;padding:4px 8px;color:var(--text3);font-weight:500;font-size:10px;text-transform:uppercase">Meta</th>
+              <th style="text-align:center;padding:4px 8px;color:var(--text3);font-weight:500;font-size:10px;text-transform:uppercase">% Avance</th>
+              <th style="text-align:center;padding:4px 8px;color:var(--text3);font-weight:500;font-size:10px;text-transform:uppercase">Semáforo</th>
+            </tr></thead>
+            <tbody>
+              ${casSem.map(({cas, casMeta, casCapVal, casPct, c:cc})=>`
+              <tr style="border-bottom:1px solid var(--border)">
+                <td style="padding:5px 8px;font-family:var(--mono);color:var(--text2)">${cas.id}</td>
+                <td style="padding:5px 8px;text-align:center;color:var(--text3)">${cas.tipo}</td>
+                <td style="padding:5px 8px;text-align:center;font-family:var(--mono);color:var(--green)">${casCapVal}</td>
+                <td style="padding:5px 8px;text-align:center;font-family:var(--mono);color:var(--text3)">${casMeta}</td>
+                <td style="padding:5px 8px;text-align:center;font-family:var(--mono);color:${cc};font-weight:600">${casPct}%</td>
+                <td style="padding:5px 8px;text-align:center;font-size:13px">${semI(casPct)}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </td>
+    </tr>` : '';
+
+    return mainRow + expandRow;
   }).join('');
+}
+
+function toggleCapExpand(capId, event) {
+  event.stopPropagation();
+  if(!window.CAP_EXPANDED) window.CAP_EXPANDED = new Set();
+  if(window.CAP_EXPANDED.has(capId)) window.CAP_EXPANDED.delete(capId);
+  else window.CAP_EXPANDED.add(capId);
+  renderTablaCapturistas();
 }
 
 function sortCap(col){
