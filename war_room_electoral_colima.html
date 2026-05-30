@@ -349,7 +349,26 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
       </div>
     </div>
 
-    <!-- TABLA CAPTURISTAS — ANCHO COMPLETO -->
+    <style>
+    #mun-table th, #mun-table td { vertical-align:middle; }
+    #mun-table th:nth-child(1), #mun-table td:nth-child(1) { width:22%; }
+    #mun-table th:nth-child(2), #mun-table td:nth-child(2) { width:11%; text-align:center !important; }
+    #mun-table th:nth-child(3), #mun-table td:nth-child(3) { width:11%; text-align:center !important; }
+    #mun-table th:nth-child(4), #mun-table td:nth-child(4) { width:10%; text-align:center !important; }
+    #mun-table th:nth-child(5), #mun-table td:nth-child(5) { width:18%; text-align:center !important; }
+    #mun-table th:nth-child(6), #mun-table td:nth-child(6) { width:10%; text-align:center !important; }
+    #mun-table th:nth-child(7), #mun-table td:nth-child(7) { width:8%;  text-align:center !important; }
+    #cap-table th, #cap-table td { vertical-align:middle; }
+    #cap-table th:nth-child(2), #cap-table td:nth-child(2) { text-align:center !important; }
+    #cap-table th:nth-child(3), #cap-table td:nth-child(3) { text-align:center !important; }
+    #cap-table th:nth-child(4), #cap-table td:nth-child(4) { text-align:center !important; }
+    #cap-table th:nth-child(5), #cap-table td:nth-child(5) { text-align:center !important; }
+    #cap-table th:nth-child(6), #cap-table td:nth-child(6) { text-align:center !important; }
+    #cap-table th:nth-child(7), #cap-table td:nth-child(7) { text-align:center !important; }
+    #cap-table th:nth-child(8), #cap-table td:nth-child(8) { text-align:center !important; }
+    #cap-table th:nth-child(9), #cap-table td:nth-child(9) { text-align:center !important; }
+    #cap-table th:nth-child(10),#cap-table td:nth-child(10){ text-align:center !important; }
+    </style>
     <div class="card" style="margin-bottom:14px">
       <div class="card-h">
         <span class="card-title">👤 Avance por capturista</span>
@@ -831,12 +850,12 @@ function renderMunF1(){
     const pv=pct(m.cap,meta);const c=semC(pv);
     return`<tr onclick="drillF1('mun','${m.id}')" class="${f1s.mun===m.id?'sel':''}">
       <td><div class="nm">${m.n}</div><div class="sub">${m.secs} secciones</div></td>
-      <td class="mono r">${fmt(m.cap)}</td>
-      <td class="mono r" style="color:var(--text2)">${fmt(meta)}</td>
-      <td class="mono r" style="color:${c};font-weight:600">${pv}%</td>
-      <td><div class="mbar" style="max-width:90px"><div class="mbar-f" style="width:${Math.min(pv/20*100,100)}%;background:${c}"></div></div></td>
+      <td class="mono" style="text-align:center">${fmt(m.cap)}</td>
+      <td class="mono" style="text-align:center;color:var(--text2)">${fmt(meta)}</td>
+      <td class="mono" style="text-align:center;color:${c};font-weight:600">${pv}%</td>
+      <td style="text-align:center"><div class="mbar" style="max-width:90px;margin:0 auto"><div class="mbar-f" style="width:${Math.min(pv/20*100,100)}%;background:${c}"></div></div></td>
       <td style="text-align:center;font-size:14px">${semI(pv)}</td>
-      <td class="mono r" style="color:${m.g24==='Partido A'?'var(--green)':'var(--red)'};font-size:10px" title="Votos 2024: ${fmt(m.v24)} (${m.p24}% · ganó ${m.g24})">${m.p24}%</td>
+      <td class="mono" style="text-align:center;color:${m.g24==='Partido A'?'var(--green)':'var(--red)'};font-size:10px" title="Votos 2024: ${fmt(m.v24)} (${m.p24}% · ganó ${m.g24})">${m.p24}%</td>
     </tr>`;
   }).join('');
 }
