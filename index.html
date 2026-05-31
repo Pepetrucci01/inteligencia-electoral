@@ -275,6 +275,11 @@ iframe{width:100%;height:100%;border:none;display:block;}
       <span class="tb-badge" style="background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.25)">● Sistema activo</span>
       <span class="tb-badge" style="background:var(--bg3);color:var(--text3);border:1px solid var(--border2)" id="tb-dias">521 días</span>
       <span class="clock" id="clock">--:--:--</span>
+      <span id="tb-usuario" style="font-size:11px;color:var(--text2);font-family:var(--mono);display:none;align-items:center;gap:8px;">
+        <span id="tb-nombre"></span>
+        <span style="color:var(--text3)">·</span>
+        <a onclick="cerrarSesion()" style="color:var(--red);cursor:pointer;text-decoration:none;font-size:10px;" title="Cerrar sesión">⏻ Salir</a>
+      </span>
     </div>
   </div>
   <div class="breadcrumb">
@@ -411,6 +416,34 @@ iframe{width:100%;height:100%;border:none;display:block;}
 </div><!-- /shell -->
 
 <script>
+// ══════════════════════════════════════════════════════
+// GUARDIA DE SESIÓN — redirige al login si no hay sesión
+// ══════════════════════════════════════════════════════
+(function() {
+  try {
+    const sesion = JSON.parse(localStorage.getItem('electoral_sesion') || 'null');
+    if (!sesion || !sesion.ts) {
+      window.location.replace('login.html');
+      return;
+    }
+    const horas = (Date.now() - sesion.ts) / 3600000;
+    if (horas >= 8) {
+      localStorage.removeItem('electoral_sesion');
+      window.location.replace('login.html');
+      return;
+    }
+    // Sesión válida — mostrar nombre y rol en el header
+    window._sesion = sesion;
+  } catch(e) {
+    window.location.replace('login.html');
+  }
+})();
+
+function cerrarSesion() {
+  localStorage.removeItem('electoral_sesion');
+  window.location.href = 'login.html';
+}
+
 let collapsed = false;
 
 function tick(){
@@ -425,6 +458,19 @@ function tick(){
   document.getElementById('tb-dias').textContent = dias > 0 ? dias + ' días a elección' : 'Día de la elección';
 }
 setInterval(tick,1000); tick();
+
+// Mostrar usuario en topbar si hay sesión
+(function(){
+  const s = window._sesion;
+  if(!s) return;
+  const el = document.getElementById('tb-usuario');
+  const nm = document.getElementById('tb-nombre');
+  if(el && nm){
+    const roles = {superadmin:'Super Admin',admin:'Admin Estatal',coordinador:'Coordinador',lider_seccion:'Líder',capturista:'Capturista'};
+    nm.textContent = (s.nombre || s.email) + ' · ' + (roles[s.rol] || s.rol);
+    el.style.display = 'flex';
+  }
+})();
 
 function toggleSidebar(){
   collapsed = !collapsed;
