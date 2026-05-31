@@ -70,6 +70,81 @@ select{background:#0f3460;color:#eee;border:1px solid #444;border-radius:4px;pad
 }
 #btn-back-menu:hover { transform: scale(1.05); }
 
+/* ── Toggle botón para leyenda ── */
+#btn-legend-toggle {
+  position: absolute;
+  bottom: 16px;
+  left: 10px;
+  z-index: 1001;
+  background: rgba(22,33,62,0.95);
+  border: 1px solid #e94560;
+  border-radius: 6px;
+  color: #e94560;
+  font-size: 18px;
+  width: 34px;
+  height: 34px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  transition: background 0.2s;
+}
+#btn-legend-toggle:hover { background: #e94560; color: #fff; }
+
+/* ── Toggle botón para stats-bar ── */
+#btn-stats-toggle {
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0 6px;
+  display: none;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+#btn-stats-toggle:hover { color: #fff; }
+#stats-bar.collapsed { display: none !important; }
+
+@media (max-width: 640px) {
+  /* Stats bar: colapsable */
+  #btn-stats-toggle { display: flex; }
+
+  /* Leyenda: oculta por defecto, botón visible */
+  #legend { display: none; }
+  #legend.visible { display: block; }
+  #btn-legend-toggle { display: flex; }
+
+  /* Info panel: sube desde abajo como drawer */
+  #info-panel {
+    top: auto !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    max-height: 60vh !important;
+    border-radius: 14px 14px 0 0 !important;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    border-top: 2px solid #e94560;
+    padding-bottom: 20px;
+  }
+  /* Mango visual del drawer */
+  #info-panel::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 4px;
+    background: #444;
+    border-radius: 2px;
+    margin: 0 auto 10px;
+  }
+}
+
 </style>
 <script src="theme.js"></script>
 
@@ -160,15 +235,18 @@ async function cargarAvanceSupabase() {
   <label class="tog"><input type="checkbox" id="chkCasillas" checked onchange="toggleCasillas()"> Casillas</label>
   <label class="tog"><input type="checkbox" id="chkSat" onchange="toggleSat()"> 🛰 Satélite</label>
 </div>
-<div id="stats-bar">
-  <div class="stat">Capa: <span id="sLayer">GOBERNADOR</span></div>
-  <div class="stat">Casillas: <span id="sCasillas">1032</span></div>
-  <div class="stat">Secciones: <span>430</span></div>
-  <div class="stat green">Meta Total: <span id="sMetaTotal">—</span></div>
-  <div class="stat green">Avance: <span id="sAvance">0%</span></div>
-  <div class="stat">Fácil: <span id="sFacil" style="color:#00cc66;">—</span></div>
-  <div class="stat">Medio: <span id="sMedio" style="color:#ffaa00;">—</span></div>
-  <div class="stat">Difícil: <span id="sDificil" style="color:#ff4466;">—</span></div>
+<div id="stats-bar-wrapper">
+  <button id="btn-stats-toggle" onclick="toggleStatsBar()" title="Mostrar/ocultar estadísticas">📊 <span id="stats-toggle-arrow">▲</span></button>
+  <div id="stats-bar">
+    <div class="stat">Capa: <span id="sLayer">GOBERNADOR</span></div>
+    <div class="stat">Casillas: <span id="sCasillas">1032</span></div>
+    <div class="stat">Secciones: <span>430</span></div>
+    <div class="stat green">Meta Total: <span id="sMetaTotal">—</span></div>
+    <div class="stat green">Avance: <span id="sAvance">0%</span></div>
+    <div class="stat">Fácil: <span id="sFacil" style="color:#00cc66;">—</span></div>
+    <div class="stat">Medio: <span id="sMedio" style="color:#ffaa00;">—</span></div>
+    <div class="stat">Difícil: <span id="sDificil" style="color:#ff4466;">—</span></div>
+  </div>
 </div>
 <div id="map-wrap">
   <div id="map"></div>
@@ -213,6 +291,8 @@ async function cargarAvanceSupabase() {
       <div class="leg-item"><div class="leg-col" style="background:#44aaff;border-radius:50%;"></div>Especial</div>
     </div>
   </div>
+  <!-- Botón toggle leyenda (solo móvil) -->
+  <button id="btn-legend-toggle" onclick="toggleLegend()" title="Mostrar/ocultar leyenda">🗂</button>
 </div>
 
 <script>
@@ -430,6 +510,22 @@ function toggleCasillas(){
 }
 
 map.on('click',()=>document.getElementById('info-panel').style.display='none');
+
+/* ── Toggle leyenda (móvil) ── */
+function toggleLegend(){
+  const leg = document.getElementById('legend');
+  const btn = document.getElementById('btn-legend-toggle');
+  leg.classList.toggle('visible');
+  btn.textContent = leg.classList.contains('visible') ? '✕' : '🗂';
+}
+
+/* ── Toggle stats bar (móvil) ── */
+function toggleStatsBar(){
+  const bar = document.getElementById('stats-bar');
+  const arrow = document.getElementById('stats-toggle-arrow');
+  bar.classList.toggle('collapsed');
+  arrow.textContent = bar.classList.contains('collapsed') ? '▼' : '▲';
+}
 renderSecciones('gobernador');
 renderCasillas(CASILLAS);
 // Cargar avance real desde Supabase
