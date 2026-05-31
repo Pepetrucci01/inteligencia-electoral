@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MI SECCIÓN — LÍDER</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+:root{
+  --bg:#0a0e1a;--bg2:#0f1526;--bg3:#141b2e;--bg4:#1a2238;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.14);
+  --text:#e8edf5;--text2:#8a9ab5;--text3:#5a6a85;
+  --accent:#3b82f6;--green:#22c55e;--red:#ef4444;
+  --amber:#f59e0b;--cyan:#06b6d4;--purple:#a855f7;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;}
+
+/* TOPBAR */
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border2);padding:0 16px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;}
+.tb-left{display:flex;align-items:center;gap:10px;}
+.tb-av{width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:600;flex-shrink:0;background:rgba(168,85,247,.15);color:var(--purple);}
+.tb-name{font-size:13px;font-weight:600;}
+.tb-id{font-size:10px;font-family:var(--mono);color:var(--text3);}
+.tb-right{display:flex;align-items:center;gap:8px;}
+.lider-badge{font-size:11px;font-family:var(--mono);padding:4px 12px;border-radius:99px;font-weight:600;background:rgba(168,85,247,.12);color:var(--purple);border:1px solid rgba(168,85,247,.25);}
+
+/* TABS */
+.tabs{display:flex;background:var(--bg3);border-bottom:1px solid var(--border);position:sticky;top:52px;z-index:199;}
+.tab{flex:1;padding:11px 4px;text-align:center;font-size:11px;font-family:var(--mono);color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;}
+.tab.active{color:var(--purple);border-bottom-color:var(--purple);}
+.tab-icon{font-size:15px;display:block;margin-bottom:2px;}
+
+/* SCREENS */
+.screen{display:none;padding:14px 16px 100px;}
+.screen.active{display:block;}
+
+/* KPIs */
+.kpi-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.kpi-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px;}
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;position:relative;overflow:hidden;}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.kpi.bl::before{background:var(--accent);}
+.kpi.gr::before{background:var(--green);}
+.kpi.am::before{background:var(--amber);}
+.kpi.re::before{background:var(--red);}
+.kpi.pu::before{background:var(--purple);}
+.kpi.cy::before{background:var(--cyan);}
+.kv{font-size:26px;font-weight:600;font-family:var(--mono);line-height:1;margin-bottom:3px;}
+.kpi.bl .kv{color:var(--accent);}
+.kpi.gr .kv{color:var(--green);}
+.kpi.am .kv{color:var(--amber);}
+.kpi.re .kv{color:var(--red);}
+.kpi.pu .kv{color:var(--purple);}
+.kpi.cy .kv{color:var(--cyan);}
+.kl{font-size:11px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.04em;}
+.prog-bar{height:6px;background:rgba(255,255,255,0.07);border-radius:99px;overflow:hidden;margin-top:8px;}
+.prog-fill{height:100%;border-radius:99px;transition:width .5s;}
+
+/* SECTION HEADER */
+.sec-header{background:rgba(168,85,247,.08);border:1px solid rgba(168,85,247,.2);border-radius:10px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px;}
+.sec-num{font-size:28px;font-weight:700;font-family:var(--mono);color:var(--purple);}
+.sec-info{flex:1;}
+.sec-mun{font-size:13px;font-weight:600;}
+.sec-meta{font-size:11px;font-family:var(--mono);color:var(--text3);margin-top:2px;}
+
+/* CAPTURISTA CARDS */
+.cap-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;}
+.cap-av{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;font-family:var(--mono);flex-shrink:0;}
+.cap-info{flex:1;min-width:0;}
+.cap-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cap-id{font-size:10px;font-family:var(--mono);color:var(--text3);margin-top:1px;}
+.cap-stats{text-align:right;flex-shrink:0;}
+.cap-num{font-size:18px;font-weight:700;font-family:var(--mono);line-height:1;}
+.cap-lbl{font-size:10px;font-family:var(--mono);color:var(--text3);}
+.cap-bar{height:4px;background:rgba(255,255,255,0.07);border-radius:99px;overflow:hidden;margin-top:6px;}
+.cap-fill{height:100%;border-radius:99px;}
+
+/* SIMPATIZANTES */
+.search-wrap{position:relative;margin-bottom:12px;}
+.search-input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:15px;padding:12px 14px 12px 42px;outline:none;}
+.search-input:focus{border-color:var(--purple);}
+.search-input::placeholder{color:var(--text3);}
+.search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:18px;}
+.chips{display:flex;gap:8px;margin-bottom:12px;overflow-x:auto;padding-bottom:4px;}
+.chip{flex-shrink:0;padding:6px 12px;border-radius:99px;border:1px solid var(--border2);font-size:11px;font-family:var(--mono);cursor:pointer;color:var(--text2);white-space:nowrap;}
+.chip.active{background:var(--purple);border-color:var(--purple);color:#fff;}
+.simp-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;}
+.simp-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.simp-av{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;font-family:var(--mono);flex-shrink:0;}
+.simp-name{font-size:14px;font-weight:500;}
+.simp-meta{font-size:10px;font-family:var(--mono);color:var(--text3);}
+.badges{display:flex;gap:5px;flex-wrap:wrap;}
+.badge{font-size:10px;font-family:var(--mono);padding:2px 8px;border-radius:99px;font-weight:500;}
+.b-green{background:rgba(34,197,94,.12);color:var(--green);border:1px solid rgba(34,197,94,.25);}
+.b-amber{background:rgba(245,158,11,.12);color:var(--amber);border:1px solid rgba(245,158,11,.25);}
+.b-red{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.25);}
+.b-blue{background:rgba(59,130,246,.12);color:var(--accent);border:1px solid rgba(59,130,246,.25);}
+.b-purple{background:rgba(168,85,247,.12);color:var(--purple);border:1px solid rgba(168,85,247,.25);}
+.simp-footer{display:flex;align-items:center;justify-content:space-between;padding-top:8px;border-top:1px solid var(--border);margin-top:8px;}
+.simp-cap{font-size:10px;font-family:var(--mono);color:var(--text3);}
+
+/* CARD */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:12px;}
+.card-head{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.card-title{font-size:11px;font-family:var(--mono);color:var(--text2);text-transform:uppercase;letter-spacing:.06em;}
+.card-body{padding:14px;}
+
+/* EMPTY */
+.empty{text-align:center;padding:40px 20px;color:var(--text3);font-family:var(--mono);font-size:12px;}
+.empty-icon{font-size:28px;margin-bottom:8px;opacity:.3;}
+
+/* RANKING */
+.rank-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);}
+.rank-item:last-child{border-bottom:none;}
+.rank-pos{width:24px;font-size:13px;font-weight:700;font-family:var(--mono);color:var(--text3);text-align:center;flex-shrink:0;}
+.rank-pos.top{color:var(--amber);}
+.rank-info{flex:1;}
+.rank-name{font-size:13px;font-weight:500;}
+.rank-sub{font-size:10px;font-family:var(--mono);color:var(--text3);}
+.rank-val{font-size:16px;font-weight:700;font-family:var(--mono);color:var(--green);}
+</style>
+</head>
+
+<script>
+// ── Guardia de sesión ──
+(function(){
+  try {
+    const s = JSON.parse(localStorage.getItem('electoral_sesion') || 'null');
+    if (!s || !s.ts) { window.location.replace('login.html'); return; }
+    const horas = (Date.now() - s.ts) / 3600000;
+    if (horas >= 8) { localStorage.removeItem('electoral_sesion'); window.location.replace('login.html'); return; }
+    if (!['lider_seccion','superadmin'].includes(s.rol)) { window.location.replace('login.html'); return; }
+    window._sesion = s;
+  } catch(e) { window.location.replace('login.html'); }
+})();
+</script>
+
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="tb-left">
+    <div class="tb-av" id="tb-av">L</div>
+    <div>
+      <div class="tb-name" id="tb-name">Líder de Sección</div>
+      <div class="tb-id" id="tb-id">Cargando...</div>
+    </div>
+  </div>
+  <div class="tb-right">
+    <span class="lider-badge">⭐ LÍDER</span>
+    <button onclick="cerrarSesion()" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;font-family:monospace;" title="Cerrar sesión">⏻</button>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" id="tab-inicio" onclick="showTab('inicio')">
+    <span class="tab-icon">📊</span>Mi sección
+  </div>
+  <div class="tab" id="tab-capturistas" onclick="showTab('capturistas')">
+    <span class="tab-icon">✏️</span>Capturistas
+  </div>
+  <div class="tab" id="tab-simpatizantes" onclick="showTab('simpatizantes')">
+    <span class="tab-icon">👥</span>Simpatizantes
+  </div>
+</div>
+
+<!-- ════════ SCREEN: INICIO ════════ -->
+<div class="screen active" id="screen-inicio">
+
+  <div class="sec-header" style="margin-top:14px;">
+    <div class="sec-num" id="sec-num">138</div>
+    <div class="sec-info">
+      <div class="sec-mun" id="sec-mun">Villa de Álvarez</div>
+      <div class="sec-meta" id="sec-meta">Sección electoral · Colima 2027</div>
+    </div>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi gr">
+      <div class="kv" id="kpi-capturas">247</div>
+      <div class="kl">Capturas totales</div>
+      <div class="prog-bar"><div class="prog-fill" id="prog-capturas" style="width:62%;background:var(--green);"></div></div>
+    </div>
+    <div class="kpi am">
+      <div class="kv" id="kpi-meta">400</div>
+      <div class="kl">Meta sección</div>
+    </div>
+  </div>
+
+  <div class="kpi-row-3">
+    <div class="kpi bl">
+      <div class="kv" id="kpi-pct">62%</div>
+      <div class="kl">Avance</div>
+    </div>
+    <div class="kpi pu">
+      <div class="kv" id="kpi-caps">4</div>
+      <div class="kl">Capturistas</div>
+    </div>
+    <div class="kpi cy">
+      <div class="kv" id="kpi-activos">3</div>
+      <div class="kl">Activos hoy</div>
+    </div>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi re">
+      <div class="kv" id="kpi-riesgo">18</div>
+      <div class="kl">En riesgo</div>
+    </div>
+    <div class="kpi gr">
+      <div class="kv" id="kpi-voto-seg">189</div>
+      <div class="kl">Voto seguro</div>
+    </div>
+  </div>
+
+  <!-- Ranking capturistas -->
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title">⭐ Ranking de capturistas</span>
+    </div>
+    <div id="ranking-caps">
+      <div class="rank-item">
+        <div class="rank-pos top">1</div>
+        <div class="rank-info">
+          <div class="rank-name">Capturista 017</div>
+          <div class="rank-sub">CAP-017 · activo hoy</div>
+        </div>
+        <div class="rank-val">87</div>
+      </div>
+      <div class="rank-item">
+        <div class="rank-pos top">2</div>
+        <div class="rank-info">
+          <div class="rank-name">Capturista 022</div>
+          <div class="rank-sub">CAP-022 · activo hoy</div>
+        </div>
+        <div class="rank-val">74</div>
+      </div>
+      <div class="rank-item">
+        <div class="rank-pos">3</div>
+        <div class="rank-info">
+          <div class="rank-name">Capturista 031</div>
+          <div class="rank-sub">CAP-031 · ayer</div>
+        </div>
+        <div class="rank-val">56</div>
+      </div>
+      <div class="rank-item">
+        <div class="rank-pos">4</div>
+        <div class="rank-info">
+          <div class="rank-name">Capturista 045</div>
+          <div class="rank-sub">CAP-045 · inactivo</div>
+        </div>
+        <div class="rank-val">30</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alertas -->
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title">⚠️ Alertas de la sección</span>
+    </div>
+    <div class="card-body" style="display:flex;flex-direction:column;gap:8px;">
+      <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:8px;padding:10px 12px;font-size:12px;">
+        <span style="color:var(--red);font-weight:600;">18 simpatizantes en riesgo</span>
+        <div style="color:var(--text2);margin-top:2px;font-family:var(--mono);font-size:10px;">Sin contacto en más de 7 días</div>
+      </div>
+      <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:10px 12px;font-size:12px;">
+        <span style="color:var(--amber);font-weight:600;">1 capturista inactivo</span>
+        <div style="color:var(--text2);margin-top:2px;font-family:var(--mono);font-size:10px;">CAP-045 sin actividad hace 3 días</div>
+      </div>
+      <div style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:8px;padding:10px 12px;font-size:12px;">
+        <span style="color:var(--green);font-weight:600;">62% de avance</span>
+        <div style="color:var(--text2);margin-top:2px;font-family:var(--mono);font-size:10px;">153 capturas para llegar a la meta</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ════════ SCREEN: CAPTURISTAS ════════ -->
+<div class="screen" id="screen-capturistas">
+
+  <div class="card" style="margin-top:14px;">
+    <div class="card-head">
+      <span class="card-title">✏️ Mis capturistas</span>
+      <span style="font-size:11px;font-family:var(--mono);color:var(--text3);" id="total-caps-label">4 asignados</span>
+    </div>
+    <div id="lista-capturistas">
+      <!-- Generado por JS -->
+    </div>
+  </div>
+
+</div>
+
+<!-- ════════ SCREEN: SIMPATIZANTES ════════ -->
+<div class="screen" id="screen-simpatizantes">
+
+  <div style="margin-top:14px;">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" id="search-simp" placeholder="Buscar por nombre o CURP..." oninput="filtrarSimps()">
+    </div>
+    <div class="chips" id="chips-comp">
+      <div class="chip active" onclick="filtrarComp('todos',this)">Todos</div>
+      <div class="chip" onclick="filtrarComp('4',this)">⭐ Voto seguro</div>
+      <div class="chip" onclick="filtrarComp('3',this)">✅ Comprometido</div>
+      <div class="chip" onclick="filtrarComp('2',this)">🟡 Simpatizante</div>
+      <div class="chip" onclick="filtrarComp('1',this)">⚪ Incierto</div>
+    </div>
+    <div id="lista-simps">
+      <!-- Generado por JS -->
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Datos demo ──
+const CAPTURISTAS_SEC = [
+  { codigo:'CAP-017', nombre:'Capturista 017', capturas:87, meta:100, activo:true,  ultimaAct:'Hoy 14:23' },
+  { codigo:'CAP-022', nombre:'Capturista 022', capturas:74, meta:100, activo:true,  ultimaAct:'Hoy 11:05' },
+  { codigo:'CAP-031', nombre:'Capturista 031', capturas:56, meta:100, activo:true,  ultimaAct:'Ayer 19:40' },
+  { codigo:'CAP-045', nombre:'Capturista 045', capturas:30, meta:100, activo:false, ultimaAct:'Hace 3 días' },
+];
+
+const SIMPATIZANTES_SEC = [
+  { nombre:'JUAN CARLOS MENDOZA RÍOS',    curp:'MERJ850312HCLDNS09', comp:4, capturista:'CAP-017', edad:39, col:'Jardines' },
+  { nombre:'PATRICIA GÓMEZ SALAZAR',      curp:'GOSP920715MCLMLT04', comp:4, capturista:'CAP-017', edad:32, col:'Centro' },
+  { nombre:'ROBERTO HERRERA VÁSQUEZ',     curp:'HEVR780430HCLLBS06', comp:3, capturista:'CAP-022', edad:46, col:'Las Palmas' },
+  { nombre:'ADRIANA LUNA CASTILLO',       curp:'LUCA010925MCLNSD08', comp:3, capturista:'CAP-022', edad:23, col:'Morelos' },
+  { nombre:'MIGUEL ÁNGEL TORRES PÉREZ',   curp:'TOPM961204HCLLRG01', comp:2, capturista:'CAP-031', edad:28, col:'Centro' },
+  { nombre:'LAURA BEATRIZ RAMOS FLORES',  curp:'RAFL880601MCLMLA07', comp:2, capturista:'CAP-031', edad:36, col:'Infonavit' },
+  { nombre:'CARLOS ESPINOZA MEDINA',      curp:'ESMC720814HCLSDR03', comp:1, capturista:'CAP-045', edad:52, col:'Centro' },
+  { nombre:'VERÓNICA SALINAS ORTIZ',      curp:'SAOV991130MCLRRT09', comp:1, capturista:'CAP-045', edad:25, col:'Jardines' },
+];
+
+let filtroComp = 'todos';
+
+// ── Inicializar sesión en topbar ──
+(function(){
+  const s = window._sesion;
+  if (!s) return;
+  const iniciales = (s.nombre||'L').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+  document.getElementById('tb-av').textContent = iniciales;
+  document.getElementById('tb-name').textContent = s.nombre || 'Líder de Sección';
+  const sec = s.seccion || '—';
+  const mun = s.municipio || '—';
+  document.getElementById('tb-id').textContent = `LDR-${sec} · Secc. ${sec} · ${mun}`;
+  document.getElementById('sec-num').textContent = sec;
+  document.getElementById('sec-mun').textContent = mun;
+  document.getElementById('sec-meta').textContent = `Sección electoral · Colima 2027`;
+})();
+
+// ── Tabs ──
+function showTab(tab) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('screen-' + tab).classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+  if (tab === 'capturistas') renderCapturistas();
+  if (tab === 'simpatizantes') renderSimps();
+}
+
+// ── Render capturistas ──
+function renderCapturistas() {
+  const colores = ['rgba(59,130,246,.15)','rgba(34,197,94,.15)','rgba(168,85,247,.15)','rgba(245,158,11,.15)'];
+  const textC   = ['var(--accent)','var(--green)','var(--purple)','var(--amber)'];
+  const html = CAPTURISTAS_SEC.map((c, i) => {
+    const pct = Math.round((c.capturas / c.meta) * 100);
+    const barColor = c.activo ? (pct >= 70 ? 'var(--green)' : pct >= 40 ? 'var(--amber)' : 'var(--red)') : 'var(--text3)';
+    return `<div class="cap-card">
+      <div class="cap-av" style="background:${colores[i%4]};color:${textC[i%4]};">${c.codigo.split('-')[1]}</div>
+      <div class="cap-info">
+        <div class="cap-name">${c.nombre}</div>
+        <div class="cap-id">${c.codigo} · ${c.ultimaAct}</div>
+        <div class="cap-bar" style="margin-top:6px;"><div class="cap-fill" style="width:${pct}%;background:${barColor};"></div></div>
+      </div>
+      <div class="cap-stats">
+        <div class="cap-num" style="color:${barColor};">${c.capturas}</div>
+        <div class="cap-lbl">/ ${c.meta}</div>
+        <div style="margin-top:4px;">
+          <span class="badge ${c.activo ? 'b-green' : 'b-red'}">${c.activo ? 'activo' : 'inactivo'}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('lista-capturistas').innerHTML = html;
+  document.getElementById('total-caps-label').textContent = CAPTURISTAS_SEC.length + ' asignados';
+}
+
+// ── Render simpatizantes ──
+function compLabel(n){
+  return [{},{lbl:'⚪ Incierto',cls:'b-gray'},{lbl:'🟡 Simpatizante',cls:'b-amber'},{lbl:'✅ Comprometido',cls:'b-blue'},{lbl:'⭐ Voto seguro',cls:'b-green'}][n] || {lbl:'—',cls:'b-gray'};
+}
+
+function renderSimps() {
+  const q = document.getElementById('search-simp').value.toLowerCase();
+  let data = SIMPATIZANTES_SEC;
+  if (filtroComp !== 'todos') data = data.filter(s => s.comp == filtroComp);
+  if (q) data = data.filter(s => s.nombre.toLowerCase().includes(q) || s.curp.toLowerCase().includes(q));
+  
+  if (!data.length) {
+    document.getElementById('lista-simps').innerHTML = '<div class="empty"><div class="empty-icon">👥</div>Sin resultados</div>';
+    return;
+  }
+
+  const html = data.map(s => {
+    const cl = compLabel(s.comp);
+    const ini = s.nombre.split(' ').map(w=>w[0]).join('').substring(0,2);
+    const bgColors = ['','rgba(100,116,139,.15)','rgba(245,158,11,.15)','rgba(59,130,246,.15)','rgba(34,197,94,.15)'];
+    const txColors = ['','var(--text2)','var(--amber)','var(--accent)','var(--green)'];
+    return `<div class="simp-card">
+      <div class="simp-header">
+        <div class="simp-av" style="background:${bgColors[s.comp]};color:${txColors[s.comp]};">${ini}</div>
+        <div>
+          <div class="simp-name">${s.nombre}</div>
+          <div class="simp-meta">${s.edad} años · ${s.col}</div>
+        </div>
+      </div>
+      <div class="badges">
+        <span class="badge ${cl.cls}">${cl.lbl}</span>
+        <span class="badge b-purple">${s.capturista}</span>
+      </div>
+      <div class="simp-footer">
+        <span class="simp-cap">${s.curp}</span>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('lista-simps').innerHTML = html;
+}
+
+function filtrarSimps() { renderSimps(); }
+
+function filtrarComp(val, el) {
+  filtroComp = val;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderSimps();
+}
+
+// ── Cerrar sesión ──
+function cerrarSesion() {
+  localStorage.removeItem('electoral_sesion');
+  window.location.href = 'login.html';
+}
+</script>
+
+</body>
+</html>
