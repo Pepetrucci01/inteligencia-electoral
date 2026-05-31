@@ -483,58 +483,14 @@ html, body {
 // ══════════════════════════════════════════════════════
 // USUARIOS DEMO (en producción → Supabase auth)
 // ══════════════════════════════════════════════════════
+// Credenciales demo solo para mostrar en el panel visual
+// El login real usa Supabase Auth
 const USUARIOS_DEMO = [
-  {
-    email:    'admin@sistema.mx',
-    pass:     'Admin2027!',
-    rol:      'superadmin',
-    nombre:   'Super Administrador',
-    id:       'ADM-001',
-    licencia: 'SISTEMA',
-    destino:  'modulo_admin.html',
-  },
-  {
-    email:    'candidato@colima.mx',
-    pass:     'Colima2027!',
-    rol:      'admin',
-    nombre:   'Administrador Colima',
-    id:       'ADM-COL',
-    licencia: 'COL-2027',
-    estado:   'Colima',
-    destino:  'panel_cliente.html',
-  },
-  {
-    email:    'coord.mzl@colima.mx',
-    pass:     'Coord2027!',
-    rol:      'coordinador',
-    nombre:   'Coordinador Manzanillo',
-    id:       'CORD-MZL',
-    licencia: 'COL-2027',
-    municipio:'Manzanillo',
-    destino:  'index.html?modulo=war',   // abre war room dentro del index
-  },
-  {
-    email:    'lider138@colima.mx',
-    pass:     'Lider2027!',
-    rol:      'lider_seccion',
-    nombre:   'Líder Sección 138',
-    id:       'LDR-138',
-    licencia: 'COL-2027',
-    seccion:  138,
-    municipio:'Villa de Álvarez',
-    destino:  'panel_capturista_personal.html',
-  },
-  {
-    email:    'cap017@colima.mx',
-    pass:     'Cap2027!',
-    rol:      'capturista',
-    nombre:   'Capturista 017',
-    id:       'CAP-017',
-    licencia: 'COL-2027',
-    seccion:  138,
-    municipio:'Villa de Álvarez',
-    destino:  'modulo_captura.html',
-  },
+  { email: 'admin@sistema.mx',  pass: 'Admin2027!',  rol: 'superadmin',    nombre: 'Super Administrador' },
+  { email: 'candidato@demo.mx', pass: 'Colima2027!', rol: 'admin',         nombre: 'Admin Estatal Demo'  },
+  { email: 'coord.a@demo.mx',   pass: 'Coord2027!',  rol: 'coordinador',   nombre: 'Coordinador A'       },
+  { email: 'lider138@demo.mx',  pass: 'Lider2027!',  rol: 'lider_seccion', nombre: 'Líder Sección 138'   },
+  { email: 'cap017@demo.mx',    pass: 'Cap2027!',     rol: 'capturista',    nombre: 'Capturista 017'      },
 ];
 
 // Rol seleccionado actualmente
@@ -598,67 +554,122 @@ function togglePass() {
 // ══════════════════════════════════════════════════════
 // LOGIN
 // ══════════════════════════════════════════════════════
+// SUPABASE CONFIG
+// ══════════════════════════════════════════════════════
+const SUPABASE_URL = 'https://dyirhwwmykskpuvzcafx.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_15ryvEoNMYqJr4bHm7fi0g_BcvPMMrK';
+
+const DESTINOS_ROL = {
+  superadmin:    'modulo_admin.html',
+  admin:         'panel_cliente.html',
+  coordinador:   'index.html',
+  lider_seccion: 'panel_capturista_personal.html',
+  capturista:    'modulo_captura.html',
+};
+
 async function intentarLogin() {
   const email = document.getElementById('f-email').value.trim().toLowerCase();
   const pass  = document.getElementById('f-pass').value;
   const errEl = document.getElementById('login-error');
   const btn   = document.getElementById('btn-login');
 
-  // Validar campos
   if (!email) return mostrarError('Ingresa tu correo electrónico.');
   if (!pass)  return mostrarError('Ingresa tu contraseña.');
 
-  // Animación de carga
   btn.classList.add('loading');
   document.getElementById('btn-text').textContent = 'Verificando...';
   errEl.classList.remove('show');
 
-  // Simular latencia de red (en producción → await supabase.auth.signIn)
-  await sleep(900);
+  try {
+    // ── 1. Autenticar con Supabase Auth ──
+    const authRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_KEY,
+      },
+      body: JSON.stringify({ email, password: pass }),
+    });
 
-  // Buscar usuario
-  const usuario = USUARIOS_DEMO.find(u =>
-    u.email.toLowerCase() === email && u.pass === pass && u.rol === rolActivo
-  );
+    const authData = await authRes.json();
 
-  btn.classList.remove('loading');
-  document.getElementById('btn-text').textContent = 'Ingresar al sistema';
-
-  if (!usuario) {
-    // Verificar si existe el email pero rol incorrecto
-    const existeEmail = USUARIOS_DEMO.find(u => u.email.toLowerCase() === email);
-    if (existeEmail && existeEmail.pass === pass) {
-      mostrarError(`Credenciales correctas pero el rol seleccionado es incorrecto. Tu rol es: ${labelRol(existeEmail.rol)}`);
-    } else {
+    if (!authRes.ok || !authData.access_token) {
+      btn.classList.remove('loading');
+      document.getElementById('btn-text').textContent = 'Ingresar al sistema';
+      document.getElementById('f-pass').classList.add('error');
+      setTimeout(() => document.getElementById('f-pass').classList.remove('error'), 2000);
       mostrarError('Correo o contraseña incorrectos. Verifica tus datos e intenta de nuevo.');
+      return;
     }
-    document.getElementById('f-pass').classList.add('error');
-    setTimeout(() => document.getElementById('f-pass').classList.remove('error'), 2000);
-    return;
+
+    // ── 2. Obtener perfil de public.usuarios ──
+    const perfilRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/usuarios?email=eq.${encodeURIComponent(email)}&select=id,codigo,nombre,email,rol,municipio,seccion_base,licencia_id,status,activo&limit=1`,
+      {
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${authData.access_token}`,
+        },
+      }
+    );
+
+    const perfiles = await perfilRes.json();
+    const perfil = perfiles?.[0];
+
+    if (!perfil) {
+      btn.classList.remove('loading');
+      document.getElementById('btn-text').textContent = 'Ingresar al sistema';
+      mostrarError('Usuario autenticado pero sin perfil asignado. Contacta al administrador.');
+      return;
+    }
+
+    if (!perfil.activo || perfil.status !== 'activo') {
+      btn.classList.remove('loading');
+      document.getElementById('btn-text').textContent = 'Ingresar al sistema';
+      mostrarError('Tu cuenta está inactiva. Contacta al administrador del sistema.');
+      return;
+    }
+
+    // ── 3. Verificar que el rol seleccionado coincide ──
+    if (perfil.rol !== rolActivo) {
+      btn.classList.remove('loading');
+      document.getElementById('btn-text').textContent = 'Ingresar al sistema';
+      mostrarError(`Rol incorrecto. Tu rol es: ${labelRol(perfil.rol)}`);
+      // Auto-seleccionar el rol correcto
+      selRol(perfil.rol);
+      return;
+    }
+
+    // ── 4. Guardar sesión ──
+    const sesion = {
+      id:           perfil.id,
+      codigo:       perfil.codigo,
+      nombre:       perfil.nombre,
+      email:        perfil.email,
+      rol:          perfil.rol,
+      licencia_id:  perfil.licencia_id,
+      municipio:    perfil.municipio || '',
+      seccion:      perfil.seccion_base || null,
+      access_token: authData.access_token,
+      refresh_token: authData.refresh_token,
+      ts:           Date.now(),
+    };
+    localStorage.setItem('electoral_sesion', JSON.stringify(sesion));
+
+    // ── 5. Animación de éxito y redirigir ──
+    btn.classList.remove('loading');
+    btn.style.background = '#22c55e';
+    document.getElementById('btn-text').textContent = '✓ Acceso concedido — redirigiendo...';
+
+    await sleep(800);
+    window.location.href = DESTINOS_ROL[perfil.rol] || 'index.html';
+
+  } catch(e) {
+    btn.classList.remove('loading');
+    document.getElementById('btn-text').textContent = 'Ingresar al sistema';
+    mostrarError('Error de conexión. Verifica tu internet e intenta de nuevo.');
+    console.error('Login error:', e);
   }
-
-  // ✅ Login exitoso — guardar sesión
-  const sesion = {
-    id:        usuario.id,
-    nombre:    usuario.nombre,
-    email:     usuario.email,
-    rol:       usuario.rol,
-    licencia:  usuario.licencia,
-    estado:    usuario.estado    || '',
-    municipio: usuario.municipio || '',
-    seccion:   usuario.seccion   || null,
-    ts:        Date.now(),
-  };
-  localStorage.setItem('electoral_sesion', JSON.stringify(sesion));
-
-  // Animación de éxito
-  btn.style.background = '#22c55e';
-  document.getElementById('btn-text').textContent = '✓ Acceso concedido — redirigiendo...';
-
-  await sleep(800);
-
-  // Redirigir según destino
-  window.location.href = usuario.destino;
 }
 
 function mostrarError(msg) {
