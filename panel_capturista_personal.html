@@ -203,6 +203,19 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 @keyframes pulse-red{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0)}50%{box-shadow:0 0 0 4px rgba(239,68,68,.15)}}
 </style>
 </head>
+<script>
+(function(){
+  try {
+    const s = JSON.parse(localStorage.getItem('electoral_sesion') || 'null');
+    if (!s || !s.ts) { window.location.replace('login.html'); return; }
+    const horas = (Date.now() - s.ts) / 3600000;
+    if (horas >= 8) { localStorage.removeItem('electoral_sesion'); window.location.replace('login.html'); return; }
+    const rolesPermitidos = ["capturista", "lider_seccion"];
+    if (!rolesPermitidos.includes(s.rol)) { window.location.replace('login.html'); return; }
+    window._sesion = s;
+  } catch(e) { window.location.replace('login.html'); }
+})();
+</script>
 <body>
 
 <!-- TOPBAR -->
