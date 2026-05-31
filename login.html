@@ -404,31 +404,112 @@ html, body {
         </div>
       </div>
 
-      <!-- Credenciales demo -->
-      <div class="demo-creds">
-        <div class="demo-title">🔑 Credenciales de prueba — clic para cargar</div>
-        <div class="demo-item" onclick="cargarDemo('superadmin','admin@sistema.mx','Admin2027!')">
-          <span class="demo-item-rol">🔒 Super Admin</span>
-          <span class="demo-item-pass">admin@sistema.mx / Admin2027!</span>
-        </div>
-        <div class="demo-item" onclick="cargarDemo('admin','candidato@colima.mx','Colima2027!')">
-          <span class="demo-item-rol">🏛 Admin Estatal</span>
-          <span class="demo-item-pass">candidato@colima.mx / Colima2027!</span>
-        </div>
-        <div class="demo-item" onclick="cargarDemo('coordinador','coord.mzl@colima.mx','Coord2027!')">
-          <span class="demo-item-rol">📍 Coordinador</span>
-          <span class="demo-item-pass">coord.mzl@colima.mx / Coord2027!</span>
-        </div>
-        <div class="demo-item" onclick="cargarDemo('lider_seccion','lider138@colima.mx','Lider2027!')">
-          <span class="demo-item-rol">⭐ Líder de Sección</span>
-          <span class="demo-item-pass">lider138@colima.mx / Lider2027!</span>
-        </div>
-        <div class="demo-item" onclick="cargarDemo('capturista','cap017@colima.mx','Cap2027!')">
-          <span class="demo-item-rol">✏️ Capturista</span>
-          <span class="demo-item-pass">cap017@colima.mx / Cap2027!</span>
-        </div>
-        <div class="demo-hint">⚠ Solo para demostración. En producción se conecta a Supabase.</div>
+      
+<div class="bg-glow"></div>
+<div class="scan-line"></div>
+
+<div class="shell">
+
+  <!-- ── PANEL IZQUIERDO ── -->
+  <div class="left-panel">
+
+    <!-- Logo -->
+    <div class="brand-mark">
+      <div class="brand-icon" data-theme="logo-inicial">IE
+        <img data-theme="logo-img" src="" style="display:none">
       </div>
+      <div>
+        <div class="brand-name" data-theme="partido-nombre">Inteligencia Electoral</div>
+        <div class="brand-sub" data-theme="sistema-titulo">Sistema · 2027</div>
+      </div>
+    </div>
+
+    <!-- Hero -->
+    <div class="left-center">
+      <div class="hero-label">Sistema electoral</div>
+      <div class="hero-title">Control territorial inteligente</div>
+      <div class="hero-desc">
+        Plataforma de gestión de estructura de campo, captura de simpatizantes y análisis electoral en tiempo real.
+      </div>
+      <div class="stats-row">
+        <div class="stat">
+          <div class="stat-val" data-theme="sistema-meta">—</div>
+          <div class="stat-lbl">Meta estatal</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val" data-theme="dias-eleccion">—</div>
+          <div class="stat-lbl">Días a elección</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val" id="reloj">—</div>
+          <div class="stat-lbl">Hora actual</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Roles -->
+    <div>
+      <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Niveles de acceso</div>
+      <div class="roles-list">
+        <div class="role-item">
+          <div class="role-dot" style="background:#ef4444"></div>
+          <span class="role-name">Super Admin</span>
+          <span class="role-dest">Panel administración</span>
+        </div>
+        <div class="role-item">
+          <div class="role-dot" style="background:#3b82f6"></div>
+          <span class="role-name">Admin Estatal (candidato)</span>
+          <span class="role-dest">Panel del cliente</span>
+        </div>
+        <div class="role-item">
+          <div class="role-dot" style="background:#06b6d4"></div>
+          <span class="role-name">Coordinador Municipal</span>
+          <span class="role-dest">War Room + Capturistas</span>
+        </div>
+        <div class="role-item">
+          <div class="role-dot" style="background:#22c55e"></div>
+          <span class="role-name">Capturista</span>
+          <span class="role-dest">Captura + Mi Panel</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── PANEL DERECHO — FORMULARIO ── -->
+  <div class="right-panel">
+    <div class="login-box">
+
+      <div class="login-header">
+        <div class="login-title">Iniciar sesión</div>
+        <div class="login-sub">Selecciona tu rol e ingresa tus credenciales</div>
+      </div>
+
+      <!-- Selector de rol -->
+      <div class="rol-selector" id="rol-selector" style="grid-template-columns:1fr 1fr 1fr;">
+        <div class="rol-btn" id="rol-superadmin" style="--rol-color:#ef4444" onclick="selRol('superadmin')">
+          <div class="rol-icon">🔒</div>
+          <span class="rol-label">Super Admin</span>
+        </div>
+        <div class="rol-btn" id="rol-admin" style="--rol-color:#3b82f6" onclick="selRol('admin')">
+          <div class="rol-icon">🏛</div>
+          <span class="rol-label">Admin Estatal</span>
+        </div>
+        <div class="rol-btn" id="rol-coordinador" style="--rol-color:#06b6d4" onclick="selRol('coordinador')">
+          <div class="rol-icon">📍</div>
+          <span class="rol-label">Coordinador</span>
+        </div>
+        <div class="rol-btn" id="rol-lider_seccion" style="--rol-color:#a855f7" onclick="selRol('lider_seccion')">
+          <div class="rol-icon">⭐</div>
+          <span class="rol-label">Líder de Sección</span>
+        </div>
+        <div class="rol-btn active" id="rol-capturista" style="--rol-color:#22c55e" onclick="selRol('capturista')">
+          <div class="rol-icon">✏️</div>
+          <span class="rol-label">Capturista</span>
+        </div>
+      </div>
+
+      
 
       <!-- Campos -->
       <div class="field">
@@ -486,11 +567,11 @@ html, body {
 // Credenciales demo solo para mostrar en el panel visual
 // El login real usa Supabase Auth
 const USUARIOS_DEMO = [
-  { email: 'admin@sistema.mx',  pass: 'Admin2027!',  rol: 'superadmin',    nombre: 'Super Administrador' },
-  { email: 'candidato@demo.mx', pass: 'Colima2027!', rol: 'admin',         nombre: 'Admin Estatal Demo'  },
-  { email: 'coord.a@demo.mx',   pass: 'Coord2027!',  rol: 'coordinador',   nombre: 'Coordinador A'       },
-  { email: 'lider138@demo.mx',  pass: 'Lider2027!',  rol: 'lider_seccion', nombre: 'Líder Sección 138'   },
-  { email: 'cap017@demo.mx',    pass: 'Cap2027!',     rol: 'capturista',    nombre: 'Capturista 017'      },
+  { email: 'admin@sistema.mx',   pass: 'Admin2027!',  rol: 'superadmin',    nombre: 'Super Administrador' },
+  { email: 'candidato@demo.mx',  pass: 'Colima2027!', rol: 'admin',         nombre: 'Admin Estatal Demo'  },
+  { email: 'coord.a@demo.mx',    pass: 'Coord2027!',  rol: 'coordinador',   nombre: 'Coordinador A'       },
+  { email: 'lider138@demo.mx',   pass: 'Lider2027!',  rol: 'lider_seccion', nombre: 'Líder Sección 138'   },
+  { email: 'cap017@demo.mx',     pass: 'Cap2027!',    rol: 'capturista',    nombre: 'Capturista 017'      },
 ];
 
 // Rol seleccionado actualmente
