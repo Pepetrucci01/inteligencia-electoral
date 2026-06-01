@@ -305,7 +305,7 @@ async function cargarDatosSupabase() {
     const pageSize = 1000;
     while (true) {
       const res = await fetch(
-        `${SUPA_URL}/rest/v1/ciudadanos?select=capturista_id,nivel_compromiso,es_riesgo,municipio_id,fecha_registro,seccion_electoral&licencia_id=eq.${LICENCIA_ID}&limit=${pageSize}&offset=${from}`,
+        `${SUPA_URL}/rest/v1/ciudadanos?select=id,capturista_id,compromiso,es_riesgo,municipio,created_at,seccion_electoral,nombre,apellido_paterno&licencia_id=eq.${LICENCIA_ID}&limit=${pageSize}&offset=${from}`,
         { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` } }
       );
       if (!res.ok) break;
@@ -316,20 +316,19 @@ async function cargarDatosSupabase() {
       from += pageSize;
     }
 
-    // Agrupar por capturista_id
+    // Agrupar por capturista_id — si es NULL usar 'SIN_ASIGNAR'
     const mapa = {};
     todos.forEach(c => {
       const id = c.capturista_id || 'SIN_ASIGNAR';
       if (!mapa[id]) {
         mapa[id] = {
           ID_CAPTURISTA: id,
-          CAPTURADO_POR: id,
-          MUNICIPIO: c.municipio_id || '—',
+          CAPTURADO_POR: id === 'SIN_ASIGNAR' ? 'Sin asignar' : id,
+          MUNICIPIO: c.municipio || '—',
           total: 0, meta: 50, faltantes: 0,
           validados: 0, seguros: 0, riesgo_alto: 0,
           duplicados: 0, score: 0,
           ultima_fecha: null,
-          // campos de distribución (no disponibles sin campos extra)
           pct_val: 0, pct_seg: 0, pct_meta: 0,
           moviliza: 0, simpatizantes: 0, contactos: 0,
           alta_prob: 0, casa: 0, referido: 0, evento: 0, digital: 0
@@ -337,41 +336,38 @@ async function cargarDatosSupabase() {
       }
       const e = mapa[id];
       e.total++;
-      if (c.nivel_compromiso >= 3) e.seguros++;
-      if (c.nivel_compromiso >= 2) e.validados++;
+      if ((c.compromiso || 0) >= 3) e.seguros++;
+      if ((c.compromiso || 0) >= 2) e.validados++;
       if (c.es_riesgo) e.riesgo_alto++;
-      if (c.fecha_registro) {
-        const f = new Date(c.fecha_registro);
+      if (c.created_at) {
+        const f = new Date(c.created_at);
         if (!e.ultima_fecha || f > e.ultima_fecha) e.ultima_fecha = f;
       }
-      // municipio del primer registro (más común)
-      if (c.municipio_id && e.MUNICIPIO === '—') e.MUNICIPIO = c.municipio_id;
+      if (c.municipio && e.MUNICIPIO === '—') e.MUNICIPIO = c.municipio;
     });
 
     // Calcular porcentajes y score
     Object.values(mapa).forEach(e => {
-      e.faltantes   = Math.max(0, e.meta - e.total);
-      e.pct_meta    = e.meta > 0 ? +(( e.total / e.meta) * 100).toFixed(1) : 0;
-      e.pct_val     = e.total > 0 ? +((e.validados / e.total) * 100).toFixed(1) : 0;
-      e.pct_seg     = e.total > 0 ? +((e.seguros   / e.total) * 100).toFixed(1) : 0;
-      // Score simple: combinación pct_val + pct_seg
-      e.score       = +((e.pct_val * 0.5 + e.pct_seg * 0.5)).toFixed(1);
-      e.ultima_str  = e.ultima_fecha
+      e.faltantes  = Math.max(0, e.meta - e.total);
+      e.pct_meta   = e.meta > 0 ? +((e.total    / e.meta)  * 100).toFixed(1) : 0;
+      e.pct_val    = e.total > 0 ? +((e.validados / e.total) * 100).toFixed(1) : 0;
+      e.pct_seg    = e.total > 0 ? +((e.seguros   / e.total) * 100).toFixed(1) : 0;
+      e.score      = +((e.pct_val * 0.5 + e.pct_seg * 0.5)).toFixed(1);
+      e.ultima_str = e.ultima_fecha
         ? e.ultima_fecha.toLocaleDateString('es-MX', {day:'2-digit',month:'2-digit',year:'numeric'})
         : '—';
     });
 
     DATOS = Object.values(mapa);
 
-    // Si Supabase no devolvió datos (BD vacía o sin licencia), cargar datos simulados
+    // Si todos tienen capturista_id en NULL → mostrar como un solo grupo "Sin asignar"
+    // pero igual mostramos los datos para que se vea que hay registros
     if (DATOS.length === 0) { cargarDatosSimulados(); return; }
-    const totalEl = document.querySelector('.kpi.blue .kpi-val');
-    if (totalEl && !totalEl.id) totalEl.textContent = DATOS.length;
 
     aplicarFiltros();
 
     // Poblar selector de municipio
-    const munsSet = new Set(DATOS.map(d => d.MUNICIPIO).filter(Boolean));
+    const munsSet = new Set(DATOS.map(d => d.MUNICIPIO).filter(m => m && m !== '—'));
     const sel = document.getElementById('filtro-municipio');
     if (sel) {
       const existing = new Set([...sel.options].map(o => o.value));
