@@ -298,11 +298,11 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
       <div class="table-wrap">
         <table class="rt" id="tbl-proyeccion">
           <thead><tr>
-            <th onclick="sortProyeccion('escenario')" style="cursor:pointer;user-select:none" title="Ordenar por escenario">Escenario <span id="sort-escenario">↕</span></th>
-            <th class="r" onclick="sortProyeccion('ritmo')" style="cursor:pointer;user-select:none" title="Ordenar por ritmo">Ritmo semanal <span id="sort-ritmo">↕</span></th>
-            <th class="r" onclick="sortProyeccion('capturas')" style="cursor:pointer;user-select:none" title="Ordenar por capturas">Capturas a jun 2027 <span id="sort-capturas">↕</span></th>
-            <th class="r" onclick="sortProyeccion('pct')" style="cursor:pointer;user-select:none" title="Ordenar por % meta">% de meta <span id="sort-pct">↕</span></th>
-            <th onclick="sortProyeccion('semaforo')" style="cursor:pointer;user-select:none" title="Ordenar por semáforo">Semáforo <span id="sort-semaforo">↕</span></th>
+            <th onclick="sortProyeccion('escenario')" style="cursor:pointer;user-select:none;text-align:center" title="Ordenar por escenario">Escenario <span id="sort-escenario">↕</span></th>
+            <th onclick="sortProyeccion('ritmo')" style="cursor:pointer;user-select:none;text-align:center" title="Ordenar por ritmo">Ritmo semanal <span id="sort-ritmo">↕</span></th>
+            <th onclick="sortProyeccion('capturas')" style="cursor:pointer;user-select:none;text-align:center" title="Ordenar por capturas">Capturas a jun 2027 <span id="sort-capturas">↕</span></th>
+            <th onclick="sortProyeccion('pct')" style="cursor:pointer;user-select:none;text-align:center" title="Ordenar por % meta">% de meta <span id="sort-pct">↕</span></th>
+            <th onclick="sortProyeccion('semaforo')" style="cursor:pointer;user-select:none;text-align:center" title="Ordenar por semáforo">Semáforo <span id="sort-semaforo">↕</span></th>
           </tr></thead>
           <tbody id="tb-proyeccion"></tbody>
         </table>
@@ -433,8 +433,15 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
       <div class="table-wrap">
         <table class="rt">
           <thead><tr>
-            <th>Municipio</th><th class="r">Capturados</th><th class="r">Meta 2027</th><th class="r">% Avance</th>
-            <th class="r">Validados</th><th class="r">Seg. vota</th><th class="r">Riesgo</th><th class="r">Dup.</th><th>Semáforo</th>
+            <th onclick="sortMun('n')" style="cursor:pointer;user-select:none;text-align:center">Municipio <span id="sort-m-n" style="color:var(--text3);font-size:9px">↕</span></th>
+            <th onclick="sortMun('cap')" style="cursor:pointer;user-select:none;text-align:center">Capturados <span id="sort-m-cap" style="color:var(--text3);font-size:9px">↕</span></th>
+            <th onclick="sortMun('meta')" style="cursor:pointer;user-select:none;text-align:center">Meta 2027 <span id="sort-m-meta" style="color:var(--text3);font-size:9px">↕</span></th>
+            <th onclick="sortMun('pct')" style="cursor:pointer;user-select:none;text-align:center">% Avance <span id="sort-m-pct" style="color:var(--text3);font-size:9px">↕</span></th>
+            <th onclick="sortMun('val')" style="cursor:pointer;user-select:none;text-align:center">Validados <span id="sort-m-val" style="color:var(--text3);font-size:9px">↕</span></th>
+            <th onclick="sortMun('seg')" style="cursor:pointer;user-select:none;text-align:center">Seg. vota <span id="sort-m-seg" style="color:var(--text3);font-size:9px">↕</span></th>
+            <th onclick="sortMun('rie')" style="cursor:pointer;user-select:none;text-align:center">Riesgo <span id="sort-m-rie" style="color:var(--text3);font-size:9px">↕</span></th>
+            <th onclick="sortMun('dup')" style="cursor:pointer;user-select:none;text-align:center">Dup. <span id="sort-m-dup" style="color:var(--text3);font-size:9px">↕</span></th>
+            <th style="text-align:center">Semáforo</th>
           </tr></thead>
           <tbody id="tb-mun"></tbody>
         </table>
@@ -455,15 +462,15 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
       <div class="table-wrap">
         <table class="rt">
           <thead><tr>
-            <th onclick="sortSec('sec')" style="cursor:pointer;user-select:none">Sección <span id="sort-sec-sec" style="color:var(--text3)">↕</span></th>
-            <th onclick="sortSec('municipio')" style="cursor:pointer;user-select:none">Municipio <span id="sort-sec-municipio" style="color:var(--text3)">↕</span></th>
-            <th onclick="sortSec('df')" style="cursor:pointer;user-select:none">Dist. Fed. <span id="sort-sec-df" style="color:var(--text3)">↕</span></th>
-            <th onclick="sortSec('dl')" style="cursor:pointer;user-select:none">Dist. Local <span id="sort-sec-dl" style="color:var(--text3)">↕</span></th>
-            <th class="r" onclick="sortSec('cap')" style="cursor:pointer;user-select:none">Capturados <span id="sort-sec-cap" style="color:var(--text3)">↕</span></th>
-            <th class="r" onclick="sortSec('meta')" style="cursor:pointer;user-select:none">Meta <span id="sort-sec-meta" style="color:var(--text3)">↕</span></th>
-            <th class="r" onclick="sortSec('pct')" style="cursor:pointer;user-select:none">% Avance <span id="sort-sec-pct" style="color:var(--text3)">↕</span></th>
-            <th onclick="sortSec('dificultad')" style="cursor:pointer;user-select:none">Dificultad <span id="sort-sec-dificultad" style="color:var(--text3)">↕</span></th>
-            <th>Semáforo</th>
+            <th onclick="sortSec('sec')" style="cursor:pointer;user-select:none;text-align:center">Sección <span id="sort-sec-sec" style="color:var(--text3);font-size:9px">↕</span></th>
+            <th onclick="sortSec('municipio')" style="cursor:pointer;user-select:none;text-align:center">Municipio <span id="sort-sec-municipio" style="color:var(--text3);font-size:9px">↕</span></th>
+            <th onclick="sortSec('df')" style="cursor:pointer;user-select:none;text-align:center">Dist. Fed. <span id="sort-sec-df" style="color:var(--text3);font-size:9px">↕</span></th>
+            <th onclick="sortSec('dl')" style="cursor:pointer;user-select:none;text-align:center">Dist. Local <span id="sort-sec-dl" style="color:var(--text3);font-size:9px">↕</span></th>
+            <th onclick="sortSec('cap')" style="cursor:pointer;user-select:none;text-align:center">Capturados <span id="sort-sec-cap" style="color:var(--text3);font-size:9px">↕</span></th>
+            <th onclick="sortSec('meta')" style="cursor:pointer;user-select:none;text-align:center">Meta <span id="sort-sec-meta" style="color:var(--text3);font-size:9px">↕</span></th>
+            <th onclick="sortSec('pct')" style="cursor:pointer;user-select:none;text-align:center">% Avance <span id="sort-sec-pct" style="color:var(--text3);font-size:9px">↕</span></th>
+            <th onclick="sortSec('dificultad')" style="cursor:pointer;user-select:none;text-align:center">Dificultad <span id="sort-sec-dificultad" style="color:var(--text3);font-size:9px">↕</span></th>
+            <th style="text-align:center">Semáforo</th>
           </tr></thead>
           <tbody id="tb-secciones"></tbody>
         </table>
@@ -545,13 +552,13 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
     <div class="table-wrap">
       <table class="rt" id="tbl-capturistas">
         <thead><tr>
-          <th onclick="sortCap('id')" style="cursor:pointer;user-select:none">ID <span id="sort-c-id" style="color:var(--text3)">↕</span></th>
-          <th onclick="sortCap('municipio')" style="cursor:pointer;user-select:none">Municipio <span id="sort-c-municipio" style="color:var(--text3)">↕</span></th>
-          <th class="r" onclick="sortCap('capturas')" style="cursor:pointer;user-select:none">Capturas <span id="sort-c-capturas" style="color:var(--text3)">↕</span></th>
-          <th class="r" onclick="sortCap('meta')" style="cursor:pointer;user-select:none">Meta <span id="sort-c-meta" style="color:var(--text3)">↕</span></th>
-          <th class="r" onclick="sortCap('pct')" style="cursor:pointer;user-select:none">% Meta <span id="sort-c-pct" style="color:var(--text3)">↕</span></th>
-          <th class="r" onclick="sortCap('score')" style="cursor:pointer;user-select:none">Score <span id="sort-c-score" style="color:var(--text3)">↕</span></th>
-          <th onclick="sortCap('status')" style="cursor:pointer;user-select:none">Estatus <span id="sort-c-status" style="color:var(--text3)">↕</span></th>
+          <th onclick="sortCap('id')" style="cursor:pointer;user-select:none;text-align:center">ID <span id="sort-c-id" style="color:var(--text3);font-size:9px">↕</span></th>
+          <th onclick="sortCap('municipio')" style="cursor:pointer;user-select:none;text-align:center">Municipio <span id="sort-c-municipio" style="color:var(--text3);font-size:9px">↕</span></th>
+          <th onclick="sortCap('capturas')" style="cursor:pointer;user-select:none;text-align:center">Capturas <span id="sort-c-capturas" style="color:var(--text3);font-size:9px">↕</span></th>
+          <th onclick="sortCap('meta')" style="cursor:pointer;user-select:none;text-align:center">Meta <span id="sort-c-meta" style="color:var(--text3);font-size:9px">↕</span></th>
+          <th onclick="sortCap('pct')" style="cursor:pointer;user-select:none;text-align:center">% Meta <span id="sort-c-pct" style="color:var(--text3);font-size:9px">↕</span></th>
+          <th onclick="sortCap('score')" style="cursor:pointer;user-select:none;text-align:center">Score <span id="sort-c-score" style="color:var(--text3);font-size:9px">↕</span></th>
+          <th onclick="sortCap('status')" style="cursor:pointer;user-select:none;text-align:center">Estatus <span id="sort-c-status" style="color:var(--text3);font-size:9px">↕</span></th>
         </tr></thead>
         <tbody id="tb-capturistas"></tbody>
       </table>
@@ -593,13 +600,13 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
       <div class="table-wrap">
         <table class="rt" id="tbl-perfil">
           <thead><tr>
-            <th onclick="sortPerfil('grupo')" style="cursor:pointer;user-select:none">Grupo edad <span id="sort-p-grupo" style="color:var(--text3)">↕</span></th>
-            <th class="r" onclick="sortPerfil('total')" style="cursor:pointer;user-select:none">Total <span id="sort-p-total" style="color:var(--text3)">↕</span></th>
-            <th class="r" onclick="sortPerfil('pct')" style="cursor:pointer;user-select:none">% del padrón <span id="sort-p-pct" style="color:var(--text3)">↕</span></th>
-            <th class="r" onclick="sortPerfil('seg')" style="cursor:pointer;user-select:none">Seg. votan <span id="sort-p-seg" style="color:var(--text3)">↕</span></th>
-            <th class="r" onclick="sortPerfil('rie')" style="cursor:pointer;user-select:none">En riesgo <span id="sort-p-rie" style="color:var(--text3)">↕</span></th>
-            <th class="r" onclick="sortPerfil('apo')" style="cursor:pointer;user-select:none">Nec. apoyo <span id="sort-p-apo" style="color:var(--text3)">↕</span></th>
-            <th onclick="sortPerfil('pri')" style="cursor:pointer;user-select:none">Prioridad <span id="sort-p-pri" style="color:var(--text3)">↕</span></th>
+            <th onclick="sortPerfil('grupo')" style="cursor:pointer;user-select:none;text-align:center">Grupo edad <span id="sort-p-grupo" style="color:var(--text3);font-size:9px">↕</span></th>
+            <th onclick="sortPerfil('total')" style="cursor:pointer;user-select:none;text-align:center">Total <span id="sort-p-total" style="color:var(--text3);font-size:9px">↕</span></th>
+            <th onclick="sortPerfil('pct')" style="cursor:pointer;user-select:none;text-align:center">% del padrón <span id="sort-p-pct" style="color:var(--text3);font-size:9px">↕</span></th>
+            <th onclick="sortPerfil('seg')" style="cursor:pointer;user-select:none;text-align:center">Seg. votan <span id="sort-p-seg" style="color:var(--text3);font-size:9px">↕</span></th>
+            <th onclick="sortPerfil('rie')" style="cursor:pointer;user-select:none;text-align:center">En riesgo <span id="sort-p-rie" style="color:var(--text3);font-size:9px">↕</span></th>
+            <th onclick="sortPerfil('apo')" style="cursor:pointer;user-select:none;text-align:center">Nec. apoyo <span id="sort-p-apo" style="color:var(--text3);font-size:9px">↕</span></th>
+            <th onclick="sortPerfil('pri')" style="cursor:pointer;user-select:none;text-align:center">Prioridad <span id="sort-p-pri" style="color:var(--text3);font-size:9px">↕</span></th>
           </tr></thead>
           <tbody id="tb-perfil"></tbody>
         </table>
@@ -847,8 +854,13 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
       <div class="table-wrap">
         <table class="rt">
           <thead><tr>
-            <th>Sección</th><th>Municipio</th><th>Total base</th>
-            <th>Ya votaron</th><th>Pendientes</th><th>%</th><th>Último reporte</th>
+            <th onclick="sortDiae('seccion')" style="cursor:pointer;user-select:none;text-align:center">Sección <span id="sort-d-seccion" style="color:var(--text3);font-size:9px">↕</span></th>
+            <th onclick="sortDiae('municipio')" style="cursor:pointer;user-select:none;text-align:center">Municipio <span id="sort-d-municipio" style="color:var(--text3);font-size:9px">↕</span></th>
+            <th onclick="sortDiae('total')" style="cursor:pointer;user-select:none;text-align:center">Total base <span id="sort-d-total" style="color:var(--text3);font-size:9px">↕</span></th>
+            <th onclick="sortDiae('votaron')" style="cursor:pointer;user-select:none;text-align:center">Ya votaron <span id="sort-d-votaron" style="color:var(--text3);font-size:9px">↕</span></th>
+            <th onclick="sortDiae('pendientes')" style="cursor:pointer;user-select:none;text-align:center">Pendientes <span id="sort-d-pendientes" style="color:var(--text3);font-size:9px">↕</span></th>
+            <th onclick="sortDiae('pct')" style="cursor:pointer;user-select:none;text-align:center">% <span id="sort-d-pct" style="color:var(--text3);font-size:9px">↕</span></th>
+            <th onclick="sortDiae('ts')" style="cursor:pointer;user-select:none;text-align:center">Último reporte <span id="sort-d-ts" style="color:var(--text3);font-size:9px">↕</span></th>
           </tr></thead>
           <tbody id="diae-tabla"></tbody>
         </table>
@@ -932,11 +944,35 @@ function actualizarKPIsMunicipio() {
   }
 }
 
+// ── SORT MUNICIPIOS ──────────────────────────────────
+let MUN_SORT = {col: null, asc: true};
+function sortMun(col) {
+  if(MUN_SORT.col === col) MUN_SORT.asc = !MUN_SORT.asc;
+  else { MUN_SORT.col = col; MUN_SORT.asc = col === 'n'; }
+  ['n','cap','meta','pct','val','seg','rie','dup'].forEach(c => {
+    const el = document.getElementById('sort-m-'+c);
+    if(el){ el.textContent='↕'; el.style.color='var(--text3)'; }
+  });
+  const activeEl = document.getElementById('sort-m-'+col);
+  if(activeEl){ activeEl.textContent = MUN_SORT.asc ? '↑' : '↓'; activeEl.style.color='var(--accent)'; }
+  buildMunTable();
+}
+
 function buildMunTable(){
   const tb = document.getElementById('tb-mun');
-  const data = MUN_SELECTED
+  let data = MUN_SELECTED
     ? MUN_DATA.filter(m => m.n === MUN_SELECTED)
-    : MUN_DATA;
+    : [...MUN_DATA];
+
+  if(MUN_SORT.col) {
+    data.sort((a,b) => {
+      const pctA = a.cap/a.meta*100, pctB = b.cap/b.meta*100;
+      const va = MUN_SORT.col==='pct' ? pctA : MUN_SORT.col==='n' ? a.n : a[MUN_SORT.col];
+      const vb = MUN_SORT.col==='pct' ? pctB : MUN_SORT.col==='n' ? b.n : b[MUN_SORT.col];
+      if(typeof va==='string') return MUN_SORT.asc ? va.localeCompare(vb) : vb.localeCompare(va);
+      return MUN_SORT.asc ? va-vb : vb-va;
+    });
+  }
 
   tb.innerHTML = data.map(m=>{
     const pct = (m.cap/m.meta*100).toFixed(1);
@@ -949,14 +985,14 @@ function buildMunTable(){
       <td><div class="cell-name" style="${isSelected ? 'color:var(--accent);font-weight:700' : ''}">${isSelected ? '🔍 ' : ''}${m.n}</div>
         <div class="mini-bar" style="width:100px"><div class="mini-fill" style="width:${Math.min(parseFloat(pct)/15*100,100)}%;background:${sc}"></div></div>
       </td>
-      <td class="cell-num" style="color:var(--text)">${m.cap.toLocaleString()}</td>
-      <td class="cell-num" style="color:var(--text2)">${m.meta.toLocaleString()}</td>
-      <td class="cell-num" style="color:${sc};font-weight:500">${pct}%</td>
-      <td class="cell-num" style="color:var(--green)">${m.val.toLocaleString()}</td>
-      <td class="cell-num" style="color:var(--green)">${m.seg.toLocaleString()}</td>
-      <td class="cell-num" style="color:var(--red)">${m.rie}</td>
-      <td class="cell-num" style="color:var(--amber)">${m.dup}</td>
-      <td><span class="badge-sm ${semClass(parseFloat(pct))}">${semLabel(parseFloat(pct))}</span></td>
+      <td class="cell-num" style="text-align:center;color:var(--text)">${m.cap.toLocaleString()}</td>
+      <td class="cell-num" style="text-align:center;color:var(--text2)">${m.meta.toLocaleString()}</td>
+      <td class="cell-num" style="text-align:center;color:${sc};font-weight:500">${pct}%</td>
+      <td class="cell-num" style="text-align:center;color:var(--green)">${m.val.toLocaleString()}</td>
+      <td class="cell-num" style="text-align:center;color:var(--green)">${m.seg.toLocaleString()}</td>
+      <td class="cell-num" style="text-align:center;color:var(--red)">${m.rie}</td>
+      <td class="cell-num" style="text-align:center;color:var(--amber)">${m.dup}</td>
+      <td style="text-align:center"><span class="badge-sm ${semClass(parseFloat(pct))}">${semLabel(parseFloat(pct))}</span></td>
     </tr>`;
   }).join('');
 }
@@ -1083,22 +1119,22 @@ function buildSecTable(data) {
     const sem = getSemaforo(pct);
     const difCol = s.dificultad === 'FACIL' ? 'var(--green)' : s.dificultad === 'MEDIO' ? 'var(--amber)' : 'var(--red)';
     return `<tr>
-      <td style="font-family:var(--mono);font-weight:600;color:var(--accent)">${s.sec}</td>
-      <td>${s.municipio}</td>
-      <td style="font-size:10px;color:var(--text3);font-family:var(--mono)">${s.df === '1' ? 'DF-01 Colima' : 'DF-02 Valle Garzas'}</td>
-      <td style="font-size:10px;color:var(--text3);font-family:var(--mono)">DL-${s.dl.padStart(2,'0')}</td>
-      <td class="cell-num" style="color:var(--text)">${s.cap.toLocaleString()}</td>
-      <td class="cell-num" style="color:var(--text2)">${s.meta.toLocaleString()}</td>
-      <td class="cell-num">
-        <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end">
+      <td style="font-family:var(--mono);font-weight:600;color:var(--accent);text-align:center">${s.sec}</td>
+      <td style="text-align:center">${s.municipio}</td>
+      <td style="font-size:10px;color:var(--text3);font-family:var(--mono);text-align:center">${s.df === '1' ? 'DF-01 Colima' : 'DF-02 Valle Garzas'}</td>
+      <td style="font-size:10px;color:var(--text3);font-family:var(--mono);text-align:center">DL-${s.dl.padStart(2,'0')}</td>
+      <td class="cell-num" style="text-align:center;color:var(--text)">${s.cap.toLocaleString()}</td>
+      <td class="cell-num" style="text-align:center;color:var(--text2)">${s.meta.toLocaleString()}</td>
+      <td class="cell-num" style="text-align:center">
+        <div style="display:flex;align-items:center;gap:6px;justify-content:center">
           <div style="width:50px;height:5px;background:rgba(255,255,255,0.06);border-radius:99px;overflow:hidden">
             <div style="width:${Math.min(pct/15*100,100)}%;height:100%;background:${sem.col};border-radius:99px"></div>
           </div>
           <span style="color:${sem.col};font-weight:500">${pct}%</span>
         </div>
       </td>
-      <td><span style="font-size:10px;font-family:var(--mono);color:${difCol}">${s.dificultad}</span></td>
-      <td><span class="badge-sm ${sem.cls}">${sem.label}</span></td>
+      <td style="text-align:center"><span style="font-size:10px;font-family:var(--mono);color:${difCol}">${s.dificultad}</span></td>
+      <td style="text-align:center"><span class="badge-sm ${sem.cls}">${sem.label}</span></td>
     </tr>`;
   }).join('');
 }
@@ -1648,24 +1684,50 @@ function actualizarKpisDiaE() {
   document.getElementById('diae-casillas').textContent  = VOTOS_REALTIME.length;
 }
 
+// ── SORT DÍA DE ELECCIÓN ─────────────────────────────
+let DIAE_SORT = {col: null, asc: true};
+function sortDiae(col) {
+  if(DIAE_SORT.col === col) DIAE_SORT.asc = !DIAE_SORT.asc;
+  else { DIAE_SORT.col = col; DIAE_SORT.asc = col === 'municipio' || col === 'seccion' || col === 'ts'; }
+  ['seccion','municipio','total','votaron','pendientes','pct','ts'].forEach(c => {
+    const el = document.getElementById('sort-d-'+c);
+    if(el){ el.textContent='↕'; el.style.color='var(--text3)'; }
+  });
+  const activeEl = document.getElementById('sort-d-'+col);
+  if(activeEl){ activeEl.textContent = DIAE_SORT.asc ? '↑' : '↓'; activeEl.style.color='var(--accent)'; }
+  renderTablaDiaE();
+}
+
 function renderTablaDiaE() {
-  document.getElementById('diae-tabla').innerHTML = VOTOS_REALTIME.map(r => {
-    const pend = r.total - r.votaron;
-    const pct  = r.total ? Math.round(r.votaron/r.total*100) : 0;
-    const col  = pct >= 60 ? 'var(--green)' : pct >= 30 ? 'var(--amber)' : 'var(--red)';
+  let data = VOTOS_REALTIME.map(r => ({
+    ...r,
+    pendientes: r.total - r.votaron,
+    pct: r.total ? Math.round(r.votaron/r.total*100) : 0
+  }));
+
+  if(DIAE_SORT.col) {
+    data.sort((a,b) => {
+      const va = a[DIAE_SORT.col], vb = b[DIAE_SORT.col];
+      if(typeof va === 'string') return DIAE_SORT.asc ? va.localeCompare(vb) : vb.localeCompare(va);
+      return DIAE_SORT.asc ? va-vb : vb-va;
+    });
+  }
+
+  document.getElementById('diae-tabla').innerHTML = data.map(r => {
+    const col = r.pct >= 60 ? 'var(--green)' : r.pct >= 30 ? 'var(--amber)' : 'var(--red)';
     return `<tr>
-      <td style="font-family:var(--mono);font-weight:500">${r.seccion}</td>
-      <td>${r.municipio}</td>
-      <td class="cell-num">${r.total}</td>
-      <td class="cell-num" style="color:var(--green)">${r.votaron}</td>
-      <td class="cell-num" style="color:var(--red)">${pend}</td>
-      <td><div style="display:flex;align-items:center;gap:8px">
-        <div style="flex:1;max-width:60px;height:5px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden">
-          <div style="width:${pct}%;height:100%;background:${col};border-radius:99px"></div>
+      <td style="font-family:var(--mono);font-weight:500;text-align:center">${r.seccion}</td>
+      <td style="text-align:center">${r.municipio}</td>
+      <td class="cell-num" style="text-align:center">${r.total}</td>
+      <td class="cell-num" style="text-align:center;color:var(--green)">${r.votaron}</td>
+      <td class="cell-num" style="text-align:center;color:var(--red)">${r.pendientes}</td>
+      <td style="text-align:center"><div style="display:flex;align-items:center;justify-content:center;gap:8px">
+        <div style="width:60px;height:5px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden">
+          <div style="width:${r.pct}%;height:100%;background:${col};border-radius:99px"></div>
         </div>
-        <span style="font-family:var(--mono);font-size:11px;color:${col}">${pct}%</span>
+        <span style="font-family:var(--mono);font-size:11px;color:${col}">${r.pct}%</span>
       </div></td>
-      <td style="font-family:var(--mono);font-size:11px;color:var(--text3)">${r.ts} hrs</td>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--text3);text-align:center">${r.ts} hrs</td>
     </tr>`;
   }).join('');
 }
@@ -1834,10 +1896,10 @@ function renderProyeccion(data) {
   tb.innerHTML = data.map(r => `
     <tr>
       <td><div class="cell-name">${r.escenario}</div><div class="cell-sub">${r.sub}</div></td>
-      <td class="cell-num">${r.ritmo.toLocaleString()}</td>
-      <td class="cell-num">${r.capturas.toLocaleString()}</td>
-      <td class="cell-num" style="color:${r.col}">${r.pct}%</td>
-      <td><span class="badge-sm ${r.cls}">${r.semaforo}</span></td>
+      <td class="cell-num" style="text-align:center">${r.ritmo.toLocaleString()}</td>
+      <td class="cell-num" style="text-align:center">${r.capturas.toLocaleString()}</td>
+      <td class="cell-num" style="text-align:center;color:${r.col}">${r.pct}%</td>
+      <td style="text-align:center"><span class="badge-sm ${r.cls}">${r.semaforo}</span></td>
     </tr>`).join('');
 }
 
@@ -2037,12 +2099,12 @@ function renderCap(dataOverride) {
     const rank = CAP_VISTA==='top' ? `<span style="font-family:var(--mono);font-size:10px;color:var(--amber);margin-right:4px;">#${i+1}</span>` : '';
     return `<tr>
       <td><div class="cell-name">${rank}${r.id}</div></td>
-      <td style="font-size:11px;color:var(--text2)">${r.municipio}</td>
-      <td class="cell-num">${r.capturas}</td>
-      <td class="cell-num" style="color:var(--text3)">${r.meta}</td>
-      <td class="cell-num" style="color:${pctCol};font-weight:600">${pct}%</td>
-      <td class="cell-num" style="color:${scCol}">${r.score}</td>
-      <td>${stBadge}</td>
+      <td style="font-size:11px;color:var(--text2);text-align:center">${r.municipio}</td>
+      <td class="cell-num" style="text-align:center">${r.capturas}</td>
+      <td class="cell-num" style="text-align:center;color:var(--text3)">${r.meta}</td>
+      <td class="cell-num" style="text-align:center;color:${pctCol};font-weight:600">${pct}%</td>
+      <td class="cell-num" style="text-align:center;color:${scCol}">${r.score}</td>
+      <td style="text-align:center">${stBadge}</td>
     </tr>`;
   }).join('');
 }
@@ -2093,13 +2155,13 @@ function renderPerfil(data) {
   if(!tb) return;
   tb.innerHTML = data.map(r=>`
     <tr>
-      <td><div class="cell-name">${r.grupo}</div></td>
-      <td class="cell-num">${r.total.toLocaleString()}</td>
-      <td class="cell-num">${r.pct}%</td>
-      <td class="cell-num" style="color:var(--green)">${r.seg.toLocaleString()}</td>
-      <td class="cell-num" style="color:${r.rie_col}">${r.rie.toLocaleString()}</td>
-      <td class="cell-num">${r.apo.toLocaleString()}</td>
-      <td><span class="badge-sm ${r.cls}">${r.prioridad}</span></td>
+      <td style="text-align:center"><div class="cell-name">${r.grupo}</div></td>
+      <td class="cell-num" style="text-align:center">${r.total.toLocaleString()}</td>
+      <td class="cell-num" style="text-align:center">${r.pct}%</td>
+      <td class="cell-num" style="text-align:center;color:var(--green)">${r.seg.toLocaleString()}</td>
+      <td class="cell-num" style="text-align:center;color:${r.rie_col}">${r.rie.toLocaleString()}</td>
+      <td class="cell-num" style="text-align:center">${r.apo.toLocaleString()}</td>
+      <td style="text-align:center"><span class="badge-sm ${r.cls}">${r.prioridad}</span></td>
     </tr>`).join('');
 }
 
