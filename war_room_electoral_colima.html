@@ -1531,8 +1531,16 @@ function aplicarFiltros(){
   if(munId) {
     cargarSeccionesSupabase(munId);
   } else {
+    // Sin municipio seleccionado → mostrar TODAS las secciones del estado
     const secSel = document.getElementById('flt-sec');
-    if(secSel) secSel.innerHTML = '<option value="">Todas</option>';
+    if(secSel) {
+      const todasSecs = Object.values(SECS).flat()
+        .sort((a,b) => a.num - b.num);
+      secSel.innerHTML = '<option value="">Todas</option>' +
+        todasSecs.map(s=>`<option value="${s.id}">Secc. ${s.num} — ${s.munNombre}</option>`).join('');
+      // Restaurar selección previa si existe
+      if(filtros.sec) secSel.value = filtros.sec;
+    }
   }
 
   // Si hay filtro de sección, hacer drill hasta esa sección
@@ -2258,8 +2266,8 @@ async function cargarSeccionesSupabase(munId = null) {
 
 function poblarFiltrosSecciones(munId) {
   const secciones = munId
-    ? (window.SECS_REAL[munId] || [])
-    : [];
+    ? (window.SECS_REAL[munId] || DLS.filter(dl=>dl.mun===munId).flatMap(dl=>SECS[dl.id]||[]))
+    : Object.values(SECS).flat().sort((a,b) => a.num - b.num);
 
   const opts = '<option value="">Todas</option>' +
     secciones.map(s=>`<option value="${s.id}">Secc. ${s.num} — ${s.munNombre}</option>`).join('');
@@ -2519,6 +2527,14 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(fltMun) fltMun.innerHTML = '<option value="">Todos</option>' + munOpts;
   if(f2FltMun) f2FltMun.innerHTML = '<option value="">Todos</option>' + munOpts;
   if(capFltMun) capFltMun.innerHTML = '<option value="">Todos</option>' + munOpts;
+
+  // Poblar flt-sec con TODAS las secciones del estado al iniciar
+  const fltSec = document.getElementById('flt-sec');
+  if(fltSec) {
+    const todasSecs = Object.values(SECS).flat().sort((a,b) => a.num - b.num);
+    fltSec.innerHTML = '<option value="">Todas</option>' +
+      todasSecs.map(s=>`<option value="${s.id}">Secc. ${s.num} — ${s.munNombre}</option>`).join('');
+  }
 
   // Precargar secciones de todos los municipios en segundo plano
   setTimeout(() => {
