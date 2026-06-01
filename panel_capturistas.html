@@ -363,7 +363,8 @@ async function cargarDatosSupabase() {
 
     DATOS = Object.values(mapa);
 
-    // Actualizar KPI de total operadores
+    // Si Supabase no devolvió datos (BD vacía o sin licencia), cargar datos simulados
+    if (DATOS.length === 0) { cargarDatosSimulados(); return; }
     const totalEl = document.querySelector('.kpi.blue .kpi-val');
     if (totalEl && !totalEl.id) totalEl.textContent = DATOS.length;
 
@@ -386,42 +387,44 @@ async function cargarDatosSupabase() {
     console.log(`✅ panel_capturistas: ${DATOS.length} capturistas, ${todos.length} ciudadanos`);
   } catch(e) {
     console.error('Error cargando datos capturistas:', e);
-    // Fallback con datos simulados para demo
-    const MUNS = ['Colima','Manzanillo','Villa de Álvarez','Tecomán','Comala','Armería','Cuauhtémoc','Minatitlán','Ixtlahuacán','Coquimatlán'];
-    const NOMS = ['Carlos Mendoza','Rosa Jiménez','Pedro Soto','Ana Flores','Luis Torres','María Ruiz','Jorge Díaz','Elena Vega','Roberto Cruz','Carmen López','Arturo Reyes','Silvia Morales','David Herrera','Patricia Núñez','Miguel Ángel Ríos','Fernanda Castillo','Héctor Vargas','Laura Guzmán','Oscar Ramírez','Beatriz Leal'];
-    DATOS = NOMS.map((n, i) => {
-      const total = Math.floor(Math.random()*80)+10;
-      const meta = 50;
-      const validados = Math.floor(total * (0.4 + Math.random()*0.5));
-      const seguros = Math.floor(validados * (0.4 + Math.random()*0.4));
-      const pct_meta = +((total/meta)*100).toFixed(1);
-      const pct_val  = +((validados/total)*100).toFixed(1);
-      const pct_seg  = +((seguros/total)*100).toFixed(1);
-      const score    = +((pct_val*0.5 + pct_seg*0.5)).toFixed(1);
-      const dias = Math.floor(Math.random()*30);
-      const fecha = new Date(Date.now() - dias*86400000);
-      return {
-        ID_CAPTURISTA: `CAP-${String(i+1).padStart(3,'0')}`,
-        CAPTURADO_POR: n,
-        MUNICIPIO: MUNS[i % MUNS.length],
-        total, meta, faltantes: Math.max(0,meta-total),
-        validados, seguros, riesgo_alto: Math.floor(total*0.05),
-        duplicados: Math.floor(Math.random()*3),
-        pct_meta, pct_val, pct_seg, score,
-        moviliza: Math.floor(seguros*0.4),
-        simpatizantes: Math.floor(validados*0.3),
-        contactos: Math.floor(total*0.1),
-        alta_prob:0, casa:0, referido:0, evento:0, digital:0,
-        ultima_str: fecha.toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',year:'numeric'}),
-        ultima_fecha: fecha
-      };
-    });
-    aplicarFiltros();
-    // Poblar selector municipio con datos simulados
-    const munsSet = new Set(DATOS.map(d => d.MUNICIPIO));
-    const sel = document.getElementById('filtro-municipio');
-    if(sel){ munsSet.forEach(m=>{ const o=document.createElement('option'); o.value=m; o.textContent=m; sel.appendChild(o); }); }
+    cargarDatosSimulados();
   }
+}
+
+function cargarDatosSimulados() {
+  const MUNS = ['Colima','Manzanillo','Villa de Álvarez','Tecomán','Comala','Armería','Cuauhtémoc','Minatitlán','Ixtlahuacán','Coquimatlán'];
+  const NOMS = ['Carlos Mendoza','Rosa Jiménez','Pedro Soto','Ana Flores','Luis Torres','María Ruiz','Jorge Díaz','Elena Vega','Roberto Cruz','Carmen López','Arturo Reyes','Silvia Morales','David Herrera','Patricia Núñez','Miguel Ángel Ríos','Fernanda Castillo','Héctor Vargas','Laura Guzmán','Oscar Ramírez','Beatriz Leal'];
+  DATOS = NOMS.map((n, i) => {
+    const total = Math.floor(Math.random()*80)+10;
+    const meta = 50;
+    const validados = Math.floor(total * (0.4 + Math.random()*0.5));
+    const seguros = Math.floor(validados * (0.4 + Math.random()*0.4));
+    const pct_meta = +((total/meta)*100).toFixed(1);
+    const pct_val  = total > 0 ? +((validados/total)*100).toFixed(1) : 0;
+    const pct_seg  = total > 0 ? +((seguros/total)*100).toFixed(1) : 0;
+    const score    = +((pct_val*0.5 + pct_seg*0.5)).toFixed(1);
+    const dias = Math.floor(Math.random()*30);
+    const fecha = new Date(Date.now() - dias*86400000);
+    return {
+      ID_CAPTURISTA: `CAP-${String(i+1).padStart(3,'0')}`,
+      CAPTURADO_POR: n,
+      MUNICIPIO: MUNS[i % MUNS.length],
+      total, meta, faltantes: Math.max(0,meta-total),
+      validados, seguros, riesgo_alto: Math.floor(total*0.05),
+      duplicados: Math.floor(Math.random()*3),
+      pct_meta, pct_val, pct_seg, score,
+      moviliza: Math.floor(seguros*0.4),
+      simpatizantes: Math.floor(validados*0.3),
+      contactos: Math.floor(total*0.1),
+      alta_prob:0, casa:0, referido:0, evento:0, digital:0,
+      ultima_str: fecha.toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',year:'numeric'}),
+      ultima_fecha: fecha
+    };
+  });
+  aplicarFiltros();
+  const munsSet = new Set(DATOS.map(d => d.MUNICIPIO));
+  const sel = document.getElementById('filtro-municipio');
+  if(sel){ munsSet.forEach(m=>{ if(![...sel.options].find(o=>o.value===m)){ const o=document.createElement('option'); o.value=m; o.textContent=m; sel.appendChild(o); } }); }
 }
 
 
