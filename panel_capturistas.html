@@ -288,64 +288,109 @@ table.cap-table tr.selected{background:rgba(59,130,246,0.1);}
 </div>
 
 <script>
-const DATOS = [{"ID_CAPTURISTA":"CAP-057","CAPTURADO_POR":"Capturista 57","MUNICIPIO":"Manzanillo","total":197,"meta":50,"pct_meta":394.0,"faltantes":0,"validados":146,"pct_val":74.1,"seguros":99,"pct_seg":50.3,"moviliza":21,"simpatizantes":58,"contactos":37,"alta_prob":97,"riesgo_alto":43,"duplicados":8,"casa":89,"referido":52,"evento":31,"digital":25,"score":59.1,"ultima_str":"30/04/2026"},
-{"ID_CAPTURISTA":"CAP-051","CAPTURADO_POR":"Capturista 51","MUNICIPIO":"Colima","total":194,"meta":50,"pct_meta":388.0,"faltantes":0,"validados":153,"pct_val":78.9,"seguros":83,"pct_seg":42.8,"moviliza":18,"simpatizantes":48,"contactos":47,"alta_prob":104,"riesgo_alto":51,"duplicados":7,"casa":88,"referido":47,"evento":32,"digital":27,"score":56.8,"ultima_str":"29/04/2026"},
-{"ID_CAPTURISTA":"CAP-053","CAPTURADO_POR":"Capturista 53","MUNICIPIO":"Manzanillo","total":194,"meta":50,"pct_meta":388.0,"faltantes":0,"validados":151,"pct_val":77.8,"seguros":88,"pct_seg":45.4,"moviliza":19,"simpatizantes":53,"contactos":36,"alta_prob":98,"riesgo_alto":48,"duplicados":9,"casa":87,"referido":49,"evento":33,"digital":25,"score":57.4,"ultima_str":"28/04/2026"},
-{"ID_CAPTURISTA":"CAP-005","CAPTURADO_POR":"Capturista 05","MUNICIPIO":"Villa de Álvarez","total":188,"meta":50,"pct_meta":376.0,"faltantes":0,"validados":145,"pct_val":77.1,"seguros":90,"pct_seg":47.9,"moviliza":20,"simpatizantes":52,"contactos":36,"alta_prob":93,"riesgo_alto":44,"duplicados":7,"casa":85,"referido":48,"evento":31,"digital":24,"score":58.2,"ultima_str":"30/04/2026"},
-{"ID_CAPTURISTA":"CAP-009","CAPTURADO_POR":"Capturista 09","MUNICIPIO":"Manzanillo","total":188,"meta":50,"pct_meta":376.0,"faltantes":0,"validados":131,"pct_val":69.7,"seguros":77,"pct_seg":41.0,"moviliza":17,"simpatizantes":45,"contactos":46,"alta_prob":91,"riesgo_alto":52,"duplicados":10,"casa":84,"referido":46,"evento":30,"digital":28,"score":53.1,"ultima_str":"27/04/2026"},
-{"ID_CAPTURISTA":"CAP-042","CAPTURADO_POR":"Capturista 42","MUNICIPIO":"Manzanillo","total":187,"meta":50,"pct_meta":374.0,"faltantes":0,"validados":131,"pct_val":70.1,"seguros":80,"pct_seg":42.8,"moviliza":18,"simpatizantes":47,"contactos":40,"alta_prob":89,"riesgo_alto":46,"duplicados":8,"casa":83,"referido":47,"evento":29,"digital":28,"score":54.4,"ultima_str":"26/04/2026"},
-{"ID_CAPTURISTA":"CAP-032","CAPTURADO_POR":"Capturista 32","MUNICIPIO":"Manzanillo","total":186,"meta":50,"pct_meta":372.0,"faltantes":0,"validados":131,"pct_val":70.4,"seguros":85,"pct_seg":45.7,"moviliza":19,"simpatizantes":50,"contactos":37,"alta_prob":88,"riesgo_alto":44,"duplicados":8,"casa":82,"referido":46,"evento":31,"digital":27,"score":53.9,"ultima_str":"25/04/2026"},
-{"ID_CAPTURISTA":"CAP-047","CAPTURADO_POR":"Capturista 47","MUNICIPIO":"Manzanillo","total":186,"meta":50,"pct_meta":372.0,"faltantes":0,"validados":119,"pct_val":64.0,"seguros":80,"pct_seg":43.0,"moviliza":17,"simpatizantes":44,"contactos":42,"alta_prob":90,"riesgo_alto":50,"duplicados":9,"casa":84,"referido":45,"evento":28,"digital":29,"score":50.2,"ultima_str":"24/04/2026"},
-{"ID_CAPTURISTA":"CAP-012","CAPTURADO_POR":"Capturista 12","MUNICIPIO":"Colima","total":185,"meta":50,"pct_meta":370.0,"faltantes":0,"validados":131,"pct_val":70.8,"seguros":88,"pct_seg":47.6,"moviliza":20,"simpatizantes":51,"contactos":34,"alta_prob":87,"riesgo_alto":42,"duplicados":7,"casa":82,"referido":46,"evento":30,"digital":27,"score":55.1,"ultima_str":"28/04/2026"},
-{"ID_CAPTURISTA":"CAP-011","CAPTURADO_POR":"Capturista 11","MUNICIPIO":"Tecomán","total":184,"meta":50,"pct_meta":368.0,"faltantes":0,"validados":138,"pct_val":75.0,"seguros":81,"pct_seg":44.0,"moviliza":17,"simpatizantes":47,"contactos":40,"alta_prob":92,"riesgo_alto":45,"duplicados":8,"casa":83,"referido":45,"evento":29,"digital":27,"score":55.3,"ultima_str":"29/04/2026"},
-{"ID_CAPTURISTA":"CAP-014","CAPTURADO_POR":"Capturista 14","MUNICIPIO":"Tecomán","total":182,"meta":50,"pct_meta":364.0,"faltantes":0,"validados":131,"pct_val":72.0,"seguros":102,"pct_seg":56.0,"moviliza":22,"simpatizantes":55,"contactos":25,"alta_prob":85,"riesgo_alto":38,"duplicados":6,"casa":80,"referido":44,"evento":28,"digital":30,"score":58.1,"ultima_str":"27/04/2026"},
-{"ID_CAPTURISTA":"CAP-020","CAPTURADO_POR":"Capturista 20","MUNICIPIO":"Colima","total":178,"meta":50,"pct_meta":356.0,"faltantes":0,"validados":128,"pct_val":71.9,"seguros":83,"pct_seg":46.6,"moviliza":18,"simpatizantes":48,"contactos":37,"alta_prob":84,"riesgo_alto":43,"duplicados":7,"casa":79,"referido":43,"evento":28,"digital":28,"score":54.8,"ultima_str":"30/04/2026"},
-{"ID_CAPTURISTA":"CAP-058","CAPTURADO_POR":"Capturista 58","MUNICIPIO":"Colima","total":166,"meta":50,"pct_meta":332.0,"faltantes":0,"validados":134,"pct_val":80.7,"seguros":79,"pct_seg":47.6,"moviliza":16,"simpatizantes":44,"contactos":43,"alta_prob":86,"riesgo_alto":38,"duplicados":5,"casa":74,"referido":41,"evento":27,"digital":24,"score":60.4,"ultima_str":"29/04/2026"},
-{"ID_CAPTURISTA":"CAP-019","CAPTURADO_POR":"Capturista 19","MUNICIPIO":"Manzanillo","total":150,"meta":50,"pct_meta":300.0,"faltantes":0,"validados":112,"pct_val":74.7,"seguros":79,"pct_seg":52.7,"moviliza":17,"simpatizantes":43,"contactos":28,"alta_prob":75,"riesgo_alto":32,"duplicados":5,"casa":67,"referido":37,"evento":24,"digital":22,"score":59.5,"ultima_str":"26/04/2026"},
-{"ID_CAPTURISTA":"CAP-046","CAPTURADO_POR":"Capturista 46","MUNICIPIO":"Manzanillo","total":150,"meta":50,"pct_meta":300.0,"faltantes":0,"validados":107,"pct_val":71.3,"seguros":78,"pct_seg":52.0,"moviliza":16,"simpatizantes":41,"contactos":31,"alta_prob":72,"riesgo_alto":34,"duplicados":5,"casa":65,"referido":36,"evento":25,"digital":24,"score":59.5,"ultima_str":"25/04/2026"},
-{"ID_CAPTURISTA":"CAP-028","CAPTURADO_POR":"Capturista 28","MUNICIPIO":"Manzanillo","total":173,"meta":50,"pct_meta":346.0,"faltantes":0,"validados":128,"pct_val":74.0,"seguros":88,"pct_seg":50.9,"moviliza":19,"simpatizantes":48,"contactos":35,"alta_prob":82,"riesgo_alto":39,"duplicados":6,"casa":77,"referido":42,"evento":28,"digital":26,"score":58.9,"ultima_str":"28/04/2026"},
-{"ID_CAPTURISTA":"CAP-010","CAPTURADO_POR":"Capturista 10","MUNICIPIO":"Manzanillo","total":163,"meta":50,"pct_meta":326.0,"faltantes":0,"validados":120,"pct_val":73.6,"seguros":81,"pct_seg":49.7,"moviliza":17,"simpatizantes":44,"contactos":34,"alta_prob":79,"risgo_alto":37,"duplicados":5,"casa":72,"referido":40,"evento":26,"digital":25,"score":58.5,"ultima_str":"27/04/2026"},
-{"ID_CAPTURISTA":"CAP-052","CAPTURADO_POR":"Capturista 52","MUNICIPIO":"Manzanillo","total":156,"meta":50,"pct_meta":312.0,"faltantes":0,"validados":107,"pct_val":68.6,"seguros":85,"pct_seg":54.5,"moviliza":18,"simpatizantes":46,"contactos":25,"alta_prob":73,"riesgo_alto":31,"duplicados":4,"casa":68,"referido":38,"evento":25,"digital":25,"score":58.0,"ultima_str":"26/04/2026"},
-{"ID_CAPTURISTA":"CAP-059","CAPTURADO_POR":"Capturista 59","MUNICIPIO":"Manzanillo","total":146,"meta":50,"pct_meta":292.0,"faltantes":0,"validados":112,"pct_val":76.7,"seguros":73,"pct_seg":50.0,"moviliza":15,"simpatizantes":39,"contactos":32,"alta_prob":70,"riesgo_alto":30,"duplicados":4,"casa":64,"referido":36,"evento":24,"digital":22,"score":60.1,"ultima_str":"25/04/2026"},
-{"ID_CAPTURISTA":"CAP-031","CAPTURADO_POR":"Capturista 31","MUNICIPIO":"Manzanillo","total":136,"meta":50,"pct_meta":272.0,"faltantes":0,"validados":106,"pct_val":77.9,"seguros":69,"pct_seg":50.7,"moviliza":14,"simpatizantes":37,"contactos":30,"alta_prob":67,"riesgo_alto":28,"duplicados":4,"casa":61,"referido":34,"evento":22,"digital":19,"score":57.7,"ultima_str":"24/04/2026"},
-{"ID_CAPTURISTA":"CAP-017","CAPTURADO_POR":"Capturista 17","MUNICIPIO":"Villa de Álvarez","total":136,"meta":50,"pct_meta":272.0,"faltantes":0,"validados":121,"pct_val":89.0,"seguros":79,"pct_seg":58.1,"moviliza":16,"simpatizantes":43,"contactos":20,"alta_prob":62,"riesgo_alto":24,"duplicados":3,"casa":62,"referido":35,"evento":22,"digital":17,"score":67.2,"ultima_str":"28/04/2026"},
-{"ID_CAPTURISTA":"CAP-049","CAPTURADO_POR":"Capturista 49","MUNICIPIO":"Colima","total":130,"meta":50,"pct_meta":260.0,"faltantes":0,"validados":108,"pct_val":83.1,"seguros":68,"pct_seg":52.3,"moviliza":14,"simpatizantes":37,"contactos":29,"alta_prob":66,"riesgo_alto":27,"duplicados":3,"casa":58,"referido":32,"evento":21,"digital":19,"score":65.7,"ultima_str":"01/05/2026"},
-{"ID_CAPTURISTA":"CAP-015","CAPTURADO_POR":"Capturista 15","MUNICIPIO":"Colima","total":126,"meta":50,"pct_meta":252.0,"faltantes":0,"validados":100,"pct_val":79.4,"seguros":70,"pct_seg":55.6,"moviliza":15,"simpatizantes":38,"contactos":18,"alta_prob":58,"riesgo_alto":23,"duplicados":3,"casa":57,"referido":31,"evento":20,"digital":18,"score":64.9,"ultima_str":"25/04/2026"},
-{"ID_CAPTURISTA":"CAP-004","CAPTURADO_POR":"Capturista 04","MUNICIPIO":"Tecomán","total":120,"meta":50,"pct_meta":240.0,"faltantes":0,"validados":95,"pct_val":79.2,"seguros":67,"pct_seg":55.8,"moviliza":14,"simpatizantes":36,"contactos":17,"alta_prob":55,"riesgo_alto":22,"duplicados":2,"casa":54,"referido":29,"evento":19,"digital":18,"score":64.5,"ultima_str":"30/04/2026"},
-{"ID_CAPTURISTA":"CAP-023","CAPTURADO_POR":"Capturista 23","MUNICIPIO":"Tecomán","total":118,"meta":50,"pct_meta":236.0,"faltantes":0,"validados":90,"pct_val":76.3,"seguros":64,"pct_seg":54.2,"moviliza":13,"simpatizantes":34,"contactos":21,"alta_prob":56,"riesgo_alto":24,"duplicados":3,"casa":52,"referido":29,"evento":19,"digital":18,"score":63.0,"ultima_str":"29/04/2026"},
-{"ID_CAPTURISTA":"CAP-001","CAPTURADO_POR":"Capturista 01","MUNICIPIO":"Tecomán","total":115,"meta":50,"pct_meta":230.0,"faltantes":0,"validados":87,"pct_val":75.7,"seguros":62,"pct_seg":53.9,"moviliza":13,"simpatizantes":33,"contactos":20,"alta_prob":53,"riesgo_alto":23,"duplicados":2,"casa":51,"referido":28,"evento":18,"digital":18,"score":62.3,"ultima_str":"28/04/2026"},
-{"ID_CAPTURISTA":"CAP-044","CAPTURADO_POR":"Capturista 44","MUNICIPIO":"Colima","total":108,"meta":50,"pct_meta":216.0,"faltantes":0,"validados":93,"pct_val":86.1,"seguros":60,"pct_seg":55.6,"moviliza":13,"simpatizantes":33,"contactos":15,"alta_prob":51,"riesgo_alto":19,"duplicados":2,"casa":49,"referido":27,"evento":17,"digital":15,"score":66.2,"ultima_str":"29/04/2026"},
-{"ID_CAPTURISTA":"CAP-027","CAPTURADO_POR":"Capturista 27","MUNICIPIO":"Manzanillo","total":100,"meta":50,"pct_meta":200.0,"faltantes":0,"validados":83,"pct_val":83.0,"seguros":58,"pct_seg":58.0,"moviliza":12,"simpatizantes":32,"contactos":16,"alta_prob":50,"riesgo_alto":18,"duplicados":2,"casa":45,"referido":25,"evento":16,"digital":14,"score":65.0,"ultima_str":"01/05/2026"},
-{"ID_CAPTURISTA":"CAP-038","CAPTURADO_POR":"Capturista 38","MUNICIPIO":"Colima","total":96,"meta":50,"pct_meta":192.0,"faltantes":0,"validados":84,"pct_val":87.5,"seguros":55,"pct_seg":57.3,"moviliza":12,"simpatizantes":30,"contactos":14,"alta_prob":47,"riesgo_alto":17,"duplicados":2,"casa":43,"referido":24,"evento":15,"digital":14,"score":68.0,"ultima_str":"01/05/2026"},
-{"ID_CAPTURISTA":"CAP-016","CAPTURADO_POR":"Capturista 16","MUNICIPIO":"Villa de Álvarez","total":90,"meta":50,"pct_meta":180.0,"faltantes":0,"validados":80,"pct_val":88.9,"seguros":52,"pct_seg":57.8,"moviliza":11,"simpatizantes":28,"contactos":13,"alta_prob":44,"riesgo_alto":16,"duplicados":1,"casa":41,"referido":22,"evento":14,"digital":13,"score":68.9,"ultima_str":"27/04/2026"},
-{"ID_CAPTURISTA":"CAP-033","CAPTURADO_POR":"Capturista 33","MUNICIPIO":"Villa de Álvarez","total":86,"meta":50,"pct_meta":172.0,"faltantes":0,"validados":75,"pct_val":87.2,"seguros":50,"pct_seg":58.1,"moviliza":11,"simpatizantes":27,"contactos":12,"alta_prob":41,"riesgo_alto":15,"duplicados":1,"casa":39,"referido":21,"evento":13,"digital":13,"score":68.4,"ultima_str":"26/04/2026"},
-{"ID_CAPTURISTA":"CAP-025","CAPTURADO_POR":"Capturista 25","MUNICIPIO":"Tecomán","total":82,"meta":50,"pct_meta":164.0,"faltantes":0,"validados":66,"pct_val":80.5,"seguros":47,"pct_seg":57.3,"moviliza":10,"simpatizantes":25,"contactos":12,"alta_prob":39,"riesgo_alto":15,"duplicados":1,"casa":37,"referido":20,"evento":13,"digital":12,"score":63.3,"ultima_str":"25/04/2026"},
-{"ID_CAPTURISTA":"CAP-043","CAPTURADO_POR":"Capturista 43","MUNICIPIO":"Armería","total":78,"meta":50,"pct_meta":156.0,"faltantes":0,"validados":62,"pct_val":79.5,"seguros":44,"pct_seg":56.4,"moviliza":9,"simpatizantes":24,"contactos":11,"alta_prob":36,"riesgo_alto":14,"duplicados":1,"casa":35,"referido":19,"evento":12,"digital":12,"score":62.5,"ultima_str":"24/04/2026"},
-{"ID_CAPTURISTA":"CAP-037","CAPTURADO_POR":"Capturista 37","MUNICIPIO":"Armería","total":74,"meta":50,"pct_meta":148.0,"faltantes":0,"validados":58,"pct_val":78.4,"seguros":41,"pct_seg":55.4,"moviliza":9,"simpatizantes":22,"contactos":12,"alta_prob":34,"riesgo_alto":14,"duplicados":1,"casa":33,"referido":18,"evento":11,"digital":12,"score":61.5,"ultima_str":"23/04/2026"},
-{"ID_CAPTURISTA":"CAP-048","CAPTURADO_POR":"Capturista 48","MUNICIPIO":"Armería","total":70,"meta":50,"pct_meta":140.0,"faltantes":0,"validados":54,"pct_val":77.1,"seguros":38,"pct_seg":54.3,"moviliza":8,"simpatizantes":21,"contactos":11,"alta_prob":32,"riesgo_alto":13,"duplicados":1,"casa":31,"referido":17,"evento":11,"digital":11,"score":60.5,"ultima_str":"22/04/2026"},
-{"ID_CAPTURISTA":"CAP-036","CAPTURADO_POR":"Capturista 36","MUNICIPIO":"Comala","total":68,"meta":50,"pct_meta":136.0,"faltantes":0,"validados":53,"pct_val":77.9,"seguros":37,"pct_seg":54.4,"moviliza":8,"simpatizantes":20,"contactos":10,"alta_prob":30,"riesgo_alto":12,"duplicados":1,"casa":30,"referido":16,"evento":10,"digital":12,"score":61.1,"ultima_str":"22/04/2026"},
-{"ID_CAPTURISTA":"CAP-029","CAPTURADO_POR":"Capturista 29","MUNICIPIO":"Comala","total":64,"meta":50,"pct_meta":128.0,"faltantes":0,"validados":50,"pct_val":78.1,"seguros":35,"pct_seg":54.7,"moviliza":7,"simpatizantes":19,"contactos":9,"alta_prob":28,"riesgo_alto":11,"duplicados":1,"casa":28,"referido":15,"evento":10,"digital":11,"score":61.6,"ultima_str":"21/04/2026"},
-{"ID_CAPTURISTA":"CAP-022","CAPTURADO_POR":"Capturista 22","MUNICIPIO":"Tecomán","total":60,"meta":50,"pct_meta":120.0,"faltantes":0,"validados":47,"pct_val":78.3,"seguros":33,"pct_seg":55.0,"moviliza":7,"simpatizantes":18,"contactos":9,"alta_prob":26,"riesgo_alto":10,"duplicados":1,"casa":27,"referido":14,"evento":9,"digital":10,"score":62.1,"ultima_str":"20/04/2026"},
-{"ID_CAPTURISTA":"CAP-035","CAPTURADO_POR":"Capturista 35","MUNICIPIO":"Armería","total":58,"meta":50,"pct_meta":116.0,"faltantes":0,"validados":44,"pct_val":75.9,"seguros":30,"pct_seg":51.7,"moviliza":6,"simpatizantes":17,"contactos":11,"alta_prob":26,"riesgo_alto":11,"duplicados":1,"casa":26,"referido":14,"evento":9,"digital":9,"score":59.2,"ultima_str":"19/04/2026"},
-{"ID_CAPTURISTA":"CAP-041","CAPTURADO_POR":"Capturista 41","MUNICIPIO":"Comala","total":56,"meta":50,"pct_meta":112.0,"faltantes":0,"validados":44,"pct_val":78.6,"seguros":31,"pct_seg":55.4,"moviliza":6,"simpatizantes":17,"contactos":8,"alta_prob":24,"riesgo_alto":9,"duplicados":1,"casa":25,"referido":14,"evento":9,"digital":8,"score":62.0,"ultima_str":"18/04/2026"},
-{"ID_CAPTURISTA":"CAP-026","CAPTURADO_POR":"Capturista 26","MUNICIPIO":"Comala","total":54,"meta":50,"pct_meta":108.0,"faltantes":0,"validados":42,"pct_val":77.8,"seguros":29,"pct_seg":53.7,"moviliza":6,"simpatizantes":16,"contactos":9,"alta_prob":23,"riesgo_alto":9,"duplicados":1,"casa":24,"referido":13,"evento":8,"digital":9,"score":61.1,"ultima_str":"17/04/2026"},
-{"ID_CAPTURISTA":"CAP-015","CAPTURADO_POR":"Capturista 15","MUNICIPIO":"Villa de Álvarez","total":52,"meta":50,"pct_meta":104.0,"faltantes":0,"validados":44,"pct_val":84.6,"seguros":26,"pct_seg":50.0,"moviliza":5,"simpatizantes":15,"contactos":12,"alta_prob":25,"riesgo_alto":10,"duplicados":1,"casa":24,"referido":13,"evento":8,"digital":7,"score":65.4,"ultima_str":"30/04/2026"},
-{"ID_CAPTURISTA":"CAP-046","CAPTURADO_POR":"Capturista 46","MUNICIPIO":"Villa de Álvarez","total":50,"meta":50,"pct_meta":100.0,"faltantes":0,"validados":36,"pct_val":72.0,"seguros":34,"pct_seg":68.0,"moviliza":6,"simpatizantes":15,"contactos":9,"alta_prob":22,"riesgo_alto":9,"duplicados":1,"casa":22,"referido":12,"evento":8,"digital":8,"score":65.6,"ultima_str":"28/04/2026"},
-{"ID_CAPTURISTA":"CAP-013","CAPTURADO_POR":"Capturista 13","MUNICIPIO":"Armería","total":48,"meta":50,"pct_meta":96.0,"faltantes":2,"validados":37,"pct_val":77.1,"seguros":26,"pct_seg":54.2,"moviliza":5,"simpatizantes":14,"contactos":9,"alta_prob":20,"riesgo_alto":9,"duplicados":1,"casa":21,"referido":12,"evento":8,"digital":7,"score":60.8,"ultima_str":"22/04/2026"},
-{"ID_CAPTURISTA":"CAP-030","CAPTURADO_POR":"Capturista 30","MUNICIPIO":"Coquimatlán","total":44,"meta":50,"pct_meta":88.0,"faltantes":6,"validados":33,"pct_val":75.0,"seguros":23,"pct_seg":52.3,"moviliza":5,"simpatizantes":12,"contactos":9,"alta_prob":19,"riesgo_alto":9,"duplicados":1,"casa":19,"referido":11,"evento":7,"digital":7,"score":59.5,"ultima_str":"21/04/2026"},
-{"ID_CAPTURISTA":"CAP-040","CAPTURADO_POR":"Capturista 40","MUNICIPIO":"Coquimatlán","total":40,"meta":50,"pct_meta":80.0,"faltantes":10,"validados":30,"pct_val":75.0,"seguros":21,"pct_seg":52.5,"moviliza":4,"simpatizantes":11,"contactos":9,"alta_prob":17,"riesgo_alto":8,"duplicados":1,"casa":17,"referido":10,"evento":7,"digital":6,"score":59.0,"ultima_str":"20/04/2026"},
-{"ID_CAPTURISTA":"CAP-050","CAPTURADO_POR":"Capturista 50","MUNICIPIO":"Coquimatlán","total":36,"meta":50,"pct_meta":72.0,"faltantes":14,"validados":28,"pct_val":77.8,"seguros":19,"pct_seg":52.8,"moviliza":4,"simpatizantes":10,"contactos":6,"alta_prob":15,"riesgo_alto":6,"duplicados":0,"casa":16,"referido":9,"evento":6,"digital":5,"score":61.1,"ultima_str":"19/04/2026"},
-{"ID_CAPTURISTA":"CAP-039","CAPTURADO_POR":"Capturista 39","MUNICIPIO":"Minatitlán","total":32,"meta":50,"pct_meta":64.0,"faltantes":18,"validados":26,"pct_val":81.3,"seguros":17,"pct_seg":53.1,"moviliza":3,"simpatizantes":9,"contactos":6,"alta_prob":13,"riesgo_alto":5,"duplicados":0,"casa":14,"referido":8,"evento":5,"digital":5,"score":63.5,"ultima_str":"18/04/2026"},
-{"ID_CAPTURISTA":"CAP-021","CAPTURADO_POR":"Capturista 21","MUNICIPIO":"Minatitlán","total":28,"meta":50,"pct_meta":56.0,"faltantes":22,"validados":22,"pct_val":78.6,"seguros":15,"pct_seg":53.6,"moviliza":3,"simpatizantes":8,"contactos":5,"alta_prob":11,"riesgo_alto":4,"duplicados":0,"casa":12,"referido":7,"evento":5,"digital":4,"score":62.9,"ultima_str":"17/04/2026"},
-{"ID_CAPTURISTA":"CAP-055","CAPTURADO_POR":"Capturista 55","MUNICIPIO":"Minatitlán","total":24,"meta":50,"pct_meta":48.0,"faltantes":26,"validados":18,"pct_val":75.0,"seguros":13,"pct_seg":54.2,"moviliza":2,"simpatizantes":7,"contactos":5,"alta_prob":10,"riesgo_alto":4,"duplicados":0,"casa":10,"referido":6,"evento":4,"digital":4,"score":61.7,"ultima_str":"16/04/2026"},
-{"ID_CAPTURISTA":"CAP-008","CAPTURADO_POR":"Capturista 08","MUNICIPIO":"Cuauhtémoc","total":20,"meta":50,"pct_meta":40.0,"faltantes":30,"validados":15,"pct_val":75.0,"seguros":11,"pct_seg":55.0,"moviliza":2,"simpatizantes":6,"contactos":4,"alta_prob":9,"riesgo_alto":4,"duplicados":0,"casa":9,"referido":5,"evento":3,"digital":3,"score":61.0,"ultima_str":"15/04/2026"},
-{"ID_CAPTURISTA":"CAP-024","CAPTURADO_POR":"Capturista 24","MUNICIPIO":"Cuauhtémoc","total":16,"meta":50,"pct_meta":32.0,"faltantes":34,"validados":12,"pct_val":75.0,"seguros":9,"pct_seg":56.3,"moviliza":2,"simpatizantes":5,"contactos":3,"alta_prob":7,"riesgo_alto":3,"duplicados":0,"casa":7,"referido":4,"evento":3,"digital":2,"score":61.3,"ultima_str":"14/04/2026"},
-{"ID_CAPTURISTA":"CAP-007","CAPTURADO_POR":"Capturista 07","MUNICIPIO":"Cuauhtémoc","total":12,"meta":50,"pct_meta":24.0,"faltantes":38,"validados":9,"pct_val":75.0,"seguros":7,"pct_seg":58.3,"moviliza":1,"simpatizantes":4,"contactos":2,"alta_prob":5,"riesgo_alto":2,"duplicados":0,"casa":5,"referido":3,"evento":2,"digital":2,"score":62.7,"ultima_str":"13/04/2026"},
-{"ID_CAPTURISTA":"CAP-018","CAPTURADO_POR":"Capturista 18","MUNICIPIO":"Cuauhtémoc","total":8,"meta":50,"pct_meta":16.0,"faltantes":42,"validados":6,"pct_val":75.0,"seguros":5,"pct_seg":62.5,"moviliza":1,"simpatizantes":3,"contactos":1,"alta_prob":3,"riesgo_alto":1,"duplicados":0,"casa":3,"referido":2,"evento":2,"digital":1,"score":64.5,"ultima_str":"12/04/2026"},
-{"ID_CAPTURISTA":"CAP-003","CAPTURADO_POR":"Capturista 03","MUNICIPIO":"Ixtlahuacán","total":4,"meta":50,"pct_meta":8.0,"faltantes":46,"validados":3,"pct_val":75.0,"seguros":3,"pct_seg":75.0,"moviliza":1,"simpatizantes":1,"contactos":0,"alta_prob":1,"riesgo_alto":0,"duplicados":0,"casa":2,"referido":1,"evento":0,"digital":1,"score":70.0,"ultima_str":"10/04/2026"},
-{"ID_CAPTURISTA":"CAP-002","CAPTURADO_POR":"Capturista 02","MUNICIPIO":"Ixtlahuacán","total":2,"meta":50,"pct_meta":4.0,"faltantes":48,"validados":2,"pct_val":100.0,"seguros":2,"pct_seg":100.0,"moviliza":0,"simpatizantes":1,"contactos":0,"alta_prob":1,"riesgo_alto":0,"duplicados":0,"casa":1,"referido":0,"evento":0,"digital":1,"score":100.0,"ultima_str":"08/04/2026"},
-{"ID_CAPTURISTA":"CAP-006","CAPTURADO_POR":"Capturista 06","MUNICIPIO":"Ixtlahuacán","total":1,"meta":50,"pct_meta":2.0,"faltantes":49,"validados":1,"pct_val":100.0,"seguros":1,"pct_seg":100.0,"moviliza":0,"simpatizantes":0,"contactos":0,"alta_prob":1,"riesgo_alto":0,"duplicados":0,"casa":1,"referido":0,"evento":0,"digital":0,"score":100.0,"ultima_str":"05/04/2026"}
-];
+// ══════════════════════════════════════════════
+// SUPABASE — DATOS REALES
+// ══════════════════════════════════════════════
+const SUPA_URL = 'https://dyirhwwmykskpuvzcafx.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5aXJod3dteWtza3B1dnpjYWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NTk3ODgsImV4cCI6MjA5NTEzNTc4OH0.2xe4cHqORGng1hnYPJ9ZiyT0r87fMijbUEJqBy3-xoI';
+const LICENCIA_ID = 'a1b2c3d4-0001-0000-0000-000000000001';
+
+let DATOS = []; // Se poblará desde Supabase
+
+async function cargarDatosSupabase() {
+  try {
+    // Paginación completa de ciudadanos
+    let todos = [];
+    let from = 0;
+    const pageSize = 1000;
+    while (true) {
+      const res = await fetch(
+        `${SUPA_URL}/rest/v1/ciudadanos?select=capturista_id,nivel_compromiso,es_riesgo,municipio_id,fecha_registro,seccion_electoral&licencia_id=eq.${LICENCIA_ID}&limit=${pageSize}&offset=${from}`,
+        { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` } }
+      );
+      if (!res.ok) break;
+      const chunk = await res.json();
+      if (!Array.isArray(chunk) || chunk.length === 0) break;
+      todos = todos.concat(chunk);
+      if (chunk.length < pageSize) break;
+      from += pageSize;
+    }
+
+    // Agrupar por capturista_id
+    const mapa = {};
+    todos.forEach(c => {
+      const id = c.capturista_id || 'SIN_ASIGNAR';
+      if (!mapa[id]) {
+        mapa[id] = {
+          ID_CAPTURISTA: id,
+          CAPTURADO_POR: id,
+          MUNICIPIO: c.municipio_id || '—',
+          total: 0, meta: 50, faltantes: 0,
+          validados: 0, seguros: 0, riesgo_alto: 0,
+          duplicados: 0, score: 0,
+          ultima_fecha: null,
+          // campos de distribución (no disponibles sin campos extra)
+          pct_val: 0, pct_seg: 0, pct_meta: 0,
+          moviliza: 0, simpatizantes: 0, contactos: 0,
+          alta_prob: 0, casa: 0, referido: 0, evento: 0, digital: 0
+        };
+      }
+      const e = mapa[id];
+      e.total++;
+      if (c.nivel_compromiso >= 3) e.seguros++;
+      if (c.nivel_compromiso >= 2) e.validados++;
+      if (c.es_riesgo) e.riesgo_alto++;
+      if (c.fecha_registro) {
+        const f = new Date(c.fecha_registro);
+        if (!e.ultima_fecha || f > e.ultima_fecha) e.ultima_fecha = f;
+      }
+      // municipio del primer registro (más común)
+      if (c.municipio_id && e.MUNICIPIO === '—') e.MUNICIPIO = c.municipio_id;
+    });
+
+    // Calcular porcentajes y score
+    Object.values(mapa).forEach(e => {
+      e.faltantes   = Math.max(0, e.meta - e.total);
+      e.pct_meta    = e.meta > 0 ? +(( e.total / e.meta) * 100).toFixed(1) : 0;
+      e.pct_val     = e.total > 0 ? +((e.validados / e.total) * 100).toFixed(1) : 0;
+      e.pct_seg     = e.total > 0 ? +((e.seguros   / e.total) * 100).toFixed(1) : 0;
+      // Score simple: combinación pct_val + pct_seg
+      e.score       = +((e.pct_val * 0.5 + e.pct_seg * 0.5)).toFixed(1);
+      e.ultima_str  = e.ultima_fecha
+        ? e.ultima_fecha.toLocaleDateString('es-MX', {day:'2-digit',month:'2-digit',year:'numeric'})
+        : '—';
+    });
+
+    DATOS = Object.values(mapa);
+
+    // Actualizar KPI de total operadores
+    const totalEl = document.querySelector('.kpi.blue .kpi-val');
+    if (totalEl && !totalEl.id) totalEl.textContent = DATOS.length;
+
+    aplicarFiltros();
+
+    // Poblar selector de municipio
+    const munsSet = new Set(DATOS.map(d => d.MUNICIPIO).filter(Boolean));
+    const sel = document.getElementById('filtro-municipio');
+    if (sel) {
+      const existing = new Set([...sel.options].map(o => o.value));
+      munsSet.forEach(m => {
+        if (!existing.has(m)) {
+          const opt = document.createElement('option');
+          opt.value = m; opt.textContent = m;
+          sel.appendChild(opt);
+        }
+      });
+    }
+
+    console.log(`✅ panel_capturistas: ${DATOS.length} capturistas, ${todos.length} ciudadanos`);
+  } catch(e) {
+    console.error('Error cargando datos capturistas:', e);
+    // Si falla, dejar DATOS vacío — la tabla mostrará sin datos
+    aplicarFiltros();
+  }
+}
+
 
 let sortField = 'score';
 let sortAsc = false;
@@ -585,7 +630,8 @@ getDatos = function() {
   });
 };
 
-aplicarFiltros();
+cargarDatosSupabase();
+setInterval(cargarDatosSupabase, 120000);
 </script>
 <script>
 (function() {
