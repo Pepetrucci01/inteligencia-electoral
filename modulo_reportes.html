@@ -2191,5 +2191,58 @@ showTab = function(tab) {
   }
 })();
 </script>
+
+<script>
+// ══════════════════════════════════════════════════
+// KPIs REALES DESDE SUPABASE
+// ══════════════════════════════════════════════════
+const SUPA_URL_REP = 'https://dyirhwwmykskpuvzcafx.supabase.co';
+const SUPA_KEY_REP = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5aXJod3dteWtza3B1dnpjYWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NTk3ODgsImV4cCI6MjA5NTEzNTc4OH0.2xe4cHqORGng1hnYPJ9ZiyT0r87fMijbUEJqBy3-xoI';
+const META_ESTATAL = 197297;
+const LICENCIA_ID  = 'a1b2c3d4-0001-0000-0000-000000000001';
+
+async function countSupa(filtro) {
+  const res = await fetch(
+    `${SUPA_URL_REP}/rest/v1/ciudadanos?select=id&licencia_id=eq.${LICENCIA_ID}${filtro}`,
+    { headers: { 'apikey': SUPA_KEY_REP, 'Authorization': `Bearer ${SUPA_KEY_REP}`, 'Prefer': 'count=exact', 'Range': '0-0' } }
+  );
+  return parseInt(res.headers.get('Content-Range')?.split('/')[1] || 0);
+}
+
+async function cargarKPIsReportes() {
+  try {
+    const fmt = n => n.toLocaleString('es-MX');
+    const [total, seguro, riesgo] = await Promise.all([
+      countSupa(''),
+      countSupa('&compromiso=gte.3'),
+      countSupa('&es_riesgo=eq.true'),
+    ]);
+
+    const pct = ((total / META_ESTATAL) * 100).toFixed(1);
+
+    // Sección Resumen ejecutivo — KPIs principales
+    const kpiVals = document.querySelectorAll('#sc-resumen .kpi-val');
+    if(kpiVals.length >= 4) {
+      // [0]=meta, [1]=total, [2]=avance%, [3]=voto seguro, [4]=riesgo...
+      kpiVals[1].textContent = fmt(total);
+      kpiVals[2].textContent = pct + '%';
+      kpiVals[3].textContent = fmt(seguro);
+      if(kpiVals[4]) kpiVals[4].textContent = fmt(riesgo);
+    }
+
+    // Barra de progreso
+    const barFill = document.querySelector('#sc-resumen .bar-fill, #sc-resumen [style*="width"]');
+    if(barFill) barFill.style.width = Math.min(100, parseFloat(pct)) + '%';
+
+    console.log(`✅ Reportes KPIs: ${total} total, ${seguro} seguro, ${riesgo} riesgo`);
+  } catch(e) {
+    console.warn('Error KPIs reportes:', e);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(cargarKPIsReportes, 500);
+});
+</script>
 </body>
 </html>
