@@ -125,6 +125,8 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 
 <script>
 // ── Guardia de sesión ──
+<script>
+// ── Guardia de sesión ──
 (function(){
   try {
     const s = JSON.parse(localStorage.getItem('electoral_sesion') || 'null');
@@ -262,7 +264,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
     <div class="card-head">
       <span class="card-title">⚠️ Alertas de la sección</span>
     </div>
-    <div class="card-body" style="display:flex;flex-direction:column;gap:8px;">
+    <div id="alertas-container" class="card-body" style="display:flex;flex-direction:column;gap:8px;">
       <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:8px;padding:10px 12px;font-size:12px;">
         <span style="color:var(--red);font-weight:600;">18 simpatizantes en riesgo</span>
         <div style="color:var(--text2);margin-top:2px;font-family:var(--mono);font-size:10px;">Sin contacto en más de 7 días</div>
@@ -318,43 +320,198 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 </div>
 
 <script>
-// ── Datos demo ──
-const CAPTURISTAS_SEC = [
-  { codigo:'CAP-017', nombre:'Capturista 017', capturas:87, meta:100, activo:true,  ultimaAct:'Hoy 14:23' },
-  { codigo:'CAP-022', nombre:'Capturista 022', capturas:74, meta:100, activo:true,  ultimaAct:'Hoy 11:05' },
-  { codigo:'CAP-031', nombre:'Capturista 031', capturas:56, meta:100, activo:true,  ultimaAct:'Ayer 19:40' },
-  { codigo:'CAP-045', nombre:'Capturista 045', capturas:30, meta:100, activo:false, ultimaAct:'Hace 3 días' },
-];
+// ══════════════════════════════════════════════
+// SUPABASE CONFIG
+// ══════════════════════════════════════════════
+const SUPA_URL = 'https://dyirhwwmykskpuvzcafx.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5aXJod3dteWtza3B1dnpjYWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NTk3ODgsImV4cCI6MjA5NTEzNTc4OH0.2xe4cHqORGng1hnYPJ9ZiyT0r87fMijbUEJqBy3-xoI';
+const LICENCIA_ID = 'a1b2c3d4-0001-0000-0000-000000000001';
 
-const SIMPATIZANTES_SEC = [
-  { nombre:'JUAN CARLOS MENDOZA RÍOS',    curp:'MERJ850312HCLDNS09', comp:4, capturista:'CAP-017', edad:39, col:'Jardines' },
-  { nombre:'PATRICIA GÓMEZ SALAZAR',      curp:'GOSP920715MCLMLT04', comp:4, capturista:'CAP-017', edad:32, col:'Centro' },
-  { nombre:'ROBERTO HERRERA VÁSQUEZ',     curp:'HEVR780430HCLLBS06', comp:3, capturista:'CAP-022', edad:46, col:'Las Palmas' },
-  { nombre:'ADRIANA LUNA CASTILLO',       curp:'LUCA010925MCLNSD08', comp:3, capturista:'CAP-022', edad:23, col:'Morelos' },
-  { nombre:'MIGUEL ÁNGEL TORRES PÉREZ',   curp:'TOPM961204HCLLRG01', comp:2, capturista:'CAP-031', edad:28, col:'Centro' },
-  { nombre:'LAURA BEATRIZ RAMOS FLORES',  curp:'RAFL880601MCLMLA07', comp:2, capturista:'CAP-031', edad:36, col:'Infonavit' },
-  { nombre:'CARLOS ESPINOZA MEDINA',      curp:'ESMC720814HCLSDR03', comp:1, capturista:'CAP-045', edad:52, col:'Centro' },
-  { nombre:'VERÓNICA SALINAS ORTIZ',      curp:'SAOV991130MCLRRT09', comp:1, capturista:'CAP-045', edad:25, col:'Jardines' },
-];
+async function supaFetch(path) {
+  const res = await fetch(`${SUPA_URL}/rest/v1/${path}`, {
+    headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` }
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
 
+// ── Estado global ──
+let SECCION_LIDER = null;
+let CIUDADANOS_SEC = [];
+let CAPTURISTAS_SEC = [];
 let filtroComp = 'todos';
 
-// ── Inicializar sesión en topbar ──
-(function(){
+// ══════════════════════════════════════════════
+// INICIALIZACIÓN
+// ══════════════════════════════════════════════
+(function initTopbar() {
   const s = window._sesion;
   if (!s) return;
-  const iniciales = (s.nombre||'L').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+  const iniciales = (s.nombre || 'L').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
   document.getElementById('tb-av').textContent = iniciales;
   document.getElementById('tb-name').textContent = s.nombre || 'Líder de Sección';
-  const sec = s.seccion || '—';
+  SECCION_LIDER = s.seccion || null;
+  const sec = SECCION_LIDER || '—';
   const mun = s.municipio || '—';
   document.getElementById('tb-id').textContent = `LDR-${sec} · Secc. ${sec} · ${mun}`;
   document.getElementById('sec-num').textContent = sec;
   document.getElementById('sec-mun').textContent = mun;
-  document.getElementById('sec-meta').textContent = `Sección electoral · Colima 2027`;
+  document.getElementById('sec-meta').textContent = `Sección ${sec} · ${mun} · 2027`;
 })();
 
-// ── Tabs ──
+// ══════════════════════════════════════════════
+// CARGA PRINCIPAL DESDE SUPABASE
+// ══════════════════════════════════════════════
+async function cargarDatos() {
+  if (!SECCION_LIDER) return;
+
+  mostrarCargando(true);
+
+  try {
+    // ── 1. Ciudadanos de esta sección (todos los campos necesarios) ──
+    let todos = [];
+    let from = 0;
+    const pageSize = 1000;
+    while (true) {
+      const chunk = await supaFetch(
+        `ciudadanos?select=id,nombre_completo,curp,nivel_compromiso,es_riesgo,capturista_id,colonia,fecha_nacimiento,licencia_id&seccion_electoral=eq.${SECCION_LIDER}&licencia_id=eq.${LICENCIA_ID}&limit=${pageSize}&offset=${from}`
+      );
+      if (!Array.isArray(chunk) || chunk.length === 0) break;
+      todos = todos.concat(chunk);
+      if (chunk.length < pageSize) break;
+      from += pageSize;
+    }
+    CIUDADANOS_SEC = todos;
+
+    // ── 2. Capturistas que tienen capturas en esta sección ──
+    const capMap = {};
+    todos.forEach(c => {
+      const cap = c.capturista_id || 'SIN_ASIGNAR';
+      if (!capMap[cap]) capMap[cap] = { id: cap, capturas: 0 };
+      capMap[cap].capturas++;
+    });
+    CAPTURISTAS_SEC = Object.values(capMap).sort((a, b) => b.capturas - a.capturas);
+
+    // ── 3. Actualizar KPIs ──
+    actualizarKPIs();
+
+    // ── 4. Ranking en la tab inicio
+    renderRankingCapturistas();
+
+    // ── 5. Si la tab activa ya está en capturistas/simpatizantes, re-renderizar ──
+    const tabActiva = document.querySelector('.tab.active')?.id?.replace('tab-', '');
+    if (tabActiva === 'capturistas') renderCapturistas();
+    if (tabActiva === 'simpatizantes') renderSimps();
+
+  } catch (e) {
+    console.error('Error cargando datos:', e);
+    document.getElementById('kpi-capturas').textContent = 'ERR';
+  }
+
+  mostrarCargando(false);
+}
+
+function mostrarCargando(estado) {
+  const kpis = ['kpi-capturas', 'kpi-meta', 'kpi-pct', 'kpi-riesgo', 'kpi-voto-seg'];
+  if (estado) kpis.forEach(id => { document.getElementById(id).textContent = '…'; });
+}
+
+// ══════════════════════════════════════════════
+// KPIs
+// ══════════════════════════════════════════════
+function actualizarKPIs() {
+  const total = CIUDADANOS_SEC.length;
+  const riesgo = CIUDADANOS_SEC.filter(c => c.es_riesgo).length;
+  const votoSeg = CIUDADANOS_SEC.filter(c => c.nivel_compromiso >= 3).length;
+
+  // Meta: leer de CASILLAS data para la sección (si no disponible, estimado)
+  // Por ahora usamos la misma lógica del war room: meta_real del array CASILLAS
+  const metaRef = getMetaSección(SECCION_LIDER);
+  const pct = metaRef > 0 ? Math.round((total / metaRef) * 100) : 0;
+  const faltantes = metaRef > 0 ? Math.max(0, metaRef - total) : 0;
+
+  document.getElementById('kpi-capturas').textContent = total.toLocaleString();
+  document.getElementById('kpi-meta').textContent = metaRef > 0 ? metaRef.toLocaleString() : '—';
+  document.getElementById('kpi-pct').textContent = pct + '%';
+  document.getElementById('kpi-riesgo').textContent = riesgo;
+  document.getElementById('kpi-voto-seg').textContent = votoSeg;
+  const comp2 = CIUDADANOS_SEC.filter(c => c.nivel_compromiso >= 2).length;
+  document.getElementById('kpi-caps').textContent = CAPTURISTAS_SEC.length;
+  document.getElementById('kpi-activos').textContent = comp2;
+
+  // Actualizar barra de progreso
+  const barEl = document.getElementById('progress-bar-fill');
+  if (barEl) {
+    const pctClamped = Math.min(pct, 100);
+    barEl.style.width = pctClamped + '%';
+    barEl.style.background = pct >= 100 ? 'var(--green)' : pct >= 70 ? 'var(--accent)' : pct >= 40 ? 'var(--amber)' : 'var(--red)';
+  }
+  const pctLabel = document.getElementById('progress-pct-label');
+  if (pctLabel) pctLabel.textContent = pct + '%';
+
+  // Alertas dinámicas
+  actualizarAlertas(riesgo, total, metaRef, faltantes);
+}
+
+function getMetaSección(seccion) {
+  // Buscar en el array de CASILLAS embebido en el visor (no disponible aquí)
+  // Alternativa: calcular estimado desde lista_nominal histórica
+  // Por ahora retorna 0 (se mostrará "—" en meta)
+  return 0;
+}
+
+function actualizarAlertas(riesgo, total, meta, faltantes) {
+  const cont = document.getElementById('alertas-container');
+  if (!cont) return;
+  let html = '';
+  if (riesgo > 0) {
+    html += `<div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:8px;padding:10px 12px;font-size:12px;">
+      <span style="color:var(--red);font-weight:600;">${riesgo} simpatizante${riesgo > 1 ? 's' : ''} en riesgo</span>
+      <div style="color:var(--text2);margin-top:2px;font-family:var(--mono);font-size:10px;">Nivel compromiso bajo o marcados en riesgo</div>
+    </div>`;
+  }
+  if (faltantes > 0 && meta > 0) {
+    html += `<div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:10px 12px;font-size:12px;">
+      <span style="color:var(--amber);font-weight:600;">${faltantes.toLocaleString()} capturas pendientes</span>
+      <div style="color:var(--text2);margin-top:2px;font-family:var(--mono);font-size:10px;">Para alcanzar la meta de la sección</div>
+    </div>`;
+  }
+  if (total > 0) {
+    const pct = meta > 0 ? Math.round((total / meta) * 100) : null;
+    const txt = pct !== null ? `${pct}% de avance — ${total.toLocaleString()} ciudadanos registrados` : `${total.toLocaleString()} ciudadanos registrados en esta sección`;
+    html += `<div style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:8px;padding:10px 12px;font-size:12px;">
+      <span style="color:var(--green);font-weight:600;">${txt}</span>
+    </div>`;
+  }
+  if (!html) html = `<div style="color:var(--text3);font-size:12px;text-align:center;padding:12px;">Sin datos de esta sección aún</div>`;
+  cont.innerHTML = html;
+}
+
+// ══════════════════════════════════════════════
+// RANKING CAPTURISTAS (card en Mi Sección)
+// ══════════════════════════════════════════════
+function renderRankingCapturistas() {
+  const cont = document.getElementById('ranking-caps');
+  if (!cont) return;
+  if (!CAPTURISTAS_SEC.length) {
+    cont.innerHTML = '<div style="color:var(--text3);font-size:12px;text-align:center;padding:12px;">Sin capturistas con actividad</div>';
+    return;
+  }
+  const html = CAPTURISTAS_SEC.slice(0, 5).map((c, i) => `
+    <div class="rank-item">
+      <div class="rank-pos">${i + 1}</div>
+      <div class="rank-info">
+        <div class="rank-name">${c.id}</div>
+        <div class="rank-sub">${c.capturas} registro${c.capturas !== 1 ? 's' : ''}</div>
+      </div>
+      <div class="rank-val">${c.capturas}</div>
+    </div>`).join('');
+  cont.innerHTML = html;
+}
+
+// ══════════════════════════════════════════════
+// TABS
+// ══════════════════════════════════════════════
 function showTab(tab) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -364,71 +521,119 @@ function showTab(tab) {
   if (tab === 'simpatizantes') renderSimps();
 }
 
-// ── Render capturistas ──
+// ══════════════════════════════════════════════
+// RENDER CAPTURISTAS
+// ══════════════════════════════════════════════
 function renderCapturistas() {
-  const colores = ['rgba(59,130,246,.15)','rgba(34,197,94,.15)','rgba(168,85,247,.15)','rgba(245,158,11,.15)'];
-  const textC   = ['var(--accent)','var(--green)','var(--purple)','var(--amber)'];
+  const colores = ['rgba(59,130,246,.15)', 'rgba(34,197,94,.15)', 'rgba(168,85,247,.15)', 'rgba(245,158,11,.15)'];
+  const textC = ['var(--accent)', 'var(--green)', 'var(--purple)', 'var(--amber)'];
+
+  if (!CAPTURISTAS_SEC.length) {
+    document.getElementById('lista-capturistas').innerHTML =
+      '<div class="empty"><div class="empty-icon">✏️</div>Sin actividad de capturistas en esta sección</div>';
+    document.getElementById('total-caps-label').textContent = '0 activos';
+    return;
+  }
+
+  // Meta por capturista: total / número de capturistas (estimado)
+  const metaTotal = getMetaSección(SECCION_LIDER);
+  const metaPorCap = CAPTURISTAS_SEC.length > 0 && metaTotal > 0
+    ? Math.round(metaTotal / CAPTURISTAS_SEC.length)
+    : 0;
+
+  const maxCapturas = CAPTURISTAS_SEC[0]?.capturas || 1;
+
   const html = CAPTURISTAS_SEC.map((c, i) => {
-    const pct = Math.round((c.capturas / c.meta) * 100);
-    const barColor = c.activo ? (pct >= 70 ? 'var(--green)' : pct >= 40 ? 'var(--amber)' : 'var(--red)') : 'var(--text3)';
+    const pct = metaPorCap > 0 ? Math.min(Math.round((c.capturas / metaPorCap) * 100), 100)
+      : Math.round((c.capturas / maxCapturas) * 100);
+    const barColor = pct >= 70 ? 'var(--green)' : pct >= 40 ? 'var(--amber)' : 'var(--red)';
+    const codigo = c.id || 'SIN ID';
+    const ini = codigo.substring(0, 3).toUpperCase();
     return `<div class="cap-card">
-      <div class="cap-av" style="background:${colores[i%4]};color:${textC[i%4]};">${c.codigo.split('-')[1]}</div>
+      <div class="cap-av" style="background:${colores[i % 4]};color:${textC[i % 4]};">${ini}</div>
       <div class="cap-info">
-        <div class="cap-name">${c.nombre}</div>
-        <div class="cap-id">${c.codigo} · ${c.ultimaAct}</div>
+        <div class="cap-name">${codigo}</div>
+        <div class="cap-id">${c.capturas} ciudadano${c.capturas !== 1 ? 's' : ''} registrado${c.capturas !== 1 ? 's' : ''}</div>
         <div class="cap-bar" style="margin-top:6px;"><div class="cap-fill" style="width:${pct}%;background:${barColor};"></div></div>
       </div>
       <div class="cap-stats">
         <div class="cap-num" style="color:${barColor};">${c.capturas}</div>
-        <div class="cap-lbl">/ ${c.meta}</div>
-        <div style="margin-top:4px;">
-          <span class="badge ${c.activo ? 'b-green' : 'b-red'}">${c.activo ? 'activo' : 'inactivo'}</span>
-        </div>
+        <div class="cap-lbl">${metaPorCap > 0 ? '/ ' + metaPorCap : 'capturas'}</div>
       </div>
     </div>`;
   }).join('');
+
   document.getElementById('lista-capturistas').innerHTML = html;
-  document.getElementById('total-caps-label').textContent = CAPTURISTAS_SEC.length + ' asignados';
+  document.getElementById('total-caps-label').textContent = CAPTURISTAS_SEC.length + ' activos';
 }
 
-// ── Render simpatizantes ──
-function compLabel(n){
-  return [{},{lbl:'⚪ Incierto',cls:'b-gray'},{lbl:'🟡 Simpatizante',cls:'b-amber'},{lbl:'✅ Comprometido',cls:'b-blue'},{lbl:'⭐ Voto seguro',cls:'b-green'}][n] || {lbl:'—',cls:'b-gray'};
+// ══════════════════════════════════════════════
+// RENDER SIMPATIZANTES
+// ══════════════════════════════════════════════
+function compLabel(n) {
+  return [
+    {}, 
+    { lbl: '⚪ Incierto', cls: 'b-gray' }, 
+    { lbl: '🟡 Simpatizante', cls: 'b-amber' }, 
+    { lbl: '✅ Comprometido', cls: 'b-blue' }, 
+    { lbl: '⭐ Voto seguro', cls: 'b-green' }
+  ][n] || { lbl: '—', cls: 'b-gray' };
+}
+
+function calcEdad(fecha_nacimiento) {
+  if (!fecha_nacimiento) return '—';
+  const hoy = new Date();
+  const nac = new Date(fecha_nacimiento);
+  let edad = hoy.getFullYear() - nac.getFullYear();
+  if (hoy.getMonth() < nac.getMonth() || (hoy.getMonth() === nac.getMonth() && hoy.getDate() < nac.getDate())) edad--;
+  return edad;
 }
 
 function renderSimps() {
   const q = document.getElementById('search-simp').value.toLowerCase();
-  let data = SIMPATIZANTES_SEC;
-  if (filtroComp !== 'todos') data = data.filter(s => s.comp == filtroComp);
-  if (q) data = data.filter(s => s.nombre.toLowerCase().includes(q) || s.curp.toLowerCase().includes(q));
-  
+  let data = CIUDADANOS_SEC;
+
+  if (filtroComp !== 'todos') data = data.filter(c => c.nivel_compromiso == filtroComp);
+  if (q) data = data.filter(c =>
+    (c.nombre_completo || '').toLowerCase().includes(q) ||
+    (c.curp || '').toLowerCase().includes(q)
+  );
+
   if (!data.length) {
     document.getElementById('lista-simps').innerHTML = '<div class="empty"><div class="empty-icon">👥</div>Sin resultados</div>';
     return;
   }
 
-  const html = data.map(s => {
-    const cl = compLabel(s.comp);
-    const ini = s.nombre.split(' ').map(w=>w[0]).join('').substring(0,2);
-    const bgColors = ['','rgba(100,116,139,.15)','rgba(245,158,11,.15)','rgba(59,130,246,.15)','rgba(34,197,94,.15)'];
-    const txColors = ['','var(--text2)','var(--amber)','var(--accent)','var(--green)'];
+  const bgColors = ['', 'rgba(100,116,139,.15)', 'rgba(245,158,11,.15)', 'rgba(59,130,246,.15)', 'rgba(34,197,94,.15)'];
+  const txColors = ['', 'var(--text2)', 'var(--amber)', 'var(--accent)', 'var(--green)'];
+
+  const html = data.slice(0, 200).map(c => {
+    const comp = c.nivel_compromiso || 0;
+    const cl = compLabel(comp);
+    const nombre = c.nombre_completo || 'Sin nombre';
+    const ini = nombre.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+    const edad = calcEdad(c.fecha_nacimiento);
+    const colonia = c.colonia || '—';
+    const curp = c.curp || '—';
+    const cap = c.capturista_id || 'N/A';
     return `<div class="simp-card">
       <div class="simp-header">
-        <div class="simp-av" style="background:${bgColors[s.comp]};color:${txColors[s.comp]};">${ini}</div>
+        <div class="simp-av" style="background:${bgColors[comp] || 'rgba(100,116,139,.15)'};color:${txColors[comp] || 'var(--text2)'};">${ini}</div>
         <div>
-          <div class="simp-name">${s.nombre}</div>
-          <div class="simp-meta">${s.edad} años · ${s.col}</div>
+          <div class="simp-name">${nombre}</div>
+          <div class="simp-meta">${edad} años · ${colonia}</div>
         </div>
       </div>
       <div class="badges">
         <span class="badge ${cl.cls}">${cl.lbl}</span>
-        <span class="badge b-purple">${s.capturista}</span>
+        <span class="badge b-purple">${cap}</span>
       </div>
       <div class="simp-footer">
-        <span class="simp-cap">${s.curp}</span>
+        <span class="simp-cap">${curp}</span>
       </div>
     </div>`;
   }).join('');
+
   document.getElementById('lista-simps').innerHTML = html;
 }
 
@@ -446,6 +651,15 @@ function cerrarSesion() {
   localStorage.removeItem('electoral_sesion');
   window.location.href = 'login.html';
 }
+
+// ══════════════════════════════════════════════
+// ARRANQUE
+// ══════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  cargarDatos();
+  // Refresco automático cada 2 minutos
+  setInterval(cargarDatos, 120000);
+});
 </script>
 
 </body>
