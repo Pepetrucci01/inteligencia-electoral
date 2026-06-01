@@ -1274,18 +1274,19 @@ function buildAlertasF2(){
   const ab=all.filter(c=>c.estatus==='abierta').length;
   const vt=all.reduce((s,c)=>s+c.votos,0);
   const alertas=[];
-  if(inc>0)alertas.push({t:'re',txt:`${inc} casillas con incidencia`,desc:'Usar cuadrantes para localizar y alertar'});
-  if(sr>800)alertas.push({t:'re',txt:`${sr} casillas sin reporte`,desc:'Enviar alerta masiva urgente'});
-  else if(sr>400)alertas.push({t:'am',txt:`${sr} casillas sin reporte`,desc:'Verificar zonas rurales primero'});
-  if(ab<100)alertas.push({t:'am',txt:`Solo ${ab} casillas activas`,desc:'Apertura lenta — monitorear'});
-  alertas.push({t:'am',txt:'1,845 votantes necesitan transporte',desc:'Asignar antes de las 14:00'});
-  if(vt>0)alertas.push({t:'bl',txt:`${fmt(vt)} votos confirmados`,desc:`${ab} casillas reportando`});
+  if(inc>0)alertas.push({t:'re',key:'sinreporte',txt:`${inc} casillas con incidencia`,desc:'Usar cuadrantes para localizar y alertar'});
+  if(sr>800)alertas.push({t:'re',key:'sinreporte',txt:`${sr} casillas sin reporte`,desc:'Enviar alerta masiva urgente'});
+  else if(sr>400)alertas.push({t:'am',key:'sinreporte',txt:`${sr} casillas sin reporte`,desc:'Verificar zonas rurales primero'});
+  if(ab<100)alertas.push({t:'am',key:'activas',txt:`Solo ${ab} casillas activas`,desc:'Apertura lenta — monitorear'});
+  alertas.push({t:'am',key:'transporte',txt:'1,845 votantes necesitan transporte',desc:'Asignar antes de las 14:00'});
+  if(vt>0)alertas.push({t:'bl',key:'votos',txt:`${fmt(vt)} votos confirmados`,desc:`${ab} casillas reportando`});
   const crit=alertas.filter(a=>a.t==='re').length+alertas.filter(a=>a.t==='am').length;
   const badge=document.getElementById('f2-alert-badge');if(badge)badge.textContent='● '+crit;
   const cont=document.getElementById('f2-alertas-list');if(!cont)return;
-  cont.innerHTML=alertas.map(a=>`<div class="al-item">
+  cont.innerHTML=alertas.map(a=>`<div class="al-item" onclick="abrirDetalleAlerta('${a.key}')" style="cursor:pointer;transition:background .15s;" onmouseenter="this.style.background='var(--bg3)'" onmouseleave="this.style.background=''">
     <div class="al-dot" style="background:${a.t==='re'?'var(--red)':a.t==='am'?'var(--amber)':'var(--accent)'}"></div>
-    <div><div class="al-title">${a.txt}</div><div class="al-desc">${a.desc}</div></div>
+    <div style="flex:1"><div class="al-title">${a.txt}</div><div class="al-desc">${a.desc}</div></div>
+    <div style="color:var(--text3);font-size:11px;align-self:center;padding-left:6px">→</div>
   </div>`).join('');
 }
 
@@ -2289,6 +2290,130 @@ async function cargarKPIsReales() {
   }
 }
 
+// ══════════════════════════════════════════════════
+// DETALLE DE ALERTAS JORNADA
+// ══════════════════════════════════════════════════
+function abrirDetalleAlerta(tipo) {
+  const modal = document.getElementById('alerta-detalle-modal');
+  const titulo = document.getElementById('alerta-detalle-titulo');
+  const cuerpo = document.getElementById('alerta-detalle-cuerpo');
+  const all = Object.values(CAS_SEC).flat();
+  let html = '', tituloTxt = '';
+
+  if (tipo === 'sinreporte') {
+    const lista = all.filter(c => c.estatus === 'sinreporte');
+    tituloTxt = `${fmt(lista.length)} casillas sin reporte`;
+    html = `<table class="t" style="width:100%"><thead><tr>
+      <th>Casilla</th><th>Sección</th><th>Municipio</th><th>Tipo</th><th>Representante</th><th>Domicilio</th>
+    </tr></thead><tbody>
+      ${lista.map(c=>`<tr>
+        <td class="mono" style="color:var(--red);font-weight:600">${c.id}</td>
+        <td class="mono" style="text-align:center">${c.secNum}</td>
+        <td>${c.munNombre}</td>
+        <td style="color:var(--text2);font-size:11px">${c.tipo}</td>
+        <td>${c.rep}</td>
+        <td style="font-size:10px;color:var(--text2)">${c.domicilio}, ${c.colonia}</td>
+      </tr>`).join('')}
+    </tbody></table>`;
+  }
+  else if (tipo === 'activas') {
+    const lista = all.filter(c => c.estatus === 'abierta');
+    tituloTxt = `${fmt(lista.length)} casillas activas`;
+    html = `<table class="t" style="width:100%"><thead><tr>
+      <th>Casilla</th><th>Sección</th><th>Municipio</th><th>Tipo</th><th>Apertura</th><th>Representante</th><th class="r">Votos</th><th class="r">Nuevos</th>
+    </tr></thead><tbody>
+      ${lista.map(c=>`<tr>
+        <td class="mono" style="color:var(--green);font-weight:600">${c.id}</td>
+        <td class="mono" style="text-align:center">${c.secNum}</td>
+        <td>${c.munNombre}</td>
+        <td style="color:var(--text2);font-size:11px">${c.tipo}</td>
+        <td class="mono" style="text-align:center">${c.apertura}</td>
+        <td>${c.rep}</td>
+        <td class="mono r" style="color:var(--green);font-weight:600">${fmt(c.votos)}</td>
+        <td class="mono r" style="color:var(--accent)">${c.nuevos}</td>
+      </tr>`).join('')}
+    </tbody></table>`;
+  }
+  else if (tipo === 'transporte') {
+    const secsAll = Object.values(SECS).flat();
+    const NOMS = ['María García','Juan López','Rosa Martínez','Pedro Soto','Ana Torres','Luis Herrera','Carmen Díaz','Jorge Cruz','Silvia Reyes','Roberto Vega'];
+    const COLS2 = ['Col. Centro','Col. Jardines','Col. Las Palmas','Col. Obrera'];
+    const pendientes = [];
+    secsAll.forEach(sec => {
+      const n = Math.floor(Math.random()*6)+1;
+      for(let i=0;i<n;i++) pendientes.push({
+        nombre: NOMS[Math.floor(Math.random()*NOMS.length)],
+        seccion: sec.num, municipio: sec.munNombre,
+        colonia: COLS2[Math.floor(Math.random()*COLS2.length)],
+        tel: `312-${String(Math.floor(Math.random()*9000000)+1000000)}`
+      });
+    });
+    tituloTxt = `${fmt(pendientes.length)} votantes necesitan transporte`;
+    html = `<table class="t" style="width:100%"><thead><tr>
+      <th>Nombre</th><th>Sección</th><th>Municipio</th><th>Colonia</th><th>Teléfono</th>
+    </tr></thead><tbody>
+      ${pendientes.slice(0,300).map(v=>`<tr>
+        <td>${v.nombre}</td>
+        <td class="mono" style="text-align:center">${v.seccion}</td>
+        <td>${v.municipio}</td>
+        <td style="font-size:11px;color:var(--text2)">${v.colonia}</td>
+        <td class="mono" style="color:var(--accent)">${v.tel}</td>
+      </tr>`).join('')}
+    </tbody></table>`;
+  }
+  else if (tipo === 'votos') {
+    const abiertas = all.filter(c => c.estatus === 'abierta' && c.votos > 0);
+    const total = abiertas.reduce((s,c)=>s+c.votos,0);
+    const porMun = {};
+    abiertas.forEach(c=>{
+      if(!porMun[c.munNombre]) porMun[c.munNombre]={cas:0,votos:0,nuevos:0};
+      porMun[c.munNombre].cas++; porMun[c.munNombre].votos+=c.votos; porMun[c.munNombre].nuevos+=c.nuevos;
+    });
+    tituloTxt = `${fmt(total)} votos confirmados`;
+    html = `<div>
+      <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Resumen por municipio</div>
+      <table class="t" style="width:100%;margin-bottom:20px"><thead><tr>
+        <th>Municipio</th><th class="r">Casillas</th><th class="r">Votos</th><th class="r">Nuevos</th>
+      </tr></thead><tbody>
+        ${Object.entries(porMun).sort((a,b)=>b[1].votos-a[1].votos).map(([mun,d])=>`<tr>
+          <td><b>${mun}</b></td>
+          <td class="mono r" style="color:var(--text2)">${d.cas}</td>
+          <td class="mono r" style="color:var(--green);font-weight:600">${fmt(d.votos)}</td>
+          <td class="mono r" style="color:var(--accent)">${d.nuevos}</td>
+        </tr>`).join('')}
+        <tr style="border-top:2px solid var(--border);background:var(--bg3)">
+          <td style="font-weight:700">TOTAL</td>
+          <td class="mono r" style="color:var(--text2)">${abiertas.length}</td>
+          <td class="mono r" style="color:var(--green);font-weight:700">${fmt(total)}</td>
+          <td class="mono r" style="color:var(--accent)">${abiertas.reduce((s,c)=>s+c.nuevos,0)}</td>
+        </tr>
+      </tbody></table>
+      <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Detalle por casilla</div>
+      <table class="t" style="width:100%"><thead><tr>
+        <th>Casilla</th><th>Sección</th><th>Municipio</th><th>Representante</th><th class="r">Votos</th><th class="r">Nuevos</th><th>Última reg.</th>
+      </tr></thead><tbody>
+        ${abiertas.sort((a,b)=>b.votos-a.votos).map(c=>`<tr>
+          <td class="mono" style="color:var(--green)">${c.id}</td>
+          <td class="mono" style="text-align:center">${c.secNum}</td>
+          <td>${c.munNombre}</td>
+          <td>${c.rep}</td>
+          <td class="mono r" style="color:var(--green);font-weight:600">${fmt(c.votos)}</td>
+          <td class="mono r" style="color:var(--accent)">${c.nuevos}</td>
+          <td class="mono" style="color:var(--text2);font-size:10px">${c.horaReg}</td>
+        </tr>`).join('')}
+      </tbody></table>
+    </div>`;
+  }
+
+  titulo.textContent = tituloTxt;
+  cuerpo.innerHTML = html;
+  modal.style.display = 'flex';
+}
+
+function cerrarDetalleAlerta() {
+  document.getElementById('alerta-detalle-modal').style.display = 'none';
+}
+
 document.addEventListener('DOMContentLoaded',()=>{
   // Poblar selectores de municipio
   const munOpts = MUNS.map(m=>`<option value="${m.id}">${m.n}</option>`).join('');
@@ -2330,5 +2455,22 @@ document.addEventListener('DOMContentLoaded',()=>{
   }
 })();
 </script>
+<!-- ── MODAL DETALLE ALERTA ─────────────────────────────────── -->
+<div id="alerta-detalle-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);align-items:flex-start;justify-content:center;overflow-y:auto;padding:20px 16px;">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;width:100%;max-width:1100px;min-height:200px;margin:auto;">
+    <!-- header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg2);z-index:1;border-radius:10px 10px 0 0;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button onclick="cerrarDetalleAlerta()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text1);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;font-family:var(--mono);display:flex;align-items:center;gap:6px;">
+          ← Regresar
+        </button>
+        <span id="alerta-detalle-titulo" style="font-size:13px;font-weight:700;font-family:var(--mono);color:var(--text1);text-transform:uppercase;letter-spacing:.04em;"></span>
+      </div>
+      <button onclick="cerrarDetalleAlerta()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;line-height:1;">✕</button>
+    </div>
+    <!-- cuerpo con scroll -->
+    <div id="alerta-detalle-cuerpo" style="padding:16px 20px;overflow-x:auto;"></div>
+  </div>
+</div>
 </body>
 </html>
