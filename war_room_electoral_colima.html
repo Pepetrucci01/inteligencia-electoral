@@ -2193,21 +2193,21 @@ async function cargarKPIsReales() {
   try {
     // Total ciudadanos
     const rTotal = await fetch(
-      `${SUPA_URL}/rest/v1/ciudadanos?select=id&licencia_id=eq.a1b2c3d4-0001-0000-0000-000000000001`,
+      `${SUPA_URL}/rest/v1/ciudadanos?select=id&licencia_id=eq.${window._sesion?.licencia_id||'a1b2c3d4-0001-0000-0000-000000000001'}`,
       { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}`, 'Prefer': 'count=exact', 'Range': '0-0' } }
     );
     const total = parseInt(rTotal.headers.get('Content-Range')?.split('/')[1] || 0);
 
     // Seguro vota (compromiso 3 o 4)
     const rSeg = await fetch(
-      `${SUPA_URL}/rest/v1/ciudadanos?select=id&licencia_id=eq.a1b2c3d4-0001-0000-0000-000000000001&compromiso=gte.3`,
+      `${SUPA_URL}/rest/v1/ciudadanos?select=id&licencia_id=eq.${window._sesion?.licencia_id||'a1b2c3d4-0001-0000-0000-000000000001'}&compromiso=gte.3`,
       { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}`, 'Prefer': 'count=exact', 'Range': '0-0' } }
     );
     const seguro = parseInt(rSeg.headers.get('Content-Range')?.split('/')[1] || 0);
 
     // En riesgo
     const rRiesgo = await fetch(
-      `${SUPA_URL}/rest/v1/ciudadanos?select=id&licencia_id=eq.a1b2c3d4-0001-0000-0000-000000000001&es_riesgo=eq.true`,
+      `${SUPA_URL}/rest/v1/ciudadanos?select=id&licencia_id=eq.${window._sesion?.licencia_id||'a1b2c3d4-0001-0000-0000-000000000001'}&es_riesgo=eq.true`,
       { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}`, 'Prefer': 'count=exact', 'Range': '0-0' } }
     );
     const riesgo = parseInt(rRiesgo.headers.get('Content-Range')?.split('/')[1] || 0);
