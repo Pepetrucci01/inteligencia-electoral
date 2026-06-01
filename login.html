@@ -217,24 +217,6 @@ html, body {
 }
 .pass-toggle:hover { color: var(--text2); }
 
-/* Credenciales de prueba */
-.demo-creds {
-  background: rgba(59,130,246,0.06); border: 1px solid rgba(59,130,246,0.15);
-  border-radius: 8px; padding: 12px 14px; margin-bottom: 16px;
-  font-size: 11px; font-family: var(--mono);
-}
-.demo-title { color: var(--accent); font-weight: 600; margin-bottom: 8px; font-size: 10px; text-transform: uppercase; letter-spacing: .06em; }
-.demo-item {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
-  cursor: pointer; transition: color .15s;
-}
-.demo-item:last-child { border-bottom: none; }
-.demo-item:hover { color: var(--text); }
-.demo-item-rol { color: var(--text2); }
-.demo-item-pass { color: var(--text3); }
-.demo-hint { font-size: 10px; color: var(--text3); margin-top: 6px; }
-
 /* Botón login */
 .btn-login {
   width: 100%; padding: 14px;
@@ -404,32 +386,6 @@ html, body {
         </div>
       </div>
 
-      <!-- Credenciales demo -->
-      <div class="demo-creds">
-        <div class="demo-title">🔑 Credenciales de prueba — clic para cargar</div>
-        <div class="demo-item" onclick="cargarDemo('superadmin','admin@sistema.mx','Admin2027!')">
-          <span class="demo-item-rol">🔒 Super Admin</span>
-          <span class="demo-item-pass">admin@sistema.mx / Admin2027!</span>
-        </div>
-        <div class="demo-item" onclick="cargarDemo('admin','candidato@colima.mx','Colima2027!')">
-          <span class="demo-item-rol">🏛 Admin Estatal</span>
-          <span class="demo-item-pass">candidato@colima.mx / Colima2027!</span>
-        </div>
-        <div class="demo-item" onclick="cargarDemo('coordinador','coord.mzl@colima.mx','Coord2027!')">
-          <span class="demo-item-rol">📍 Coordinador</span>
-          <span class="demo-item-pass">coord.mzl@colima.mx / Coord2027!</span>
-        </div>
-        <div class="demo-item" onclick="cargarDemo('lider_seccion','lider138@colima.mx','Lider2027!')">
-          <span class="demo-item-rol">⭐ Líder de Sección</span>
-          <span class="demo-item-pass">lider138@colima.mx / Lider2027!</span>
-        </div>
-        <div class="demo-item" onclick="cargarDemo('capturista','cap017@colima.mx','Cap2027!')">
-          <span class="demo-item-rol">✏️ Capturista</span>
-          <span class="demo-item-pass">cap017@colima.mx / Cap2027!</span>
-        </div>
-        <div class="demo-hint">⚠ Solo para demostración. En producción se conecta a Supabase.</div>
-      </div>
-
       <!-- Campos -->
       <div class="field">
         <label class="field-label">Correo electrónico</label>
@@ -481,18 +437,6 @@ html, body {
 
 <script>
 // ══════════════════════════════════════════════════════
-// USUARIOS DEMO (en producción → Supabase auth)
-// ══════════════════════════════════════════════════════
-// Credenciales demo solo para mostrar en el panel visual
-// El login real usa Supabase Auth
-const USUARIOS_DEMO = [
-  { email: 'admin@sistema.mx',  pass: 'Admin2027!',  rol: 'superadmin',    nombre: 'Super Administrador' },
-  { email: 'candidato@demo.mx', pass: 'Colima2027!', rol: 'admin',         nombre: 'Admin Estatal Demo'  },
-  { email: 'coord.a@demo.mx',   pass: 'Coord2027!',  rol: 'coordinador',   nombre: 'Coordinador A'       },
-  { email: 'lider138@demo.mx',  pass: 'Lider2027!',  rol: 'lider_seccion', nombre: 'Líder Sección 138'   },
-  { email: 'cap017@demo.mx',    pass: 'Cap2027!',     rol: 'capturista',    nombre: 'Capturista 017'      },
-];
-
 // Rol seleccionado actualmente
 let rolActivo = 'capturista';
 
@@ -523,16 +467,6 @@ function selRol(rol) {
   document.getElementById('btn-login').style.background = colores[rol] || '#3b82f6';
 
   // Limpiar error
-  document.getElementById('login-error').classList.remove('show');
-}
-
-// ══════════════════════════════════════════════════════
-// CARGAR CREDENCIAL DEMO
-// ══════════════════════════════════════════════════════
-function cargarDemo(rol, email, pass) {
-  selRol(rol);
-  document.getElementById('f-email').value = email;
-  document.getElementById('f-pass').value  = pass;
   document.getElementById('login-error').classList.remove('show');
 }
 
