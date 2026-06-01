@@ -2280,6 +2280,90 @@ function poblarFiltrosSecciones(munId) {
 
 
 // ══════════════════════════════════════════════════
+// CARGA INICIAL DATOS REALES DESDE SUPABASE
+// ══════════════════════════════════════════════════
+const LICENCIA_ID = (window._sesion?.licencia_id) || 'a1b2c3d4-0001-0000-0000-000000000001';
+
+async function cargarDatosReales() {
+  try {
+    // ── 1. Metas por municipio desde secciones_electorales_colima ──
+    const rMetas = await fetch(
+      `${SUPA_URL}/rest/v1/secciones_electorales_colima?select=municipio,meta_proyectada`,
+      { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` } }
+    );
+    const secciones = await rMetas.json();
+
+    // Agrupar meta por municipio
+    const metasPorMun = {};
+    const secsPorMun  = {};
+    secciones.forEach(s => {
+      const k = s.municipio?.trim().toUpperCase();
+      if (!k) return;
+      metasPorMun[k] = (metasPorMun[k] || 0) + Math.round(s.meta_proyectada || 0);
+      secsPorMun[k]  = (secsPorMun[k]  || 0) + 1;
+    });
+
+    // ── 2. Capturados por municipio desde ciudadanos ──
+    const rCap = await fetch(
+      `${SUPA_URL}/rest/v1/ciudadanos?select=municipio&licencia_id=eq.${LICENCIA_ID}`,
+      { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` } }
+    );
+    const ciudadanos = await rCap.json();
+
+    const capPorMun = {};
+    ciudadanos.forEach(c => {
+      const k = c.municipio?.trim().toUpperCase();
+      if (!k) return;
+      capPorMun[k] = (capPorMun[k] || 0) + 1;
+    });
+
+    // ── 3. Avance por sección (para tabla de secciones) ──
+    window.AVANCE_SECCION = {};
+    ciudadanos.forEach(c => {
+      const s = c.seccion_electoral;
+      if (!s) return;
+      window.AVANCE_SECCION[s] = (window.AVANCE_SECCION[s] || 0) + 1;
+    });
+
+    // ── 4. Actualizar MUNS con datos reales ──
+    MUNS.forEach(m => {
+      const k = m.n.toUpperCase()
+        .replace('Á','A').replace('É','E').replace('Í','I').replace('Ó','O').replace('Ú','U')
+        .normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+      // Buscar coincidencia en BD (normalizada)
+      const bdKey = Object.keys(metasPorMun).find(bk =>
+        bk.normalize('NFD').replace(/[\u0300-\u036f]/g,'') === k
+      );
+      if (bdKey) {
+        m.meta = metasPorMun[bdKey];
+        m.secs = secsPorMun[bdKey] || m.secs;
+      }
+      const capKey = Object.keys(capPorMun).find(ck =>
+        ck.normalize('NFD').replace(/[\u0300-\u036f]/g,'') === k
+      );
+      if (capKey) m.cap = capPorMun[capKey];
+    });
+
+    // ── 5. Recalcular totales de DFS y DLS ──
+    DFS.forEach(df => {
+      df.cap  = MUNS.filter(m=>df.munIds.includes(m.id)).reduce((s,m)=>s+m.cap,0);
+      df.meta = MUNS.filter(m=>df.munIds.includes(m.id)).reduce((s,m)=>s+m.meta,0);
+      df.secs = MUNS.filter(m=>df.munIds.includes(m.id)).reduce((s,m)=>s+m.secs,0);
+    });
+
+    // ── 6. Re-renderizar con datos reales ──
+    renderMunF1();
+    renderTablaCapturistas();
+    cargarKPIsReales();
+
+    console.log('✅ Datos reales cargados desde Supabase');
+  } catch(e) {
+    console.warn('⚠️ Error cargando datos reales, usando simulados:', e);
+    // El sistema ya tiene datos simulados de fallback — no hace nada
+  }
+}
+
+// ══════════════════════════════════════════════════
 // CARGA KPIs REALES DESDE SUPABASE
 // ══════════════════════════════════════════════════
 async function cargarKPIsReales() {
@@ -2293,14 +2377,14 @@ async function cargarKPIsReales() {
 
     // Seguro vota (compromiso 3 o 4)
     const rSeg = await fetch(
-      `${SUPA_URL}/rest/v1/ciudadanos?select=id&licencia_id=eq.${window._sesion?.licencia_id||'a1b2c3d4-0001-0000-0000-000000000001'}&compromiso=gte.3`,
+      `${SUPA_URL}/rest/v1/ciudadanos?select=id&licencia_id=eq.${window._sesion?.licencia_id||LICENCIA_ID}&compromiso=gte.3`,
       { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}`, 'Prefer': 'count=exact', 'Range': '0-0' } }
     );
     const seguro = parseInt(rSeg.headers.get('Content-Range')?.split('/')[1] || 0);
 
     // En riesgo
     const rRiesgo = await fetch(
-      `${SUPA_URL}/rest/v1/ciudadanos?select=id&licencia_id=eq.${window._sesion?.licencia_id||'a1b2c3d4-0001-0000-0000-000000000001'}&es_riesgo=eq.true`,
+      `${SUPA_URL}/rest/v1/ciudadanos?select=id&licencia_id=eq.${window._sesion?.licencia_id||LICENCIA_ID}&es_riesgo=eq.true`,
       { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}`, 'Prefer': 'count=exact', 'Range': '0-0' } }
     );
     const riesgo = parseInt(rRiesgo.headers.get('Content-Range')?.split('/')[1] || 0);
@@ -2547,6 +2631,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   renderCuadF1();
   renderTablaCapturistas();
   cargarKPIsReales();
+  cargarDatosReales(); // ← carga datos reales y re-renderiza con Supabase
   actualizarConteoAlerta();
   actualizarHistorialAlertas();
   renderSemaforoGlobal();
