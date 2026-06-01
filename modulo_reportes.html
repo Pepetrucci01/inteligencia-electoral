@@ -873,17 +873,17 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
 </div><!-- /main -->
 
 <script>
-const MUN_DATA = [
-  {n:'Tecomán',      cap:1537, meta:29211, val:1088, seg:699, rie:345, dup:56},
-  {n:'Armería',      cap:688,  meta:8826,  val:477,  seg:315, rie:148, dup:34},
-  {n:'Colima',       cap:1620, meta:22050, val:1161, seg:774, rie:375, dup:65},
-  {n:'Villa de Álv.',cap:1393, meta:23201, val:1006, seg:651, rie:307, dup:53},
-  {n:'Manzanillo',   cap:2108, meta:49083, val:1560, seg:990, rie:479, dup:87},
-  {n:'Comala',       cap:631,  meta:5971,  val:453,  seg:268, rie:111, dup:25},
-  {n:'Cuauhtémoc',   cap:619,  meta:8061,  val:452,  seg:271, rie:122, dup:37},
-  {n:'Ixtlahuacán',  cap:310,  meta:3286,  val:225,  seg:135, rie:71,  dup:13},
-  {n:'Minatitlán',   cap:625,  meta:3908,  val:443,  seg:285, rie:135, dup:24},
-  {n:'Coquimatlán',  cap:469,  meta:6700,  val:328,  seg:213, rie:110, dup:14},
+let MUN_DATA = [
+  {n:'Tecomán',      cap:0, meta:29211, val:0, seg:0, rie:0, dup:0},
+  {n:'Armería',      cap:0, meta:8826,  val:0, seg:0, rie:0, dup:0},
+  {n:'Colima',       cap:0, meta:22050, val:0, seg:0, rie:0, dup:0},
+  {n:'Villa de Álv.',cap:0, meta:23201, val:0, seg:0, rie:0, dup:0},
+  {n:'Manzanillo',   cap:0, meta:49083, val:0, seg:0, rie:0, dup:0},
+  {n:'Comala',       cap:0, meta:5971,  val:0, seg:0, rie:0, dup:0},
+  {n:'Cuauhtémoc',   cap:0, meta:8061,  val:0, seg:0, rie:0, dup:0},
+  {n:'Ixtlahuacán',  cap:0, meta:3286,  val:0, seg:0, rie:0, dup:0},
+  {n:'Minatitlán',   cap:0, meta:3908,  val:0, seg:0, rie:0, dup:0},
+  {n:'Coquimatlán',  cap:0, meta:6700,  val:0, seg:0, rie:0, dup:0},
 ];
 
 function semCol(p){ return p>=10?'var(--green)':p>=5?'var(--amber)':'var(--red)'; }
@@ -1001,40 +1001,7 @@ buildMunTable();
 // ══════════════════════════════════════════════════════
 // DATOS DE SECCIONES (muestra representativa Colima)
 // ══════════════════════════════════════════════════════
-const SEC_DATA = [
-  {sec:1,  municipio:'Colima',       df:'1', dl:'1',  cap:12, meta:180, dificultad:'FACIL'},
-  {sec:2,  municipio:'Colima',       df:'1', dl:'1',  cap:8,  meta:210, dificultad:'MEDIO'},
-  {sec:3,  municipio:'Colima',       df:'1', dl:'2',  cap:15, meta:195, dificultad:'FACIL'},
-  {sec:4,  municipio:'Colima',       df:'1', dl:'2',  cap:3,  meta:175, dificultad:'DIFICIL'},
-  {sec:5,  municipio:'Colima',       df:'1', dl:'2',  cap:22, meta:220, dificultad:'FACIL'},
-  {sec:24, municipio:'Villa de Álv.',df:'1', dl:'3',  cap:18, meta:240, dificultad:'FACIL'},
-  {sec:25, municipio:'Villa de Álv.',df:'1', dl:'3',  cap:5,  meta:190, dificultad:'MEDIO'},
-  {sec:26, municipio:'Villa de Álv.',df:'1', dl:'3',  cap:0,  meta:165, dificultad:'DIFICIL'},
-  {sec:27, municipio:'Villa de Álv.',df:'1', dl:'4',  cap:9,  meta:200, dificultad:'MEDIO'},
-  {sec:45, municipio:'Comala',       df:'1', dl:'4',  cap:14, meta:130, dificultad:'FACIL'},
-  {sec:46, municipio:'Comala',       df:'1', dl:'4',  cap:2,  meta:120, dificultad:'DIFICIL'},
-  {sec:60, municipio:'Cuauhtémoc',   df:'1', dl:'6',  cap:11, meta:155, dificultad:'FACIL'},
-  {sec:61, municipio:'Cuauhtémoc',   df:'1', dl:'6',  cap:4,  meta:140, dificultad:'MEDIO'},
-  {sec:80, municipio:'Minatitlán',   df:'1', dl:'7',  cap:7,  meta:95,  dificultad:'MEDIO'},
-  {sec:81, municipio:'Minatitlán',   df:'1', dl:'7',  cap:0,  meta:88,  dificultad:'DIFICIL'},
-  {sec:100,municipio:'Ixtlahuacán',  df:'1', dl:'8',  cap:6,  meta:110, dificultad:'MEDIO'},
-  {sec:101,municipio:'Ixtlahuacán',  df:'1', dl:'8',  cap:3,  meta:105, dificultad:'DIFICIL'},
-  {sec:120,municipio:'Armería',      df:'2', dl:'9',  cap:16, meta:185, dificultad:'FACIL'},
-  {sec:121,municipio:'Armería',      df:'2', dl:'9',  cap:9,  meta:175, dificultad:'FACIL'},
-  {sec:122,municipio:'Armería',      df:'2', dl:'9',  cap:1,  meta:160, dificultad:'DIFICIL'},
-  {sec:138,municipio:'Villa de Álv.',df:'1', dl:'4',  cap:7,  meta:511, dificultad:'MEDIO'},
-  {sec:150,municipio:'Coquimatlán',  df:'1', dl:'5',  cap:8,  meta:145, dificultad:'MEDIO'},
-  {sec:151,municipio:'Coquimatlán',  df:'1', dl:'5',  cap:2,  meta:130, dificultad:'DIFICIL'},
-  {sec:200,municipio:'Tecomán',      df:'2', dl:'10', cap:25, meta:310, dificultad:'FACIL'},
-  {sec:201,municipio:'Tecomán',      df:'2', dl:'10', cap:19, meta:290, dificultad:'FACIL'},
-  {sec:202,municipio:'Tecomán',      df:'2', dl:'10', cap:4,  meta:275, dificultad:'MEDIO'},
-  {sec:203,municipio:'Tecomán',      df:'2', dl:'11', cap:0,  meta:260, dificultad:'DIFICIL'},
-  {sec:250,municipio:'Manzanillo',   df:'2', dl:'12', cap:30, meta:380, dificultad:'FACIL'},
-  {sec:251,municipio:'Manzanillo',   df:'2', dl:'12', cap:22, meta:360, dificultad:'FACIL'},
-  {sec:252,municipio:'Manzanillo',   df:'2', dl:'13', cap:8,  meta:340, dificultad:'MEDIO'},
-  {sec:253,municipio:'Manzanillo',   df:'2', dl:'13', cap:1,  meta:320, dificultad:'DIFICIL'},
-  {sec:254,municipio:'Manzanillo',   df:'2', dl:'14', cap:0,  meta:300, dificultad:'DIFICIL'},
-];
+let SEC_DATA = []; // Se cargará desde Supabase
 
 let secSortField = 'pct';
 let secSortAsc = true;
@@ -2256,6 +2223,106 @@ showTab = function(tab) {
 
 <script>
 // ══════════════════════════════════════════════════
+// ══════════════════════════════════════════════════
+// CARGA DATOS REALES DESDE SUPABASE
+// ══════════════════════════════════════════════════
+async function cargarDatosReportesReales() {
+  try {
+    // ── 1. Secciones completas con meta y avance ──
+    const [rSecs, rCiudadanos] = await Promise.all([
+      fetch(`${SUPA_URL_REP}/rest/v1/secciones_electorales_colima?select=seccion,municipio,distrito_federal,distrito_local,meta_proyectada,estatus_afluencia&order=seccion`,
+        { headers: { 'apikey': SUPA_KEY_REP, 'Authorization': `Bearer ${SUPA_KEY_REP}` } }),
+      fetch(`${SUPA_URL_REP}/rest/v1/ciudadanos?select=municipio,seccion_electoral,compromiso,es_riesgo,duplicado,licencia_id&licencia_id=eq.${LICENCIA_ID}`,
+        { headers: { 'apikey': SUPA_KEY_REP, 'Authorization': `Bearer ${SUPA_KEY_REP}` } })
+    ]);
+
+    const secciones   = await rSecs.json();
+    const ciudadanos  = await rCiudadanos.json();
+
+    // ── 2. Índice de avance por sección ──
+    const capPorSec = {}, segPorSec = {}, riePorSec = {}, dupPorSec = {};
+    const capPorMun = {}, valPorMun = {}, segPorMun = {}, riePorMun = {}, dupPorMun = {};
+
+    ciudadanos.forEach(c => {
+      const s = c.seccion_electoral;
+      const m = c.municipio?.trim();
+      if (s) {
+        capPorSec[s] = (capPorSec[s] || 0) + 1;
+        if (c.compromiso >= 3) segPorSec[s] = (segPorSec[s] || 0) + 1;
+        if (c.es_riesgo)       riePorSec[s] = (riePorSec[s] || 0) + 1;
+        if (c.duplicado)       dupPorSec[s] = (dupPorSec[s] || 0) + 1;
+      }
+      if (m) {
+        capPorMun[m] = (capPorMun[m] || 0) + 1;
+        if (c.compromiso >= 2) valPorMun[m] = (valPorMun[m] || 0) + 1;
+        if (c.compromiso >= 3) segPorMun[m] = (segPorMun[m] || 0) + 1;
+        if (c.es_riesgo)       riePorMun[m] = (riePorMun[m] || 0) + 1;
+        if (c.duplicado)       dupPorMun[m] = (dupPorMun[m] || 0) + 1;
+      }
+    });
+
+    // ── 3. Actualizar MUN_DATA con datos reales ──
+    const normStr = s => (s||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+    // Metas reales por municipio desde secciones
+    const metaPorMun = {};
+    secciones.forEach(s => {
+      const k = normStr(s.municipio);
+      metaPorMun[k] = (metaPorMun[k] || 0) + Math.round(s.meta_proyectada || 0);
+    });
+
+    MUN_DATA.forEach(m => {
+      const k = normStr(m.n);
+      // Buscar municipio en BD (con variantes de nombre)
+      const bdKey = Object.keys(capPorMun).find(bk => normStr(bk) === k) ||
+                    Object.keys(capPorMun).find(bk => normStr(bk).startsWith(k.substring(0,5)));
+      const metaKey = Object.keys(metaPorMun).find(bk => normStr(bk) === k) ||
+                      Object.keys(metaPorMun).find(bk => normStr(bk).startsWith(k.substring(0,5)));
+      if (metaKey) m.meta = metaPorMun[metaKey];
+      if (bdKey) {
+        m.cap = capPorMun[bdKey] || 0;
+        m.val = valPorMun[bdKey] || 0;
+        m.seg = segPorMun[bdKey] || 0;
+        m.rie = riePorMun[bdKey] || 0;
+        m.dup = dupPorMun[bdKey] || 0;
+      }
+    });
+
+    // ── 4. Construir SEC_DATA desde BD ──
+    SEC_DATA = secciones.map(s => ({
+      sec:        s.seccion,
+      municipio:  s.municipio?.charAt(0) + s.municipio?.slice(1).toLowerCase() || '—',
+      df:         String(s.distrito_federal || '1'),
+      dl:         String(s.distrito_local   || '1'),
+      cap:        capPorSec[s.seccion]  || 0,
+      meta:       Math.round(s.meta_proyectada || 0),
+      dificultad: s.estatus_afluencia || 'MEDIO'
+    }));
+
+    // ── 5. Poblar filtros de municipio y DL ──
+    const munSet = [...new Set(SEC_DATA.map(s => s.municipio))].sort();
+    const filMun = document.getElementById('fil-municipio');
+    if (filMun) {
+      filMun.innerHTML = '<option value="">Todos los municipios</option>' +
+        munSet.map(m => `<option value="${m}">${m}</option>`).join('');
+    }
+    const dlSet = [...new Set(SEC_DATA.map(s => s.dl))].sort((a,b) => +a - +b);
+    const filDl = document.getElementById('fil-dl');
+    if (filDl) {
+      filDl.innerHTML = '<option value="">Todos</option>' +
+        dlSet.map(d => `<option value="${d}">DL-${d.padStart(2,'0')}</option>`).join('');
+    }
+
+    // ── 6. Re-renderizar tablas con datos reales ──
+    buildMunTable();
+    actualizarKPIsMunicipio();
+    aplicarFiltroSecciones();
+
+    console.log(`✅ Reportes: ${ciudadanos.length} ciudadanos, ${secciones.length} secciones`);
+  } catch(e) {
+    console.warn('⚠️ Error cargando datos reportes:', e);
+  }
+}
+
 // KPIs REALES DESDE SUPABASE
 // ══════════════════════════════════════════════════
 const SUPA_URL_REP = 'https://dyirhwwmykskpuvzcafx.supabase.co';
@@ -2313,7 +2380,8 @@ async function cargarKPIsReportes() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  setTimeout(cargarKPIsReportes, 500);
+  setTimeout(cargarKPIsReportes, 300);
+  setTimeout(cargarDatosReportesReales, 400);
 });
 </script>
 <script src="theme.js"></script>
