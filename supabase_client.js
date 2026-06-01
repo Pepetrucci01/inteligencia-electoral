@@ -17,7 +17,7 @@ const IS_STAGING = window.location.hostname === 'localhost'
 const SUPABASE_CONFIG = {
   staging: {
     url:  'https://dyirhwwmykskpuvzcafx.supabase.co',
-    key:  'sb_publishable_15ryvEoNMYqJr4bHm7fi0g_BcvPMMrK'
+    key:  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5aXJod3dteWtza3B1dnpjYWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NTk3ODgsImV4cCI6MjA5NTEzNTc4OH0.2xe4cHqORGng1hnYPJ9ZiyT0r87fMijbUEJqBy3-xoI'
   },
   production: {
     url:  'https://jawymbrpglddhhlizifk.supabase.co',
