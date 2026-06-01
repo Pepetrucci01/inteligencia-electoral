@@ -350,12 +350,12 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
         <table class="t" id="mun-table">
           <thead><tr>
             <th onclick="sortWR('n')" style="cursor:pointer;user-select:none">Municipio <span id="sort-wr-n" style="color:var(--text3)">↕</span></th>
-            <th class="r" onclick="sortWR('cap')" style="cursor:pointer;user-select:none">Capturados <span id="sort-wr-cap" style="color:var(--text3)">↕</span></th>
-            <th class="r" onclick="sortWR('meta')" style="cursor:pointer;user-select:none">Meta 2027 <span id="sort-wr-meta" style="color:var(--text3)">↕</span></th>
-            <th class="r" onclick="sortWR('pct')" style="cursor:pointer;user-select:none">% Avance <span id="sort-wr-pct" style="color:var(--text3)">↕</span></th>
+            <th class="r" onclick="sortWR('cap')" style="cursor:pointer;user-select:none;text-align:center">Capturados <span id="sort-wr-cap" style="color:var(--text3)">↕</span></th>
+            <th class="r" onclick="sortWR('meta')" style="cursor:pointer;user-select:none;text-align:center">Meta 2027 <span id="sort-wr-meta" style="color:var(--text3)">↕</span></th>
+            <th class="r" onclick="sortWR('pct')" style="cursor:pointer;user-select:none;text-align:center">% Avance <span id="sort-wr-pct" style="color:var(--text3)">↕</span></th>
             <th>Progreso</th>
             <th>Semáforo</th>
-            <th class="r" onclick="sortWR('v24')" style="cursor:pointer;user-select:none" title="Votos obtenidos en elección 2024 — referencia histórica">2024 <span id="sort-wr-v24" style="color:var(--text3)">↕</span></th>
+            <th class="r" onclick="sortWR('v24')" style="cursor:pointer;user-select:none;text-align:center" title="Votos obtenidos en elección 2024 — referencia histórica">2024 <span id="sort-wr-v24" style="color:var(--text3)">↕</span></th>
           </tr></thead>
           <tbody id="mun-tbody"></tbody>
         </table>
@@ -413,13 +413,13 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
         <table class="t" id="cap-table">
           <thead><tr>
             <th onclick="sortCap('nombre')" style="cursor:pointer;user-select:none">Capturista <span id="sort-cap-nombre" style="color:var(--text3)">↕</span></th>
-            <th onclick="sortCap('secNum')" style="cursor:pointer;user-select:none">Sección <span id="sort-cap-secNum" style="color:var(--text3)">↕</span></th>
-            <th onclick="sortCap('munNombre')" style="cursor:pointer;user-select:none">Municipio <span id="sort-cap-munNombre" style="color:var(--text3)">↕</span></th>
-            <th class="r" onclick="sortCap('cap')" style="cursor:pointer;user-select:none">Capturados <span id="sort-cap-cap" style="color:var(--text3)">↕</span></th>
-            <th class="r" onclick="sortCap('meta')" style="cursor:pointer;user-select:none">Meta <span id="sort-cap-meta" style="color:var(--text3)">↕</span></th>
-            <th class="r" onclick="sortCap('pct')" style="cursor:pointer;user-select:none">% Avance <span id="sort-cap-pct" style="color:var(--text3)">↕</span></th>
+            <th onclick="sortCap('secNum')" style="cursor:pointer;user-select:none;text-align:center">Sección <span id="sort-cap-secNum" style="color:var(--text3)">↕</span></th>
+            <th onclick="sortCap('munNombre')" style="cursor:pointer;user-select:none;text-align:center">Municipio <span id="sort-cap-munNombre" style="color:var(--text3)">↕</span></th>
+            <th class="r" onclick="sortCap('cap')" style="cursor:pointer;user-select:none;text-align:center">Capturados <span id="sort-cap-cap" style="color:var(--text3)">↕</span></th>
+            <th class="r" onclick="sortCap('meta')" style="cursor:pointer;user-select:none;text-align:center">Meta <span id="sort-cap-meta" style="color:var(--text3)">↕</span></th>
+            <th class="r" onclick="sortCap('pct')" style="cursor:pointer;user-select:none;text-align:center">% Avance <span id="sort-cap-pct" style="color:var(--text3)">↕</span></th>
             <th>Progreso</th>
-            <th class="r" onclick="sortCap('votosF2')" style="cursor:pointer;user-select:none">Votos F2 <span id="sort-cap-votosF2" style="color:var(--text3)">↕</span></th>
+            <th class="r" onclick="sortCap('votosF2')" style="cursor:pointer;user-select:none;text-align:center">Votos F2 <span id="sort-cap-votosF2" style="color:var(--text3)">↕</span></th>
             <th>Semáforo</th>
             <th>Acción</th>
           </tr></thead>
@@ -540,13 +540,13 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
           <table class="t">
             <thead><tr>
               <th onclick="sortF2('n')" style="cursor:pointer;user-select:none">Municipio <span id="sf2-n" style="color:var(--text3)">↕</span></th>
-              <th class="r" onclick="sortF2('cas')" style="cursor:pointer;user-select:none">Casillas <span id="sf2-cas" style="color:var(--text3)">↕</span></th>
-              <th class="r" onclick="sortF2('ab')" style="cursor:pointer;user-select:none">Abiertas <span id="sf2-ab" style="color:var(--text3)">↕</span></th>
-              <th class="r" onclick="sortF2('inc')" style="cursor:pointer;user-select:none">Incid. <span id="sf2-inc" style="color:var(--text3)">↕</span></th>
-              <th class="r" onclick="sortF2('sr')" style="cursor:pointer;user-select:none">S/Rep. <span id="sf2-sr" style="color:var(--text3)">↕</span></th>
-              <th class="r" onclick="sortF2('votos')" style="cursor:pointer;user-select:none">Votos <span id="sf2-votos" style="color:var(--text3)">↕</span></th>
-              <th class="r" onclick="sortF2('nuevos')" style="cursor:pointer;user-select:none">Nuevos <span id="sf2-nuevos" style="color:var(--text3)">↕</span></th>
-              <th class="r" onclick="sortF2('pv')" style="cursor:pointer;user-select:none">% Part. <span id="sf2-pv" style="color:var(--text3)">↕</span></th>
+              <th class="r" onclick="sortF2('cas')" style="cursor:pointer;user-select:none;text-align:center">Casillas <span id="sf2-cas" style="color:var(--text3)">↕</span></th>
+              <th class="r" onclick="sortF2('ab')" style="cursor:pointer;user-select:none;text-align:center">Abiertas <span id="sf2-ab" style="color:var(--text3)">↕</span></th>
+              <th class="r" onclick="sortF2('inc')" style="cursor:pointer;user-select:none;text-align:center">Incid. <span id="sf2-inc" style="color:var(--text3)">↕</span></th>
+              <th class="r" onclick="sortF2('sr')" style="cursor:pointer;user-select:none;text-align:center">S/Rep. <span id="sf2-sr" style="color:var(--text3)">↕</span></th>
+              <th class="r" onclick="sortF2('votos')" style="cursor:pointer;user-select:none;text-align:center">Votos <span id="sf2-votos" style="color:var(--text3)">↕</span></th>
+              <th class="r" onclick="sortF2('nuevos')" style="cursor:pointer;user-select:none;text-align:center">Nuevos <span id="sf2-nuevos" style="color:var(--text3)">↕</span></th>
+              <th class="r" onclick="sortF2('pv')" style="cursor:pointer;user-select:none;text-align:center">% Part. <span id="sf2-pv" style="color:var(--text3)">↕</span></th>
               <th>Progreso</th><th>Estado</th>
             </tr></thead>
             <tbody id="mun-f2-tbody"></tbody>
@@ -698,14 +698,14 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
     <div style="overflow-x:auto;border-radius:8px;border:1px solid var(--border);">
       <table class="t" id="tbl-casillas-f2">
         <thead><tr>
-          <th onclick="sortCasillas('id')"      style="cursor:pointer;user-select:none">Casilla <span id="scs-id"      style="color:var(--text3)">↕</span></th>
+          <th onclick="sortCasillas('id')"      style="cursor:pointer;user-select:none;text-align:center">Casilla <span id="scs-id"      style="color:var(--text3)">↕</span></th>
           <th onclick="sortCasillas('seccion')" style="cursor:pointer;user-select:none;text-align:center">Sección <span id="scs-seccion" style="color:var(--text3)">↕</span></th>
           <th onclick="sortCasillas('municipio')" style="cursor:pointer;user-select:none;text-align:center">Municipio <span id="scs-municipio" style="color:var(--text3)">↕</span></th>
           <th onclick="sortCasillas('tipo')"    style="cursor:pointer;user-select:none;text-align:center">Tipo <span id="scs-tipo"    style="color:var(--text3)">↕</span></th>
           <th onclick="sortCasillas('estatus')" style="cursor:pointer;user-select:none;text-align:center">Estatus <span id="scs-estatus" style="color:var(--text3)">↕</span></th>
           <th onclick="sortCasillas('hora')"    style="cursor:pointer;user-select:none;text-align:center">Apertura <span id="scs-hora"    style="color:var(--text3)">↕</span></th>
           <th style="text-align:center">Representante</th>
-          <th style="cursor:pointer;user-select:none;text-align:center" onclick="sortCasillas('votos')">Votos <span id="scs-votos" style="color:var(--text3)">↕</span></th>
+          <th onclick="sortCasillas('votos')" style="cursor:pointer;user-select:none;text-align:center">Votos <span id="scs-votos" style="color:var(--text3)">↕</span></th>
         </tr></thead>
         <tbody id="tb-casillas-f2"></tbody>
       </table>
@@ -1040,7 +1040,7 @@ function sortSecF1(f){
 function thSF1(lbl,f){
   const act=_sf1SecField===f;
   const arr=act?(_sf1SecAsc?'↑':'↓'):'↕';
-  return`<th onclick="sortSecF1('${f}')" style="cursor:pointer;user-select:none;white-space:nowrap">${lbl} <span style="color:${act?'var(--accent)':'var(--text3)'};font-size:9px">${arr}</span></th>`;
+  return`<th onclick="sortSecF1('${f}')" style="text-align:center;cursor:pointer;user-select:none;white-space:nowrap">${lbl} <span style="color:${act?'var(--accent)':'var(--text3)'};font-size:9px">${arr}</span></th>`;
 }
 function detalleSecF1(sec){
   const p=pct(sec.cap,sec.meta);const c=semC(p);
@@ -1443,7 +1443,7 @@ function sortSecF2(f){
 function thSF2(lbl,f,align){
   const act=_sf2SecField===f;
   const arr=act?(_sf2SecAsc?'↑':'↓'):'↕';
-  const st=align==='r'?'text-align:right':align==='c'?'text-align:center':'';
+  const st=align==='r'?'text-align:right':align==='c'?'text-align:center':'text-align:center';
   return`<th onclick="sortSecF2('${f}')" style="${st};cursor:pointer;user-select:none;white-space:nowrap">${lbl} <span style="color:${act?'var(--accent)':'var(--text3)'};font-size:9px">${arr}</span></th>`;
 }
 function detalleSecF2(sec){
