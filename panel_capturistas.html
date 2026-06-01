@@ -259,16 +259,16 @@ table.cap-table tr.selected{background:rgba(59,130,246,0.1);}
         <table class="cap-table">
           <thead>
             <tr>
-              <th>#</th>
-              <th onclick="sortPanel('CAPTURADO_POR')" style="cursor:pointer;user-select:none">Capturista <span id="sort-p-CAPTURADO_POR" style="color:var(--text3)">↕</span></th>
-              <th onclick="sortPanel('MUNICIPIO')" style="cursor:pointer;user-select:none">Municipio <span id="sort-p-MUNICIPIO" style="color:var(--text3)">↕</span></th>
-              <th class="right" onclick="sortPanel('total')" style="cursor:pointer;user-select:none">Capturas <span id="sort-p-total" style="color:var(--text3)">↕</span></th>
-              <th>Avance</th>
-              <th class="right" onclick="sortPanel('pct_meta')" style="cursor:pointer;user-select:none">% Meta <span id="sort-p-pct_meta" style="color:var(--text3)">↕</span></th>
-              <th class="right" onclick="sortPanel('pct_val')" style="cursor:pointer;user-select:none">Validados <span id="sort-p-pct_val" style="color:var(--text3)">↕</span></th>
-              <th class="right" onclick="sortPanel('seguros')" style="cursor:pointer;user-select:none">Seg. vota <span id="sort-p-seguros" style="color:var(--text3)">↕</span></th>
-              <th class="right" onclick="sortPanel('score')" style="cursor:pointer;user-select:none">Score <span id="sort-p-score" style="color:var(--text3)">↕</span></th>
-              <th class="right" onclick="sortPanel('ultima_str')" style="cursor:pointer;user-select:none">Última cap. <span id="sort-p-ultima_str" style="color:var(--text3)">↕</span></th>
+              <th style="text-align:center">#</th>
+              <th onclick="sortPanel('CAPTURADO_POR')" style="cursor:pointer;user-select:none;text-align:center">Capturista <span id="sort-p-CAPTURADO_POR" style="color:var(--text3)">↕</span></th>
+              <th onclick="sortPanel('MUNICIPIO')" style="cursor:pointer;user-select:none;text-align:center">Municipio <span id="sort-p-MUNICIPIO" style="color:var(--text3)">↕</span></th>
+              <th onclick="sortPanel('total')" style="cursor:pointer;user-select:none;text-align:center">Capturas <span id="sort-p-total" style="color:var(--text3)">↕</span></th>
+              <th style="text-align:center">Avance</th>
+              <th onclick="sortPanel('pct_meta')" style="cursor:pointer;user-select:none;text-align:center">% Meta <span id="sort-p-pct_meta" style="color:var(--text3)">↕</span></th>
+              <th onclick="sortPanel('pct_val')" style="cursor:pointer;user-select:none;text-align:center">Validados <span id="sort-p-pct_val" style="color:var(--text3)">↕</span></th>
+              <th onclick="sortPanel('seguros')" style="cursor:pointer;user-select:none;text-align:center">Seg. vota <span id="sort-p-seguros" style="color:var(--text3)">↕</span></th>
+              <th onclick="sortPanel('score')" style="cursor:pointer;user-select:none;text-align:center">Score <span id="sort-p-score" style="color:var(--text3)">↕</span></th>
+              <th onclick="sortPanel('ultima_str')" style="cursor:pointer;user-select:none;text-align:center">Última cap. <span id="sort-p-ultima_str" style="color:var(--text3)">↕</span></th>
             </tr>
           </thead>
           <tbody id="cap-tbody"></tbody>
@@ -386,8 +386,41 @@ async function cargarDatosSupabase() {
     console.log(`✅ panel_capturistas: ${DATOS.length} capturistas, ${todos.length} ciudadanos`);
   } catch(e) {
     console.error('Error cargando datos capturistas:', e);
-    // Si falla, dejar DATOS vacío — la tabla mostrará sin datos
+    // Fallback con datos simulados para demo
+    const MUNS = ['Colima','Manzanillo','Villa de Álvarez','Tecomán','Comala','Armería','Cuauhtémoc','Minatitlán','Ixtlahuacán','Coquimatlán'];
+    const NOMS = ['Carlos Mendoza','Rosa Jiménez','Pedro Soto','Ana Flores','Luis Torres','María Ruiz','Jorge Díaz','Elena Vega','Roberto Cruz','Carmen López','Arturo Reyes','Silvia Morales','David Herrera','Patricia Núñez','Miguel Ángel Ríos','Fernanda Castillo','Héctor Vargas','Laura Guzmán','Oscar Ramírez','Beatriz Leal'];
+    DATOS = NOMS.map((n, i) => {
+      const total = Math.floor(Math.random()*80)+10;
+      const meta = 50;
+      const validados = Math.floor(total * (0.4 + Math.random()*0.5));
+      const seguros = Math.floor(validados * (0.4 + Math.random()*0.4));
+      const pct_meta = +((total/meta)*100).toFixed(1);
+      const pct_val  = +((validados/total)*100).toFixed(1);
+      const pct_seg  = +((seguros/total)*100).toFixed(1);
+      const score    = +((pct_val*0.5 + pct_seg*0.5)).toFixed(1);
+      const dias = Math.floor(Math.random()*30);
+      const fecha = new Date(Date.now() - dias*86400000);
+      return {
+        ID_CAPTURISTA: `CAP-${String(i+1).padStart(3,'0')}`,
+        CAPTURADO_POR: n,
+        MUNICIPIO: MUNS[i % MUNS.length],
+        total, meta, faltantes: Math.max(0,meta-total),
+        validados, seguros, riesgo_alto: Math.floor(total*0.05),
+        duplicados: Math.floor(Math.random()*3),
+        pct_meta, pct_val, pct_seg, score,
+        moviliza: Math.floor(seguros*0.4),
+        simpatizantes: Math.floor(validados*0.3),
+        contactos: Math.floor(total*0.1),
+        alta_prob:0, casa:0, referido:0, evento:0, digital:0,
+        ultima_str: fecha.toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',year:'numeric'}),
+        ultima_fecha: fecha
+      };
+    });
     aplicarFiltros();
+    // Poblar selector municipio con datos simulados
+    const munsSet = new Set(DATOS.map(d => d.MUNICIPIO));
+    const sel = document.getElementById('filtro-municipio');
+    if(sel){ munsSet.forEach(m=>{ const o=document.createElement('option'); o.value=m; o.textContent=m; sel.appendChild(o); }); }
   }
 }
 
@@ -446,25 +479,25 @@ function renderTable(d){
     const pctW = Math.min(r.pct_meta,400)/400*100;
     const sel = selectedId===r.ID_CAPTURISTA+r.MUNICIPIO ? 'selected':'';
     return `<tr class="${sel}" onclick="seleccionar('${r.ID_CAPTURISTA}','${r.MUNICIPIO.replace(/'/g,"\\'")}')">
-      <td><span class="rank-num">${i+1}</span></td>
-      <td>
+      <td style="text-align:center"><span class="rank-num">${i+1}</span></td>
+      <td style="text-align:center">
         <div class="cap-name">${r.CAPTURADO_POR}</div>
         <div class="cap-id">${r.ID_CAPTURISTA}</div>
       </td>
-      <td><div class="cap-mun" style="color:var(--cyan)">${r.MUNICIPIO}</div></td>
-      <td class="num-r" style="color:${mc};font-weight:600">${fmt(r.total)}</td>
-      <td style="width:100px">
-        <div class="mini-bar" style="width:100px">
+      <td style="text-align:center"><div class="cap-mun" style="color:var(--cyan)">${r.MUNICIPIO}</div></td>
+      <td style="text-align:center;color:${mc};font-weight:600">${fmt(r.total)}</td>
+      <td style="text-align:center;width:100px">
+        <div class="mini-bar" style="width:100px;margin:0 auto">
           <div class="mini-fill" style="width:${pctW}%;background:${mc}"></div>
         </div>
       </td>
-      <td class="num-r" style="color:${mc}">${fmtPct(r.pct_meta)}</td>
-      <td class="num-r" style="color:var(--text2)">${fmtPct(r.pct_val)}</td>
-      <td class="num-r" style="color:var(--green)">${r.seguros}</td>
-      <td>
+      <td style="text-align:center;color:${mc}">${fmtPct(r.pct_meta)}</td>
+      <td style="text-align:center;color:var(--text2)">${fmtPct(r.pct_val)}</td>
+      <td style="text-align:center;color:var(--green)">${r.seguros}</td>
+      <td style="text-align:center">
         <span class="score-badge" style="background:${sc}22;color:${sc};border:1px solid ${sc}44">${r.score}</span>
       </td>
-      <td class="num-r" style="font-size:10px;color:var(--text3)">${r.ultima_str}</td>
+      <td style="text-align:center;font-size:10px;color:var(--text3)">${r.ultima_str}</td>
     </tr>`;
   }).join('');
 }
