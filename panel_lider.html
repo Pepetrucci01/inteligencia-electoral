@@ -93,6 +93,30 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 .simp-meta{font-size:10px;font-family:var(--mono);color:var(--text3);}
 .badges{display:flex;gap:5px;flex-wrap:wrap;}
 .badge{font-size:10px;font-family:var(--mono);padding:2px 8px;border-radius:99px;font-weight:500;}
+.badge-green{background:rgba(34,197,94,0.12);color:var(--green);border:1px solid rgba(34,197,94,0.25);}
+.badge-amber{background:rgba(245,158,11,0.12);color:var(--amber);border:1px solid rgba(245,158,11,0.25);}
+.badge-red{background:rgba(239,68,68,0.12);color:var(--red);border:1px solid rgba(239,68,68,0.25);}
+.badge-blue{background:rgba(59,130,246,0.12);color:var(--accent);border:1px solid rgba(59,130,246,0.25);}
+.badge-gray{background:rgba(100,116,139,0.12);color:var(--text2);border:1px solid var(--border);}
+.badge-purple{background:rgba(168,85,247,0.12);color:var(--purple);border:1px solid rgba(168,85,247,0.25);}
+.ficha-back{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);cursor:pointer;margin-bottom:16px;padding:8px 0;}
+.ficha-header{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px;}
+.ficha-avatar{width:52px;height:52px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;font-family:var(--mono);margin-bottom:10px;}
+.ficha-name{font-size:16px;font-weight:600;margin-bottom:2px;}
+.ficha-sub{font-size:12px;color:var(--text3);font-family:var(--mono);}
+.ficha-score-row{display:flex;gap:8px;margin-top:12px;}
+.ficha-score{flex:1;background:var(--bg2);border-radius:8px;padding:10px;text-align:center;}
+.ficha-score-val{font-size:18px;font-weight:600;font-family:var(--mono);line-height:1;}
+.ficha-score-lbl{font-size:10px;color:var(--text3);margin-top:2px;}
+.ficha-section{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;}
+.ficha-section-title{font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;}
+.ficha-row{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border);}
+.ficha-row:last-child{border-bottom:none;}
+.ficha-row-label{color:var(--text2);}
+.ficha-row-val{font-family:var(--mono);text-align:right;}
+.asign-alert-ficha{background:rgba(6,182,212,0.08);border:1px solid rgba(6,182,212,0.25);border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:12px;}
+.btn-primary{width:100%;background:var(--accent);color:#fff;border:none;border-radius:10px;padding:13px;font-size:14px;font-weight:600;cursor:pointer;margin-top:8px;transition:background .15s;}
+.btn-danger{background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:8px 14px;font-size:12px;cursor:pointer;}
 .b-green{background:rgba(34,197,94,.12);color:var(--green);border:1px solid rgba(34,197,94,.25);}
 .b-amber{background:rgba(245,158,11,.12);color:var(--amber);border:1px solid rgba(245,158,11,.25);}
 .b-red{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.25);}
@@ -805,68 +829,106 @@ function cerrarSesion() {
 }
 
 // ══════════════════════════════════════════════
-// FICHA CIUDADANO — modal detalle + edición
+// FICHA CIUDADANO — idéntica al módulo de captura
 // ══════════════════════════════════════════════
-const COMP_LABELS = ['', '⚪ Incierto', '🟡 Simpatizante', '✅ Comprometido', '⭐ Voto seguro'];
-const COMP_COLORS = ['', 'var(--text3)', 'var(--amber)', 'var(--accent)', 'var(--green)'];
+function compColor(c){return['','#64748b','#3b82f6','#22c55e','#a855f7'][c]||'#64748b';}
+function compLabelFicha(c){return['','Contacto','Simpatiza','Seg. vota','Moviliza'][c]||'—';}
+function initialsL(n){return(n||'').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();}
+function calcEdadL(fn){
+  if(!fn) return '—';
+  const hoy=new Date(), nac=new Date(fn);
+  let e=hoy.getFullYear()-nac.getFullYear();
+  if(hoy.getMonth()<nac.getMonth()||(hoy.getMonth()===nac.getMonth()&&hoy.getDate()<nac.getDate())) e--;
+  return e;
+}
 
 function abrirFichaCiudadano(cid) {
-  const c = CIUDADANOS_SEC.find(x => (x.id || x.curp) === cid);
+  const c = CIUDADANOS_SEC.find(x => (x.id||x.curp) === cid);
   if (!c) return;
+
+  // Normalizar campos al formato del módulo de captura
+  const nombre   = c.nombre_completo || c.nombre || 'Sin nombre';
+  const comp     = c.nivel_compromiso || c.comp || 0;
+  const validado = c.validado || false;
+  const riesgo   = c.es_riesgo || c.riesgo || false;
+  const apoyo    = c.apoyo || false;
+  const influencia = c.influencia || false;
+  const duplicado  = c.duplicado || false;
+  const tel      = c.telefono || c.tel || '—';
+  const curp     = c.curp || '—';
+  const mun      = c.municipio || (window._sesion?.municipio) || '—';
+  const sec      = c.seccion_electoral || c.sec || SECCION_LIDER || '—';
+  const cap_por  = c.capturista_id || c.cap_por || '—';
+  const origen   = c.origen || 'Sistema';
+  const sexo     = c.sexo || '—';
+  const edad     = calcEdadL(c.fecha_nacimiento || c.fecha_nac);
+  const cc       = compColor(comp);
+
   const modal = document.getElementById('modal-ficha');
   const cuerpo = document.getElementById('modal-ficha-body');
-  const comp = c.nivel_compromiso || 0;
-  const edad = calcEdad(c.fecha_nacimiento);
-  const ini = (c.nombre_completo || 'XX').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
-  const bgAv = ['','rgba(100,116,139,.2)','rgba(245,158,11,.2)','rgba(59,130,246,.2)','rgba(34,197,94,.2)'][comp] || 'rgba(100,116,139,.2)';
-  const txAv = ['','var(--text2)','var(--amber)','var(--accent)','var(--green)'][comp] || 'var(--text2)';
-
-  // Botones nivel compromiso
-  const nivelBtns = [1,2,3,4].map(n => {
-    const act = comp === n;
-    const col = COMP_COLORS[n];
-    return `<button onclick="cambiarCompromiso('${cid}',${n})" style="flex:1;padding:7px 4px;border-radius:6px;border:1px solid ${act?col:'var(--border)'};background:${act?col+'22':'var(--bg3)'};color:${act?col:'var(--text2)'};font-size:10px;cursor:pointer;font-family:var(--mono);transition:all .15s">${COMP_LABELS[n]}</button>`;
-  }).join('');
 
   cuerpo.innerHTML = `
-    <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
-      <div style="width:52px;height:52px;border-radius:50%;background:${bgAv};color:${txAv};font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;font-family:var(--mono);flex-shrink:0">${ini}</div>
-      <div>
-        <div style="font-size:16px;font-weight:700;color:var(--text1)">${c.nombre_completo || 'Sin nombre'}</div>
-        <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px">${c.curp || '—'}</div>
+    <div class="ficha-header">
+      <div class="ficha-avatar" style="background:${cc}22;color:${cc};border:1px solid ${cc}44">${initialsL(nombre)}</div>
+      <div class="ficha-name">${nombre}</div>
+      <div class="ficha-sub">${curp} · ${sexo !== '—' ? sexo+' · ' : ''}${edad !== '—' ? edad+' años' : ''}</div>
+      <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
+        <span class="badge" style="background:${cc}15;color:${cc};border:1px solid ${cc}30">${comp} ${compLabelFicha(comp)}</span>
+        ${validado?'<span class="badge badge-green">✓ Validado</span>':'<span class="badge badge-amber">⏳ Pendiente</span>'}
+        ${riesgo?'<span class="badge badge-red">⚠ Riesgo</span>':''}
+        ${apoyo?'<span class="badge badge-amber">🚗 Necesita apoyo</span>':''}
+        ${influencia?'<span class="badge badge-purple">👥 Influencia</span>':''}
+        ${duplicado?'<span class="badge badge-red">⚠ Duplicado</span>':''}
+      </div>
+      <div class="ficha-score-row">
+        <div class="ficha-score">
+          <div class="ficha-score-val" style="color:${cc}">${comp}</div>
+          <div class="ficha-score-lbl">Compromiso</div>
+        </div>
+        <div class="ficha-score">
+          <div class="ficha-score-val" style="color:var(--cyan)">${sec}</div>
+          <div class="ficha-score-lbl">Sección</div>
+        </div>
+        <div class="ficha-score">
+          <div class="ficha-score-val" style="color:${validado?'var(--green)':'var(--amber)'}">${validado?'✓':'⏳'}</div>
+          <div class="ficha-score-lbl">Validado</div>
+        </div>
       </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
-      <div style="background:var(--bg3);border-radius:8px;padding:10px 12px">
-        <div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Edad</div>
-        <div style="font-size:14px;font-weight:600;color:var(--text1)">${edad !== '—' ? edad+' años' : '—'}</div>
-      </div>
-      <div style="background:var(--bg3);border-radius:8px;padding:10px 12px">
-        <div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Colonia</div>
-        <div style="font-size:14px;font-weight:600;color:var(--text1)">${c.colonia || '—'}</div>
-      </div>
-      <div style="background:var(--bg3);border-radius:8px;padding:10px 12px">
-        <div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Capturista</div>
-        <div style="font-size:13px;font-weight:600;color:var(--accent)">${c.capturista_id || '—'}</div>
-      </div>
-      <div style="background:var(--bg3);border-radius:8px;padding:10px 12px">
-        <div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">En riesgo</div>
-        <div style="font-size:14px;font-weight:600;color:${c.es_riesgo?'var(--red)':'var(--green)'}">${c.es_riesgo ? '⚠ Sí' : '✓ No'}</div>
-      </div>
+    <div class="ficha-section">
+      <div class="ficha-section-title">Datos de contacto</div>
+      <div class="ficha-row"><span class="ficha-row-label">Teléfono</span><span class="ficha-row-val">${tel}</span></div>
+      <div class="ficha-row"><span class="ficha-row-label">CURP</span><span class="ficha-row-val" style="font-size:11px">${curp}</span></div>
+      <div class="ficha-row"><span class="ficha-row-label">Municipio</span><span class="ficha-row-val">${mun}</span></div>
+      <div class="ficha-row"><span class="ficha-row-label">Colonia</span><span class="ficha-row-val">${c.colonia||'—'}</span></div>
+      <div class="ficha-row"><span class="ficha-row-label">Origen</span><span class="ficha-row-val">${origen}</span></div>
     </div>
 
-    <div style="margin-bottom:16px">
-      <div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Nivel de compromiso</div>
-      <div style="display:flex;gap:6px">${nivelBtns}</div>
+    <div class="ficha-section">
+      <div class="ficha-section-title">Asignación y responsables</div>
+      <div class="ficha-row"><span class="ficha-row-label">Capturado por</span><span class="ficha-row-val" style="color:var(--text2)">${cap_por}</span></div>
+      <div class="ficha-row"><span class="ficha-row-label">Responsable territorial</span><span class="ficha-row-val" style="color:var(--cyan)">${window._sesion?.nombre||'—'}</span></div>
+      <div class="ficha-row"><span class="ficha-row-label">Sección</span><span class="ficha-row-val">${sec}</span></div>
+    </div>
+
+    <div class="ficha-section">
+      <div class="ficha-section-title">Cambiar nivel de compromiso</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px">
+        ${[1,2,3,4].map(n=>{
+          const col=compColor(n); const act=comp===n;
+          return `<button onclick="cambiarCompromisoLider('${cid}',${n})" style="padding:8px;border-radius:8px;border:1px solid ${act?col:'var(--border)'};background:${act?col+'22':'var(--bg3)'};color:${act?col:'var(--text2)'};font-size:11px;cursor:pointer;font-family:var(--mono);text-align:left">
+            <div style="font-weight:${act?700:400}">${compLabelFicha(n)}</div>
+          </button>`;
+        }).join('')}
+      </div>
     </div>
 
     <div style="display:flex;gap:8px;margin-top:4px">
-      <button onclick="toggleRiesgo('${cid}')" style="flex:1;padding:9px;border-radius:8px;border:1px solid ${c.es_riesgo?'rgba(239,68,68,.4)':'var(--border)'};background:${c.es_riesgo?'rgba(239,68,68,.1)':'var(--bg3)'};color:${c.es_riesgo?'var(--red)':'var(--text2)'};font-size:12px;cursor:pointer;font-family:var(--mono)">
-        ${c.es_riesgo ? '✓ Quitar marca de riesgo' : '⚠ Marcar en riesgo'}
-      </button>
-      <button onclick="cerrarFicha()" style="padding:9px 20px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:12px;cursor:pointer;font-family:var(--mono)">Cerrar</button>
-    </div>`;
+      <button class="btn-danger" onclick="toggleRiesgoLider('${cid}')">${riesgo?'✓ Quitar riesgo':'⚠ Marcar en riesgo'}</button>
+      <button class="btn-danger" onclick="toggleDuplicadoLider('${cid}')">⚠ Duplicado</button>
+    </div>
+    <button class="btn-primary" onclick="cerrarFicha()" style="margin-top:8px">Cerrar</button>`;
 
   modal.dataset.cid = cid;
   modal.style.display = 'flex';
@@ -876,22 +938,32 @@ function cerrarFicha() {
   document.getElementById('modal-ficha').style.display = 'none';
 }
 
-function cambiarCompromiso(cid, nivel) {
-  const c = CIUDADANOS_SEC.find(x => (x.id || x.curp) === cid);
+function cambiarCompromisoLider(cid, nivel) {
+  const c = CIUDADANOS_SEC.find(x => (x.id||x.curp) === cid);
   if (!c) return;
-  c.nivel_compromiso = nivel;
-  // En producción: supaFetch PUT ciudadanos/id nivel_compromiso
-  abrirFichaCiudadano(cid); // refrescar modal
-  renderSimps(); // refrescar lista
-}
-
-function toggleRiesgo(cid) {
-  const c = CIUDADANOS_SEC.find(x => (x.id || x.curp) === cid);
-  if (!c) return;
-  c.es_riesgo = !c.es_riesgo;
-  // En producción: supaFetch PUT ciudadanos/id es_riesgo
+  c.nivel_compromiso = nivel; c.comp = nivel;
   abrirFichaCiudadano(cid);
   renderSimps();
+  actualizarKPIs();
+}
+
+function toggleRiesgoLider(cid) {
+  const c = CIUDADANOS_SEC.find(x => (x.id||x.curp) === cid);
+  if (!c) return;
+  c.es_riesgo = !c.es_riesgo; c.riesgo = c.es_riesgo;
+  abrirFichaCiudadano(cid);
+  renderSimps();
+  actualizarKPIs();
+}
+
+function toggleDuplicadoLider(cid) {
+  const c = CIUDADANOS_SEC.find(x => (x.id||x.curp) === cid);
+  if (!c) return;
+  if (confirm(`¿Marcar a ${c.nombre_completo||c.nombre} como duplicado?`)) {
+    c.duplicado = true;
+    abrirFichaCiudadano(cid);
+    renderSimps();
+  }
 }
 
 // ══════════════════════════════════════════════
