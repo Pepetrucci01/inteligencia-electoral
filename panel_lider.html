@@ -125,8 +125,6 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 
 <script>
 // ── Guardia de sesión ──
-<script>
-// ── Guardia de sesión ──
 (function(){
   try {
     const s = JSON.parse(localStorage.getItem('electoral_sesion') || 'null');
@@ -284,17 +282,32 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 
 <!-- ════════ SCREEN: CAPTURISTAS ════════ -->
 <div class="screen" id="screen-capturistas">
-
   <div class="card" style="margin-top:14px;">
     <div class="card-head">
       <span class="card-title">✏️ Mis capturistas</span>
       <span style="font-size:11px;font-family:var(--mono);color:var(--text3);" id="total-caps-label">4 asignados</span>
     </div>
-    <div id="lista-capturistas">
-      <!-- Generado por JS -->
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;" id="tabla-capturistas-lider">
+        <thead>
+          <tr>
+            <th style="width:32px;text-align:center;padding:8px 6px;font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);background:var(--bg3);"></th>
+            <th onclick="sortCapsLider('id')" style="text-align:center;padding:8px 10px;font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);background:var(--bg3);cursor:pointer;user-select:none;white-space:nowrap">Capturista <span id="sl-id" style="font-size:9px">↕</span></th>
+            <th style="text-align:center;padding:8px 10px;font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);background:var(--bg3);">Sección</th>
+            <th style="text-align:center;padding:8px 10px;font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);background:var(--bg3);">Municipio</th>
+            <th onclick="sortCapsLider('capturas')" style="text-align:center;padding:8px 10px;font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);background:var(--bg3);cursor:pointer;user-select:none;white-space:nowrap">Capturados <span id="sl-capturas" style="font-size:9px">↕</span></th>
+            <th onclick="sortCapsLider('meta')" style="text-align:center;padding:8px 10px;font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);background:var(--bg3);cursor:pointer;user-select:none;white-space:nowrap">Meta <span id="sl-meta" style="font-size:9px">↕</span></th>
+            <th onclick="sortCapsLider('pct')" style="text-align:center;padding:8px 10px;font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);background:var(--bg3);cursor:pointer;user-select:none;white-space:nowrap">% Avance <span id="sl-pct" style="font-size:9px">↕</span></th>
+            <th style="text-align:center;padding:8px 10px;font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);background:var(--bg3);">Progreso</th>
+            <th onclick="sortCapsLider('votosF2')" style="text-align:center;padding:8px 10px;font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);background:var(--bg3);cursor:pointer;user-select:none;white-space:nowrap">Votos F2 <span id="sl-votosF2" style="font-size:9px">↕</span></th>
+            <th style="text-align:center;padding:8px 10px;font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);background:var(--bg3);">Semáforo</th>
+            <th style="text-align:center;padding:8px 10px;font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);background:var(--bg3);">Acción</th>
+          </tr>
+        </thead>
+        <tbody id="lista-capturistas"></tbody>
+      </table>
     </div>
   </div>
-
 </div>
 
 <!-- ════════ SCREEN: SIMPATIZANTES ════════ -->
@@ -522,49 +535,150 @@ function showTab(tab) {
 }
 
 // ══════════════════════════════════════════════
-// RENDER CAPTURISTAS
+// RENDER CAPTURISTAS — tabla con expand casillas
 // ══════════════════════════════════════════════
+let _slSort = {col: null, asc: true};
+let _slExpanded = new Set();
+
+function sortCapsLider(col) {
+  if(_slSort.col === col) _slSort.asc = !_slSort.asc;
+  else { _slSort.col = col; _slSort.asc = col !== 'capturas'; }
+  ['id','capturas','meta','pct','votosF2'].forEach(c => {
+    const el = document.getElementById('sl-'+c);
+    if(el){ el.textContent='↕'; el.style.color='var(--text3)'; }
+  });
+  const activeEl = document.getElementById('sl-'+col);
+  if(activeEl){ activeEl.textContent = _slSort.asc ? '↑' : '↓'; activeEl.style.color='var(--accent)'; }
+  renderCapturistas();
+}
+
+function toggleCapRow(capId) {
+  if(_slExpanded.has(capId)) _slExpanded.delete(capId);
+  else _slExpanded.add(capId);
+  renderCapturistas();
+}
+
 function renderCapturistas() {
-  const colores = ['rgba(59,130,246,.15)', 'rgba(34,197,94,.15)', 'rgba(168,85,247,.15)', 'rgba(245,158,11,.15)'];
-  const textC = ['var(--accent)', 'var(--green)', 'var(--purple)', 'var(--amber)'];
+  const tbody = document.getElementById('lista-capturistas');
+  if (!tbody) return;
 
   if (!CAPTURISTAS_SEC.length) {
-    document.getElementById('lista-capturistas').innerHTML =
-      '<div class="empty"><div class="empty-icon">✏️</div>Sin actividad de capturistas en esta sección</div>';
+    tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--text3);font-size:12px;">Sin actividad de capturistas en esta sección</td></tr>`;
     document.getElementById('total-caps-label').textContent = '0 activos';
     return;
   }
 
-  // Meta por capturista: total / número de capturistas (estimado)
   const metaTotal = getMetaSección(SECCION_LIDER);
   const metaPorCap = CAPTURISTAS_SEC.length > 0 && metaTotal > 0
-    ? Math.round(metaTotal / CAPTURISTAS_SEC.length)
-    : 0;
+    ? Math.round(metaTotal / CAPTURISTAS_SEC.length) : 0;
+  const sesion = window._sesion || {};
+  const secNum = SECCION_LIDER || '—';
+  const munNombre = sesion.municipio || '—';
 
-  const maxCapturas = CAPTURISTAS_SEC[0]?.capturas || 1;
+  // Construir datos con pct y meta
+  let datos = CAPTURISTAS_SEC.map(c => {
+    const meta = metaPorCap || 0;
+    const pct = meta > 0 ? +((c.capturas / meta * 100).toFixed(1)) : 0;
+    const votosF2 = Math.floor(c.capturas * 0.3); // estimado F2
+    return { ...c, meta, pct, votosF2 };
+  });
 
-  const html = CAPTURISTAS_SEC.map((c, i) => {
-    const pct = metaPorCap > 0 ? Math.min(Math.round((c.capturas / metaPorCap) * 100), 100)
-      : Math.round((c.capturas / maxCapturas) * 100);
-    const barColor = pct >= 70 ? 'var(--green)' : pct >= 40 ? 'var(--amber)' : 'var(--red)';
-    const codigo = c.id || 'SIN ID';
-    const ini = codigo.substring(0, 3).toUpperCase();
-    return `<div class="cap-card">
-      <div class="cap-av" style="background:${colores[i % 4]};color:${textC[i % 4]};">${ini}</div>
-      <div class="cap-info">
-        <div class="cap-name">${codigo}</div>
-        <div class="cap-id">${c.capturas} ciudadano${c.capturas !== 1 ? 's' : ''} registrado${c.capturas !== 1 ? 's' : ''}</div>
-        <div class="cap-bar" style="margin-top:6px;"><div class="cap-fill" style="width:${pct}%;background:${barColor};"></div></div>
-      </div>
-      <div class="cap-stats">
-        <div class="cap-num" style="color:${barColor};">${c.capturas}</div>
-        <div class="cap-lbl">${metaPorCap > 0 ? '/ ' + metaPorCap : 'capturas'}</div>
-      </div>
-    </div>`;
+  // Sort
+  if(_slSort.col) {
+    datos.sort((a,b) => {
+      const va = a[_slSort.col] ?? '', vb = b[_slSort.col] ?? '';
+      if(typeof va === 'string') return _slSort.asc ? va.localeCompare(vb) : vb.localeCompare(va);
+      return _slSort.asc ? va-vb : vb-va;
+    });
+  }
+
+  const maxCap = datos[0]?.capturas || 1;
+
+  const rows = datos.map((c, i) => {
+    const semCol = c.pct >= 70 ? 'var(--green)' : c.pct >= 40 ? 'var(--amber)' : 'var(--red)';
+    const semDot = c.pct >= 70 ? '#22c55e' : c.pct >= 40 ? '#f59e0b' : '#ef4444';
+    const barW = Math.min(Math.round((c.capturas / maxCap) * 100), 100);
+    const exp = _slExpanded.has(c.id);
+    const ini = (c.id || 'XX').substring(0, 2).toUpperCase();
+
+    // Casillas simuladas de la sección (2 por defecto, en producción vendrán de Supabase)
+    const numCasillas = 2;
+    const metaCasilla = c.meta > 0 ? Math.round(c.meta / numCasillas) : 0;
+    const capPorCasilla = Math.round(c.capturas / numCasillas);
+
+    const casillaRows = Array.from({length: numCasillas}, (_, k) => {
+      const casId = `CAS-${String(k+1).padStart(4,'0')}`;
+      const tipo = k === 0 ? 'Básica' : 'Extraordinaria';
+      const capCas = k === 0 ? Math.ceil(c.capturas * 0.6) : Math.floor(c.capturas * 0.4);
+      const pctCas = metaCasilla > 0 ? +((capCas/metaCasilla*100).toFixed(1)) : 0;
+      const scCas = pctCas >= 70 ? 'var(--green)' : pctCas >= 40 ? 'var(--amber)' : 'var(--red)';
+      return `<tr style="background:var(--bg1)">
+        <td style="padding:6px 8px 6px 52px;font-size:11px;font-family:var(--mono);color:var(--accent)">${casId}</td>
+        <td style="padding:6px 8px;font-size:11px;color:var(--text2);text-align:center">${tipo}</td>
+        <td style="padding:6px 8px;font-size:11px;color:var(--text3);text-align:center">—</td>
+        <td style="padding:6px 8px;font-size:11px;text-align:center;color:var(--text2)">${metaCasilla || '—'}</td>
+        <td style="padding:6px 8px;font-size:11px;text-align:center;color:${scCas};font-weight:600">${pctCas}%</td>
+        <td colspan="5" style="padding:6px 8px">
+          <div style="width:120px;height:4px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden;margin:0 auto">
+            <div style="width:${Math.min(pctCas,100)}%;height:100%;background:${scCas};border-radius:99px"></div>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+
+    const subHeader = exp ? `<tr style="background:rgba(59,130,246,.04);border-left:3px solid var(--accent)">
+      <td colspan="11" style="padding:0">
+        <div style="padding:6px 8px 4px 52px;font-size:10px;font-family:var(--mono);color:var(--accent);letter-spacing:.06em">
+          ${numCasillas} CASILLAS EN SECCIÓN ${secNum} &nbsp;•&nbsp; <span style="color:var(--text3)">DATOS ESTIMADOS</span>
+        </div>
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr style="background:var(--bg2)">
+            <th style="padding:5px 8px 5px 52px;font-size:10px;font-family:var(--mono);color:var(--text3);text-align:left;text-transform:uppercase;letter-spacing:.04em">Casilla</th>
+            <th style="padding:5px 8px;font-size:10px;font-family:var(--mono);color:var(--text3);text-align:center;text-transform:uppercase;letter-spacing:.04em">Tipo</th>
+            <th style="padding:5px 8px;font-size:10px;font-family:var(--mono);color:var(--text3);text-align:center;text-transform:uppercase;letter-spacing:.04em">Lista nominal</th>
+            <th style="padding:5px 8px;font-size:10px;font-family:var(--mono);color:var(--text3);text-align:center;text-transform:uppercase;letter-spacing:.04em">Meta</th>
+            <th style="padding:5px 8px;font-size:10px;font-family:var(--mono);color:var(--text3);text-align:center;text-transform:uppercase;letter-spacing:.04em">% Avance</th>
+            <th colspan="5" style="padding:5px 8px;font-size:10px;font-family:var(--mono);color:var(--text3);text-align:center;text-transform:uppercase;letter-spacing:.04em">Semáforo</th>
+          </tr></thead>
+          <tbody>${casillaRows}</tbody>
+        </table>
+      </td>
+    </tr>` : '';
+
+    return `<tr onclick="toggleCapRow('${c.id}')" style="cursor:pointer;border-bottom:1px solid var(--border)" onmouseenter="this.style.background='var(--bg3)'" onmouseleave="this.style.background=''">
+      <td style="padding:10px 6px;text-align:center;color:var(--text3);font-size:11px">${exp ? '▼' : '▶'}</td>
+      <td style="padding:10px 10px;text-align:center">
+        <div style="display:flex;align-items:center;gap:8px;justify-content:center">
+          <div style="width:28px;height:28px;border-radius:50%;background:rgba(59,130,246,.15);color:var(--accent);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;font-family:var(--mono)">${ini}</div>
+          <div>
+            <div style="font-size:12px;font-weight:600;color:var(--text1);font-family:var(--mono)">${c.id}</div>
+          </div>
+        </div>
+      </td>
+      <td style="text-align:center;font-family:var(--mono);font-size:12px;color:var(--text2)">${secNum}</td>
+      <td style="text-align:center;font-size:12px;color:var(--cyan)">${munNombre}</td>
+      <td style="text-align:center;font-family:var(--mono);font-size:13px;font-weight:600;color:${semCol}">${c.capturas}</td>
+      <td style="text-align:center;font-family:var(--mono);font-size:12px;color:var(--text2)">${c.meta || '—'}</td>
+      <td style="text-align:center;font-family:var(--mono);font-size:12px;color:${semCol}">${c.meta > 0 ? c.pct+'%' : '—'}</td>
+      <td style="text-align:center;padding:10px 12px">
+        <div style="width:80px;height:5px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden;margin:0 auto">
+          <div style="width:${barW}%;height:100%;background:${semCol};border-radius:99px"></div>
+        </div>
+      </td>
+      <td style="text-align:center;font-family:var(--mono);font-size:12px;color:var(--green)">${c.votosF2}</td>
+      <td style="text-align:center"><div style="width:10px;height:10px;border-radius:50%;background:${semDot};margin:0 auto"></div></td>
+      <td style="text-align:center">
+        <button onclick="event.stopPropagation();alertarCapturista('${c.id}')" style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:var(--red);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:11px;font-family:var(--mono)">🚨 Alertar</button>
+      </td>
+    </tr>${subHeader}`;
   }).join('');
 
-  document.getElementById('lista-capturistas').innerHTML = html;
-  document.getElementById('total-caps-label').textContent = CAPTURISTAS_SEC.length + ' activos';
+  tbody.innerHTML = rows;
+  document.getElementById('total-caps-label').textContent = datos.length + ' activos';
+}
+
+function alertarCapturista(capId) {
+  alert(`Alerta enviada a ${capId}`);
 }
 
 // ══════════════════════════════════════════════
