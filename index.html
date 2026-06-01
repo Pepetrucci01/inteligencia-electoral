@@ -527,7 +527,7 @@ document.addEventListener('keydown', e=>{
 (async function cargarKPIsIndex(){
   const URL = 'https://dyirhwwmykskpuvzcafx.supabase.co';
   const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5aXJod3dteWtza3B1dnpjYWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NTk3ODgsImV4cCI6MjA5NTEzNTc4OH0.2xe4cHqORGng1hnYPJ9ZiyT0r87fMijbUEJqBy3-xoI';
-  const LIC  = 'a1b2c3d4-0001-0000-0000-000000000001';
+  const LIC  = window._sesion?.licencia_id || 'a1b2c3d4-0001-0000-0000-000000000001';
   const META = 197297;
   const fmt  = n => n.toLocaleString('es-MX');
 
