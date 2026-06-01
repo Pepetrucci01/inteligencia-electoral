@@ -2318,12 +2318,11 @@ document.addEventListener('DOMContentLoaded',()=>{
   renderSemaforoF2();
 });
 </script>
-<script src="theme.js">
-// Mostrar botón de menú solo si NO está en iframe
+<script src="theme.js"></script>
+<script>
 (function() {
   try {
     if (window.self === window.top) {
-      // No está en iframe - mostrar botón de regreso
       var btn = document.getElementById('btn-back-menu');
       if (btn) btn.style.display = 'block';
     }
@@ -2332,7 +2331,6 @@ document.addEventListener('DOMContentLoaded',()=>{
     if (btn) btn.style.display = 'block';
   }
 })();
-
 </script>
 </body>
 </html>
