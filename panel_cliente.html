@@ -610,34 +610,207 @@ const ROLES = {
   capturista:  {label:'Capturista',            color:'var(--green)'},
 };
 
-const USUARIOS = [
-  {id:'CORD-MZL',nombre:'Coordinador Manzanillo',email:'manzanillo@colima.mx',rol:'coordinador',mun:'Manzanillo',sec:'79 secciones',ultimo:'Hoy 08:45',capturas:0,status:'activo'},
-  {id:'CORD-TCM',nombre:'Coordinador Tecomán',email:'tecoman@colima.mx',rol:'coordinador',mun:'Tecomán',sec:'62 secciones',ultimo:'Ayer 22:10',capturas:0,status:'activo'},
-  {id:'CORD-COL',nombre:'Coordinador Colima',email:'colima@colima.mx',rol:'coordinador',mun:'Colima',sec:'99 secciones',ultimo:'Hoy 07:30',capturas:0,status:'activo'},
-  {id:'CORD-VDA',nombre:'Coordinador V. Álvarez',email:'valvarez@colima.mx',rol:'coordinador',mun:'V. Álvarez',sec:'70 secciones',ultimo:'Ayer 20:15',capturas:0,status:'activo'},
-  {id:'LDR-138',nombre:'Líder Sección 138',email:'lider138@colima.mx',rol:'lider_seccion',mun:'Villa de Álvarez',sec:'138',ultimo:'Hoy 09:05',capturas:0,status:'activo'},
-  {id:'LDR-236',nombre:'Líder Sección 236',email:'lider236@colima.mx',rol:'lider_seccion',mun:'Manzanillo',sec:'236',ultimo:'Hoy 08:50',capturas:0,status:'activo'},
-  {id:'CAP-032',nombre:'Capturista 032',email:'cap032@colima.mx',rol:'capturista',mun:'Manzanillo',sec:'236',ultimo:'Hoy 09:38',capturas:52,status:'activo'},
-  {id:'CAP-038',nombre:'Capturista 038',email:'cap038@colima.mx',rol:'capturista',mun:'Manzanillo',sec:'248',ultimo:'Hoy 08:12',capturas:50,status:'activo'},
-  {id:'CAP-004',nombre:'Capturista 004',email:'cap004@colima.mx',rol:'capturista',mun:'Manzanillo',sec:'261',ultimo:'Ayer 18:40',capturas:48,status:'activo'},
-  {id:'CAP-042',nombre:'Capturista 042',email:'cap042@colima.mx',rol:'capturista',mun:'Manzanillo',sec:'264',ultimo:'Hoy 07:55',capturas:48,status:'activo'},
-  {id:'CAP-091',nombre:'Capturista 091',email:'cap091@colima.mx',rol:'capturista',mun:'Comala',sec:'92',ultimo:'Nunca',capturas:0,status:'pendiente'},
-  {id:'CAP-092',nombre:'Capturista 092',email:'cap092@colima.mx',rol:'capturista',mun:'Coquimatlán',sec:'105',ultimo:'Nunca',capturas:0,status:'pendiente'},
-  {id:'CAP-OLD',nombre:'Capturista Bloqueado',email:'capbloq@colima.mx',rol:'capturista',mun:'Cuauhtémoc',sec:'120',ultimo:'hace 30 días',capturas:2,status:'bloqueado'},
-];
+// ══════════════════════════════════════════════
+// SUPABASE CONFIG
+// ══════════════════════════════════════════════
+const SUPA_URL = 'https://dyirhwwmykskpuvzcafx.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5aXJod3dteWtza3B1dnpjYWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NTk3ODgsImV4cCI6MjA5NTEzNTc4OH0.2xe4cHqORGng1hnYPJ9ZiyT0r87fMijbUEJqBy3-xoI';
+const LICENCIA_ID = 'a1b2c3d4-0001-0000-0000-000000000001';
 
-const MUNICIPIOS_DATA = [
-  {nombre:'Manzanillo',  meta:49000, capturados:3120},
-  {nombre:'Colima',      meta:44000, capturados:2890},
-  {nombre:'Tecomán',     meta:38000, capturados:1640},
-  {nombre:'V. Álvarez',  meta:28000, capturados:1110},
-  {nombre:'Comala',      meta:12000, capturados:420},
-  {nombre:'Coquimatlán', meta:10000, capturados:312},
-  {nombre:'Armería',     meta:8000,  capturados:280},
-  {nombre:'Cuauhtémoc',  meta:5000,  capturados:180},
-  {nombre:'Minatitlán',  meta:2500,  capturados:80},
-  {nombre:'Ixtlahuacán', meta:1797,  capturados:60},
-];
+async function supaFetch(path) {
+  const res = await fetch(`${SUPA_URL}/rest/v1/${path}`, {
+    headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` }
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+// Arrays reactivos — se poblarán desde Supabase
+let USUARIOS = [];
+let MUNICIPIOS_DATA = [];
+
+async function cargarDatosCliente() {
+  try {
+    // ── 1. Ciudadanos: conteo total y por municipio ──
+    let allCiudadanos = [];
+    let from = 0;
+    while (true) {
+      const res = await fetch(
+        `${SUPA_URL}/rest/v1/ciudadanos?select=municipio_id,nivel_compromiso,es_riesgo,fecha_registro,seccion_electoral,capturista_id&licencia_id=eq.${LICENCIA_ID}&limit=1000&offset=${from}`,
+        { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` } }
+      );
+      if (!res.ok) break;
+      const chunk = await res.json();
+      if (!Array.isArray(chunk) || chunk.length === 0) break;
+      allCiudadanos = allCiudadanos.concat(chunk);
+      if (chunk.length < 1000) break;
+      from += 1000;
+    }
+
+    const totalCapturados = allCiudadanos.length;
+    const META_ESTATAL = 197297;
+    const pctAvance = META_ESTATAL > 0 ? ((totalCapturados / META_ESTATAL) * 100).toFixed(1) : '0.0';
+
+    // Secciones únicas cubiertas
+    const seccionesCubiertas = new Set(allCiudadanos.map(c => c.seccion_electoral).filter(Boolean)).size;
+
+    // Capturistas activos hoy
+    const hoy = new Date().toISOString().split('T')[0];
+    const activosHoy = new Set(
+      allCiudadanos
+        .filter(c => c.fecha_registro && c.fecha_registro.startsWith(hoy) && c.capturista_id)
+        .map(c => c.capturista_id)
+    ).size;
+
+    // Actualizar KPIs resumen
+    const kpisResumen = document.querySelectorAll('#sc-resumen .kpi .kpi-val');
+    if (kpisResumen.length >= 5) {
+      kpisResumen[1].textContent = totalCapturados.toLocaleString('es-MX');
+      kpisResumen[2].textContent = pctAvance + '%';
+      kpisResumen[3].textContent = activosHoy;
+      kpisResumen[4].textContent = seccionesCubiertas.toLocaleString('es-MX');
+    }
+
+    // Agrupar por municipio para barras
+    const munMap = {};
+    allCiudadanos.forEach(c => {
+      const m = c.municipio_id || 'Sin municipio';
+      munMap[m] = (munMap[m] || 0) + 1;
+    });
+
+    // Metas por municipio (referencia 2024 ajustada)
+    const METAS_MUN = {
+      'Manzanillo': 49000, 'Colima': 44000, 'Tecomán': 38000,
+      'Villa de Álvarez': 28000, 'Comala': 12000, 'Coquimatlán': 10000,
+      'Armería': 8000, 'Cuauhtémoc': 5000, 'Minatitlán': 2500, 'Ixtlahuacán': 1797
+    };
+
+    MUNICIPIOS_DATA = Object.entries(munMap)
+      .map(([nombre, capturados]) => ({
+        nombre,
+        meta: METAS_MUN[nombre] || Math.ceil(capturados * 1.5),
+        capturados
+      }))
+      .sort((a, b) => b.capturados - a.capturados);
+
+    renderBarras();
+
+    // Actividad reciente (últimos 10 registros)
+    const recientes = [...allCiudadanos]
+      .filter(c => c.fecha_registro)
+      .sort((a, b) => new Date(b.fecha_registro) - new Date(a.fecha_registro))
+      .slice(0, 10);
+    renderActividadReal(recientes);
+
+    // Alertas dinámicas
+    const riesgo = allCiudadanos.filter(c => c.es_riesgo).length;
+    const sinSeccion = allCiudadanos.filter(c => !c.seccion_electoral).length;
+    renderAlertasReal(riesgo, sinSeccion, totalCapturados, META_ESTATAL);
+
+    // ── 2. Usuarios desde tabla usuarios ──
+    try {
+      const usuarios = await supaFetch(`usuarios?select=id,nombre,email,rol,municipio,seccion_base,activo,licencia_id&licencia_id=eq.${LICENCIA_ID}&limit=500`);
+      USUARIOS = usuarios.map(u => ({
+        id: u.id,
+        nombre: u.nombre || u.email,
+        email: u.email,
+        rol: u.rol,
+        mun: u.municipio || '—',
+        sec: u.seccion_base ? String(u.seccion_base) : '—',
+        ultimo: '—',
+        capturas: 0,
+        status: u.activo ? 'activo' : 'inactivo'
+      }));
+
+      // Enriquecer con capturas por capturista
+      const capPorId = {};
+      allCiudadanos.forEach(c => {
+        if (c.capturista_id) capPorId[c.capturista_id] = (capPorId[c.capturista_id] || 0) + 1;
+      });
+      USUARIOS.forEach(u => { u.capturas = capPorId[u.id] || 0; });
+
+      // Actualizar KPIs usuarios
+      document.getElementById('kpi-total').textContent = USUARIOS.length;
+      document.getElementById('kpi-pend').textContent  = USUARIOS.filter(u => u.status === 'pendiente').length;
+      document.getElementById('kpi-bloq').textContent  = USUARIOS.filter(u => u.status === 'bloqueado' || u.status === 'inactivo').length;
+      document.getElementById('kpi-caps').textContent  = USUARIOS.filter(u => u.rol === 'capturista').length;
+
+      // Re-renderizar tabla si está visible
+      const sc = document.getElementById('sc-usuarios');
+      if (sc && sc.classList.contains('active')) renderUsuarios(USUARIOS);
+
+    } catch(e2) {
+      console.warn('No se pudo cargar usuarios:', e2);
+    }
+
+    console.log(`✅ panel_cliente: ${totalCapturados} ciudadanos, ${MUNICIPIOS_DATA.length} municipios`);
+  } catch(e) {
+    console.error('Error panel_cliente:', e);
+  }
+}
+
+function renderActividadReal(recientes) {
+  const cont = document.getElementById('actividad-lista');
+  if (!cont) return;
+  if (!recientes.length) {
+    cont.innerHTML = '<div style="padding:12px;color:var(--text3);font-size:12px;text-align:center;">Sin actividad reciente</div>';
+    return;
+  }
+  cont.innerHTML = recientes.map(c => {
+    const fecha = new Date(c.fecha_registro);
+    const hace = tiempoRelativo(fecha);
+    return `<div style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:12px;display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <span style="color:var(--green);font-weight:600;">+1 ciudadano</span>
+        <span style="color:var(--text3);margin-left:6px;">${c.capturista_id || 'N/A'}</span>
+      </div>
+      <span style="color:var(--text3);font-family:monospace;font-size:10px;">${hace}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderAlertasReal(riesgo, sinSeccion, total, meta) {
+  const cont = document.getElementById('alertas-lista');
+  if (!cont) return;
+  let items = [];
+  if (riesgo > 0)
+    items.push({color:'red', txt:`${riesgo} simpatizantes en riesgo`, sub:'Nivel compromiso bajo o marcados en riesgo'});
+  if (sinSeccion > 0)
+    items.push({color:'amber', txt:`${sinSeccion} ciudadanos sin sección asignada`, sub:'Verificar asignación territorial'});
+  const pct = meta > 0 ? (total / meta * 100) : 0;
+  if (pct < 20)
+    items.push({color:'red', txt:`Avance crítico: ${pct.toFixed(1)}% de la meta`, sub:'Requiere acelerar captura'});
+  else if (pct < 50)
+    items.push({color:'amber', txt:`Avance medio: ${pct.toFixed(1)}% de la meta`, sub:'Mantener ritmo operativo'});
+  if (!items.length)
+    items.push({color:'green', txt:'Sin alertas críticas', sub:'Operación en curso normal'});
+
+  const badge = document.querySelector('#sc-resumen .card-head .badge');
+  const criticas = items.filter(i => i.color === 'red').length;
+  if (badge) badge.textContent = criticas > 0 ? `${criticas} crítica${criticas > 1 ? 's' : ''}` : 'Sin críticas';
+
+  const colVars = {red:'var(--red)', amber:'var(--amber)', green:'var(--green)'};
+  const bgVars  = {red:'rgba(239,68,68,.08)', amber:'rgba(245,158,11,.08)', green:'rgba(34,197,94,.08)'};
+  const bdVars  = {red:'rgba(239,68,68,.2)', amber:'rgba(245,158,11,.2)', green:'rgba(34,197,94,.2)'};
+  cont.innerHTML = items.map(i => `
+    <div style="padding:10px 14px;border-bottom:1px solid var(--border);">
+      <div style="background:${bgVars[i.color]};border:1px solid ${bdVars[i.color]};border-radius:6px;padding:8px 10px;">
+        <div style="color:${colVars[i.color]};font-weight:600;font-size:12px;">${i.txt}</div>
+        <div style="color:var(--text3);font-size:10px;margin-top:2px;font-family:monospace;">${i.sub}</div>
+      </div>
+    </div>`).join('');
+}
+
+function tiempoRelativo(fecha) {
+  const diff = Date.now() - fecha;
+  const min = Math.floor(diff / 60000);
+  if (min < 1) return 'Ahora';
+  if (min < 60) return `Hace ${min} min`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `Hace ${h}h`;
+  return `Hace ${Math.floor(h / 24)}d`;
+}
+
 
 // ══════════════════════════════════════════════════
 // INIT
@@ -721,9 +894,8 @@ function renderAlertas(){
   ).join('');
 }
 
-renderBarras();
-renderActividad();
-renderAlertas();
+cargarDatosCliente();
+setInterval(cargarDatosCliente, 120000);
 
 // ══════════════════════════════════════════════════
 // TABS
