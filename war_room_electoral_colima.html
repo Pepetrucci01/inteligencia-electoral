@@ -1032,9 +1032,25 @@ function buildCuadF1(nivel,titulo,items,getCap,getMeta,getNombre,getSub,getOncli
   </div>`;
 }
 
+let _sf1SecField=null,_sf1SecAsc=true;
+function sortSecF1(f){
+  if(_sf1SecField===f)_sf1SecAsc=!_sf1SecAsc; else{_sf1SecField=f;_sf1SecAsc=true;}
+  renderCuadF1();
+}
+function thSF1(lbl,f){
+  const act=_sf1SecField===f;
+  const arr=act?(_sf1SecAsc?'↑':'↓'):'↕';
+  return`<th onclick="sortSecF1('${f}')" style="cursor:pointer;user-select:none;white-space:nowrap">${lbl} <span style="color:${act?'var(--accent)':'var(--text3)'};font-size:9px">${arr}</span></th>`;
+}
 function detalleSecF1(sec){
   const p=pct(sec.cap,sec.meta);const c=semC(p);
-  const cas=CAS_SEC[sec.id]||[];
+  let cas=[...(CAS_SEC[sec.id]||[])];
+  if(_sf1SecField){
+    cas.sort((a,b)=>{
+      const va=a[_sf1SecField]||'', vb=b[_sf1SecField]||'';
+      return typeof va==='string'?(_sf1SecAsc?va.localeCompare(vb):vb.localeCompare(va)):(_sf1SecAsc?va-vb:vb-va);
+    });
+  }
   return`<div class="dp">
     <div class="dp-head">
       <div><div class="dp-title">Sección ${sec.num} — ${sec.munNombre}</div><div class="dp-sub">${sec.cas} casilla(s) asignadas en Fase 2</div></div>
@@ -1049,7 +1065,9 @@ function detalleSecF1(sec){
     </div>
     <div style="height:7px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden;margin-bottom:10px"><div style="width:${p}%;height:100%;background:${c};border-radius:99px"></div></div>
     <div style="font-size:11px;font-weight:500;color:var(--text2);margin-bottom:8px">Casillas de esta sección (activas en Fase 2)</div>
-    <div class="tw"><table class="t"><thead><tr><th>Casilla</th><th>Tipo</th><th>Representante</th><th>Domicilio</th><th>Colonia</th><th>Lugar</th></tr></thead>
+    <div class="tw"><table class="t"><thead><tr>
+      ${thSF1('Casilla','id')}${thSF1('Tipo','tipo')}${thSF1('Representante','rep')}${thSF1('Domicilio','domicilio')}${thSF1('Colonia','colonia')}${thSF1('Lugar','lugar')}
+    </tr></thead>
     <tbody>${cas.map(c=>`<tr><td class="mono">${c.id}</td><td style="font-size:11px">${c.tipo}</td><td class="mono" style="color:var(--cyan);font-size:11px">${c.rep}</td><td style="font-size:11px">${c.domicilio}</td><td style="font-size:11px">${c.colonia}</td><td style="font-size:11px">${c.lugar}</td></tr>`).join('')}</tbody>
     </table></div>
   </div>`;
@@ -1417,12 +1435,29 @@ function buildCuadF2(nivel,titulo,items,getStats,getNombre,getSub,getOnclick,sel
   </div>`;
 }
 
+let _sf2SecField=null,_sf2SecAsc=true;
+function sortSecF2(f){
+  if(_sf2SecField===f)_sf2SecAsc=!_sf2SecAsc; else{_sf2SecField=f;_sf2SecAsc=true;}
+  renderCuadF2();
+}
+function thSF2(lbl,f,align){
+  const act=_sf2SecField===f;
+  const arr=act?(_sf2SecAsc?'↑':'↓'):'↕';
+  const st=align==='r'?'text-align:right':align==='c'?'text-align:center':'';
+  return`<th onclick="sortSecF2('${f}')" style="${st};cursor:pointer;user-select:none;white-space:nowrap">${lbl} <span style="color:${act?'var(--accent)':'var(--text3)'};font-size:9px">${arr}</span></th>`;
+}
 function detalleSecF2(sec){
-  const cas=CAS_SEC[sec.id]||[];
+  let cas=[...(CAS_SEC[sec.id]||[])];
   const vt=cas.reduce((s,c)=>s+c.votos,0);
   const nv=cas.reduce((s,c)=>s+c.nuevos,0);
   const ab=cas.filter(c=>c.estatus==='abierta').length;
   const inc=cas.filter(c=>c.estatus==='incidencia').length;
+  if(_sf2SecField){
+    cas.sort((a,b)=>{
+      const va=a[_sf2SecField]||'', vb=b[_sf2SecField]||'';
+      return typeof va==='string'?(_sf2SecAsc?va.localeCompare(vb):vb.localeCompare(va)):(_sf2SecAsc?va-vb:vb-va);
+    });
+  }
   const stMap={abierta:`<span class="badge st-ab">🟢 Abierta</span>`,cerrada:`<span class="badge st-ce">⚫ Cerrada</span>`,incidencia:`<span class="badge st-in">🔴 Incidencia</span>`,sinreporte:`<span class="badge st-sr">🟡 Sin reporte</span>`};
   return`<div class="dp" style="border-color:rgba(59,130,246,.25)">
     <div class="dp-head">
@@ -1436,13 +1471,14 @@ function detalleSecF2(sec){
       <div class="dp-kpi"><div class="dp-kv" style="color:var(--accent)">${fmt(nv)}</div><div class="dp-kl">Nuevos</div></div>
     </div>
     <div class="tw"><table class="t"><thead><tr>
-      <th>Casilla</th><th>Tipo</th><th>Representante</th><th>Apertura</th><th class="r">Votos</th><th class="r">Nuevos</th><th>Estatus</th><th>Acción</th>
+      ${thSF2('Casilla','id','')}${thSF2('Tipo','tipo','')}${thSF2('Representante','rep','')}${thSF2('Apertura','apertura','c')}${thSF2('Votos','votos','r')}${thSF2('Nuevos','nuevos','r')}${thSF2('Estatus','estatus','')}
+      <th>Acción</th>
     </tr></thead><tbody>
     ${cas.map(c=>`<tr onclick="drillF2('cas','${c.id}')" style="cursor:pointer">
       <td class="mono">${c.id}</td>
       <td style="font-size:11px">${c.tipo}</td>
       <td class="mono" style="color:var(--cyan);font-size:11px">${c.rep}</td>
-      <td class="mono" style="font-size:11px;color:${c.apertura!=='—'?'var(--green)':'var(--text3)'}">${c.apertura}</td>
+      <td class="mono" style="font-size:11px;text-align:center;color:${c.apertura!=='—'?'var(--green)':'var(--text3)'}">${c.apertura}</td>
       <td class="mono r" style="color:var(--green);font-weight:600">${c.votos||'—'}</td>
       <td class="mono r" style="color:var(--accent)">${c.nuevos||'—'}</td>
       <td>${stMap[c.estatus]||''}</td>
@@ -2293,18 +2329,44 @@ async function cargarKPIsReales() {
 // ══════════════════════════════════════════════════
 // DETALLE DE ALERTAS JORNADA
 // ══════════════════════════════════════════════════
-function abrirDetalleAlerta(tipo) {
-  const modal = document.getElementById('alerta-detalle-modal');
-  const titulo = document.getElementById('alerta-detalle-titulo');
+// Estado de sorting del modal
+let _mSortField = null, _mSortAsc = true, _mTipo = null, _mData = null;
+
+function thM(label, field, align) {
+  const c = align === 'c' ? 'text-align:center' : align === 'r' ? 'text-align:right' : '';
+  const active = _mSortField === field;
+  const arrow = active ? (_mSortAsc ? ' ↑' : ' ↓') : ' ↕';
+  return `<th onclick="sortModal('${field}')" style="${c};cursor:pointer;user-select:none;white-space:nowrap;" title="Ordenar por ${label}">${label}<span style="color:${active?'var(--accent)':'var(--text3)'};font-size:9px">${arrow}</span></th>`;
+}
+
+function sortModal(field) {
+  if (_mSortField === field) _mSortAsc = !_mSortAsc;
+  else { _mSortField = field; _mSortAsc = true; }
+  renderDetalleAlerta();
+}
+
+function renderDetalleAlerta() {
   const cuerpo = document.getElementById('alerta-detalle-cuerpo');
-  const all = Object.values(CAS_SEC).flat();
+  const titulo = document.getElementById('alerta-detalle-titulo');
+  const tipo = _mTipo;
+  const data = _mData;
   let html = '', tituloTxt = '';
 
+  function sortArr(arr, f, isStr) {
+    if (!_mSortField) return arr;
+    return [...arr].sort((a,b) => {
+      const va = typeof a[_mSortField] === 'string' ? a[_mSortField] : (a[_mSortField]||0);
+      const vb = typeof b[_mSortField] === 'string' ? b[_mSortField] : (b[_mSortField]||0);
+      if (typeof va === 'string') return _mSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+      return _mSortAsc ? va - vb : vb - va;
+    });
+  }
+
   if (tipo === 'sinreporte') {
-    const lista = all.filter(c => c.estatus === 'sinreporte');
+    const lista = _mSortField ? sortArr(data) : data;
     tituloTxt = `${fmt(lista.length)} casillas sin reporte`;
     html = `<table class="t" style="width:100%"><thead><tr>
-      <th>Casilla</th><th>Sección</th><th>Municipio</th><th>Tipo</th><th>Representante</th><th>Domicilio</th>
+      ${thM('Casilla','id','')}${thM('Sección','secNum','c')}${thM('Municipio','munNombre','')}${thM('Tipo','tipo','')}${thM('Representante','rep','')}${thM('Domicilio','domicilio','')}
     </tr></thead><tbody>
       ${lista.map(c=>`<tr>
         <td class="mono" style="color:var(--red);font-weight:600">${c.id}</td>
@@ -2317,10 +2379,10 @@ function abrirDetalleAlerta(tipo) {
     </tbody></table>`;
   }
   else if (tipo === 'activas') {
-    const lista = all.filter(c => c.estatus === 'abierta');
+    const lista = _mSortField ? sortArr(data) : data;
     tituloTxt = `${fmt(lista.length)} casillas activas`;
     html = `<table class="t" style="width:100%"><thead><tr>
-      <th>Casilla</th><th>Sección</th><th>Municipio</th><th>Tipo</th><th>Apertura</th><th>Representante</th><th class="r">Votos</th><th class="r">Nuevos</th>
+      ${thM('Casilla','id','')}${thM('Sección','secNum','c')}${thM('Municipio','munNombre','')}${thM('Tipo','tipo','')}${thM('Apertura','apertura','c')}${thM('Representante','rep','')}${thM('Votos','votos','r')}${thM('Nuevos','nuevos','r')}
     </tr></thead><tbody>
       ${lista.map(c=>`<tr>
         <td class="mono" style="color:var(--green);font-weight:600">${c.id}</td>
@@ -2329,30 +2391,18 @@ function abrirDetalleAlerta(tipo) {
         <td style="color:var(--text2);font-size:11px">${c.tipo}</td>
         <td class="mono" style="text-align:center">${c.apertura}</td>
         <td>${c.rep}</td>
-        <td class="mono r" style="color:var(--green);font-weight:600">${fmt(c.votos)}</td>
-        <td class="mono r" style="color:var(--accent)">${c.nuevos}</td>
+        <td class="mono" style="text-align:right;color:var(--green);font-weight:600">${fmt(c.votos)}</td>
+        <td class="mono" style="text-align:right;color:var(--accent)">${c.nuevos}</td>
       </tr>`).join('')}
     </tbody></table>`;
   }
   else if (tipo === 'transporte') {
-    const secsAll = Object.values(SECS).flat();
-    const NOMS = ['María García','Juan López','Rosa Martínez','Pedro Soto','Ana Torres','Luis Herrera','Carmen Díaz','Jorge Cruz','Silvia Reyes','Roberto Vega'];
-    const COLS2 = ['Col. Centro','Col. Jardines','Col. Las Palmas','Col. Obrera'];
-    const pendientes = [];
-    secsAll.forEach(sec => {
-      const n = Math.floor(Math.random()*6)+1;
-      for(let i=0;i<n;i++) pendientes.push({
-        nombre: NOMS[Math.floor(Math.random()*NOMS.length)],
-        seccion: sec.num, municipio: sec.munNombre,
-        colonia: COLS2[Math.floor(Math.random()*COLS2.length)],
-        tel: `312-${String(Math.floor(Math.random()*9000000)+1000000)}`
-      });
-    });
-    tituloTxt = `${fmt(pendientes.length)} votantes necesitan transporte`;
+    const lista = _mSortField ? sortArr(data) : data;
+    tituloTxt = `${fmt(lista.length)} votantes necesitan transporte`;
     html = `<table class="t" style="width:100%"><thead><tr>
-      <th>Nombre</th><th>Sección</th><th>Municipio</th><th>Colonia</th><th>Teléfono</th>
+      ${thM('Nombre','nombre','')}${thM('Sección','seccion','c')}${thM('Municipio','municipio','')}${thM('Colonia','colonia','')}${thM('Teléfono','tel','')}
     </tr></thead><tbody>
-      ${pendientes.slice(0,300).map(v=>`<tr>
+      ${lista.slice(0,300).map(v=>`<tr>
         <td>${v.nombre}</td>
         <td class="mono" style="text-align:center">${v.seccion}</td>
         <td>${v.municipio}</td>
@@ -2362,44 +2412,44 @@ function abrirDetalleAlerta(tipo) {
     </tbody></table>`;
   }
   else if (tipo === 'votos') {
-    const abiertas = all.filter(c => c.estatus === 'abierta' && c.votos > 0);
-    const total = abiertas.reduce((s,c)=>s+c.votos,0);
-    const porMun = {};
-    abiertas.forEach(c=>{
-      if(!porMun[c.munNombre]) porMun[c.munNombre]={cas:0,votos:0,nuevos:0};
-      porMun[c.munNombre].cas++; porMun[c.munNombre].votos+=c.votos; porMun[c.munNombre].nuevos+=c.nuevos;
-    });
+    const { porMunArr, casillas, total } = data;
+    const munSorted = _mSortField && ['mun','cas','votos','nuevos'].includes(_mSortField)
+      ? [...porMunArr].sort((a,b)=>{ const va=a[_mSortField]||0, vb=b[_mSortField]||0; return typeof va==='string'?(_mSortAsc?va.localeCompare(vb):vb.localeCompare(va)):(_mSortAsc?va-vb:vb-va); })
+      : porMunArr;
+    const casSorted = _mSortField && ['id','secNum','munNombre','rep','votos','nuevos','horaReg'].includes(_mSortField)
+      ? [...casillas].sort((a,b)=>{ const va=a[_mSortField]||0, vb=b[_mSortField]||0; return typeof va==='string'?(_mSortAsc?va.localeCompare(vb):vb.localeCompare(va)):(_mSortAsc?va-vb:vb-va); })
+      : casillas;
     tituloTxt = `${fmt(total)} votos confirmados`;
     html = `<div>
       <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Resumen por municipio</div>
       <table class="t" style="width:100%;margin-bottom:20px"><thead><tr>
-        <th>Municipio</th><th class="r">Casillas</th><th class="r">Votos</th><th class="r">Nuevos</th>
+        ${thM('Municipio','mun','')}${thM('Casillas','cas','c')}${thM('Votos','votos','r')}${thM('Nuevos','nuevos','r')}
       </tr></thead><tbody>
-        ${Object.entries(porMun).sort((a,b)=>b[1].votos-a[1].votos).map(([mun,d])=>`<tr>
-          <td><b>${mun}</b></td>
-          <td class="mono r" style="color:var(--text2)">${d.cas}</td>
-          <td class="mono r" style="color:var(--green);font-weight:600">${fmt(d.votos)}</td>
-          <td class="mono r" style="color:var(--accent)">${d.nuevos}</td>
+        ${munSorted.map(d=>`<tr>
+          <td><b>${d.mun}</b></td>
+          <td class="mono" style="text-align:center;color:var(--text2)">${d.cas}</td>
+          <td class="mono" style="text-align:right;color:var(--green);font-weight:600">${fmt(d.votos)}</td>
+          <td class="mono" style="text-align:right;color:var(--accent)">${d.nuevos}</td>
         </tr>`).join('')}
         <tr style="border-top:2px solid var(--border);background:var(--bg3)">
           <td style="font-weight:700">TOTAL</td>
-          <td class="mono r" style="color:var(--text2)">${abiertas.length}</td>
-          <td class="mono r" style="color:var(--green);font-weight:700">${fmt(total)}</td>
-          <td class="mono r" style="color:var(--accent)">${abiertas.reduce((s,c)=>s+c.nuevos,0)}</td>
+          <td class="mono" style="text-align:center;color:var(--text2)">${casillas.length}</td>
+          <td class="mono" style="text-align:right;color:var(--green);font-weight:700">${fmt(total)}</td>
+          <td class="mono" style="text-align:right;color:var(--accent)">${casillas.reduce((s,c)=>s+c.nuevos,0)}</td>
         </tr>
       </tbody></table>
       <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Detalle por casilla</div>
       <table class="t" style="width:100%"><thead><tr>
-        <th>Casilla</th><th>Sección</th><th>Municipio</th><th>Representante</th><th class="r">Votos</th><th class="r">Nuevos</th><th>Última reg.</th>
+        ${thM('Casilla','id','')}${thM('Sección','secNum','c')}${thM('Municipio','munNombre','')}${thM('Representante','rep','')}${thM('Votos','votos','r')}${thM('Nuevos','nuevos','r')}${thM('Última reg.','horaReg','c')}
       </tr></thead><tbody>
-        ${abiertas.sort((a,b)=>b.votos-a.votos).map(c=>`<tr>
+        ${casSorted.map(c=>`<tr>
           <td class="mono" style="color:var(--green)">${c.id}</td>
           <td class="mono" style="text-align:center">${c.secNum}</td>
           <td>${c.munNombre}</td>
           <td>${c.rep}</td>
-          <td class="mono r" style="color:var(--green);font-weight:600">${fmt(c.votos)}</td>
-          <td class="mono r" style="color:var(--accent)">${c.nuevos}</td>
-          <td class="mono" style="color:var(--text2);font-size:10px">${c.horaReg}</td>
+          <td class="mono" style="text-align:right;color:var(--green);font-weight:600">${fmt(c.votos)}</td>
+          <td class="mono" style="text-align:right;color:var(--accent)">${c.nuevos}</td>
+          <td class="mono" style="text-align:center;color:var(--text2);font-size:10px">${c.horaReg}</td>
         </tr>`).join('')}
       </tbody></table>
     </div>`;
@@ -2407,6 +2457,52 @@ function abrirDetalleAlerta(tipo) {
 
   titulo.textContent = tituloTxt;
   cuerpo.innerHTML = html;
+}
+
+function abrirDetalleAlerta(tipo) {
+  const modal = document.getElementById('alerta-detalle-modal');
+  const all = Object.values(CAS_SEC).flat();
+  _mTipo = tipo;
+  _mSortField = null;
+  _mSortAsc = true;
+
+  if (tipo === 'sinreporte') {
+    _mData = all.filter(c => c.estatus === 'sinreporte');
+  }
+  else if (tipo === 'activas') {
+    _mData = all.filter(c => c.estatus === 'abierta');
+  }
+  else if (tipo === 'transporte') {
+    const NOMS = ['María García','Juan López','Rosa Martínez','Pedro Soto','Ana Torres','Luis Herrera','Carmen Díaz','Jorge Cruz','Silvia Reyes','Roberto Vega'];
+    const COLS2 = ['Col. Centro','Col. Jardines','Col. Las Palmas','Col. Obrera'];
+    const pendientes = [];
+    Object.values(SECS).flat().forEach(sec => {
+      const n = Math.floor(Math.random()*6)+1;
+      for(let i=0;i<n;i++) pendientes.push({
+        nombre: NOMS[Math.floor(Math.random()*NOMS.length)],
+        seccion: sec.num, municipio: sec.munNombre,
+        colonia: COLS2[Math.floor(Math.random()*COLS2.length)],
+        tel: `312-${String(Math.floor(Math.random()*9000000)+1000000)}`
+      });
+    });
+    _mData = pendientes;
+  }
+  else if (tipo === 'votos') {
+    const abiertas = all.filter(c => c.estatus === 'abierta' && c.votos > 0);
+    const total = abiertas.reduce((s,c)=>s+c.votos,0);
+    const porMunObj = {};
+    abiertas.forEach(c=>{
+      if(!porMunObj[c.munNombre]) porMunObj[c.munNombre]={mun:c.munNombre,cas:0,votos:0,nuevos:0};
+      porMunObj[c.munNombre].cas++; porMunObj[c.munNombre].votos+=c.votos; porMunObj[c.munNombre].nuevos+=c.nuevos;
+    });
+    _mData = {
+      porMunArr: Object.values(porMunObj).sort((a,b)=>b.votos-a.votos),
+      casillas: [...abiertas].sort((a,b)=>b.votos-a.votos),
+      total
+    };
+  }
+
+  renderDetalleAlerta();
   modal.style.display = 'flex';
 }
 
