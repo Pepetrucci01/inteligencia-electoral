@@ -539,10 +539,15 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
         <div class="tw">
           <table class="t">
             <thead><tr>
-              <th>Municipio</th><th class="r">Casillas</th><th class="r">Abiertas</th>
-              <th class="r">Incid.</th><th class="r">S/Rep.</th>
-              <th class="r">Votos</th><th class="r">Nuevos</th>
-              <th class="r">% Part.</th><th>Progreso</th><th>Estado</th>
+              <th onclick="sortF2('n')" style="cursor:pointer;user-select:none">Municipio <span id="sf2-n" style="color:var(--text3)">↕</span></th>
+              <th class="r" onclick="sortF2('cas')" style="cursor:pointer;user-select:none">Casillas <span id="sf2-cas" style="color:var(--text3)">↕</span></th>
+              <th class="r" onclick="sortF2('ab')" style="cursor:pointer;user-select:none">Abiertas <span id="sf2-ab" style="color:var(--text3)">↕</span></th>
+              <th class="r" onclick="sortF2('inc')" style="cursor:pointer;user-select:none">Incid. <span id="sf2-inc" style="color:var(--text3)">↕</span></th>
+              <th class="r" onclick="sortF2('sr')" style="cursor:pointer;user-select:none">S/Rep. <span id="sf2-sr" style="color:var(--text3)">↕</span></th>
+              <th class="r" onclick="sortF2('votos')" style="cursor:pointer;user-select:none">Votos <span id="sf2-votos" style="color:var(--text3)">↕</span></th>
+              <th class="r" onclick="sortF2('nuevos')" style="cursor:pointer;user-select:none">Nuevos <span id="sf2-nuevos" style="color:var(--text3)">↕</span></th>
+              <th class="r" onclick="sortF2('pv')" style="cursor:pointer;user-select:none">% Part. <span id="sf2-pv" style="color:var(--text3)">↕</span></th>
+              <th>Progreso</th><th>Estado</th>
             </tr></thead>
             <tbody id="mun-f2-tbody"></tbody>
           </table>
@@ -1197,12 +1202,57 @@ function updateF2KPIs(){
   set('k-ca',Math.round(act/all.length*100)+'%');
 }
 
+
+// ── Sort Fase 2 ──
+let _f2SortField = null;
+let _f2SortAsc   = false;
+
+function sortF2(field) {
+  if (_f2SortField === field) { _f2SortAsc = !_f2SortAsc; }
+  else { _f2SortField = field; _f2SortAsc = field === 'n'; }
+
+  // Update arrow indicators
+  ['n','cas','ab','inc','sr','votos','nuevos','pv'].forEach(k => {
+    const el = document.getElementById('sf2-' + k);
+    if (el) { el.textContent = '↕'; el.style.color = 'var(--text3)'; }
+  });
+  const activeEl = document.getElementById('sf2-' + field);
+  if (activeEl) { activeEl.textContent = _f2SortAsc ? '↑' : '↓'; activeEl.style.color = 'var(--cyan)'; }
+
+  renderMunF2();
+}
+
 function renderMunF2(){
-  document.getElementById('mun-f2-tbody').innerHTML=MUNS.map(m=>{
-    const secIds=munSecIds(m.id);
-    const st=casStats(secIds);
-    const act=st.ab+st.ce;
-    const pv=Math.round(st.votos/Math.max(act*32,1)*100);
+  // Pre-compute stats for sorting
+  const munsWithStats = MUNS.map(m => {
+    const secIds = munSecIds(m.id);
+    const st = casStats(secIds);
+    const act = st.ab + st.ce;
+    const pv = Math.round(st.votos / Math.max(act * 32, 1) * 100);
+    return { m, st, pv };
+  });
+
+  // Apply sort if active
+  if (_f2SortField) {
+    munsWithStats.sort((a, b) => {
+      let va, vb;
+      if (_f2SortField === 'n')      { va = a.m.n;      vb = b.m.n; }
+      else if (_f2SortField === 'cas')   { va = a.m.cas;    vb = b.m.cas; }
+      else if (_f2SortField === 'ab')    { va = a.st.ab;    vb = b.st.ab; }
+      else if (_f2SortField === 'inc')   { va = a.st.inc;   vb = b.st.inc; }
+      else if (_f2SortField === 'sr')    { va = a.st.sr;    vb = b.st.sr; }
+      else if (_f2SortField === 'votos') { va = a.st.votos; vb = b.st.votos; }
+      else if (_f2SortField === 'nuevos'){ va = a.st.nuevos;vb = b.st.nuevos; }
+      else if (_f2SortField === 'pv')    { va = a.pv;       vb = b.pv; }
+      if (typeof va === 'string') return _f2SortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+      return _f2SortAsc ? va - vb : vb - va;
+    });
+  }
+
+  document.getElementById('mun-f2-tbody').innerHTML = munsWithStats.map(({m, st, pv}) => {
+    const act = st.ab + st.ce;
+    const c = semC(pv);
+    return`<tr onclick="drillF2('mun','${m.id}')" class="${f2s.mun===m.id?'sel':''}">
     const c=semC(pv);
     return`<tr onclick="drillF2('mun','${m.id}')" class="${f2s.mun===m.id?'sel':''}">
       <td><div class="nm">${m.n}</div></td>
