@@ -768,7 +768,7 @@ function renderSimps() {
     const colonia = c.colonia || '—';
     const curp = c.curp || '—';
     const cap = c.capturista_id || 'N/A';
-    return `<div class="simp-card">
+    return `<div class="simp-card" onclick="abrirFichaCiudadano('${c.id || c.curp}')" style="cursor:pointer;transition:border-color .15s" onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'">
       <div class="simp-header">
         <div class="simp-av" style="background:${bgColors[comp] || 'rgba(100,116,139,.15)'};color:${txColors[comp] || 'var(--text2)'};">${ini}</div>
         <div>
@@ -805,6 +805,96 @@ function cerrarSesion() {
 }
 
 // ══════════════════════════════════════════════
+// FICHA CIUDADANO — modal detalle + edición
+// ══════════════════════════════════════════════
+const COMP_LABELS = ['', '⚪ Incierto', '🟡 Simpatizante', '✅ Comprometido', '⭐ Voto seguro'];
+const COMP_COLORS = ['', 'var(--text3)', 'var(--amber)', 'var(--accent)', 'var(--green)'];
+
+function abrirFichaCiudadano(cid) {
+  const c = CIUDADANOS_SEC.find(x => (x.id || x.curp) === cid);
+  if (!c) return;
+  const modal = document.getElementById('modal-ficha');
+  const cuerpo = document.getElementById('modal-ficha-body');
+  const comp = c.nivel_compromiso || 0;
+  const edad = calcEdad(c.fecha_nacimiento);
+  const ini = (c.nombre_completo || 'XX').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+  const bgAv = ['','rgba(100,116,139,.2)','rgba(245,158,11,.2)','rgba(59,130,246,.2)','rgba(34,197,94,.2)'][comp] || 'rgba(100,116,139,.2)';
+  const txAv = ['','var(--text2)','var(--amber)','var(--accent)','var(--green)'][comp] || 'var(--text2)';
+
+  // Botones nivel compromiso
+  const nivelBtns = [1,2,3,4].map(n => {
+    const act = comp === n;
+    const col = COMP_COLORS[n];
+    return `<button onclick="cambiarCompromiso('${cid}',${n})" style="flex:1;padding:7px 4px;border-radius:6px;border:1px solid ${act?col:'var(--border)'};background:${act?col+'22':'var(--bg3)'};color:${act?col:'var(--text2)'};font-size:10px;cursor:pointer;font-family:var(--mono);transition:all .15s">${COMP_LABELS[n]}</button>`;
+  }).join('');
+
+  cuerpo.innerHTML = `
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
+      <div style="width:52px;height:52px;border-radius:50%;background:${bgAv};color:${txAv};font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;font-family:var(--mono);flex-shrink:0">${ini}</div>
+      <div>
+        <div style="font-size:16px;font-weight:700;color:var(--text1)">${c.nombre_completo || 'Sin nombre'}</div>
+        <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px">${c.curp || '—'}</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+      <div style="background:var(--bg3);border-radius:8px;padding:10px 12px">
+        <div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Edad</div>
+        <div style="font-size:14px;font-weight:600;color:var(--text1)">${edad !== '—' ? edad+' años' : '—'}</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:8px;padding:10px 12px">
+        <div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Colonia</div>
+        <div style="font-size:14px;font-weight:600;color:var(--text1)">${c.colonia || '—'}</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:8px;padding:10px 12px">
+        <div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Capturista</div>
+        <div style="font-size:13px;font-weight:600;color:var(--accent)">${c.capturista_id || '—'}</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:8px;padding:10px 12px">
+        <div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">En riesgo</div>
+        <div style="font-size:14px;font-weight:600;color:${c.es_riesgo?'var(--red)':'var(--green)'}">${c.es_riesgo ? '⚠ Sí' : '✓ No'}</div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:16px">
+      <div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Nivel de compromiso</div>
+      <div style="display:flex;gap:6px">${nivelBtns}</div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button onclick="toggleRiesgo('${cid}')" style="flex:1;padding:9px;border-radius:8px;border:1px solid ${c.es_riesgo?'rgba(239,68,68,.4)':'var(--border)'};background:${c.es_riesgo?'rgba(239,68,68,.1)':'var(--bg3)'};color:${c.es_riesgo?'var(--red)':'var(--text2)'};font-size:12px;cursor:pointer;font-family:var(--mono)">
+        ${c.es_riesgo ? '✓ Quitar marca de riesgo' : '⚠ Marcar en riesgo'}
+      </button>
+      <button onclick="cerrarFicha()" style="padding:9px 20px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:12px;cursor:pointer;font-family:var(--mono)">Cerrar</button>
+    </div>`;
+
+  modal.dataset.cid = cid;
+  modal.style.display = 'flex';
+}
+
+function cerrarFicha() {
+  document.getElementById('modal-ficha').style.display = 'none';
+}
+
+function cambiarCompromiso(cid, nivel) {
+  const c = CIUDADANOS_SEC.find(x => (x.id || x.curp) === cid);
+  if (!c) return;
+  c.nivel_compromiso = nivel;
+  // En producción: supaFetch PUT ciudadanos/id nivel_compromiso
+  abrirFichaCiudadano(cid); // refrescar modal
+  renderSimps(); // refrescar lista
+}
+
+function toggleRiesgo(cid) {
+  const c = CIUDADANOS_SEC.find(x => (x.id || x.curp) === cid);
+  if (!c) return;
+  c.es_riesgo = !c.es_riesgo;
+  // En producción: supaFetch PUT ciudadanos/id es_riesgo
+  abrirFichaCiudadano(cid);
+  renderSimps();
+}
+
+// ══════════════════════════════════════════════
 // ARRANQUE
 // ══════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
@@ -815,5 +905,15 @@ window.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <script src="theme.js"></script>
+<!-- ── MODAL FICHA CIUDADANO ─────────────────── -->
+<div id="modal-ficha" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:16px;">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;width:100%;max-width:480px;overflow:hidden;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);background:var(--bg3);">
+      <span style="font-size:12px;font-weight:700;font-family:var(--mono);color:var(--text1);text-transform:uppercase;letter-spacing:.06em">Ficha del simpatizante</span>
+      <button onclick="cerrarFicha()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;line-height:1">✕</button>
+    </div>
+    <div id="modal-ficha-body" style="padding:18px;"></div>
+  </div>
+</div>
 </body>
 </html>
