@@ -784,6 +784,12 @@ function setFiltro(f){
 }
 
 function buscar(){
+  const contB=document.getElementById('search-results');
+  // Si aún está cargando desde Supabase
+  if(window._cargandoCiudadanos) {
+    if(contB) contB.innerHTML='<div class="no-results" style="color:var(--text3)">⏳ Cargando registros...</div>';
+    return;
+  }
   const q=(document.getElementById('search-q').value||'').toLowerCase();
   let res=[...CIUDADANOS];
   if(q) res=res.filter(c=>
@@ -944,6 +950,8 @@ function renderLista(){
 // ─── INIT ──────────────────────────────────────────────────────────────────
 // ── Carga inicial de ciudadanos desde Supabase ──
 async function cargarCiudadanosDesdeSupabase() {
+  window._cargandoCiudadanos = true;
+  buscar(); // mostrar "cargando..."
   const SUPA_URL_CAP = 'https://dyirhwwmykskpuvzcafx.supabase.co';
   const SUPA_KEY_CAP = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5aXJod3dteWtza3B1dnpjYWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NTk3ODgsImV4cCI6MjA5NTEzNTc4OH0.2xe4cHqORGng1hnYPJ9ZiyT0r87fMijbUEJqBy3-xoI';
   const LIC = window._sesion?.licencia_id || 'a1b2c3d4-0001-0000-0000-000000000001';
@@ -982,8 +990,8 @@ async function cargarCiudadanosDesdeSupabase() {
     console.log(`✅ Captura: ${CIUDADANOS.length} ciudadanos cargados`);
   } catch(e) {
     console.warn('⚠️ Error cargando ciudadanos, usando datos demo:', e);
-    // Mantener CIUDADANOS vacío — el capturista puede seguir registrando
   }
+  window._cargandoCiudadanos = false;
   buscar();
   renderLista();
 }
