@@ -580,8 +580,20 @@ const RESPONSABLES = {
   74:'CAP-020',  45:'CAP-051', 236:'CAP-057', 248:'CAP-057',
 };
 
-// Array de ciudadanos — se llena desde Supabase al iniciar
-let CIUDADANOS = [];
+let CIUDADANOS = [
+  {id:'REG-001',nombre:'María García López',edad:34,sexo:'MUJER',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0001',comp:3,origen:'Casa por casa',riesgo:false,apoyo:false,influencia:true,curp:'GALM901230MCLRPR01',validado:true,duplicado:false,cap_por:'CAP-017',resp:'CAP-017',domicilio:'Calle Hidalgo 245',colonia:'Col. Centro',notas:'Vecina activa'},
+  {id:'REG-002',nombre:'José Martínez Ruiz',edad:52,sexo:'HOMBRE',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0002',comp:4,origen:'Referido',riesgo:false,apoyo:true,influencia:true,curp:'MARJ720415HCLRRZ09',validado:true,duplicado:false,cap_por:'CAP-017',resp:'CAP-017',domicilio:'Av. Independencia 78',colonia:'Col. Las Palmas',notas:'Necesita transporte'},
+  {id:'REG-003',nombre:'Ana Torres Mendoza',edad:28,sexo:'MUJER',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0003',comp:2,origen:'Digital',riesgo:false,apoyo:false,influencia:false,curp:'TOMA980612MCLRNN06',validado:false,duplicado:false,cap_por:'CAP-017',resp:'CAP-005',domicilio:'Calle Morelos 12',colonia:'Col. Jardines',notas:''},
+  {id:'REG-004',nombre:'Carlos Pérez Silva',edad:45,sexo:'HOMBRE',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0004',comp:3,origen:'Evento',riesgo:true,apoyo:false,influencia:false,curp:'PESC791103HCLRLR03',validado:true,duplicado:false,cap_por:'CAP-017',resp:'CAP-017',domicilio:'Privada Las Flores 5',colonia:'Col. Residencial',notas:'Dudó al final'},
+  {id:'REG-005',nombre:'Laura Hernández Cruz',edad:31,sexo:'MUJER',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0005',comp:1,origen:'Casa por casa',riesgo:false,apoyo:true,influencia:false,curp:'HECL950222MCLRRR08',validado:false,duplicado:false,cap_por:'CAP-017',resp:'CAP-033',domicilio:'Calle Juárez 89',colonia:'Col. Centro',notas:''},
+  {id:'REG-006',nombre:'Roberto Díaz Morales',edad:60,sexo:'HOMBRE',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0006',comp:4,origen:'Referido',riesgo:false,apoyo:false,influencia:true,curp:'DIMR640815HCLRZB02',validado:true,duplicado:false,cap_por:'CAP-017',resp:'CAP-017',domicilio:'Blvd. Camino Real 340',colonia:'Col. Las Américas',notas:'Líder de colonia'},
+  {id:'REG-007',nombre:'Sofía Ramírez Vega',edad:22,sexo:'MUJER',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0007',comp:2,origen:'Digital',riesgo:false,apoyo:false,influencia:false,curp:'RAVS020318MCLRMF05',validado:false,duplicado:true,cap_por:'CAP-017',resp:'CAP-017',domicilio:'Calle Colón 56',colonia:'Col. Obrera',notas:'Posible duplicado'},
+  {id:'REG-008',nombre:'Miguel Flores Jiménez',edad:48,sexo:'HOMBRE',sec:141,mun:'VILLA DE ALVAREZ',tel:'312-111-0008',comp:3,origen:'Casa por casa',riesgo:true,apoyo:true,influencia:false,curp:'FOJM760930HCLRLG07',validado:true,duplicado:false,cap_por:'CAP-017',resp:'CAP-016',domicilio:'Av. de la Paz 123',colonia:'Col. La Paz',notas:'Riesgo alto'},
+  {id:'REG-009',nombre:'Patricia Gómez Luna',edad:39,sexo:'MUJER',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0009',comp:3,origen:'Evento',riesgo:false,apoyo:false,influencia:true,curp:'GOLP851115MCLRMN01',validado:true,duplicado:false,cap_por:'CAP-017',resp:'CAP-017',domicilio:'Calle Reforma 67',colonia:'Col. Magisterial',notas:'Maestra'},
+  {id:'REG-010',nombre:'Fernando Castro Reyes',edad:55,sexo:'HOMBRE',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0010',comp:4,origen:'Referido',riesgo:false,apoyo:false,influencia:true,curp:'CARF690728HCLLRN04',validado:true,duplicado:false,cap_por:'CAP-017',resp:'CAP-017',domicilio:'Privada del Sol 8',colonia:'Fracc. Los Pinos',notas:''},
+  {id:'REG-011',nombre:'Elena Vargas Soto',edad:42,sexo:'MUJER',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0011',comp:3,origen:'Casa por casa',riesgo:false,apoyo:false,influencia:false,curp:'VASE830410MCLRGN05',validado:true,duplicado:false,cap_por:'CAP-017',resp:'CAP-017',domicilio:'Calle Allende 34',colonia:'Col. Centro',notas:''},
+  {id:'REG-012',nombre:'Alejandro Núñez Ramos',edad:36,sexo:'HOMBRE',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0012',comp:2,origen:'Digital',riesgo:true,apoyo:false,influencia:false,curp:'NURA891205HCLZMN08',validado:false,duplicado:false,cap_por:'CAP-017',resp:'CAP-017',domicilio:'Calle 5 de Mayo 201',colonia:'Col. Insurgentes',notas:'Indeciso'},
+];
 
 // ─── STATE ─────────────────────────────────────────────────────────────────
 let compSel = 0, origenSel = '', toggles = {riesgo:false, apoyo:false, influencia:false};
@@ -784,12 +796,6 @@ function setFiltro(f){
 }
 
 function buscar(){
-  const contB=document.getElementById('search-results');
-  // Si aún está cargando desde Supabase
-  if(window._cargandoCiudadanos) {
-    if(contB) contB.innerHTML='<div class="no-results" style="color:var(--text3)">⏳ Cargando registros...</div>';
-    return;
-  }
   const q=(document.getElementById('search-q').value||'').toLowerCase();
   let res=[...CIUDADANOS];
   if(q) res=res.filter(c=>
@@ -947,56 +953,9 @@ function renderLista(){
     </div>`).join('');
 }
 
-// ─── INIT ──────────────────────────────────────────────────────────────────
-// ── Carga inicial de ciudadanos desde Supabase ──
-async function cargarCiudadanosDesdeSupabase() {
-  window._cargandoCiudadanos = true;
-  buscar(); // mostrar "cargando..."
-  const SUPA_URL_CAP = 'https://dyirhwwmykskpuvzcafx.supabase.co';
-  const SUPA_KEY_CAP = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5aXJod3dteWtza3B1dnpjYWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NTk3ODgsImV4cCI6MjA5NTEzNTc4OH0.2xe4cHqORGng1hnYPJ9ZiyT0r87fMijbUEJqBy3-xoI';
-  const LIC = window._sesion?.licencia_id || 'a1b2c3d4-0001-0000-0000-000000000001';
-  try {
-    const res = await fetch(
-      `${SUPA_URL_CAP}/rest/v1/ciudadanos?select=id,nombre,apellido_paterno,apellido_materno,edad,sexo,telefono,curp,clave_elector,seccion_electoral,municipio,compromiso,es_riesgo,es_apoyo,es_influencia,duplicado,validado,capturista_id,responsable_id,notas,origen,domicilio,colonia,licencia_id&licencia_id=eq.${LIC}&order=created_at.desc&limit=500`,
-      { headers: { 'apikey': SUPA_KEY_CAP, 'Authorization': `Bearer ${SUPA_KEY_CAP}` } }
-    );
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const data = await res.json();
-
-    // Mapear campos de BD al formato interno
-    CIUDADANOS = data.map(c => ({
-      id:         c.id,
-      nombre:     [c.nombre, c.apellido_paterno, c.apellido_materno].filter(Boolean).join(' '),
-      edad:       c.edad || 0,
-      sexo:       c.sexo || '—',
-      sec:        c.seccion_electoral || 0,
-      mun:        c.municipio || '—',
-      tel:        c.telefono || '',
-      comp:       c.compromiso || 1,
-      origen:     c.origen || 'Sistema',
-      riesgo:     c.es_riesgo || false,
-      apoyo:      c.es_apoyo || false,
-      influencia: c.es_influencia || false,
-      curp:       c.curp || '',
-      validado:   c.validado || false,
-      duplicado:  c.duplicado || false,
-      cap_por:    c.capturista_id || CAPTURISTA.id,
-      resp:       c.responsable_id || CAPTURISTA.id,
-      domicilio:  c.domicilio || '',
-      colonia:    c.colonia || '',
-      notas:      c.notas || ''
-    }));
-
-    console.log(`✅ Captura: ${CIUDADANOS.length} ciudadanos cargados`);
-  } catch(e) {
-    console.warn('⚠️ Error cargando ciudadanos, usando datos demo:', e);
-  }
-  window._cargandoCiudadanos = false;
-  buscar();
-  renderLista();
-}
-
-cargarCiudadanosDesdeSupabase();
+// ── INIT ──────────────────────────────────────────────────────────────────
+buscar();
+renderLista();
 
 // ══════════════════════════════════════════════════════════════════
 // SISTEMA DE VALIDACIÓN DE CURP
@@ -1360,8 +1319,6 @@ async function guardarEnSupabase(nuevo) {
     // 5. Registrar en auditoría
     await SDB.log('CAPTURA_CIUDADANO', 'ciudadanos', ciudadano.id, ciudadanoData);
 
-    // Recargar lista local con el nuevo registro
-    cargarCiudadanosDesdeSupabase();
     return true;
 
   } catch(err) {
