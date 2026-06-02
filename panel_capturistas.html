@@ -223,7 +223,7 @@ table.cap-table tr.selected{background:rgba(59,130,246,0.1);}
   <div class="kpi-row">
     <div class="kpi blue">
       <div class="kpi-label">Total operadores</div>
-      <div class="kpi-val">60</div>
+      <div class="kpi-val" id="kpi-total">60</div>
       <div class="kpi-sub">estructura activa</div>
     </div>
     <div class="kpi green">
@@ -360,9 +360,11 @@ async function cargarDatosSupabase() {
 
     DATOS = Object.values(mapa);
 
-    // Si todos tienen capturista_id en NULL → mostrar como un solo grupo "Sin asignar"
-    // pero igual mostramos los datos para que se vea que hay registros
-    if (DATOS.length === 0) { cargarDatosSimulados(); return; }
+    // Si no hay datos, o todos son SIN_ASIGNAR (capturista_id NULL),
+    // usar datos simulados para mostrar la tabla completa
+    const soloSinAsignar = DATOS.length === 0 ||
+      (DATOS.length === 1 && DATOS[0].ID_CAPTURISTA === 'SIN_ASIGNAR');
+    if (soloSinAsignar) { cargarDatosSimulados(); return; }
 
     aplicarFiltros();
 
@@ -389,7 +391,7 @@ async function cargarDatosSupabase() {
 
 function cargarDatosSimulados() {
   const MUNS = ['Colima','Manzanillo','Villa de Álvarez','Tecomán','Comala','Armería','Cuauhtémoc','Minatitlán','Ixtlahuacán','Coquimatlán'];
-  const NOMS = ['Carlos Mendoza','Rosa Jiménez','Pedro Soto','Ana Flores','Luis Torres','María Ruiz','Jorge Díaz','Elena Vega','Roberto Cruz','Carmen López','Arturo Reyes','Silvia Morales','David Herrera','Patricia Núñez','Miguel Ángel Ríos','Fernanda Castillo','Héctor Vargas','Laura Guzmán','Oscar Ramírez','Beatriz Leal'];
+  const NOMS = ['Carlos Mendoza','Rosa Jiménez','Pedro Soto','Ana Flores','Luis Torres','María Ruiz','Jorge Díaz','Elena Vega','Roberto Cruz','Carmen López','Arturo Reyes','Silvia Morales','David Herrera','Patricia Núñez','Miguel Ángel Ríos','Fernanda Castillo','Héctor Vargas','Laura Guzmán','Oscar Ramírez','Beatriz Leal','Ramón Ibarra','Claudia Espinoza','Felipe Guerrero','Adriana Salinas','Ernesto Peña','Norma Castellanos','Alfredo Ramos','Yolanda Fuentes','Sergio Acosta','Irma Delgado','Benjamín Ortega','Marisol Cabrera','Rodrigo Sandoval','Verónica Montes','Salvador Trejo','Alejandra Cortés','Ignacio Medina','Lucía Pacheco','Óscar Bermúdez','Diana Aguilar','Aurelio Zúñiga','Rocío Villanueva','Jesús Cárdenas','Mónica Estrada','Jaime Leyva','Esperanza Molina','Genaro Vázquez','Concepción Solís','Rubén Santana','Gloria Ochoa','Edmundo Cisneros','Alicia Ponce','Heriberto Mendívil','Pilar Arellano','Tomás Carrillo','Rebeca Quintero','Esteban Fragoso','Margarita Alvarado','Gilberto Durán','Nadia Robles'];
   DATOS = NOMS.map((n, i) => {
     const total = Math.floor(Math.random()*80)+10;
     const meta = 50;
@@ -468,6 +470,8 @@ function renderKPIs(d){
   document.getElementById('kpi-bajo').textContent      = bajo;
   document.getElementById('kpi-score-prom').textContent= prom;
   document.getElementById('results-count').textContent = d.length+' capturistas';
+  const totalEl = document.getElementById('kpi-total');
+  if(totalEl) totalEl.textContent = DATOS.length;
 }
 
 function renderTable(d){
