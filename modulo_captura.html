@@ -873,8 +873,13 @@ function abrirFicha(id){
       <div class="ficha-section-title">Datos de contacto</div>
       <div class="ficha-row"><span class="ficha-row-label">Teléfono</span><span class="ficha-row-val">${c.tel||'—'}</span></div>
       <div class="ficha-row"><span class="ficha-row-label">CURP</span><span class="ficha-row-val" style="font-size:11px">${c.curp||'—'}</span></div>
+      <div class="ficha-row"><span class="ficha-row-label">Edad</span><span class="ficha-row-val">${c.edad||'—'} años</span></div>
+      <div class="ficha-row"><span class="ficha-row-label">Sexo</span><span class="ficha-row-val">${c.sexo||'—'}</span></div>
+      <div class="ficha-row"><span class="ficha-row-label">Domicilio</span><span class="ficha-row-val">${c.domicilio||'—'}</span></div>
+      <div class="ficha-row"><span class="ficha-row-label">Colonia</span><span class="ficha-row-val">${c.colonia||'—'}</span></div>
       <div class="ficha-row"><span class="ficha-row-label">Municipio</span><span class="ficha-row-val">${c.mun}</span></div>
       <div class="ficha-row"><span class="ficha-row-label">Origen</span><span class="ficha-row-val">${c.origen}</span></div>
+      ${c.notas?`<div class="ficha-row"><span class="ficha-row-label">Notas</span><span class="ficha-row-val" style="color:var(--text2);font-style:italic">${c.notas}</span></div>`:''}
     </div>
     <div class="ficha-section">
       <div class="ficha-section-title">Asignación y responsables</div>
