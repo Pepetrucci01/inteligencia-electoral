@@ -405,26 +405,52 @@ async function cargarDatos() {
   mostrarCargando(true);
 
   try {
-    // ── 1. Ciudadanos de esta sección (todos los campos necesarios) ──
+    // ── 1. Ciudadanos de esta sección ──
     let todos = [];
     let from = 0;
     const pageSize = 1000;
     while (true) {
       const chunk = await supaFetch(
-        `ciudadanos?select=id,nombre_completo,curp,nivel_compromiso,es_riesgo,capturista_id,colonia,fecha_nacimiento,licencia_id&seccion_electoral=eq.${SECCION_LIDER}&licencia_id=eq.${LICENCIA_ID}&limit=${pageSize}&offset=${from}`
+        `ciudadanos?select=id,nombre,apellido_paterno,apellido_materno,compromiso,es_riesgo,capturista_id,colonia,fecha_nacimiento,licencia_id,telefono,municipio,seccion_electoral,origen,sexo,curp,validado,duplicado,es_apoyo,es_influencia&seccion_electoral=eq.${SECCION_LIDER}&licencia_id=eq.${LICENCIA_ID}&limit=${pageSize}&offset=${from}`
       );
       if (!Array.isArray(chunk) || chunk.length === 0) break;
       todos = todos.concat(chunk);
       if (chunk.length < pageSize) break;
       from += pageSize;
     }
-    CIUDADANOS_SEC = todos;
+
+    // Mapear al formato interno usado por el panel
+    CIUDADANOS_SEC = todos.map(c => ({
+      id:              c.id,
+      nombre_completo: [c.nombre, c.apellido_paterno, c.apellido_materno].filter(Boolean).join(' '),
+      nombre:          [c.nombre, c.apellido_paterno, c.apellido_materno].filter(Boolean).join(' '),
+      curp:            c.curp || '',
+      nivel_compromiso: c.compromiso || 1,
+      comp:            c.compromiso || 1,
+      es_riesgo:       c.es_riesgo || false,
+      riesgo:          c.es_riesgo || false,
+      apoyo:           c.es_apoyo  || false,
+      influencia:      c.es_influencia || false,
+      capturista_id:   c.capturista_id || '—',
+      colonia:         c.colonia || '—',
+      fecha_nacimiento: c.fecha_nacimiento || null,
+      telefono:        c.telefono || '—',
+      municipio:       c.municipio || '—',
+      seccion_electoral: c.seccion_electoral,
+      origen:          c.origen || 'Sistema',
+      sexo:            c.sexo || '—',
+      validado:        c.validado || false,
+      duplicado:       c.duplicado || false,
+      licencia_id:     c.licencia_id
+    }));
 
     // Si BD vacía → cargar datos simulados
     if (CIUDADANOS_SEC.length === 0) { cargarDatosSimuladosLider(); return; }
+
+    // ── 2. Agrupar por capturista ──
     const capMap = {};
-    todos.forEach(c => {
-      const cap = c.capturista_id || 'SIN_ASIGNAR';
+    CIUDADANOS_SEC.forEach(c => {
+      const cap = c.capturista_id && c.capturista_id !== '—' ? c.capturista_id : 'SIN_ASIGNAR';
       if (!capMap[cap]) capMap[cap] = { id: cap, capturas: 0 };
       capMap[cap].capturas++;
     });
@@ -433,10 +459,10 @@ async function cargarDatos() {
     // ── 3. Actualizar KPIs ──
     actualizarKPIs();
 
-    // ── 4. Ranking en la tab inicio
+    // ── 4. Ranking en la tab inicio ──
     renderRankingCapturistas();
 
-    // ── 5. Si la tab activa ya está en capturistas/simpatizantes, re-renderizar ──
+    // ── 5. Re-renderizar tab activa ──
     const tabActiva = document.querySelector('.tab.active')?.id?.replace('tab-', '');
     if (tabActiva === 'capturistas') renderCapturistas();
     if (tabActiva === 'simpatizantes') renderSimps();
@@ -496,8 +522,8 @@ function mostrarCargando(estado) {
 // ══════════════════════════════════════════════
 function actualizarKPIs() {
   const total = CIUDADANOS_SEC.length;
-  const riesgo = CIUDADANOS_SEC.filter(c => c.es_riesgo).length;
-  const votoSeg = CIUDADANOS_SEC.filter(c => c.nivel_compromiso >= 3).length;
+  const riesgo = CIUDADANOS_SEC.filter(c => c.es_riesgo || c.riesgo).length;
+  const votoSeg = CIUDADANOS_SEC.filter(c => (c.nivel_compromiso || c.comp || 0) >= 3).length;
 
   // Meta: leer de CASILLAS data para la sección (si no disponible, estimado)
   // Por ahora usamos la misma lógica del war room: meta_real del array CASILLAS
@@ -510,7 +536,7 @@ function actualizarKPIs() {
   document.getElementById('kpi-pct').textContent = pct + '%';
   document.getElementById('kpi-riesgo').textContent = riesgo;
   document.getElementById('kpi-voto-seg').textContent = votoSeg;
-  const comp2 = CIUDADANOS_SEC.filter(c => c.nivel_compromiso >= 2).length;
+  const comp2 = CIUDADANOS_SEC.filter(c => (c.nivel_compromiso || c.comp || 0) >= 2).length;
   document.getElementById('kpi-caps').textContent = CAPTURISTAS_SEC.length;
   document.getElementById('kpi-activos').textContent = comp2;
 
@@ -529,10 +555,22 @@ function actualizarKPIs() {
 }
 
 function getMetaSección(seccion) {
-  // Buscar en el array de CASILLAS embebido en el visor (no disponible aquí)
-  // Alternativa: calcular estimado desde lista_nominal histórica
-  // Por ahora retorna 0 (se mostrará "—" en meta)
+  // Usar meta cacheada si ya se cargó
+  if (window._META_SECCION && window._META_SECCION[seccion]) return window._META_SECCION[seccion];
   return 0;
+}
+
+// Cargar meta real de la sección desde Supabase
+async function cargarMetaSeccion(seccion) {
+  if (!seccion) return;
+  try {
+    const data = await supaFetch(`secciones_electorales_colima?select=meta_proyectada&seccion=eq.${seccion}&limit=1`);
+    if (Array.isArray(data) && data.length > 0) {
+      if (!window._META_SECCION) window._META_SECCION = {};
+      window._META_SECCION[seccion] = Math.round(data[0].meta_proyectada || 0);
+      actualizarKPIs(); // refrescar con la meta real
+    }
+  } catch(e) { console.warn('Error cargando meta sección:', e); }
 }
 
 function actualizarAlertas(riesgo, total, meta, faltantes) {
@@ -971,6 +1009,7 @@ function toggleDuplicadoLider(cid) {
 // ══════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
   cargarDatos();
+  cargarMetaSeccion(SECCION_LIDER);
   // Refresco automático cada 2 minutos
   setInterval(cargarDatos, 120000);
 });
