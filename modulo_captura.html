@@ -236,7 +236,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
     if (!s || !s.ts) { window.location.replace('login.html'); return; }
     const horas = (Date.now() - s.ts) / 3600000;
     if (horas >= 8) { localStorage.removeItem('electoral_sesion'); window.location.replace('login.html'); return; }
-    const rolesPermitidos = ["capturista"];
+    const rolesPermitidos = ["capturista","coordinador","admin","superadmin"];
     if (!rolesPermitidos.includes(s.rol)) { window.location.replace('login.html'); return; }
     window._sesion = s;
   } catch(e) { window.location.replace('login.html'); }
