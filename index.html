@@ -163,6 +163,20 @@ iframe{width:100%;height:100%;border:none;display:block;}
 </style>
 </head>
 <body>
+<script>
+// Guard de sesión — redirigir a login si no hay sesión válida
+(function(){
+  try {
+    const s = localStorage.getItem('electoral_sesion');
+    if(!s){ window.location.replace('login.html'); return; }
+    const u = JSON.parse(s);
+    if(!u || !u.ts){ window.location.replace('login.html'); return; }
+    const horas = (Date.now() - u.ts) / 3600000;
+    if(horas >= 8){ localStorage.removeItem('electoral_sesion'); window.location.replace('login.html'); return; }
+    window._sesion = u;
+  } catch(e){ window.location.replace('login.html'); }
+})();
+</script>
 
 <div class="mob-overlay" id="mob-overlay" onclick="closeSidebar()"></div>
 
