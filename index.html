@@ -264,7 +264,7 @@ iframe{width:100%;height:100%;border:none;display:block;}
       </div>
     </div>
     <div class="topbar-right">
-      <span style="background:#7c3aed;color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:4px;letter-spacing:.5px;">⚠ MODO DEMO</span>
+      <span style="background:#7c3aed;color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:4px;letter-spacing:.5px;flex-shrink:0;">⚠ MODO DEMO</span>
       <span class="tb-badge" style="background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.25)">● Sistema activo</span>
       <span class="tb-badge" style="background:var(--bg3);color:var(--text3);border:1px solid var(--border2)" id="tb-dias">521 días</span>
       <span class="clock" id="clock">--:--:--</span>
@@ -512,13 +512,6 @@ document.addEventListener('keydown', e=>{
   if(e.key==='Escape') showHub();
   if((e.metaKey||e.ctrlKey) && e.key==='['){e.preventDefault();toggleSidebar();}
 });
-
-// Garantizar que el hub siempre sea visible al cargar
-window.addEventListener('load', function() {
-  if(document.getElementById('frame-wrap').style.display !== 'block') {
-    showHub();
-  }
-});
 </script>
 <script src="theme.js"></script>
 
@@ -531,39 +524,28 @@ window.addEventListener('load', function() {
   const META = 197297;
   const fmt  = n => n.toLocaleString('es-MX');
 
-  // Datos simulados como fallback mientras RLS no está configurado
-  const DEMO = { total: 10000, seguro: 4601, riesgo: 2203 };
-
   async function count(filtro){
-    try {
-      const r = await fetch(`${URL}/rest/v1/ciudadanos?select=id&licencia_id=eq.${LIC}${filtro}`,
-        {headers:{'apikey':KEY,'Authorization':`Bearer ${KEY}`,'Prefer':'count=exact','Range':'0-0'}});
-      if(!r.ok) return null;
-      return parseInt(r.headers.get('Content-Range')?.split('/')[1]||0);
-    } catch(e){ return null; }
+    const r = await fetch(`${URL}/rest/v1/ciudadanos?select=id&licencia_id=eq.${LIC}${filtro}`,
+      {headers:{'apikey':KEY,'Authorization':`Bearer ${KEY}`,'Prefer':'count=exact','Range':'0-0'}});
+    return parseInt(r.headers.get('Content-Range')?.split('/')[1]||0);
   }
 
   try {
     const [total, seguro, riesgo] = await Promise.all([
       count(''), count('&compromiso=gte.3'), count('&es_riesgo=eq.true')
     ]);
-
-    // Si Supabase falla, usar datos demo sin romper el render
-    const t = total ?? DEMO.total;
-    const s = seguro ?? DEMO.seguro;
-    const ri = riesgo ?? DEMO.riesgo;
-    const pct = ((t/META)*100).toFixed(1);
+    const pct = ((total/META)*100).toFixed(1);
 
     const set = (id, val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
-    set('idx-kpi-total',  fmt(t));
-    set('idx-kpi-seguro', fmt(s));
-    set('idx-kpi-riesgo', fmt(ri));
+    set('idx-kpi-total',  fmt(total));
+    set('idx-kpi-seguro', fmt(seguro));
+    set('idx-kpi-riesgo', fmt(riesgo));
     set('idx-pb-pct',     pct+'%');
-    set('idx-pb-nums',    `${fmt(t)} / 197,297`);
+    set('idx-pb-nums',    `${fmt(total)} / 197,297`);
 
     const fill = document.getElementById('idx-pb-fill');
     if(fill) fill.style.width = Math.min(100, parseFloat(pct))+'%';
-  } catch(e){ console.warn('KPIs index:', e); }
+  } catch(e){ console.warn('KPIs index error:', e); }
 })();
 </script>
 </body>
