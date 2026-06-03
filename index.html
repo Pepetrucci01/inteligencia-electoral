@@ -512,6 +512,13 @@ document.addEventListener('keydown', e=>{
   if(e.key==='Escape') showHub();
   if((e.metaKey||e.ctrlKey) && e.key==='['){e.preventDefault();toggleSidebar();}
 });
+
+// Garantizar que el hub siempre sea visible al cargar
+window.addEventListener('load', function() {
+  if(document.getElementById('frame-wrap').style.display !== 'block') {
+    showHub();
+  }
+});
 </script>
 <script src="theme.js"></script>
 
