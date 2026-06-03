@@ -277,6 +277,13 @@ iframe{width:100%;height:100%;border:none;display:block;}
       </div>
     </div>
     <div class="topbar-right">
+      <span id="tb-usuario" style="font-size:11px;color:var(--text2);font-family:var(--mono);display:none;align-items:center;gap:8px;">
+        <span id="tb-nombre" style="color:var(--text)"></span>
+        <span style="color:var(--text3)">·</span>
+        <span id="tb-rol" style="color:var(--text3);text-transform:capitalize;"></span>
+        <span style="color:var(--text3)">·</span>
+        <a onclick="cerrarSesion()" style="color:var(--red);cursor:pointer;text-decoration:none;font-size:10px;" title="Cerrar sesión">⏻ Salir</a>
+      </span>
       <span class="tb-badge" style="background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.25)">● Sistema activo</span>
       <span class="tb-badge" style="background:var(--bg3);color:var(--text3);border:1px solid var(--border2)" id="tb-dias">521 días</span>
       <span class="clock" id="clock">--:--:--</span>
@@ -484,6 +491,28 @@ document.addEventListener('keydown', e=>{
   if(e.key==='Escape') showHub();
   if((e.metaKey||e.ctrlKey) && e.key==='['){e.preventDefault();toggleSidebar();}
 });
+
+// Mostrar usuario en topbar si hay sesión
+(function(){
+  try {
+    const s = localStorage.getItem('electoral_sesion');
+    if(s){
+      const u = JSON.parse(s);
+      window._sesion = u;
+      const el = document.getElementById('tb-usuario');
+      if(el){ el.style.display='flex'; }
+      const n = document.getElementById('tb-nombre');
+      if(n) n.textContent = u.nombre || '';
+      const r = document.getElementById('tb-rol');
+      if(r) r.textContent = u.rol || '';
+    }
+  } catch(e){}
+})();
+
+function cerrarSesion(){
+  localStorage.removeItem('electoral_sesion');
+  window.location.href = 'login.html';
+}
 </script>
 <script src="theme.js"></script>
 </body>
