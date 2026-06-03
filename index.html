@@ -160,11 +160,6 @@ iframe{width:100%;height:100%;border:none;display:block;}
   .collapse-btn{display:none;}
   .pb-nums{display:none;}
 }
-
-.demo-banner{display:flex;align-items:center;justify-content:center;gap:10px;background:#7c3aed;color:#fff;font-size:11px;font-weight:600;padding:6px 20px;letter-spacing:.4px;flex-shrink:0;}
-.demo-banner span.badge{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);border-radius:4px;padding:2px 8px;font-size:10px;letter-spacing:.6px;}
-.demo-banner a{color:#c4b5fd;text-decoration:none;font-weight:400;font-size:10px;}
-.demo-banner a:hover{color:#fff;}
 </style>
 </head>
 <body>
@@ -260,13 +255,6 @@ iframe{width:100%;height:100%;border:none;display:block;}
 
 <!-- ── CONTENT ── -->
 <div class="content">
-<!-- ── DEMO BANNER ── -->
-<div class="demo-banner">
-  <span class="badge">⚠ MODO DEMO</span>
-  Los datos mostrados son ilustrativos — no corresponden a una campaña real.
-  <a href="#">Solicitar acceso con datos reales →</a>
-</div>
-
   <div class="topbar">
     <div class="topbar-left">
       <div class="hamburger" onclick="openSidebar()">☰</div>
@@ -276,6 +264,7 @@ iframe{width:100%;height:100%;border:none;display:block;}
       </div>
     </div>
     <div class="topbar-right">
+      <span style="background:#7c3aed;color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:4px;letter-spacing:.5px;">⚠ MODO DEMO</span>
       <span class="tb-badge" style="background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.25)">● Sistema activo</span>
       <span class="tb-badge" style="background:var(--bg3);color:var(--text3);border:1px solid var(--border2)" id="tb-dias">521 días</span>
       <span class="clock" id="clock">--:--:--</span>
