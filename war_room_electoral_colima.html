@@ -311,8 +311,8 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
     <!-- KPIs -->
     <div class="kpi-row">
       <div class="kpi bl"><div class="kl">Meta estatal <span data-theme="sistema-anio">2027</span></div><div class="kv" id="kpi-meta">197,297</div><div class="ks">votos proyectados</div></div>
-      <div class="kpi gr"><div class="kl">Total capturados</div><div class="kv">14,300</div><div class="ks">registros activos</div></div>
-      <div class="kpi gr"><div class="kl">Seguro vota</div><div class="kv">3,432</div><div class="ks">nivel compromiso 3+4</div></div>
+      <div class="kpi gr"><div class="kl">Total capturados</div><div class="kv" id="kpi-total-cap">14,300</div><div class="ks">registros activos</div></div>
+      <div class="kpi gr"><div class="kl">Seguro vota</div><div class="kv" id="kpi-seguro-vota">3,432</div><div class="ks">nivel compromiso 3+4</div></div>
       <div class="kpi am"><div class="kl">Prioridad alta</div><div class="kv">2,757</div><div class="ks">requieren atención</div></div>
       <div class="kpi re"><div class="kl">Riesgo alto</div><div class="kv">2,203</div><div class="ks">posible fuga de voto</div></div>
       <div class="kpi pu"><div class="kl">Duplicados</div><div class="kv">408</div><div class="ks">registros a depurar</div></div>
@@ -719,6 +719,9 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
 // ══════════════════════════════════════════════════
 // DATOS BASE
 // ══════════════════════════════════════════════════
+// Variable global para preservar el conteo real de Supabase
+let _totalCapturadosReal = 14300;
+
 const MUNS = [
   {id:'TEC',n:'Tecomán',      cap:4475,meta:29211,secs:62, df:'DF2',cas:153,v24:6820,g24:'Partido A',p24:61.7},
   {id:'MIN',n:'Minatitlán',   cap:625, meta:4329, secs:14, df:'DF2',cas:19, v24:1440,g24:'Partido A',p24:64.1},
@@ -905,10 +908,11 @@ function recalc(){
   const meta=Math.round(195000*(p/6));
   document.getElementById('meta-calc').textContent=fmt(meta);
   document.getElementById('kpi-meta').textContent=fmt(meta);
-  const av=pct(14300,meta);
+  const capActual = _totalCapturadosReal;
+  const av=pct(capActual,meta);
   document.getElementById('pb-fill').style.width=av+'%';
   document.getElementById('pb-pct').textContent=av+'%';
-  document.getElementById('pb-nums').textContent=fmt(14300)+' / '+fmt(meta)+' capturados';
+  document.getElementById('pb-nums').textContent=fmt(capActual)+' / '+fmt(meta)+' capturados';
   renderMunF1();
   if(f1s.nivel!=='candidato') renderCuadF1();
 }
@@ -2391,12 +2395,15 @@ async function cargarKPIsReales() {
 
     // Actualizar KPIs en el DOM
     const fmt = n => n.toLocaleString('es-MX');
+
+    // Guardar en variable global para que recalc() la use
+    _totalCapturadosReal = total;
     
-    // Total capturados
-    document.querySelectorAll('.kpi.gr .kv').forEach((el, i) => {
-      if(i === 0) el.textContent = fmt(total);
-      if(i === 1) el.textContent = fmt(seguro);
-    });
+    // Total capturados — usando IDs fijos
+    const elTotalCap = document.getElementById('kpi-total-cap');
+    if(elTotalCap) elTotalCap.textContent = fmt(total);
+    const elSeguro = document.getElementById('kpi-seguro-vota');
+    if(elSeguro) elSeguro.textContent = fmt(seguro);
     
     // Riesgo alto
     const riesgoEl = document.querySelector('.kpi.re .kv');
