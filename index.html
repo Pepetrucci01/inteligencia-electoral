@@ -330,17 +330,17 @@ iframe{width:100%;height:100%;border:none;display:block;}
 
     <div class="prog-bar">
       <div class="pb-label">Avance vs meta <span data-theme="sistema-anio">2027</span></div>
-      <div class="pb-track"><div class="pb-fill" style="width:5.1%"></div></div>
-      <div class="pb-pct">5.1%</div>
-      <div class="pb-nums">10,000 / <span data-theme="sistema-meta">197,297</span></div>
+      <div class="pb-track"><div class="pb-fill" id="hub-pb-fill" style="width:5.1%"></div></div>
+      <div class="pb-pct" id="hub-pb-pct">5.1%</div>
+      <div class="pb-nums" id="hub-pb-nums">10,000 / <span data-theme="sistema-meta">197,297</span></div>
     </div>
 
     <div class="kpi-row">
       <div class="kpi bl"><div class="kv" data-theme="sistema-meta">197,297</div><div class="kl">Meta estatal</div></div>
-      <div class="kpi gr"><div class="kv">10,000</div><div class="kl">Capturados</div></div>
-      <div class="kpi gr"><div class="kv">4,601</div><div class="kl">Voto seguro</div></div>
-      <div class="kpi am"><div class="kv">2,203</div><div class="kl">En riesgo</div></div>
-      <div class="kpi re"><div class="kv">408</div><div class="kl">Duplicados</div></div>
+      <div class="kpi gr"><div class="kv" id="hub-kpi-total">10,000</div><div class="kl">Capturados</div></div>
+      <div class="kpi gr"><div class="kv" id="hub-kpi-seguro">4,601</div><div class="kl">Voto seguro</div></div>
+      <div class="kpi am"><div class="kv" id="hub-kpi-riesgo">2,203</div><div class="kl">En riesgo</div></div>
+      <div class="kpi re"><div class="kv" id="hub-kpi-dup">408</div><div class="kl">Duplicados</div></div>
       <div class="kpi cy"><div class="kv">60</div><div class="kl">Operadores</div></div>
       <div class="kpi cy"><div class="kv">392</div><div class="kl">Secciones</div></div>
       <div class="kpi re"><div class="kv">219</div><div class="kl">Sec. críticas</div></div>
@@ -527,6 +527,41 @@ function cerrarSesion(){
   localStorage.removeItem('electoral_sesion');
   window.location.href = 'login.html';
 }
+
+// ── CARGA KPIs REALES DESDE SUPABASE ──────────────────────────
+(async function cargarKPIsHub() {
+  try {
+    const SUPA_URL = 'https://dyirhwwmykskpuvzcafx.supabase.co';
+    const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5aXJod3dteWtza3B1dnpjYWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyNzM2MDgsImV4cCI6MjA2MDg0OTYwOH0.oU3IXPX0iOHHFMKkGKJhwnaa7cLNIcSOBTTnhLSVIhs';
+    const LICENCIA = (window._sesion?.licencia_id) || 'a1b2c3d4-0001-0000-0000-000000000001';
+    const META = 197297;
+    const fmt = n => Math.round(n).toLocaleString('es-MX');
+    const h = { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}`, 'Prefer': 'count=exact', 'Range': '0-0' };
+
+    const [rTotal, rSeg, rRiesgo] = await Promise.all([
+      fetch(`${SUPA_URL}/rest/v1/ciudadanos?select=id&licencia_id=eq.${LICENCIA}`, { headers: h }),
+      fetch(`${SUPA_URL}/rest/v1/ciudadanos?select=id&licencia_id=eq.${LICENCIA}&compromiso=gte.3`, { headers: h }),
+      fetch(`${SUPA_URL}/rest/v1/ciudadanos?select=id&licencia_id=eq.${LICENCIA}&es_riesgo=eq.true`, { headers: h }),
+    ]);
+
+    const total  = parseInt(rTotal.headers.get('Content-Range')?.split('/')[1]  || 0);
+    const seguro = parseInt(rSeg.headers.get('Content-Range')?.split('/')[1]    || 0);
+    const riesgo = parseInt(rRiesgo.headers.get('Content-Range')?.split('/')[1] || 0);
+    const pct    = Math.min(100, ((total / META) * 100).toFixed(1));
+
+    const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+    set('hub-kpi-total',  fmt(total));
+    set('hub-kpi-seguro', fmt(seguro));
+    set('hub-kpi-riesgo', fmt(riesgo));
+    set('hub-pb-pct',  pct + '%');
+    set('hub-pb-nums', fmt(total) + ' / ' + fmt(META));
+    const fill = document.getElementById('hub-pb-fill');
+    if(fill) fill.style.width = pct + '%';
+    console.log(`✅ Hub KPIs: ${total} capturados`);
+  } catch(e) {
+    console.warn('Hub KPIs error:', e);
+  }
+})();
 </script>
 <script src="theme.js"></script>
 </body>
