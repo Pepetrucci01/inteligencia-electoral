@@ -51,6 +51,9 @@ select{background:#0f3460;color:#eee;border:1px solid #444;border-radius:4px;pad
 .cas-legend{margin-top:8px;padding-top:8px;border-top:1px solid #333;}
 .divider{height:1px;background:#333;margin:8px 0;}
 
+/* Lider: ocultar tabs estratégicos */
+.tab-lider-ocultar { display: none !important; }
+
 #btn-back-menu {
   display: none;
   position: fixed;
@@ -148,6 +151,24 @@ select{background:#0f3460;color:#eee;border:1px solid #444;border-radius:4px;pad
 </style>
 <script src="theme.js"></script>
 
+<!-- GUARD DE SESIÓN + CONTROL ROL LIDER -->
+<script>
+(function(){
+  try {
+    const s = JSON.parse(localStorage.getItem('electoral_sesion') || 'null');
+    if (!s || !s.ts) { window.location.replace('login.html'); return; }
+    const horas = (Date.now() - s.ts) / 3600000;
+    if (horas >= 8) { localStorage.removeItem('electoral_sesion'); window.location.replace('login.html'); return; }
+    const rolesPermitidos = ['superadmin','admin','coordinador','lider_seccion'];
+    if (!rolesPermitidos.includes(s.rol)) { window.location.replace('login.html'); return; }
+    window._sesion = s;
+    window._esLider = (s.rol === 'lider_seccion');
+    window._seccionLider = s.seccion || null;
+    window._municipioLider = s.municipio || null;
+  } catch(e) { window.location.replace('login.html'); }
+})();
+</script>
+
 <!-- SUPABASE: avance real por sección -->
 <script>
 const SUPABASE_URL = 'https://dyirhwwmykskpuvzcafx.supabase.co';
@@ -211,9 +232,9 @@ async function cargarAvanceSupabase() {
     <div class="tab" onclick="setLayer('senador',this)">SENADOR</div>
     <div class="tab" onclick="setLayer('diputado_local',this)">DIP. LOCAL</div>
     <div class="sep" style="height:18px;"></div>
-    <div class="tab meta-tab" onclick="setLayer('meta',this)">🎯 AVANCE META</div>
-    <div class="tab meta-tab" onclick="setLayer('ganador',this)">🏆 GANADOR 2024</div>
-    <div class="tab meta-tab" onclick="setLayer('estatus',this)">📊 DIFICULTAD</div>
+    <div class="tab meta-tab tab-lider-ocultar" id="tab-avance-meta" onclick="setLayer('meta',this)">🎯 AVANCE META</div>
+    <div class="tab meta-tab tab-lider-ocultar" id="tab-ganador" onclick="setLayer('ganador',this)">🏆 GANADOR 2024</div>
+    <div class="tab meta-tab tab-lider-ocultar" id="tab-dificultad" onclick="setLayer('estatus',this)">📊 DIFICULTAD</div>
   </div>
   <div class="sep"></div>
   <div class="ctrl-group">
@@ -530,6 +551,49 @@ renderSecciones('gobernador');
 renderCasillas(CASILLAS);
 // Cargar avance real desde Supabase
 cargarAvanceSupabase();
+
+// ── MODO LÍDER: zoom y filtro automático ──────────────────────────
+(function initLider(){
+  if (!window._esLider) return;
+
+  // Ocultar tabs estratégicos (ya tienen la clase CSS, solo como seguro)
+  document.querySelectorAll('.tab-lider-ocultar').forEach(el => el.style.display='none');
+
+  const sec   = window._seccionLider;
+  const mun   = window._municipioLider;
+
+  // Fijar selector de municipio si hay municipio en sesión
+  if (mun) {
+    const sel = document.getElementById('filtMunicipio');
+    if (sel) {
+      // Intentar seleccionar el municipio (nombre en mayúsculas en los datos)
+      const munUpper = mun.toUpperCase();
+      for (let i = 0; i < sel.options.length; i++) {
+        if (sel.options[i].value.toUpperCase() === munUpper) {
+          sel.selectedIndex = i;
+          sel.disabled = true; // lider no puede cambiar municipio
+          break;
+        }
+      }
+      filtrarCasillas();
+    }
+  }
+
+  // Si tiene sección asignada, hacer zoom sobre sus casillas
+  if (sec) {
+    const casillasSec = CASILLAS.filter(c => c.seccion == sec);
+    if (casillasSec.length > 0) {
+      const lats = casillasSec.map(c => c.lat).filter(Boolean);
+      const lons = casillasSec.map(c => c.lon).filter(Boolean);
+      if (lats.length) {
+        const bounds = [[Math.min(...lats)-0.003, Math.min(...lons)-0.003],
+                        [Math.max(...lats)+0.003, Math.max(...lons)+0.003]];
+        map.fitBounds(bounds, {padding:[30,30]});
+      }
+    }
+  }
+})();
+
 </script>
 <button id="btn-back-menu" onclick="window.location.href='index.html'">☰ Menú Principal</button>
 
