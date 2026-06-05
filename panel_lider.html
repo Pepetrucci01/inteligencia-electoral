@@ -803,14 +803,26 @@ function calcEdad(fecha_nacimiento) {
   return edad;
 }
 
+function _norm(txt){
+  return (txt||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+}
+function _buscarNombre(nombre, q){
+  const n = _norm(nombre);
+  if(n.includes(q)) return true;
+  const tokens = n.split(/\s+/);
+  const tq = q.split(/\s+/).filter(x=>x.length>0);
+  if(tq.length > 1) return tq.every(t => tokens.some(tk => tk.includes(t)));
+  return false;
+}
+
 function renderSimps() {
-  const q = document.getElementById('search-simp').value.toLowerCase();
+  const q = _norm(document.getElementById('search-simp').value);
   let data = CIUDADANOS_SEC;
 
   if (filtroComp !== 'todos') data = data.filter(c => c.nivel_compromiso == filtroComp);
   if (q) data = data.filter(c =>
-    (c.nombre_completo || '').toLowerCase().includes(q) ||
-    (c.curp || '').toLowerCase().includes(q)
+    _buscarNombre(c.nombre_completo, q) ||
+    _norm(c.curp).includes(q)
   );
 
   if (!data.length) {
