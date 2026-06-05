@@ -364,7 +364,7 @@ html, body {
 
       <!-- Selector de rol -->
       <div class="rol-selector" id="rol-selector" style="grid-template-columns:1fr 1fr 1fr;">
-        <div class="rol-btn" id="rol-superadmin" style="--rol-color:#ef4444" onclick="selRol('superadmin')">
+        <div class="rol-btn" id="rol-super_admin" style="--rol-color:#ef4444" onclick="selRol('super_admin')">
           <div class="rol-icon">🔒</div>
           <span class="rol-label">Super Admin</span>
         </div>
@@ -376,7 +376,7 @@ html, body {
           <div class="rol-icon">📍</div>
           <span class="rol-label">Coordinador</span>
         </div>
-        <div class="rol-btn" id="rol-lider_seccion" style="--rol-color:#a855f7" onclick="selRol('lider_seccion')">
+        <div class="rol-btn" id="rol-jefe_seccion" style="--rol-color:#a855f7" onclick="selRol('jefe_seccion')">
           <div class="rol-icon">⭐</div>
           <span class="rol-label">Líder de Sección</span>
         </div>
@@ -458,10 +458,10 @@ function selRol(rol) {
 
   // Cambiar color del botón de login según el rol
   const colores = {
-    superadmin:    '#ef4444',
+    super_admin:    '#ef4444',
     admin:         '#3b82f6',
     coordinador:   '#06b6d4',
-    lider_seccion: '#a855f7',
+    jefe_seccion: '#a855f7',
     capturista:    '#22c55e',
   };
   document.getElementById('btn-login').style.background = colores[rol] || '#3b82f6';
@@ -494,10 +494,10 @@ const SUPABASE_URL = 'https://dyirhwwmykskpuvzcafx.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5aXJod3dteWtza3B1dnpjYWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NTk3ODgsImV4cCI6MjA5NTEzNTc4OH0.2xe4cHqORGng1hnYPJ9ZiyT0r87fMijbUEJqBy3-xoI';
 
 const DESTINOS_ROL = {
-  superadmin:    'modulo_admin.html',
+  super_admin:    'modulo_admin.html',
   admin:         'panel_cliente.html',
   coordinador:   'index.html',
-  lider_seccion: 'panel_lider.html',
+  jefe_seccion: 'panel_lider.html',
   capturista:    'modulo_captura.html',
 };
 
@@ -538,7 +538,7 @@ async function intentarLogin() {
 
     // ── 2. Obtener perfil de public.usuarios ──
     const perfilRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/usuarios?email=eq.${encodeURIComponent(email)}&select=id,codigo,nombre,email,rol,municipio,seccion_base,licencia_id,status,activo&limit=1`,
+      `${SUPABASE_URL}/rest/v1/usuarios?email=eq.${encodeURIComponent(email)}&select=id,nombre,email,rol,municipio,seccion,licencia_id&limit=1`,
       {
         headers: {
           'apikey': SUPABASE_KEY,
@@ -557,13 +557,6 @@ async function intentarLogin() {
       return;
     }
 
-    if (!perfil.activo || perfil.status !== 'activo') {
-      btn.classList.remove('loading');
-      document.getElementById('btn-text').textContent = 'Ingresar al sistema';
-      mostrarError('Tu cuenta está inactiva. Contacta al administrador del sistema.');
-      return;
-    }
-
     // ── 3. Verificar que el rol seleccionado coincide ──
     if (perfil.rol !== rolActivo) {
       btn.classList.remove('loading');
@@ -577,13 +570,12 @@ async function intentarLogin() {
     // ── 4. Guardar sesión ──
     const sesion = {
       id:           perfil.id,
-      codigo:       perfil.codigo,
       nombre:       perfil.nombre,
       email:        perfil.email,
       rol:          perfil.rol,
       licencia_id:  perfil.licencia_id,
       municipio:    perfil.municipio || '',
-      seccion:      perfil.seccion_base || null,
+      seccion:      perfil.seccion || null,
       access_token: authData.access_token,
       refresh_token: authData.refresh_token,
       ts:           Date.now(),
@@ -613,7 +605,7 @@ function mostrarError(msg) {
 }
 
 function labelRol(rol) {
-  return { superadmin:'Super Admin', admin:'Admin Estatal', coordinador:'Coordinador', lider_seccion:'Líder de Sección', capturista:'Capturista' }[rol] || rol;
+  return { super_admin:'Super Admin', admin:'Admin Estatal', coordinador:'Coordinador', jefe_seccion:'Líder de Sección', capturista:'Capturista' }[rol] || rol;
 }
 
 // ══════════════════════════════════════════════════════
@@ -647,10 +639,10 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
       if (horas < 8) {
         // Sesión válida — redirigir directo
         const destinos = {
-          superadmin:    'modulo_admin.html',
+          super_admin:    'modulo_admin.html',
           admin:         'panel_cliente.html',
           coordinador:   'index.html',
-          lider_seccion: 'panel_lider.html',
+          jefe_seccion: 'panel_lider.html',
           capturista:    'modulo_captura.html',
         };
         const dest = destinos[sesion.rol];
