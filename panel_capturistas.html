@@ -450,12 +450,30 @@ function barColor(p,max){
   return '#ef4444';
 }
 
+function normalizar(txt){
+  return (txt||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+}
+
+function buscarNombre(nombre, q){
+  // Búsqueda 1: nombre completo normalizado contiene la consulta
+  const nombreNorm = normalizar(nombre);
+  if(nombreNorm.includes(q)) return true;
+  // Búsqueda 2: permite buscar "apellidoPaterno apellidoMaterno nombre"
+  // Divide el nombre en tokens y busca si todos los tokens de la query aparecen
+  const tokensNombre = nombreNorm.split(/\s+/);
+  const tokensQ = q.split(/\s+/).filter(t=>t.length>0);
+  if(tokensQ.length > 1){
+    return tokensQ.every(tq => tokensNombre.some(tn => tn.includes(tq)));
+  }
+  return false;
+}
+
 function getDatos(){
   const mun = document.getElementById('fil-municipio').value;
-  const q   = document.getElementById('fil-search').value.toLowerCase();
+  const q   = normalizar(document.getElementById('fil-search').value);
   let d = [...DATOS];
   if(mun) d = d.filter(r=>r.MUNICIPIO===mun);
-  if(q)   d = d.filter(r=>r.CAPTURADO_POR.toLowerCase().includes(q)||r.ID_CAPTURISTA.toLowerCase().includes(q));
+  if(q)   d = d.filter(r=>buscarNombre(r.CAPTURADO_POR, q)||normalizar(r.ID_CAPTURISTA).includes(q));
   d.sort((a,b)=> sortAsc ? a[sortField]-b[sortField] : b[sortField]-a[sortField]);
   return d;
 }
