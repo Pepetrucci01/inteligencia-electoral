@@ -3,25 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Usuarios — SIE Colima 2027</title>
-
-
-
-<style>
-.lic-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:20px;}
-.lic-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;}
-.lic-icon{font-size:28px;margin-bottom:8px;}
-.lic-name{font-size:13px;font-weight:600;margin-bottom:4px;}
-.lic-status{font-size:11px;margin-bottom:12px;}
-.lic-status.activa{color:var(--green);}
-.lic-status.inactiva{color:var(--text2);}
-.btn-activar{background:var(--accent);color:#fff;border:none;padding:7px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;width:100%;}
-.btn-activar:hover{background:#c73652;}
-.btn-activar.activa{background:var(--bg3);color:var(--green);border:1px solid var(--green);cursor:default;}
-</style>
+<title>Usuarios — Inteligencia Electoral 2027</title>
 <script src="theme.js"></script>
 <style>
-
 :root{
   --bg:#0a0e1a;--bg2:#0f1526;--bg3:#141b2e;--bg4:#1a2238;
   --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.14);
@@ -37,22 +21,39 @@ body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,
 table{width:100%;border-collapse:collapse;font-size:13px;}
 th{background:var(--bg3);color:var(--text2);font-weight:600;padding:10px 12px;text-align:left;border-bottom:1px solid var(--border2);}
 td{padding:10px 12px;border-bottom:1px solid var(--border);}
+tr:last-child td{border-bottom:none;}
 h3{font-size:15px;font-weight:600;margin-bottom:12px;}
-/* Botón regreso */
+.lic-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:20px;}
+.lic-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;}
+.lic-icon{font-size:28px;margin-bottom:8px;}
+.lic-name{font-size:13px;font-weight:600;margin-bottom:4px;}
+.lic-status{font-size:11px;margin-bottom:12px;}
+.lic-status.activa{color:var(--green);}
+.lic-status.inactiva{color:var(--text2);}
+.btn-activar{background:var(--accent);color:#fff;border:none;padding:7px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;width:100%;}
+.btn-activar:hover{background:#2563eb;}
+.btn-activar.activa{background:var(--bg3);color:var(--green);border:1px solid var(--green);cursor:default;}
+.rol-badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;}
+.rol-super_admin{color:#ef4444;}
+.rol-admin{color:#f59e0b;}
+.rol-coordinador{color:#22c55e;}
+.rol-jefe_seccion{color:#06b6d4;}
+.rol-capturista{color:#a855f7;}
+.status-activo{color:var(--green);}
+.status-inactivo{color:var(--red);}
 #btn-back-menu{display:none;position:fixed;bottom:20px;right:20px;z-index:9999;
   background:var(--accent);color:#fff;border:none;border-radius:50px;
   padding:10px 18px;font-size:13px;font-weight:600;cursor:pointer;
   box-shadow:0 4px 20px rgba(0,0,0,0.4);transition:all 0.2s;}
 #btn-back-menu:hover{transform:scale(1.05);}
-
+.loading{color:var(--text3);font-size:13px;padding:20px;text-align:center;}
 </style>
 </head>
 <body>
 
-
 <div id="main">
-  
 
+  <!-- Licencias -->
   <div class="card" style="margin-bottom:16px;">
     <h3>🏷️ Licencias por Candidatura</h3>
     <p style="font-size:12px;color:var(--text2);margin-bottom:14px;">
@@ -74,7 +75,7 @@ h3{font-size:15px;font-weight:600;margin-bottom:12px;}
       <div class="lic-card">
         <div class="lic-icon">🗳️</div>
         <div class="lic-name">Diputado Local</div>
-        <div class="lic-status inactiva" id="st-local">● Inactiva</div>
+        <div class="lic-status inactiva" id="st-local\">● Inactiva</div>
         <button class="btn-activar" id="btn-local" onclick="activarLicencia('DIPUTADO LOCAL')">Activar Licencia</button>
       </div>
       <div class="lic-card">
@@ -92,99 +93,127 @@ h3{font-size:15px;font-weight:600;margin-bottom:12px;}
     </div>
   </div>
 
+  <!-- Usuarios reales desde Supabase -->
   <div class="card">
     <h3>⚙️ Usuarios del Sistema</h3>
     <table>
       <thead>
         <tr>
-          <th>Usuario</th><th>Nombre</th><th>Rol</th>
-          <th>Licencia</th><th>Territorio</th><th>Estado</th>
+          <th>Email</th><th>Nombre</th><th>Rol</th>
+          <th>Municipio</th><th>Sección</th><th>Estado</th>
         </tr>
       </thead>
-      <tbody>
-        <tr>
-          <td style="font-family:monospace;color:var(--blue)">admin</td>
-          <td>Administrador General</td>
-          <td style="color:#e94560;font-weight:600">ADMINISTRADOR</td>
-          <td>Gubernatura</td><td>Todo el Estado</td>
-          <td style="color:var(--green)">● Activo</td>
-        </tr>
-        <tr>
-          <td style="font-family:monospace;color:var(--blue)">coord</td>
-          <td>Coord. Territorial</td>
-          <td style="color:#00cc66;font-weight:600">COORDINADOR</td>
-          <td>Gubernatura</td><td>Estado de Colima</td>
-          <td style="color:var(--green)">● Activo</td>
-        </tr>
-        <tr>
-          <td style="font-family:monospace;color:var(--blue)">lider</td>
-          <td>Líder Sección 12</td>
-          <td style="color:#ffaa00;font-weight:600">LIDER</td>
-          <td>Local</td><td>Sección 12 — Colima</td>
-          <td style="color:var(--green)">● Activo</td>
-        </tr>
-        <tr>
-          <td style="font-family:monospace;color:var(--blue)">capturista</td>
-          <td>Capturista Sección 12</td>
-          <td style="color:#4ecdc4;font-weight:600">CAPTURISTA</td>
-          <td>Local</td><td>Sección 12 — Colima</td>
-          <td style="color:var(--green)">● Activo</td>
-        </tr>
+      <tbody id="tbody-usuarios">
+        <tr><td colspan="6" class="loading">Cargando usuarios...</td></tr>
       </tbody>
     </table>
   </div>
 </div>
 
+<button id="btn-back-menu" onclick="window.location.href='modulo_admin.html'">☰ Volver a Admin</button>
+
+<script src="supabase-client.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+// ── Guard de sesión ──────────────────────────────────────────
+(function() {
+  try {
+    const raw = localStorage.getItem('electoral_sesion');
+    if (!raw) return window.location.replace('login.html');
+    const s = JSON.parse(raw);
+    if (!s || !s.ts) return window.location.replace('login.html');
+    const horas = (Date.now() - s.ts) / 3600000;
+    if (horas >= 8) { localStorage.removeItem('electoral_sesion'); return window.location.replace('login.html'); }
+    const rolesPermitidos = ['super_admin', 'admin'];
+    if (!rolesPermitidos.includes(s.rol)) return window.location.replace('login.html');
+    window._sesion = s;
+  } catch(e) { window.location.replace('login.html'); }
+})();
 
-  // Check which licencias are already accepted
-  const acuerdos = JSON.parse(sessionStorage.getItem('sie_acuerdos') || '{}');
-  Object.keys(acuerdos).forEach(lic => {
-    marcarActiva(lic);
-  });
-});
-
-function activarLicencia(licencia) {
-  // Check if already accepted
-  const acuerdos = JSON.parse(sessionStorage.getItem('sie_acuerdos') || '{}');
-  if(acuerdos[licencia]) {
-    alert('Esta licencia ya fue activada por ' + acuerdos[licencia].usuario + ' el ' + acuerdos[licencia].fecha);
-    return;
-  }
-  // Redirect to terms page
-  window.location.href = 'terminos.html?licencia=' + encodeURIComponent(licencia);
-}
-
-function marcarActiva(licencia) {
-  const key = licencia.toLowerCase().replace(' ','').replace('diputado','');
-  const stMap = {
-    'GUBERNATURA': 'gubernatura',
-    'DIPUTADO FEDERAL': 'federal',
-    'DIPUTADO LOCAL': 'local',
-    'AYUNTAMIENTO': 'ayuntamiento',
-    'SENADOR': 'senador'
-  };
-  const id = stMap[licencia];
-  if(!id) return;
-  const st = document.getElementById('st-'+id);
-  const btn = document.getElementById('btn-'+id);
-  if(st) { st.textContent = '● Activa'; st.className = 'lic-status activa'; }
-  if(btn) { btn.textContent = '✅ Activa'; btn.className = 'btn-activar activa'; btn.disabled = true; }
-}
-
+// ── Mostrar botón volver si es standalone ────────────────────
 (function() {
   try {
     if (window.self === window.top) {
-      var btn = document.getElementById('btn-back-menu');
-      if (btn) btn.style.display = 'block';
+      document.getElementById('btn-back-menu').style.display = 'block';
     }
   } catch(e) {
-    var btn = document.getElementById('btn-back-menu');
-    if (btn) btn.style.display = 'block';
+    document.getElementById('btn-back-menu').style.display = 'block';
   }
 })();
+
+// ── Cargar usuarios desde Supabase ───────────────────────────
+const SUPA_URL  = 'https://dyirhwwmykskpuvzcafx.supabase.co';
+const SUPA_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5aXJod3dteWtza3B1dnpjYWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NTk3ODgsImV4cCI6MjA5NTEzNTc4OH0.2xe4cHqORGng1hnYPJ9ZiyT0r87fMijbUEJqBy3-xoI';
+
+const ROL_LABEL = {
+  super_admin:  '🔒 Super Admin',
+  admin:        '👑 Admin',
+  coordinador:  '🗺 Coordinador',
+  jefe_seccion: '🏅 Jefe Sección',
+  capturista:   '✏️ Capturista',
+};
+
+async function cargarUsuarios() {
+  try {
+    const res = await fetch(`${SUPA_URL}/rest/v1/usuarios?select=email,nombre,rol,municipio,seccion,activo&order=rol.asc`, {
+      headers: {
+        'apikey': SUPA_KEY,
+        'Authorization': `Bearer ${window._sesion.access_token}`,
+      }
+    });
+    const usuarios = await res.json();
+    const tbody = document.getElementById('tbody-usuarios');
+
+    if (!Array.isArray(usuarios) || usuarios.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="loading">Sin usuarios registrados</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = usuarios.map(u => `
+      <tr>
+        <td style="font-family:var(--mono);font-size:12px;color:var(--cyan)">${u.email || '—'}</td>
+        <td>${u.nombre || '—'}</td>
+        <td><span class="rol-badge rol-${u.rol}">${ROL_LABEL[u.rol] || u.rol}</span></td>
+        <td>${u.municipio || '—'}</td>
+        <td>${u.seccion || '—'}</td>
+        <td class="${u.activo ? 'status-activo' : 'status-inactivo'}">${u.activo ? '● Activo' : '● Inactivo'}</td>
+      </tr>
+    `).join('');
+  } catch(e) {
+    document.getElementById('tbody-usuarios').innerHTML =
+      '<tr><td colspan="6" class="loading" style="color:var(--red)">Error al cargar usuarios</td></tr>';
+  }
+}
+
+// ── Licencias ────────────────────────────────────────────────
+function activarLicencia(licencia) {
+  const acuerdos = JSON.parse(localStorage.getItem('ie_acuerdos') || '{}');
+  if (acuerdos[licencia]) {
+    alert('Esta licencia ya fue activada el ' + acuerdos[licencia].fecha);
+    return;
+  }
+  window.location.href = 'terminos.html?licencia=' + encodeURIComponent(licencia);
+}
+
+function marcarLicenciasActivas() {
+  const acuerdos = JSON.parse(localStorage.getItem('ie_acuerdos') || '{}');
+  const stMap = {
+    'GUBERNATURA': 'gubernatura', 'DIPUTADO FEDERAL': 'federal',
+    'DIPUTADO LOCAL': 'local', 'AYUNTAMIENTO': 'ayuntamiento', 'SENADOR': 'senador'
+  };
+  Object.keys(acuerdos).forEach(lic => {
+    const id = stMap[lic];
+    if (!id) return;
+    const st  = document.getElementById('st-' + id);
+    const btn = document.getElementById('btn-' + id);
+    if (st)  { st.textContent = '● Activa'; st.className = 'lic-status activa'; }
+    if (btn) { btn.textContent = '✅ Activa'; btn.className = 'btn-activar activa'; btn.disabled = true; }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  marcarLicenciasActivas();
+  cargarUsuarios();
+});
 </script>
-<button id="btn-back-menu" onclick="window.location.href='modulo_admin.html'">☰ Volver a Admin</button>
 </body>
 </html>

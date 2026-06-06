@@ -253,7 +253,7 @@ h3{font-size:15px;font-weight:600;margin-bottom:12px;}
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  const u = JSON.parse(sessionStorage.getItem('sie_usuario') || localStorage.getItem('sie_user') || 'null');
+  const u = JSON.parse(localStorage.getItem("electoral_sesion") || "null");
   const params = new URLSearchParams(window.location.search);
   const licencia = params.get('licencia') || 'GUBERNATURA';
   document.getElementById('licencia-badge').textContent = 'LICENCIA: ' + licencia.toUpperCase();
@@ -286,9 +286,9 @@ function aceptar() {
     'Licencia: ' + licencia.toUpperCase() + ' | Usuario: ' + (u ? u.nombre : '—') + ' | Fecha: ' + fecha;
 
   // Save to session
-  const acuerdos = JSON.parse(sessionStorage.getItem('sie_acuerdos') || '{}');
+  const acuerdos = JSON.parse(localStorage.getItem("ie_acuerdos") || '{}');
   acuerdos[licencia] = { aceptado: true, usuario: u ? u.nombre : '—', fecha: fecha };
-  sessionStorage.setItem('sie_acuerdos', JSON.stringify(acuerdos));
+  localStorage.setItem("ie_acuerdos", JSON.stringify(acuerdos));
 }
 
 function rechazar() {
