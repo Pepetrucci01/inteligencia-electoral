@@ -306,7 +306,7 @@ async function cargarDatosSupabase() {
     while (true) {
       const res = await fetch(
         `${SUPA_URL}/rest/v1/ciudadanos?select=id,capturista_id,compromiso,es_riesgo,municipio,created_at,seccion_electoral,nombre,apellido_paterno&licencia_id=eq.${LICENCIA_ID}&limit=${pageSize}&offset=${from}`,
-        { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${window._sesion?.access_token || SUPA_KEY}` } }
+        { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` } }
       );
       if (!res.ok) break;
       const chunk = await res.json();

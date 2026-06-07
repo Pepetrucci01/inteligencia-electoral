@@ -2197,7 +2197,7 @@ async function cargarCasillasSeccion(secNum) {
   try {
     const res = await fetch(
       `${SUPA_URL}/rest/v1/casillas?select=id,numero_seccion,numero_casilla,tipo_casilla,municipio,lista_nominal,meta_proyectada,votos_nuestro_partido,estatus_casilla,lat,lng&numero_seccion=eq.${secNum}&activo=eq.true&order=numero_casilla`,
-      { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${window._sesion?.access_token || SUPA_KEY}` } }
+      { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` } }
     );
     if(!res.ok) return null;
     const data = await res.json();
@@ -2242,7 +2242,7 @@ async function cargarSeccionesSupabase(munId = null) {
 
     const res = await fetch(
       `${SUPA_URL}/rest/v1/secciones_electorales_colima?select=seccion,municipio,meta_proyectada&municipio=eq.${encodeURIComponent(bdNombre)}&order=seccion`,
-      { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${window._sesion?.access_token || SUPA_KEY}` } }
+      { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` } }
     );
     if(!res.ok) return;
     const all = await res.json();
@@ -2293,7 +2293,7 @@ async function cargarDatosReales() {
     // ── 1. Metas por municipio desde secciones_electorales_colima ──
     const rMetas = await fetch(
       `${SUPA_URL}/rest/v1/secciones_electorales_colima?select=municipio,meta_proyectada`,
-      { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${window._sesion?.access_token || SUPA_KEY}` } }
+      { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` } }
     );
     const secciones = await rMetas.json();
 
@@ -2310,7 +2310,7 @@ async function cargarDatosReales() {
     // ── 2. Capturados por municipio desde ciudadanos ──
     const rCap = await fetch(
       `${SUPA_URL}/rest/v1/ciudadanos?select=municipio&licencia_id=eq.${LICENCIA_ID}`,
-      { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${window._sesion?.access_token || SUPA_KEY}` } }
+      { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` } }
     );
     const ciudadanos = await rCap.json();
 
@@ -2375,21 +2375,21 @@ async function cargarKPIsReales() {
     // Total ciudadanos
     const rTotal = await fetch(
       `${SUPA_URL}/rest/v1/ciudadanos?select=id&licencia_id=eq.${window._sesion?.licencia_id||'a1b2c3d4-0001-0000-0000-000000000001'}`,
-      { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${window._sesion?.access_token || SUPA_KEY}`, 'Prefer': 'count=exact', 'Range': '0-0' } }
+      { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}`, 'Prefer': 'count=exact', 'Range': '0-0' } }
     );
     const total = parseInt(rTotal.headers.get('Content-Range')?.split('/')[1] || 0);
 
     // Seguro vota (compromiso 3 o 4)
     const rSeg = await fetch(
       `${SUPA_URL}/rest/v1/ciudadanos?select=id&licencia_id=eq.${window._sesion?.licencia_id||LICENCIA_ID}&compromiso=gte.3`,
-      { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${window._sesion?.access_token || SUPA_KEY}`, 'Prefer': 'count=exact', 'Range': '0-0' } }
+      { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}`, 'Prefer': 'count=exact', 'Range': '0-0' } }
     );
     const seguro = parseInt(rSeg.headers.get('Content-Range')?.split('/')[1] || 0);
 
     // En riesgo
     const rRiesgo = await fetch(
       `${SUPA_URL}/rest/v1/ciudadanos?select=id&licencia_id=eq.${window._sesion?.licencia_id||LICENCIA_ID}&es_riesgo=eq.true`,
-      { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${window._sesion?.access_token || SUPA_KEY}`, 'Prefer': 'count=exact', 'Range': '0-0' } }
+      { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}`, 'Prefer': 'count=exact', 'Range': '0-0' } }
     );
     const riesgo = parseInt(rRiesgo.headers.get('Content-Range')?.split('/')[1] || 0);
 

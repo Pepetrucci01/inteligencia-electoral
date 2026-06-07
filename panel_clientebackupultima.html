@@ -636,7 +636,7 @@ async function cargarDatosCliente() {
     let from = 0;
     while (true) {
       const res = await fetch(
-        `${SUPA_URL}/rest/v1/ciudadanos?select=municipio,nombre,apellido_paterno,compromiso,es_riesgo,created_at,seccion_electoral,capturista_id&licencia_id=eq.${LICENCIA_ID}&limit=1000&offset=${from}`,
+        `${SUPA_URL}/rest/v1/ciudadanos?select=municipio,compromiso,es_riesgo,created_at,seccion_electoral,capturista_id&licencia_id=eq.${LICENCIA_ID}&limit=1000&offset=${from}`,
         { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${(await window.supabase.auth.getSession()).data.session?.access_token || SUPA_KEY}` } }
       );
       if (!res.ok) break;
@@ -674,15 +674,15 @@ async function cargarDatosCliente() {
     // Agrupar por municipio para barras
     const munMap = {};
     allCiudadanos.forEach(c => {
-      const m = (c.municipio || 'Sin municipio').toUpperCase().trim();
+      const m = c.municipio_id || 'Sin municipio';
       munMap[m] = (munMap[m] || 0) + 1;
     });
 
     // Metas por municipio (referencia 2024 ajustada)
     const METAS_MUN = {
-      'MANZANILLO': 49000, 'COLIMA': 44000, 'TECOMAN': 38000,
-      'VILLA DE ALVAREZ': 28000, 'COMALA': 12000, 'COQUIMATLAN': 10000,
-      'ARMERIA': 8000, 'CUAUHTEMOC': 5000, 'MINATITLAN': 2500, 'IXTLAHUACAN': 1797
+      'Manzanillo': 49000, 'Colima': 44000, 'Tecomán': 38000,
+      'Villa de Álvarez': 28000, 'Comala': 12000, 'Coquimatlán': 10000,
+      'Armería': 8000, 'Cuauhtémoc': 5000, 'Minatitlán': 2500, 'Ixtlahuacán': 1797
     };
 
     MUNICIPIOS_DATA = Object.entries(munMap)
@@ -698,7 +698,7 @@ async function cargarDatosCliente() {
     // Actividad reciente (últimos 10 registros)
     const recientes = [...allCiudadanos]
       .filter(c => c.created_at)
-      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .sort((a, b) => new Date(b.fecha_registro) - new Date(a.fecha_registro))
       .slice(0, 10);
     renderActividadReal(recientes);
 
@@ -757,13 +757,12 @@ function renderActividadReal(recientes) {
     return;
   }
   cont.innerHTML = recientes.map(c => {
-    const nombreCompleto = [c.nombre, c.apellido_paterno].filter(Boolean).join(' ') || 'Sin nombre';
     const fecha = new Date(c.created_at);
     const hace = tiempoRelativo(fecha);
     return `<div style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:12px;display:flex;justify-content:space-between;align-items:center;">
       <div>
         <span style="color:var(--green);font-weight:600;">+1 ciudadano</span>
-        <span style="color:var(--text3);margin-left:6px;">${nombreCompleto}</span>
+        <span style="color:var(--text3);margin-left:6px;">${c.capturista_id || 'N/A'}</span>
       </div>
       <span style="color:var(--text3);font-family:monospace;font-size:10px;">${hace}</span>
     </div>`;
@@ -1025,43 +1024,26 @@ function editarUsuario(id){
   document.getElementById('modal-usuario').style.display = 'flex';
 }
 
-async function crearUsuario(){
+function crearUsuario(){
   const nombre = document.getElementById('m-nombre').value.trim();
-  const email  = document.getElementById('m-email').value.trim();
-  const pass   = document.getElementById('m-pass').value.trim();
-  const rol    = document.getElementById('m-rol').value;
-  const mun    = document.getElementById('m-mun').value;
-  const sec    = document.getElementById('m-sec').value || null;
-
-  if(!nombre || !email || !pass){ alert('Nombre, email y contraseña son obligatorios.'); return; }
-
-  try {
-    const session = await window.supabase.auth.getSession();
-    const token = session.data.session?.access_token;
-
-    const res = await fetch(`${SUPA_URL}/functions/v1/crear-usuario`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-        'apikey': SUPA_KEY,
-      },
-      body: JSON.stringify({ nombre, email, password: pass, rol, municipio: mun, seccion: sec })
-    });
-
-    const result = await res.json();
-    if (!result.ok) throw new Error(result.error);
-
-    alert('✅ Usuario creado correctamente: ' + nombre);
-    cerrarModal('modal-usuario');
-    await cargarDatosCliente();
-
-  } catch(e) {
-    console.error('Error creando usuario:', e);
-    alert('⚠️ Error al crear usuario: ' + (e.message || e));
-  }
+  const id     = document.getElementById('m-id').value.trim();
+  if(!nombre || !id){ alert('El nombre y el ID son obligatorios.'); return; }
+  const nuevo = {
+    id, nombre,
+    email:     document.getElementById('m-email').value,
+    rol:       document.getElementById('m-rol').value,
+    mun:       document.getElementById('m-mun').value,
+    sec:       document.getElementById('m-sec').value || '—',
+    ultimo:    'Nunca',
+    capturas:  0,
+    status:    'pendiente'
+  };
+  USUARIOS.push(nuevo);
+  cerrarModal('modal-usuario');
+  filtrarUsuarios();
+  document.getElementById('kpi-total').textContent = USUARIOS.length;
+  document.getElementById('kpi-pend').textContent  = USUARIOS.filter(u => u.status === 'pendiente').length;
 }
-
 
 function exportarCSV(){
   const csv = [
