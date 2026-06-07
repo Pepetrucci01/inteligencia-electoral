@@ -366,7 +366,7 @@ const LICENCIA_ID = window._sesion?.licencia_id || 'a1b2c3d4-0001-0000-0000-0000
 
 async function supaFetch(path) {
   const res = await fetch(`${SUPA_URL}/rest/v1/${path}`, {
-    headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` }
+    headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${window._sesion?.access_token || SUPA_KEY}` }
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();

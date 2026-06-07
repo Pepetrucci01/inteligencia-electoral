@@ -555,24 +555,109 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 
 <script>
 // ── DATOS SIMULADOS ────────────────────────────────────────────────────────
-let SIMPATIZANTES = [
-  {id:'REG-001',nombre:'María García López',paterno:'García',materno:'López',edad:34,nacimiento:'1990-03-15',sexo:'MUJER',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0001',movil:'312-111-0001',email:'mgarcia@gmail.com',domicilio:'Calle Hidalgo 245, Col. Centro',cp:'28010',curp:'GALM901230MCLRPR01',clave:'GALMX9012300H1VW',comp:3,origen:'Casa por casa',prob_voto:'Alta',valor:'Alto',riesgo:false,apoyo:false,influencia:true,ya_voto:false,duplicado:false,validado:true,voto:false,obs:'Vecina activa, trae 3 familias',fecha:'12/04/2026'},
-  {id:'REG-002',nombre:'José Martínez Ruiz',paterno:'Martínez',materno:'Ruiz',edad:52,nacimiento:'1972-07-20',sexo:'HOMBRE',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0002',movil:'312-222-0002',email:'',domicilio:'Av. Independencia 78, Col. Las Palmas',cp:'28017',curp:'MARJ720415HCLRRZ09',clave:'MARJX7204200H1VW',comp:4,origen:'Referido',prob_voto:'Alta',valor:'Alto',riesgo:false,apoyo:true,influencia:true,ya_voto:false,duplicado:false,validado:true,voto:false,obs:'Necesita transporte el día de la elección',fecha:'13/04/2026'},
-  {id:'REG-003',nombre:'Ana Torres Mendoza',paterno:'Torres',materno:'Mendoza',edad:28,nacimiento:'1998-06-12',sexo:'MUJER',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0003',movil:'312-333-0003',email:'ana.torres@hotmail.com',domicilio:'Calle Morelos 12, Col. Jardines',cp:'28015',curp:'TOMA980612MCLRNN06',clave:'TOMAX9806120H1VW',comp:2,origen:'Digital',prob_voto:'Media',valor:'Medio',riesgo:false,apoyo:false,influencia:false,ya_voto:false,duplicado:false,validado:false,voto:false,obs:'',fecha:'15/04/2026'},
-  {id:'REG-004',nombre:'Carlos Pérez Silva',paterno:'Pérez',materno:'Silva',edad:45,nacimiento:'1980-11-03',sexo:'HOMBRE',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0004',movil:'312-444-0004',email:'',domicilio:'Privada Las Flores 5, Col. Residencial',cp:'28018',curp:'PESC791103HCLRLR03',clave:'PESCX7911030H1VW',comp:3,origen:'Evento',prob_voto:'Media',valor:'Medio',riesgo:true,apoyo:false,influencia:false,ya_voto:false,duplicado:false,validado:true,voto:false,obs:'Dudó al final — seguimiento recomendado',fecha:'10/04/2026'},
-  {id:'REG-005',nombre:'Laura Hernández Cruz',paterno:'Hernández',materno:'Cruz',edad:31,nacimiento:'1994-02-22',sexo:'MUJER',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0005',movil:'',email:'',domicilio:'Calle Juárez 89, Col. Centro',cp:'28010',curp:'HECL950222MCLRRR08',clave:'',comp:1,origen:'Casa por casa',prob_voto:'Baja',valor:'Bajo',riesgo:false,apoyo:true,influencia:false,ya_voto:false,duplicado:false,validado:false,voto:false,obs:'',fecha:'16/04/2026'},
-  {id:'REG-006',nombre:'Roberto Díaz Morales',paterno:'Díaz',materno:'Morales',edad:60,nacimiento:'1964-08-15',sexo:'HOMBRE',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0006',movil:'312-666-0006',email:'rdiaz@empresa.com',domicilio:'Blvd. Camino Real 340, Col. Las Américas',cp:'28019',curp:'DIMR640815HCLRZB02',clave:'DIMRX6408150H1VW',comp:4,origen:'Referido',prob_voto:'Alta',valor:'Alto',riesgo:false,apoyo:false,influencia:true,ya_voto:false,duplicado:false,validado:true,voto:false,obs:'Líder de colonia, coordina 15 vecinos',fecha:'11/04/2026'},
-  {id:'REG-007',nombre:'Sofía Ramírez Vega',paterno:'Ramírez',materno:'Vega',edad:22,nacimiento:'2002-03-18',sexo:'MUJER',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0007',movil:'312-777-0007',email:'sofia.rv@gmail.com',domicilio:'Calle Colón 56, Col. Obrera',cp:'28012',curp:'RAVS020318MCLRMF05',clave:'',comp:2,origen:'Digital',prob_voto:'Media',valor:'Bajo',riesgo:false,apoyo:false,influencia:false,ya_voto:false,duplicado:true,validado:false,voto:false,obs:'Posible duplicado — verificar CURP',fecha:'17/04/2026'},
-  {id:'REG-008',nombre:'Miguel Flores Jiménez',paterno:'Flores',materno:'Jiménez',edad:48,nacimiento:'1977-09-30',sexo:'HOMBRE',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0008',movil:'312-888-0008',email:'',domicilio:'Av. de la Paz 123, Col. La Paz',cp:'28013',curp:'FOJM760930HCLRLG07',clave:'FOJMX7609300H1VW',comp:3,origen:'Casa por casa',prob_voto:'Media',valor:'Medio',riesgo:true,apoyo:true,influencia:false,ya_voto:false,duplicado:false,validado:true,voto:false,obs:'Riesgo alto — revisar antes de la elección',fecha:'09/04/2026'},
-  {id:'REG-009',nombre:'Patricia Gómez Luna',paterno:'Gómez',materno:'Luna',edad:39,nacimiento:'1986-11-15',sexo:'MUJER',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0009',movil:'312-999-0009',email:'pgomez@escuela.edu.mx',domicilio:'Calle Reforma 67, Col. Magisterial',cp:'28016',curp:'GOLP851115MCLRMN01',clave:'GOLPX8511150H1VW',comp:3,origen:'Evento',prob_voto:'Alta',valor:'Alto',riesgo:false,apoyo:false,influencia:true,ya_voto:false,duplicado:false,validado:true,voto:false,obs:'Maestra — organiza vecinos de su colonia',fecha:'14/04/2026'},
-  {id:'REG-010',nombre:'Fernando Castro Reyes',paterno:'Castro',materno:'Reyes',edad:55,nacimiento:'1970-07-28',sexo:'HOMBRE',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0010',movil:'312-100-0010',email:'fcastro@negocio.mx',domicilio:'Privada del Sol 8, Fracc. Los Pinos',cp:'28020',curp:'CARF690728HCLLRN04',clave:'CARFX6907280H1VW',comp:4,origen:'Referido',prob_voto:'Alta',valor:'Alto',riesgo:false,apoyo:false,influencia:true,ya_voto:false,duplicado:false,validado:true,voto:false,obs:'',fecha:'08/04/2026'},
-  {id:'REG-011',nombre:'Elena Vargas Soto',paterno:'Vargas',materno:'Soto',edad:42,nacimiento:'1983-04-10',sexo:'MUJER',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0011',movil:'312-110-0011',email:'evargas@correo.com',domicilio:'Calle Allende 34, Col. Centro',cp:'28010',curp:'VASE830410MCLRGN05',clave:'VASEX8304100H1VW',comp:3,origen:'Casa por casa',prob_voto:'Alta',valor:'Medio',riesgo:false,apoyo:false,influencia:false,ya_voto:false,duplicado:false,validado:true,voto:false,obs:'',fecha:'18/04/2026'},
-  {id:'REG-012',nombre:'Alejandro Núñez Ramos',paterno:'Núñez',materno:'Ramos',edad:36,nacimiento:'1989-12-05',sexo:'HOMBRE',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0012',movil:'312-120-0012',email:'',domicilio:'Calle 5 de Mayo 201, Col. Insurgentes',cp:'28014',curp:'NURA891205HCLZMN08',clave:'',comp:2,origen:'Digital',prob_voto:'Baja',valor:'Bajo',riesgo:true,apoyo:false,influencia:false,ya_voto:false,duplicado:false,validado:false,voto:false,obs:'Indeciso — no confirmó compromiso',fecha:'19/04/2026'},
-];
+// ── CONFIGURACIÓN SUPABASE ────────────────────────────────────────────────
+const SUPA_URL = 'https://dyirhwwmykskpuvzcafx.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5aXJod3dteWtza3B1dnpjYWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NTk3ODgsImV4cCI6MjA5NTEzNTc4OH0.2xe4cHqORGng1hnYPJ9ZiyT0r87fMijbUEJqBy3-xoI';
+const LICENCIA_ID = window._sesion?.licencia_id || 'a1b2c3d4-0001-0000-0000-000000000001';
+const CAP_ID      = window._sesion?.usuario_id  || null;
+const SECCION_CAP = window._sesion?.seccion      || null;
+const META_CAP    = 50; // meta por capturista
 
+async function supaFetch(path) {
+  const res = await fetch(`${SUPA_URL}/rest/v1/${path}`, {
+    headers: {
+      'apikey': SUPA_KEY,
+      'Authorization': `Bearer ${window._sesion?.access_token || SUPA_KEY}`
+    }
+  });
+  if (!res.ok) throw new Error(`Supabase error ${res.status}`);
+  return res.json();
+}
 
+// Mapear ciudadano de Supabase al formato del panel
+function mapCiudadano(c) {
+  const nombre = [c.nombre, c.apellido_paterno, c.apellido_materno].filter(Boolean).join(' ') || 'Sin nombre';
+  const edad   = c.edad || null;
+  return {
+    id:          c.id,
+    nombre,
+    paterno:     c.apellido_paterno || '',
+    materno:     c.apellido_materno || '',
+    edad:        edad || '—',
+    nacimiento:  '',
+    sexo:        c.sexo || '—',
+    sec:         c.seccion_electoral || SECCION_CAP || '—',
+    mun:         c.municipio || window._sesion?.municipio || '—',
+    tel:         c.telefono || '',
+    movil:       c.telefono || '',
+    email:       '',
+    domicilio:   c.domicilio || '',
+    curp:        c.curp || '',
+    clave:       c.clave_elector || '',
+    comp:        c.compromiso || 1,
+    origen:      c.origen || '—',
+    prob_voto:   c.compromiso >= 3 ? 'Alta' : c.compromiso === 2 ? 'Media' : 'Baja',
+    valor:       c.es_influencia ? 'Alto' : c.compromiso >= 3 ? 'Medio' : 'Bajo',
+    riesgo:      c.es_riesgo || false,
+    apoyo:       c.es_apoyo || false,
+    influencia:  c.es_influencia || false,
+    ya_voto:     false,
+    duplicado:   c.duplicado || false,
+    validado:    c.validado || false,
+    voto:        false,
+    obs:         c.notas || '',
+    fecha:       c.created_at ? new Date(c.created_at).toLocaleDateString('es-MX') : '—',
+    licencia_id: c.licencia_id,
+    capturista_id: c.capturista_id,
+  };
+}
 
+// ── CARGA DESDE SUPABASE ─────────────────────────────────────────────────
+let SIMPATIZANTES = [];
 
+async function cargarMisRegistros() {
+  try {
+    // Filtrar por capturista_id si está disponible, sino por licencia
+    let query = `ciudadanos?select=id,nombre,apellido_paterno,apellido_materno,edad,sexo,seccion_electoral,municipio,telefono,domicilio,curp,clave_elector,compromiso,origen,es_riesgo,es_apoyo,es_influencia,validado,duplicado,notas,created_at,licencia_id,capturista_id&licencia_id=eq.${LICENCIA_ID}&order=created_at.desc&limit=500`;
+    if (CAP_ID) query += `&capturista_id=eq.${CAP_ID}`;
+
+    const data = await supaFetch(query);
+    SIMPATIZANTES = (data || []).map(mapCiudadano);
+
+    actualizarKPIs();
+    renderLista();
+  } catch(e) {
+    console.warn('Error cargando registros:', e);
+    // Dejar lista vacía si falla
+    SIMPATIZANTES = [];
+    actualizarKPIs();
+    renderLista();
+  }
+}
+
+function actualizarKPIs() {
+  const total     = SIMPATIZANTES.length;
+  const validados = SIMPATIZANTES.filter(s => s.validado).length;
+  const seguros   = SIMPATIZANTES.filter(s => s.comp >= 3).length;
+  const riesgo    = SIMPATIZANTES.filter(s => s.riesgo).length;
+  const pctMeta   = Math.min(100, Math.round((total / META_CAP) * 100));
+  const faltan    = Math.max(0, META_CAP - total);
+
+  const el = id => document.getElementById(id);
+  if(el('kv-capturas'))  el('kv-capturas').textContent  = total.toLocaleString('es-MX');
+  if(el('kv-faltan'))    el('kv-faltan').textContent    = faltan.toLocaleString('es-MX');
+  if(el('kv-validados')) el('kv-validados').textContent = validados;
+  if(el('kv-seguros'))   el('kv-seguros').textContent   = seguros;
+  if(el('kv-riesgo'))    el('kv-riesgo').textContent    = riesgo;
+  if(el('kv-seccion'))   el('kv-seccion').textContent   = SECCION_CAP || '—';
+  if(el('kv-municipio')) el('kv-municipio').textContent = window._sesion?.municipio || '—';
+  if(el('prog-capturas'))el('prog-capturas').style.width = pctMeta + '%';
+  if(el('pct-capturas')) el('pct-capturas').textContent = `${pctMeta}% de mi meta`;
+  if(el('meta-faltan'))  el('meta-faltan').textContent  = `para llegar a ${META_CAP}`;
+  if(total > 0 && el('pct-validados')) {
+    el('pct-validados').textContent = `${Math.round((validados/total)*100)}% de mis registros`;
+  }
+}
 
 let chipActivo='todos', fichaActual=null, compSel=0, fase=1;
 let votosCount=0, nuevosCount=0;
@@ -951,7 +1036,7 @@ function registroRapido(){
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────
-renderLista();
+cargarMisRegistros();
 
 // ── CASILLA ───────────────────────────────────────────────────────────────
 let tipoCasilla = '';

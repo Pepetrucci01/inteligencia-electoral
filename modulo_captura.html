@@ -1238,6 +1238,8 @@ function mostrarEstadoCURP(curp) {
 })();
 
 
+
+
 // ── Guardar en Supabase ──────────────────────────────────────
 async function guardarEnSupabase(nuevo) {
   // Esperar a que Supabase esté listo
@@ -1294,7 +1296,7 @@ async function guardarEnSupabase(nuevo) {
       notas:              nuevo.obs || null,
       compromiso:         nuevo.comp ? parseInt(nuevo.comp) : null,
       licencia_id:        window._sesion?.licencia_id || window.LICENCIA_ACTIVA_ID || 'a1b2c3d4-0001-0000-0000-000000000001',
-      capturista_id:      null,
+      capturista_id:      window._sesion?.usuario_id || null,
       responsable_id:     null,
       validado:           false,
       duplicado:          false,

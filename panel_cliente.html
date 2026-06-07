@@ -319,7 +319,7 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
         <select class="form-select" id="usr-rol" onchange="filtrarUsuarios()" style="width:160px">
           <option value="">Todos los roles</option>
           <option value="coordinador">Coordinador</option>
-          <option value="lider_seccion">Líder de Sección</option>
+          <option value="jefe_seccion">Líder de Sección</option>
           <option value="capturista">Capturista</option>
         </select>
         <select class="form-select" id="usr-status" onchange="filtrarUsuarios()" style="width:140px">
@@ -619,7 +619,7 @@ const LICENCIA_ID = window._sesion?.licencia_id || 'a1b2c3d4-0001-0000-0000-0000
 
 async function supaFetch(path) {
   const res = await fetch(`${SUPA_URL}/rest/v1/${path}`, {
-    headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` }
+    headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${window._sesion?.access_token || SUPA_KEY}` }
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
@@ -637,7 +637,7 @@ async function cargarDatosCliente() {
     while (true) {
       const res = await fetch(
         `${SUPA_URL}/rest/v1/ciudadanos?select=municipio_id,nivel_compromiso,es_riesgo,fecha_registro,seccion_electoral,capturista_id&licencia_id=eq.${LICENCIA_ID}&limit=1000&offset=${from}`,
-        { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` } }
+        { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${window._sesion?.access_token || SUPA_KEY}` } }
       );
       if (!res.ok) break;
       const chunk = await res.json();
@@ -709,14 +709,14 @@ async function cargarDatosCliente() {
 
     // ── 2. Usuarios desde tabla usuarios ──
     try {
-      const usuarios = await supaFetch(`usuarios?select=id,nombre,email,rol,municipio,seccion_base,activo,licencia_id&licencia_id=eq.${LICENCIA_ID}&limit=500`);
+      const usuarios = await supaFetch(`usuarios?select=id,nombre,email,rol,municipio,seccion,activo,licencia_id&licencia_id=eq.${LICENCIA_ID}&limit=500`);
       USUARIOS = usuarios.map(u => ({
         id: u.id,
         nombre: u.nombre || u.email,
         email: u.email,
         rol: u.rol,
         mun: u.municipio || '—',
-        sec: u.seccion_base ? String(u.seccion_base) : '—',
+        sec: u.seccion ? String(u.seccion) : '—',
         ultimo: '—',
         capturas: 0,
         status: u.activo ? 'activo' : 'inactivo'
