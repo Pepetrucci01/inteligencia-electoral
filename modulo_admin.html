@@ -196,6 +196,7 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
 
 </style>
 </head>
+<script src="supabase_client.js"></script>
 <script>
 (function(){
   try {
@@ -240,12 +241,12 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
 <!-- ══════════ USUARIOS ══════════ -->
 <div class="screen active" id="sc-usuarios">
   <div class="kpi-row">
-    <div class="kpi bl"><div class="kpi-lbl">Total usuarios</div><div class="kpi-val">68</div></div>
-    <div class="kpi gr"><div class="kpi-lbl">Activos hoy</div><div class="kpi-val">23</div></div>
-    <div class="kpi am"><div class="kpi-lbl">Pendientes activar</div><div class="kpi-val">5</div></div>
+    <div class="kpi bl"><div class="kpi-lbl">Total usuarios</div><div class="kpi-val" id="kpi-total-usr">68</div></div>
+    <div class="kpi gr"><div class="kpi-lbl">Activos hoy</div><div class="kpi-val" id="kpi-activos-usr">23</div></div>
+    <div class="kpi am"><div class="kpi-lbl">Pendientes activar</div><div class="kpi-val" id="kpi-bloq-usr">5</div></div>
     <div class="kpi re"><div class="kpi-lbl">Bloqueados</div><div class="kpi-val">2</div></div>
     <div class="kpi pu"><div class="kpi-lbl">Super admins</div><div class="kpi-val">1</div></div>
-    <div class="kpi cy"><div class="kpi-lbl">Capturistas</div><div class="kpi-val">60</div></div>
+    <div class="kpi cy"><div class="kpi-lbl">Capturistas</div><div class="kpi-val" id="kpi-caps-usr">60</div></div>
   </div>
 
   <div class="card">
@@ -1008,7 +1009,7 @@ const ROLES = {
   capturista:    {label:'Capturista',       color:'var(--green)'},
 };
 
-const USUARIOS = [
+let USUARIOS = [
   {id:'ADM-001',nombre:'Administrador Principal',email:'admin@sistema.mx',rol:'super_admin',mun:'Estatal',sec:'—',ultimo:'Hoy 09:22',capturas:0,status:'activo'},
   {id:'CORD-MZL',nombre:'Coordinador Manzanillo',email:'manzanillo@colima.mx',rol:'coordinador',mun:'Manzanillo',sec:'79 secciones',ultimo:'Hoy 08:45',capturas:0,status:'activo'},
   {id:'CORD-TCM',nombre:'Coordinador Tecomán',email:'tecoman@colima.mx',rol:'coordinador',mun:'Tecomán',sec:'62 secciones',ultimo:'Ayer 22:10',capturas:0,status:'activo'},
@@ -1025,6 +1026,85 @@ const USUARIOS = [
   {id:'CAP-092',nombre:'Capturista 092',email:'cap092@colima.mx',rol:'capturista',mun:'Coquimatlán',sec:'105',ultimo:'Nunca',capturas:0,status:'pendiente'},
   {id:'CAP-OLD',nombre:'Capturista Bloqueado',email:'capbloq@colima.mx',rol:'capturista',mun:'Cuauhtémoc',sec:'120',ultimo:'hace 30 días',capturas:2,status:'bloqueado'},
 ];
+
+async function cargarUsuarios() {
+  try {
+    if(!window.supabase) {
+      await new Promise(resolve => document.addEventListener('supabase-ready', resolve, {once:true}));
+    }
+    const sesion = JSON.parse(localStorage.getItem('electoral_sesion') || 'null');
+    const licenciaId = sesion?.licencia_id;
+    if(!licenciaId) return;
+
+    // Cargar usuarios
+    const { data: usuarios, error } = await window.supabase
+      .from('usuarios')
+      .select('id, nombre, email, rol, municipio, seccion, activo, last_login, licencia_id')
+      .eq('licencia_id', licenciaId)
+      .order('rol', { ascending: true });
+
+    if(error || !usuarios) return;
+
+    // Contar capturas por capturista
+    const { data: caps } = await window.supabase
+      .from('ciudadanos')
+      .select('capturista_id')
+      .eq('licencia_id', licenciaId)
+      .not('capturista_id', 'is', null);
+
+    const capCount = {};
+    (caps || []).forEach(c => {
+      capCount[c.capturista_id] = (capCount[c.capturista_id] || 0) + 1;
+    });
+
+    const hoy = new Date().toISOString().split('T')[0];
+    USUARIOS = usuarios.map(u => {
+      let ultimo = 'Nunca';
+      if(u.last_login) {
+        const d = u.last_login.split('T')[0];
+        ultimo = d === hoy ? 'Hoy' : 'Antes';
+      }
+      return {
+        id:       u.id,
+        nombre:   u.nombre || u.email,
+        email:    u.email,
+        rol:      u.rol || 'capturista',
+        mun:      u.municipio || '—',
+        sec:      u.seccion ? String(u.seccion) : '—',
+        ultimo:   ultimo,
+        capturas: capCount[u.id] || 0,
+        status:   u.activo ? 'activo' : 'bloqueado',
+      };
+    });
+
+    usuariosFiltrados = [...USUARIOS];
+    renderUsuarios(USUARIOS);
+    actualizarKPIsUsuarios();
+    console.log(`Usuarios cargados: ${USUARIOS.length}`);
+
+  } catch(e) {
+    console.warn('Error cargando usuarios:', e);
+  }
+}
+
+function actualizarKPIsUsuarios() {
+  const total = USUARIOS.length;
+  const activos = USUARIOS.filter(u => u.status === 'activo').length;
+  const coords = USUARIOS.filter(u => u.rol === 'coordinador').length;
+  const caps = USUARIOS.filter(u => u.rol === 'capturista').length;
+  const bloq = USUARIOS.filter(u => u.status === 'bloqueado').length;
+
+  const elTotal = document.getElementById('kpi-total-usr');
+  const elActivos = document.getElementById('kpi-activos-usr');
+  const elCoords = document.getElementById('kpi-coords-usr');
+  const elCaps = document.getElementById('kpi-caps-usr');
+  const elBloq = document.getElementById('kpi-bloq-usr');
+  if(elTotal) elTotal.textContent = total;
+  if(elActivos) elActivos.textContent = activos;
+  if(elCoords) elCoords.textContent = coords;
+  if(elCaps) elCaps.textContent = caps;
+  if(elBloq) elBloq.textContent = bloq;
+}
 
 let usuariosFiltrados = [...USUARIOS];
 
@@ -1059,6 +1139,12 @@ function renderUsuarios(lista){
   }).join('');
 }
 renderUsuarios(USUARIOS);
+// Cargar usuarios reales desde Supabase
+if(window.supabase) {
+  cargarUsuarios();
+} else {
+  document.addEventListener('supabase-ready', () => cargarUsuarios(), {once:true});
+}
 
 let USUARIOS_SORT = {col: null, asc: true};
 
@@ -1099,12 +1185,23 @@ function filtrarUsuarios(){
   renderUsuarios(r);
 }
 
-function cambiarStatus(id, nuevoStatus){
-  const u=USUARIOS.find(x=>x.id===id);
+async function cambiarStatus(id, nuevoStatus){
+  const u = USUARIOS.find(x => x.id === id);
   if(!u) return;
   if(!confirm(`¿${nuevoStatus==='bloqueado'?'Bloquear':'Activar'} a ${u.nombre}?`)) return;
-  u.status=nuevoStatus;
-  filtrarUsuarios();
+
+  try {
+    const { error } = await window.supabase
+      .from('usuarios')
+      .update({ activo: nuevoStatus !== 'bloqueado' })
+      .eq('id', id);
+
+    if(error) throw error;
+    u.status = nuevoStatus;
+    filtrarUsuarios();
+  } catch(e) {
+    alert('Error al actualizar: ' + e.message);
+  }
 }
 
 function showTab(t){
@@ -1187,12 +1284,42 @@ function editarUsuario(id){
   document.getElementById('modal-bg').style.display='flex';
 }
 
-function crearUsuario(){
-  const nombre=document.getElementById('m-nombre').value.trim();
-  const email=document.getElementById('m-email').value.trim();
-  if(!nombre||!email){alert('Nombre y email son requeridos');return;}
-  alert('Usuario creado correctamente.\nSe enviará correo de activación a: '+email);
-  cerrarModal();
+async function crearUsuario(){
+  const nombre = document.getElementById('m-nombre')?.value.trim();
+  const email  = document.getElementById('m-email')?.value.trim();
+  const pass   = document.getElementById('m-pass')?.value.trim();
+  const rol    = document.getElementById('m-rol')?.value;
+  const mun    = document.getElementById('m-mun')?.value;
+  const sec    = document.getElementById('m-sec')?.value || null;
+
+  if(!nombre || !email || !pass) { alert('Nombre, email y contraseña son requeridos'); return; }
+
+  try {
+    const sesion = JSON.parse(localStorage.getItem('electoral_sesion') || 'null');
+    const token = sesion?.access_token;
+    const SUPA_URL = 'https://dyirhwwmykskpuvzcafx.supabase.co';
+    const SUPA_KEY = 'sb_publishable_15ryvEoNMYqJr4bHm7fi0g_BcvPMMrK';
+
+    const res = await fetch(`${SUPA_URL}/functions/v1/crear-usuario`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'apikey': SUPA_KEY,
+      },
+      body: JSON.stringify({ nombre, email, password: pass, rol, municipio: mun, seccion: sec })
+    });
+
+    const result = await res.json();
+    if(!result.ok) throw new Error(result.error || 'Error desconocido');
+
+    alert(`✅ Usuario creado: ${nombre}`);
+    cerrarModal();
+    await cargarUsuarios();
+
+  } catch(e) {
+    alert('⚠️ Error al crear usuario: ' + e.message);
+  }
 }
 
 function modalNuevaLicencia(){

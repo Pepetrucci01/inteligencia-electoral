@@ -569,10 +569,10 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
 <!-- ═══════════ PERFIL DEL VOTANTE ═══════════ -->
 <div class="screen" id="sc-perfil">
   <div class="kpi-row">
-    <div class="kpi bl"><div class="kpi-lbl">Hombres</div><div class="kpi-val" id="perfil-hombres">5,007</div><div class="kpi-trend" id="perfil-hombres-pct">50.1%</div></div>
-    <div class="kpi pu"><div class="kpi-lbl">Mujeres</div><div class="kpi-val" id="perfil-mujeres">4,993</div><div class="kpi-trend" id="perfil-mujeres-pct">49.9%</div></div>
-    <div class="kpi cy"><div class="kpi-lbl">Edad promedio</div><div class="kpi-val" id="perfil-edad-prom">47</div><div class="kpi-trend">años</div></div>
-    <div class="kpi am"><div class="kpi-lbl">Grupo más grande</div><div class="kpi-val" id="perfil-grupo-mayor">70+</div><div class="kpi-trend" id="perfil-grupo-mayor-sub">2,047 personas</div></div>
+    <div class="kpi bl"><div class="kpi-lbl">Hombres</div><div class="kpi-val">5,007</div><div class="kpi-trend">50.1%</div></div>
+    <div class="kpi pu"><div class="kpi-lbl">Mujeres</div><div class="kpi-val">4,993</div><div class="kpi-trend">49.9%</div></div>
+    <div class="kpi cy"><div class="kpi-lbl">Edad promedio</div><div class="kpi-val">47</div><div class="kpi-trend">años</div></div>
+    <div class="kpi am"><div class="kpi-lbl">Grupo más grande</div><div class="kpi-val">70+</div><div class="kpi-trend">2,047 personas</div></div>
   </div>
 
   <div class="grid2">
@@ -588,8 +588,8 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
         <canvas id="ch-sexo" role="img" aria-label="Distribución por sexo: hombres 50.1%, mujeres 49.9%">Casi paridad entre hombres y mujeres.</canvas>
       </div>
       <div style="display:flex;gap:20px;padding:0 16px 14px;justify-content:center;">
-        <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text2)"><span style="width:10px;height:10px;border-radius:2px;background:#3b82f6;display:inline-block"></span><span id="leyenda-hombres">Hombres 50.1%</span></span>
-        <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text2)"><span style="width:10px;height:10px;border-radius:2px;background:#a855f7;display:inline-block"></span><span id="leyenda-mujeres">Mujeres 49.9%</span></span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text2)"><span style="width:10px;height:10px;border-radius:2px;background:#3b82f6;display:inline-block"></span>Hombres 50.1%</span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text2)"><span style="width:10px;height:10px;border-radius:2px;background:#a855f7;display:inline-block"></span>Mujeres 49.9%</span>
       </div>
     </div>
   </div>
@@ -1078,7 +1078,7 @@ async function cargarDatosSecciones() {
 
     const { data, error } = await window.supabase
       .from('ciudadanos')
-      .select('seccion_electoral, municipio')
+      .select('seccion, municipio')
       .eq('licencia_id', licenciaId);
 
     if (error || !data || !data.length) return;
@@ -1086,7 +1086,7 @@ async function cargarDatosSecciones() {
     // Agrupar por sección
     const secMap = {};
     data.forEach(r => {
-      const s = parseInt(r.seccion_electoral) || 0;
+      const s = parseInt(r.seccion) || 0;
       if (!s) return;
       if (!secMap[s]) secMap[s] = { municipio: r.municipio || '—', cap: 0 };
       secMap[s].cap++;
@@ -1388,7 +1388,7 @@ function buildCharts(tab){
   }
 
   if(tab==='perfil'){
-    window._chartEdad = new Chart(document.getElementById('ch-edad'),{
+    new Chart(document.getElementById('ch-edad'),{
       type:'bar',
       data:{
         labels:['18–29','30–39','40–49','50–59','60–69','70+'],
@@ -1398,7 +1398,7 @@ function buildCharts(tab){
       options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
         scales:{x:{ticks:{color:TICK,font:FONT},grid:{color:GRID}},y:{ticks:{color:TICK,font:FONT},grid:{color:GRID}}}}
     });
-    window._chartSexo = new Chart(document.getElementById('ch-sexo'),{
+    new Chart(document.getElementById('ch-sexo'),{
       type:'doughnut',
       data:{
         labels:['Hombres','Mujeres'],
@@ -1406,8 +1406,6 @@ function buildCharts(tab){
       },
       options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false}}}
     });
-    // Si ya hay datos reales cargados, actualizar las gráficas inmediatamente
-    if(window._perfilCargado) actualizarGraficasPerfil();
   }
 }
 
@@ -1473,55 +1471,37 @@ async function cargarSimpatizantes() {
     const sesion = JSON.parse(localStorage.getItem('electoral_sesion') || 'null');
     const licenciaId = sesion?.licencia_id || 'a1b2c3d4-0001-0000-0000-000000000001';
 
-    // Paginación — Supabase limita a 1000 por query
-    const PAGE = 1000;
-    let allData = [];
-    let from = 0;
-    let hasMore = true;
+    const { data, error } = await window.supabase
+      .from('ciudadanos')
+      .select('id, nombre, curp, edad, sexo, municipio, seccion, telefono, domicilio, email, compromiso, origen, capturista_id, validado, es_riesgo, apoyo_logistico, influencia, duplicado, observaciones, created_at, licencia_id')
+      .eq('licencia_id', licenciaId)
+      .order('created_at', { ascending: false });
 
-    while (hasMore) {
-      const { data, error } = await window.supabase
-        .from('ciudadanos')
-        .select('id, nombre, curp, edad, sexo, municipio, seccion_electoral, telefono, domicilio, compromiso, origen, capturista_id, validado, es_riesgo, es_apoyo, es_influencia, duplicado, notas, created_at')
-        .eq('licencia_id', licenciaId)
-        .order('created_at', { ascending: false })
-        .range(from, from + PAGE - 1);
+    if (error || !data || !data.length) return;
 
-      if (error) { console.warn('Error paginando simpatizantes:', error); break; }
-      if (!data || data.length === 0) break;
-
-      allData = allData.concat(data);
-      hasMore = data.length === PAGE;
-      from += PAGE;
-    }
-
-    if (!allData.length) return;
-
-    SIMPATIZANTES = allData.map(r => ({
-      id:         r.id,
-      nombre:     r.nombre || '—',
-      curp:       r.curp   || '—',
-      edad:       r.edad   || 0,
-      sexo:       (r.sexo  || '—').toUpperCase(),
-      municipio:  (r.municipio || '—').toUpperCase(),
-      seccion:    r.seccion_electoral || 0,
-      tel:        r.telefono || '—',
-      domicilio:  r.domicilio || '—',
-      email:      '',
-      compromiso: r.compromiso || 0,
-      origen:     r.origen || '—',
-      capturista: r.capturista_id || '—',
-      responsable:r.capturista_id || '—',
-      validado:   !!r.validado,
-      riesgo:     !!r.es_riesgo,
-      apoyo:      !!r.es_apoyo,
-      influencia: !!r.es_influencia,
-      duplicado:  !!r.duplicado,
-      obs:        r.notas || '',
-      fecha:      r.created_at ? r.created_at.split('T')[0] : '—',
+    SIMPATIZANTES = data.map(r => ({
+      id:          r.id,
+      nombre:      r.nombre || '—',
+      curp:        r.curp   || '—',
+      edad:        r.edad   || 0,
+      sexo:        (r.sexo  || '—').toUpperCase(),
+      municipio:   (r.municipio || '—').toUpperCase(),
+      seccion:     r.seccion || 0,
+      tel:         r.telefono || '—',
+      domicilio:   r.domicilio || '—',
+      email:       r.email || '',
+      compromiso:  r.compromiso || 0,
+      origen:      r.origen || '—',
+      capturista:  r.capturista_id || '—',
+      responsable: r.capturista_id || '—',
+      validado:    !!r.validado,
+      riesgo:      !!r.es_riesgo,
+      apoyo:       !!r.apoyo_logistico,
+      influencia:  !!r.influencia,
+      duplicado:   !!r.duplicado,
+      obs:         r.observaciones || '',
+      fecha:       r.created_at ? r.created_at.split('T')[0] : '—',
     }));
-
-    console.log(`Simpatizantes cargados: ${SIMPATIZANTES.length}`);
 
   } catch(e) {
     console.warn('Error cargando simpatizantes:', e);
@@ -1636,11 +1616,6 @@ function initDescargas() {
 // ── Motor de descarga ──
 async function descargar(tipo, nivelRol) {
   const s = window._sesionDescarga || { rol:'coordinador', nombre:'Demo', municipio:'Manzanillo', id:'CAP-017', seccion:138 };
-
-  // Si SIMPATIZANTES tiene datos demo (≤10) o incompletos (≤1000), recargar con paginación
-  if (tipo === 'simpatizantes' && SIMPATIZANTES.length <= 1000) {
-    await cargarSimpatizantes();
-  }
 
   // Spinner
   const spinIds = {
@@ -2323,7 +2298,7 @@ async function cargarPerfilVotante() {
 
     const { data, error } = await window.supabase
       .from('ciudadanos')
-      .select('edad, sexo, compromiso, es_riesgo, es_apoyo')
+      .select('edad, sexo, compromiso, es_riesgo, apoyo_logistico')
       .eq('licencia_id', licenciaId);
 
     if (error || !data || !data.length) return;
@@ -2346,7 +2321,7 @@ async function cargarPerfilVotante() {
       const t   = sub.length;
       const seg = sub.filter(r => (r.compromiso || 0) >= 3).length;
       const rie = sub.filter(r => r.es_riesgo).length;
-      const apo = sub.filter(r => r.es_apoyo).length;
+      const apo = sub.filter(r => r.apoyo_logistico).length;
       const rieCol = rie / (t||1) > 0.25 ? 'var(--red)' : 'var(--amber)';
       return {
         grupo: g.label,
@@ -2360,64 +2335,27 @@ async function cargarPerfilVotante() {
       };
     });
 
-    // Actualizar KPIs de género
+    // Actualizar también KPIs de género
     const hombres = data.filter(r => (r.sexo||'').toUpperCase() === 'HOMBRE' || (r.sexo||'').toUpperCase() === 'M').length;
     const mujeres = data.filter(r => (r.sexo||'').toUpperCase() === 'MUJER'  || (r.sexo||'').toUpperCase() === 'F').length;
     const edades  = data.map(r => parseInt(r.edad)||0).filter(e => e > 0);
     const promEdad = edades.length ? Math.round(edades.reduce((s,e)=>s+e,0)/edades.length) : 0;
-    const hPct = total ? (hombres/total*100).toFixed(1) : '0';
-    const mPct = total ? (mujeres/total*100).toFixed(1) : '0';
 
-    const elH  = document.getElementById('perfil-hombres');
-    const elM  = document.getElementById('perfil-mujeres');
-    const elE  = document.getElementById('perfil-edad-prom');
+    const elH = document.getElementById('perfil-hombres');
+    const elM = document.getElementById('perfil-mujeres');
+    const elE = document.getElementById('perfil-edad-prom');
     const elHP = document.getElementById('perfil-hombres-pct');
     const elMP = document.getElementById('perfil-mujeres-pct');
-    if(elH)  elH.textContent  = hombres.toLocaleString();
-    if(elM)  elM.textContent  = mujeres.toLocaleString();
-    if(elE)  elE.textContent  = promEdad;
-    if(elHP) elHP.textContent = hPct + '%';
-    if(elMP) elMP.textContent = mPct + '%';
-
-    // Actualizar grupo más grande
-    const grupoMayor = [...PERFIL_DATA].sort((a,b) => b.total - a.total)[0];
-    const elGM  = document.getElementById('perfil-grupo-mayor');
-    const elGMS = document.getElementById('perfil-grupo-mayor-sub');
-    if(elGM  && grupoMayor) elGM.textContent  = grupoMayor.grupo;
-    if(elGMS && grupoMayor) elGMS.textContent = grupoMayor.total.toLocaleString() + ' personas';
-
-    // Guardar datos para cuando se abra el tab de perfil
-    window._perfilHombres = hombres;
-    window._perfilMujeres = mujeres;
-    window._perfilCargado = true;
-
-    // Actualizar gráficas si ya están inicializadas
-    actualizarGraficasPerfil();
+    if(elH) elH.textContent = hombres.toLocaleString();
+    if(elM) elM.textContent = mujeres.toLocaleString();
+    if(elE) elE.textContent = promEdad;
+    if(elHP) elHP.textContent = total ? (hombres/total*100).toFixed(1)+'%' : '—';
+    if(elMP) elMP.textContent = total ? (mujeres/total*100).toFixed(1)+'%' : '—';
 
     renderPerfil(PERFIL_DATA);
 
   } catch(e) {
     console.warn('Error cargando perfil votante:', e);
-  }
-}
-
-// Actualizar gráficas de edad y sexo con datos reales
-function actualizarGraficasPerfil() {
-  if(window._chartEdad && PERFIL_DATA.length) {
-    window._chartEdad.data.datasets[0].data = PERFIL_DATA.map(g => g.total);
-    window._chartEdad.update();
-  }
-  if(window._chartSexo && window._perfilHombres !== undefined) {
-    const h = window._perfilHombres;
-    const m = window._perfilMujeres;
-    const tot = h + m;
-    window._chartSexo.data.datasets[0].data = [h, m];
-    window._chartSexo.update();
-    // Actualizar leyendas
-    const lH = document.getElementById('leyenda-hombres');
-    const lM = document.getElementById('leyenda-mujeres');
-    if(lH) lH.textContent = `Hombres ${tot ? (h/tot*100).toFixed(1) : 0}%`;
-    if(lM) lM.textContent = `Mujeres ${tot ? (m/tot*100).toFixed(1) : 0}%`;
   }
 }
 let PERFIL_SORT = {col: null, asc: true};
@@ -2468,7 +2406,7 @@ renderPerfil(PERFIL_DATA);
 // ══════════════════════════════════════════════════════
 // CALIDAD DEL PADRÓN — FILTRO POR MUNICIPIO
 // ══════════════════════════════════════════════════════
-let CALIDAD_MUN = {
+const CALIDAD_MUN = {
   'todos':        {val:7193, pen:1763, inc:636, dup:408, comp:[1169,3432,3219,2180], origen:[4538,2519,1711,1232]},
   'Tecomán':      {val:1105, pen:302,  inc:88,  dup:42,  comp:[180,526,493,338],    origen:[697,388,263,189]},
   'Colima':       {val:1166, pen:286,  inc:103, dup:65,  comp:[190,556,522,352],    origen:[736,409,277,198]},
@@ -2481,81 +2419,6 @@ let CALIDAD_MUN = {
   'Ixtlahuacán':  {val:223,  pen:55,   inc:20,  dup:12,  comp:[36,106,99,69],       origen:[140,78,53,39]},
   'Coquimatlán':  {val:335,  pen:82,   inc:30,  dup:19,  comp:[55,159,148,104],     origen:[211,116,78,56]},
 };
-
-async function cargarCalidad() {
-  try {
-    await SDB.waitReady();
-    const sesion = JSON.parse(localStorage.getItem('electoral_sesion') || 'null');
-    const licenciaId = sesion?.licencia_id || 'a1b2c3d4-0001-0000-0000-000000000001';
-
-    // Paginación
-    const PAGE = 1000;
-    let allData = [];
-    let from = 0;
-    let hasMore = true;
-    while (hasMore) {
-      const { data: chunk, error } = await window.supabase
-        .from('ciudadanos')
-        .select('municipio, validado, duplicado, compromiso, origen, nombre, seccion_electoral')
-        .eq('licencia_id', licenciaId)
-        .range(from, from + PAGE - 1);
-      if (error || !chunk || !chunk.length) break;
-      allData = allData.concat(chunk);
-      hasMore = chunk.length === PAGE;
-      from += PAGE;
-    }
-    const data = allData;
-
-    if (!data.length) return;
-
-    // Función helper para calcular stats de un subconjunto
-    const calcStats = (rows) => {
-      const dup = rows.filter(r => r.duplicado).length;
-      // Incompleto: le falta nombre O seccion_electoral (mínimo operativo)
-      const inc = rows.filter(r => !r.duplicado && (!r.nombre || !r.seccion_electoral)).length;
-      // Validado: revisado y confirmado explícitamente
-      const val = rows.filter(r => !r.duplicado && r.validado).length;
-      // Pendiente: tiene nombre y sección, no duplicado, no validado aún
-      const pen = rows.filter(r => !r.duplicado && !r.validado && r.nombre && r.seccion_electoral).length;
-
-      // Compromiso: [1-Contacto, 2-Simpatiza, 3-Seg.vota, 4-Moviliza]
-      const comp = [1,2,3,4].map(n => rows.filter(r => r.compromiso === n).length);
-
-      // Origen: [Casa por casa, Referido, Evento, Digital]
-      const origenes = ['Casa por casa','Referido','Evento','Digital'];
-      const origen = origenes.map(o => rows.filter(r => (r.origen||'').toLowerCase() === o.toLowerCase()).length);
-
-      return { val, pen, inc, dup, comp, origen };
-    };
-
-    // Agrupar por municipio
-    const munMap = {};
-    data.forEach(r => {
-      const m = (r.municipio || 'Sin municipio').trim();
-      if (!munMap[m]) munMap[m] = [];
-      munMap[m].push(r);
-    });
-
-    // Reconstruir CALIDAD_MUN con datos reales
-    const nuevo = { 'todos': calcStats(data) };
-    Object.entries(munMap).forEach(([mun, rows]) => {
-      // Normalizar nombre para que coincida con los botones
-      const label = mun.charAt(0).toUpperCase() + mun.slice(1).toLowerCase();
-      nuevo[label] = calcStats(rows);
-      // También guardar con el nombre exacto del municipio por si acaso
-      nuevo[mun] = calcStats(rows);
-    });
-
-    CALIDAD_MUN = nuevo;
-
-    // Refrescar la vista si el tab de calidad está activo
-    filtrarCalidad('todos');
-    console.log('Calidad del padrón cargada desde Supabase');
-
-  } catch(e) {
-    console.warn('Error cargando calidad:', e);
-  }
-}
 
 function filtrarCalidad(mun) {
   const d = CALIDAD_MUN[mun] || CALIDAD_MUN['todos'];
@@ -2582,17 +2445,6 @@ function filtrarCalidad(mun) {
   if (window._chartValidacion) {
     window._chartValidacion.data.datasets[0].data = [d.val, d.pen, d.inc, d.dup];
     window._chartValidacion.update();
-    // Actualizar leyendas
-    const t = total || 1;
-    const leyendas = document.querySelectorAll('#sc-calidad .chart-wrap + div span, #sc-calidad .card-body > div span');
-    // Buscar los spans de leyenda por texto
-    document.querySelectorAll('#sc-calidad span').forEach(el => {
-      const txt = el.textContent;
-      if(txt.startsWith('Validado'))  el.textContent = `Validado ${(d.val/t*100).toFixed(1)}%`;
-      if(txt.startsWith('Pendiente')) el.textContent = `Pendiente ${(d.pen/t*100).toFixed(1)}%`;
-      if(txt.startsWith('Incompleto'))el.textContent = `Incompleto ${(d.inc/t*100).toFixed(1)}%`;
-      if(txt.startsWith('Duplicado')) el.textContent = `Duplicado ${(d.dup/t*100).toFixed(1)}%`;
-    });
   }
   if (window._chartCompromiso) {
     window._chartCompromiso.data.datasets[0].data = d.comp;
@@ -2667,7 +2519,6 @@ document.addEventListener('supabase-ready', async () => {
   await cargarDatosSecciones();
   await cargarPerfilVotante();
   await cargarSimpatizantes();
-  await cargarCalidad();
 });
 </script>
 <script src="theme.js"></script>

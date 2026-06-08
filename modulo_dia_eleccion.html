@@ -175,6 +175,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 
 </style>
 </head>
+<script src="supabase_client.js"></script>
 <script>
 (function(){
   try {
@@ -536,21 +537,84 @@ const CAPTURISTA_ID = SESION?.id       || 'CAP-017';
 const MUNICIPIO     = SESION?.municipio|| 'VILLA DE ALVAREZ';
 const SECCION_BASE  = SESION?.seccion  || 138;
 
-// Simpatizantes de la base (Fase 1) — en producción: query a Supabase por sección
-let SIMPATIZANTES = [
-  {id:'REG-001',nombre:'María García López',   tel:'312-111-0001',seccion:138,municipio:'VILLA DE ALVAREZ',compromiso:3,responsable:'LDR-138',coordinador:'CORD-VDA',votó:false,hora_voto:null},
-  {id:'REG-002',nombre:'José Martínez Ruiz',   tel:'312-111-0002',seccion:138,municipio:'VILLA DE ALVAREZ',compromiso:4,responsable:'LDR-138',coordinador:'CORD-VDA',votó:false,hora_voto:null},
-  {id:'REG-003',nombre:'Ana Torres Mendoza',   tel:'312-111-0003',seccion:139,municipio:'VILLA DE ALVAREZ',compromiso:2,responsable:'LDR-139',coordinador:'CORD-VDA',votó:false,hora_voto:null},
-  {id:'REG-004',nombre:'Carlos Pérez Silva',   tel:'312-111-0004',seccion:138,municipio:'VILLA DE ALVAREZ',compromiso:3,responsable:'LDR-138',coordinador:'CORD-VDA',votó:false,hora_voto:null},
-  {id:'REG-005',nombre:'Laura Hernández Cruz', tel:'312-111-0005',seccion:140,municipio:'VILLA DE ALVAREZ',compromiso:1,responsable:'LDR-140',coordinador:'CORD-VDA',votó:false,hora_voto:null},
-  {id:'REG-006',nombre:'Roberto Díaz Morales', tel:'312-111-0006',seccion:138,municipio:'VILLA DE ALVAREZ',compromiso:4,responsable:'LDR-138',coordinador:'CORD-VDA',votó:false,hora_voto:null},
-  {id:'REG-007',nombre:'Sofía Ramírez Vega',   tel:'312-111-0007',seccion:138,municipio:'VILLA DE ALVAREZ',compromiso:2,responsable:'LDR-138',coordinador:'CORD-VDA',votó:false,hora_voto:null},
-  {id:'REG-008',nombre:'Miguel Flores Jiménez',tel:'312-111-0008',seccion:141,municipio:'VILLA DE ALVAREZ',compromiso:3,responsable:'LDR-141',coordinador:'CORD-VDA',votó:false,hora_voto:null},
-  {id:'REG-009',nombre:'Patricia Gómez Luna',  tel:'312-111-0009',seccion:138,municipio:'VILLA DE ALVAREZ',compromiso:3,responsable:'LDR-138',coordinador:'CORD-VDA',votó:false,hora_voto:null},
-  {id:'REG-010',nombre:'Fernando Castro Reyes',tel:'312-111-0010',seccion:138,municipio:'VILLA DE ALVAREZ',compromiso:4,responsable:'LDR-138',coordinador:'CORD-VDA',votó:false,hora_voto:null},
-  {id:'REG-011',nombre:'Isabel Ruiz Soto',     tel:'312-111-0011',seccion:139,municipio:'VILLA DE ALVAREZ',compromiso:3,coordinador:'CORD-VDA',votó:false,hora_voto:null},
-  {id:'REG-012',nombre:'Héctor Mendoza Vega',  tel:'312-111-0012',seccion:140,municipio:'VILLA DE ALVAREZ',compromiso:2,coordinador:'CORD-VDA',votó:false,hora_voto:null},
-];
+// Simpatizantes — se cargan de Supabase al iniciar, con fallback offline
+let SIMPATIZANTES = [];
+
+async function cargarSimpatizantesDiaE() {
+  try {
+    if(!window.supabase) {
+      await new Promise(resolve => document.addEventListener('supabase-ready', resolve, {once:true}));
+    }
+    // Leer sesión en el momento de ejecutar (ya restaurada por supabase_client.js)
+    const sesionActual = window._sesion || SESION;
+    const licenciaId = sesionActual?.licencia_id || 'a1b2c3d4-0001-0000-0000-000000000001';
+    const rol = sesionActual?.rol || '';
+
+    // Cargar ciudadanos con compromiso >= 2 del municipio del operador
+    let query = window.supabase
+      .from('ciudadanos')
+      .select('id, nombre, apellido_paterno, apellido_materno, telefono, seccion_electoral, municipio, compromiso, responsable_id, capturista_id')
+      .eq('licencia_id', licenciaId)
+      .gte('compromiso', 2)
+      .order('seccion_electoral', { ascending: true });
+
+    // Filtrar según rol y datos disponibles en sesión
+    const municipioReal = sesionActual?.municipio || '';
+    const seccionReal   = sesionActual?.seccion   || null;
+
+    if(rol === 'capturista' && seccionReal) {
+      // Capturista con sección: solo su sección
+      query = query.eq('seccion_electoral', seccionReal);
+    } else if(municipioReal) {
+      // Coordinador o capturista con municipio: filtrar por municipio
+      query = query.ilike('municipio', municipioReal);
+    }
+    // Si no hay municipio ni sección (admin o coord sin asignar): trae todos
+
+    const { data, error } = await query.limit(2000);
+
+    if(error || !data || !data.length) {
+      console.warn('Sin datos de Supabase para Día E, usando demo');
+      return;
+    }
+
+    SIMPATIZANTES = data.map(r => ({
+      id:          r.id,
+      nombre:      [r.nombre, r.apellido_paterno, r.apellido_materno].filter(Boolean).join(' '),
+      tel:         r.telefono || '—',
+      seccion:     r.seccion_electoral || SECCION_BASE,
+      municipio:   (r.municipio || MUNICIPIO).toUpperCase(),
+      compromiso:  r.compromiso || 2,
+      responsable: r.responsable_id || '—',
+      coordinador: '—',
+      votó:        false,
+      hora_voto:   null,
+    }));
+
+    // Restaurar estado de votos guardados en localStorage
+    try {
+      const saved = localStorage.getItem('dia_eleccion_votos');
+      if(saved) {
+        const savedData = JSON.parse(saved);
+        if(savedData.votos) {
+          savedData.votos.forEach(v => {
+            const s = SIMPATIZANTES.find(x => x.id === v.id);
+            if(s) { s.votó = v.votó; s.hora_voto = v.hora_voto; }
+          });
+        }
+        if(savedData.sorpresas) SORPRESAS = savedData.sorpresas;
+        if(savedData.log) LOG = savedData.log;
+      }
+    } catch(e) {}
+
+    console.log(`Día E: ${SIMPATIZANTES.length} simpatizantes cargados`);
+    renderLista();
+    actualizarContador();
+
+  } catch(e) {
+    console.warn('Error cargando simpatizantes Día E:', e);
+  }
+}
 
 let SORPRESAS = [];
 let LOG = [];
@@ -558,23 +622,12 @@ let pendienteConfirmar = null;
 let filtroSeccion = 'todas';
 let queryBusqueda  = '';
 
-// Cargar estado guardado (offline)
-(function() {
-  try {
-    const saved = localStorage.getItem('dia_eleccion_votos');
-    if (saved) {
-      const data = JSON.parse(saved);
-      if (data.votos) {
-        data.votos.forEach(v => {
-          const s = SIMPATIZANTES.find(x => x.id === v.id);
-          if(s) { s.votó = v.votó; s.hora_voto = v.hora_voto; }
-        });
-      }
-      if (data.sorpresas) SORPRESAS = data.sorpresas;
-      if (data.log) LOG = data.log;
-    }
-  } catch(e) {}
-})();
+// Cargar simpatizantes desde Supabase — esperar a que sesión esté restaurada
+document.addEventListener('supabase-ready', () => cargarSimpatizantesDiaE(), {once:true});
+// Si supabase ya está listo y sesión restaurada, llamar directo
+if(window.supabase && window._sesion?.access_token) {
+  cargarSimpatizantesDiaE();
+}
 
 // ══════════════════════════════════════════════════════
 // RELOJ Y CUENTA REGRESIVA AL CORTE

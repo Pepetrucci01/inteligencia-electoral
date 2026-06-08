@@ -533,10 +533,11 @@ function cerrarSesion(){
   try {
     const SUPA_URL = 'https://dyirhwwmykskpuvzcafx.supabase.co';
     const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5aXJod3dteWtza3B1dnpjYWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NTk3ODgsImV4cCI6MjA5NTEzNTc4OH0.2xe4cHqORGng1hnYPJ9ZiyT0r87fMijbUEJqBy3-xoI';
+    const TOKEN   = window._sesion?.access_token || SUPA_KEY;
     const LICENCIA = (window._sesion?.licencia_id) || 'a1b2c3d4-0001-0000-0000-000000000001';
     const META = 197297;
     const fmt = n => Math.round(n).toLocaleString('es-MX');
-    const h = { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}`, 'Prefer': 'count=exact', 'Range': '0-0' };
+    const h = { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${TOKEN}`, 'Prefer': 'count=exact', 'Range': '0-0' };
 
     const [rTotal, rSeg, rRiesgo] = await Promise.all([
       fetch(`${SUPA_URL}/rest/v1/ciudadanos?select=id&licencia_id=eq.${LICENCIA}`, { headers: h }),

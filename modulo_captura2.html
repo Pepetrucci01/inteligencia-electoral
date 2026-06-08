@@ -568,7 +568,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 // ─── DATOS SIMULADOS ───────────────────────────────────────────────────────
 // Datos del capturista desde sesión real
 const CAPTURISTA = {
-  id:           window._sesion?.id || 'CAP-017',
+  id:           window._sesion?.usuario_id || 'CAP-017',
   nombre:       window._sesion?.nombre     || 'Capturista Demo',
   seccion_base: window._sesion?.seccion    || 138,
   municipio:    window._sesion?.municipio  || 'VILLA DE ALVAREZ'
@@ -580,62 +580,20 @@ const RESPONSABLES = {
   74:'CAP-020',  45:'CAP-051', 236:'CAP-057', 248:'CAP-057',
 };
 
-let CIUDADANOS = [];
-let _ciudadanosCargados = false;
-
-async function cargarCiudadanosCapturista() {
-  try {
-    if(!window.supabase) {
-      await new Promise(resolve => document.addEventListener('supabase-ready', resolve, {once:true}));
-    }
-    const sesion = window._sesion;
-    if(!sesion?.licencia_id || !sesion?.id) {
-      _ciudadanosCargados = true;
-      buscar(); renderLista(); return;
-    }
-
-    const { data, error } = await window.supabase
-      .from('ciudadanos')
-      .select('id, nombre, apellido_paterno, apellido_materno, edad, sexo, seccion_electoral, municipio, telefono, compromiso, origen, es_riesgo, es_apoyo, es_influencia, curp, validado, duplicado, capturista_id, responsable_id, domicilio, notas, created_at')
-      .eq('licencia_id', sesion.licencia_id)
-      .eq('capturista_id', sesion.id)
-      .order('created_at', { ascending: false });
-
-    _ciudadanosCargados = true;
-
-    if(!error && data && data.length) {
-      CIUDADANOS = data.map(r => ({
-        id:         r.id,
-        nombre:     [r.nombre, r.apellido_paterno, r.apellido_materno].filter(Boolean).join(' '),
-        edad:       r.edad || 0,
-        sexo:       (r.sexo || '—').toUpperCase(),
-        sec:        r.seccion_electoral || 0,
-        mun:        r.municipio || '—',
-        tel:        r.telefono || '—',
-        comp:       r.compromiso || 0,
-        origen:     r.origen || '—',
-        riesgo:     !!r.es_riesgo,
-        apoyo:      !!r.es_apoyo,
-        influencia: !!r.es_influencia,
-        curp:       r.curp || '',
-        validado:   !!r.validado,
-        duplicado:  !!r.duplicado,
-        cap_por:    r.capturista_id || CAPTURISTA.id,
-        resp:       r.responsable_id || r.capturista_id || CAPTURISTA.id,
-        domicilio:  r.domicilio || '',
-        colonia:    '',
-        notas:      r.notas || '',
-      }));
-      console.log(`Registros del capturista: ${CIUDADANOS.length}`);
-    }
-    buscar();
-    renderLista();
-  } catch(e) {
-    console.warn('Error cargando ciudadanos:', e);
-    _ciudadanosCargados = true;
-    buscar(); renderLista();
-  }
-}
+let CIUDADANOS = [
+  {id:'REG-001',nombre:'María García López',edad:34,sexo:'MUJER',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0001',comp:3,origen:'Casa por casa',riesgo:false,apoyo:false,influencia:true,curp:'GALM901230MCLRPR01',validado:true,duplicado:false,cap_por:'CAP-017',resp:'CAP-017',domicilio:'Calle Hidalgo 245',colonia:'Col. Centro',notas:'Vecina activa'},
+  {id:'REG-002',nombre:'José Martínez Ruiz',edad:52,sexo:'HOMBRE',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0002',comp:4,origen:'Referido',riesgo:false,apoyo:true,influencia:true,curp:'MARJ720415HCLRRZ09',validado:true,duplicado:false,cap_por:'CAP-017',resp:'CAP-017',domicilio:'Av. Independencia 78',colonia:'Col. Las Palmas',notas:'Necesita transporte'},
+  {id:'REG-003',nombre:'Ana Torres Mendoza',edad:28,sexo:'MUJER',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0003',comp:2,origen:'Digital',riesgo:false,apoyo:false,influencia:false,curp:'TOMA980612MCLRNN06',validado:false,duplicado:false,cap_por:'CAP-017',resp:'CAP-005',domicilio:'Calle Morelos 12',colonia:'Col. Jardines',notas:''},
+  {id:'REG-004',nombre:'Carlos Pérez Silva',edad:45,sexo:'HOMBRE',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0004',comp:3,origen:'Evento',riesgo:true,apoyo:false,influencia:false,curp:'PESC791103HCLRLR03',validado:true,duplicado:false,cap_por:'CAP-017',resp:'CAP-017',domicilio:'Privada Las Flores 5',colonia:'Col. Residencial',notas:'Dudó al final'},
+  {id:'REG-005',nombre:'Laura Hernández Cruz',edad:31,sexo:'MUJER',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0005',comp:1,origen:'Casa por casa',riesgo:false,apoyo:true,influencia:false,curp:'HECL950222MCLRRR08',validado:false,duplicado:false,cap_por:'CAP-017',resp:'CAP-033',domicilio:'Calle Juárez 89',colonia:'Col. Centro',notas:''},
+  {id:'REG-006',nombre:'Roberto Díaz Morales',edad:60,sexo:'HOMBRE',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0006',comp:4,origen:'Referido',riesgo:false,apoyo:false,influencia:true,curp:'DIMR640815HCLRZB02',validado:true,duplicado:false,cap_por:'CAP-017',resp:'CAP-017',domicilio:'Blvd. Camino Real 340',colonia:'Col. Las Américas',notas:'Líder de colonia'},
+  {id:'REG-007',nombre:'Sofía Ramírez Vega',edad:22,sexo:'MUJER',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0007',comp:2,origen:'Digital',riesgo:false,apoyo:false,influencia:false,curp:'RAVS020318MCLRMF05',validado:false,duplicado:true,cap_por:'CAP-017',resp:'CAP-017',domicilio:'Calle Colón 56',colonia:'Col. Obrera',notas:'Posible duplicado'},
+  {id:'REG-008',nombre:'Miguel Flores Jiménez',edad:48,sexo:'HOMBRE',sec:141,mun:'VILLA DE ALVAREZ',tel:'312-111-0008',comp:3,origen:'Casa por casa',riesgo:true,apoyo:true,influencia:false,curp:'FOJM760930HCLRLG07',validado:true,duplicado:false,cap_por:'CAP-017',resp:'CAP-016',domicilio:'Av. de la Paz 123',colonia:'Col. La Paz',notas:'Riesgo alto'},
+  {id:'REG-009',nombre:'Patricia Gómez Luna',edad:39,sexo:'MUJER',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0009',comp:3,origen:'Evento',riesgo:false,apoyo:false,influencia:true,curp:'GOLP851115MCLRMN01',validado:true,duplicado:false,cap_por:'CAP-017',resp:'CAP-017',domicilio:'Calle Reforma 67',colonia:'Col. Magisterial',notas:'Maestra'},
+  {id:'REG-010',nombre:'Fernando Castro Reyes',edad:55,sexo:'HOMBRE',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0010',comp:4,origen:'Referido',riesgo:false,apoyo:false,influencia:true,curp:'CARF690728HCLLRN04',validado:true,duplicado:false,cap_por:'CAP-017',resp:'CAP-017',domicilio:'Privada del Sol 8',colonia:'Fracc. Los Pinos',notas:''},
+  {id:'REG-011',nombre:'Elena Vargas Soto',edad:42,sexo:'MUJER',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0011',comp:3,origen:'Casa por casa',riesgo:false,apoyo:false,influencia:false,curp:'VASE830410MCLRGN05',validado:true,duplicado:false,cap_por:'CAP-017',resp:'CAP-017',domicilio:'Calle Allende 34',colonia:'Col. Centro',notas:''},
+  {id:'REG-012',nombre:'Alejandro Núñez Ramos',edad:36,sexo:'HOMBRE',sec:138,mun:'VILLA DE ALVAREZ',tel:'312-111-0012',comp:2,origen:'Digital',riesgo:true,apoyo:false,influencia:false,curp:'NURA891205HCLZMN08',validado:false,duplicado:false,cap_por:'CAP-017',resp:'CAP-017',domicilio:'Calle 5 de Mayo 201',colonia:'Col. Insurgentes',notas:'Indeciso'},
+];
 
 // ─── STATE ─────────────────────────────────────────────────────────────────
 let compSel = 0, origenSel = '', toggles = {riesgo:false, apoyo:false, influencia:false};
@@ -653,13 +611,7 @@ function showTab(tab) {
 
 // ─── CAPTURISTA ────────────────────────────────────────────────────────────
 function toggleCapturista(){
-  const s = window._sesion || {};
-  const nombre  = s.nombre    || CAPTURISTA.nombre;
-  const id      = s.id        || CAPTURISTA.id;
-  const seccion = s.seccion   || CAPTURISTA.seccion_base;
-  const mun     = s.municipio || CAPTURISTA.municipio;
-  const propios = CIUDADANOS.filter(c => c.cap_por === id).length;
-  alert(`${id} · ${nombre}\nSección base: ${seccion || '—'}\nMunicipio: ${mun || '—'}\nRegistros capturados: ${propios}`);
+  alert('CAP-017 · Capturista 17\nSección base: 138\nMunicipio: Villa de Álvarez\nMeta: 50 registros');
 }
 
 // ─── ASIGNACIÓN ────────────────────────────────────────────────────────────
@@ -747,7 +699,7 @@ function toggleSwitch(k) {
 }
 
 // ─── GUARDAR ───────────────────────────────────────────────────────────────
-async function guardarRegistro() {
+function guardarRegistro() {
   if(!votoParejo) {
     var ve=document.getElementById('vp-error');
     if(ve) { ve.textContent='⚠️ Indica si vota parejo o no'; ve.style.display='block'; ve.scrollIntoView({block:'center',behavior:'smooth'}); }
@@ -780,9 +732,8 @@ async function guardarRegistro() {
     cap_por: CAPTURISTA.id, resp: resp,
   };
   CIUDADANOS.push(nuevo);
-  // Guardar en Supabase y esperar resultado antes de mostrar éxito
-  const guardadoOk = await guardarEnSupabase(nuevo);
-  if(!guardadoOk) return; // El error ya se mostró en guardarEnSupabase
+  // Guardar en Supabase
+  guardarEnSupabase(nuevo);
   // Mostrar paso 3
   document.getElementById('paso2').style.display='none';
   document.getElementById('paso3').style.display='block';
@@ -846,17 +797,6 @@ function setFiltro(f){
 
 function buscar(){
   const q=(document.getElementById('search-q').value||'').toLowerCase();
-  const cont=document.getElementById('search-results');
-  if(!_ciudadanosCargados){
-    cont.innerHTML='<div class="no-results">⏳ Cargando registros...</div>'; return;
-  }
-  if(!CIUDADANOS.length && !q){
-    cont.innerHTML=`<div class="no-results" style="padding:40px 20px">
-      <div style="font-size:28px;margin-bottom:10px">📋</div>
-      <div style="font-size:13px;color:var(--text2);margin-bottom:6px">Aún no tienes registros capturados</div>
-      <div style="font-size:11px">Los registros que captures aparecerán aquí</div>
-    </div>`; return;
-  }
   let res=[...CIUDADANOS];
   if(q) res=res.filter(c=>
     c.nombre.toLowerCase().includes(q)||
@@ -868,6 +808,7 @@ function buscar(){
   if(filtroActivo==='riesgo') res=res.filter(c=>c.riesgo);
   if(filtroActivo==='apoyo') res=res.filter(c=>c.apoyo);
   if(filtroActivo==='dup') res=res.filter(c=>c.duplicado);
+  const cont=document.getElementById('search-results');
   if(!res.length){
     cont.innerHTML='<div class="no-results">Sin resultados</div>'; return;
   }
@@ -975,18 +916,15 @@ function marcarDuplicado(id){
 
 // ─── LISTA SECCIÓN ─────────────────────────────────────────────────────────
 function renderLista(){
-  const sec    = parseInt(document.getElementById('lista-sec').value);
-  const sesion = window._sesion || {};
-  const capId  = sesion.id       || CAPTURISTA.id;
-  const capMun = sesion.municipio|| CAPTURISTA.municipio;
-  const enSec  = CIUDADANOS.filter(c=>c.sec===sec);
-  const seguros= enSec.filter(c=>c.comp>=3).length;
-  const pct    = enSec.length?Math.round(enSec.length/50*100):0;
-
+  const sec=parseInt(document.getElementById('lista-sec').value);
+  const todos=CIUDADANOS.filter(c=>c.resp===CAPTURISTA.id || c.sec===sec);
+  const enSec=CIUDADANOS.filter(c=>c.sec===sec);
+  const seguros=enSec.filter(c=>c.comp>=3).length;
+  const pct=enSec.length?Math.round(enSec.length/50*100):0;
   document.getElementById('lista-header').innerHTML=`
     <div class="sec-header-card">
-      <div style="font-size:13px;font-weight:600;">Sección ${sec} · ${capMun||'—'}</div>
-      <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px;">Responsable: ${capId}</div>
+      <div style="font-size:13px;font-weight:600;">Sección ${sec} · ${CAPTURISTA.municipio}</div>
+      <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px;">Responsable: ${CAPTURISTA.id}</div>
       <div class="progress-bar" style="margin-top:10px"><div class="progress-fill" style="width:${pct}%;background:var(--accent)"></div></div>
       <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:4px;">${enSec.length} / 50 meta · ${pct}%</div>
       <div class="sec-stats">
@@ -995,16 +933,9 @@ function renderLista(){
         <div class="sec-stat"><div class="sec-stat-val" style="color:var(--amber)">${enSec.filter(c=>c.apoyo).length}</div><div class="sec-stat-lbl">Nec. apoyo</div></div>
       </div>
     </div>`;
-
-  if(!_ciudadanosCargados){
-    document.getElementById('lista-cards').innerHTML='<div class="no-results">⏳ Cargando registros...</div>'; return;
-  }
   if(!enSec.length){
-    document.getElementById('lista-cards').innerHTML=`<div class="no-results" style="padding:40px 20px">
-      <div style="font-size:28px;margin-bottom:10px">📋</div>
-      <div style="font-size:13px;color:var(--text2);margin-bottom:6px">Sin registros en sección ${sec}</div>
-      <div style="font-size:11px">Captura el primero con el botón +</div>
-    </div>`; return;
+    document.getElementById('lista-cards').innerHTML='<div class="no-results">Sin registros en esta sección</div>';
+    return;
   }
   const cc2=c=>compColor(c.comp);
   document.getElementById('lista-cards').innerHTML=enSec.map(c=>`
@@ -1030,12 +961,6 @@ function renderLista(){
 // ── INIT ──────────────────────────────────────────────────────────────────
 buscar();
 renderLista();
-// Cargar registros reales — si supabase ya está listo llamar directo, sino esperar evento
-if(window.supabase) {
-  cargarCiudadanosCapturista();
-} else {
-  document.addEventListener('supabase-ready', () => cargarCiudadanosCapturista(), {once:true});
-}
 
 // ══════════════════════════════════════════════════════════════════
 // SISTEMA DE VALIDACIÓN DE CURP
@@ -1353,41 +1278,25 @@ async function guardarEnSupabase(nuevo) {
     const nombreSolo = document.getElementById('f-nombre')?.value.trim() || nuevo.nombre || null;
     const apellidoPat = document.getElementById('f-paterno')?.value.trim() || null;
     const apellidoMat = document.getElementById('f-materno')?.value.trim() || null;
-    const seccion = nuevo.sec ? parseInt(nuevo.sec) : null;
-    const municipio = nuevo.mun || null;
-    const sexo = nuevo.sexo || null;
-    const compromiso = nuevo.comp ? parseInt(nuevo.comp) : null;
-
-    // Validar campos obligatorios antes de intentar el INSERT
-    const camposFaltantes = [];
-    if(!nombreSolo) camposFaltantes.push('nombre');
-    if(!seccion)    camposFaltantes.push('sección electoral');
-    if(!municipio)  camposFaltantes.push('municipio');
-    if(!sexo)       camposFaltantes.push('sexo');
-    if(!compromiso) camposFaltantes.push('compromiso');
-    if(camposFaltantes.length) {
-      throw new Error('Faltan campos obligatorios: ' + camposFaltantes.join(', '));
-    }
-
     const ciudadanoData = {
       nombre:             nombreSolo,
       apellido_paterno:   apellidoPat,
       apellido_materno:   apellidoMat,
       edad:               nuevo.edad ? parseInt(nuevo.edad) : null,
-      sexo:               sexo,
+      sexo:               nuevo.sexo || null,
       telefono:           nuevo.tel || null,
       curp:               nuevo.curp || null,
       clave_elector:      document.getElementById('f-clave')?.value.trim() || null,
-      seccion_electoral:  seccion,
-      municipio:          municipio,
+      seccion_electoral:  nuevo.sec ? parseInt(nuevo.sec) : null,
+      municipio:          nuevo.mun || null,
       origen:             nuevo.origen || null,
       es_riesgo:          nuevo.riesgo || false,
       es_apoyo:           nuevo.apoyo || false,
       es_influencia:      nuevo.influencia || false,
       notas:              nuevo.obs || null,
-      compromiso:         compromiso,
+      compromiso:         nuevo.comp ? parseInt(nuevo.comp) : null,
       licencia_id:        window._sesion?.licencia_id || window.LICENCIA_ACTIVA_ID || 'a1b2c3d4-0001-0000-0000-000000000001',
-      capturista_id:      window._sesion?.id || null,
+      capturista_id:      window._sesion?.usuario_id || null,
       responsable_id:     null,
       validado:           false,
       duplicado:          false,
@@ -1396,29 +1305,6 @@ async function guardarEnSupabase(nuevo) {
 
     const { data: ciudadano, error: errCiudadano } = await SDB.guardarCiudadano(ciudadanoData);
     if(errCiudadano) throw new Error('Error al guardar: ' + errCiudadano.message);
-
-    // Agregar al array local inmediatamente
-    _ciudadanosCargados = true;
-    CIUDADANOS.unshift({
-      id:         ciudadano.id,
-      nombre:     [ciudadanoData.nombre, ciudadanoData.apellido_paterno, ciudadanoData.apellido_materno].filter(Boolean).join(' '),
-      edad:       ciudadanoData.edad || 0,
-      sexo:       (ciudadanoData.sexo || '—').toUpperCase(),
-      sec:        ciudadanoData.seccion_electoral || 0,
-      mun:        ciudadanoData.municipio || '—',
-      tel:        ciudadanoData.telefono || '—',
-      comp:       ciudadanoData.compromiso || 0,
-      origen:     ciudadanoData.origen || '—',
-      riesgo:     !!ciudadanoData.es_riesgo,
-      apoyo:      !!ciudadanoData.es_apoyo,
-      influencia: !!ciudadanoData.es_influencia,
-      curp:       ciudadanoData.curp || '',
-      validado:   false, duplicado: false,
-      cap_por:    ciudadanoData.capturista_id || CAPTURISTA.id,
-      resp:       ciudadanoData.responsable_id || ciudadanoData.capturista_id || CAPTURISTA.id,
-      domicilio:  ciudadanoData.domicilio || '',
-      colonia:    '', notas: ciudadanoData.notas || '',
-    });
 
     // 4. Guardar vínculo con candidatura + voto parejo
     // candidatura_id: se obtiene del contexto global de candidatura activa
