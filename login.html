@@ -567,7 +567,22 @@ async function intentarLogin() {
       return;
     }
 
-    // ── 4. Guardar sesión ──
+    // ── 4. Obtener territorio de la licencia ──
+    let territorio = null;
+    if(perfil.licencia_id) {
+      try {
+        const licRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/licencias?id=eq.${perfil.licencia_id}&select=territorio&limit=1`,
+          { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${authData.access_token}` } }
+        );
+        const licData = await licRes.json();
+        territorio = licData?.[0]?.territorio || null;
+      } catch(e) {
+        console.warn('No se pudo leer territorio de licencia:', e);
+      }
+    }
+
+    // ── 5. Guardar sesión ──
     const sesion = {
       id:           perfil.id,
       nombre:       perfil.nombre,
@@ -576,6 +591,7 @@ async function intentarLogin() {
       licencia_id:  perfil.licencia_id,
       municipio:    perfil.municipio || '',
       seccion:      perfil.seccion || null,
+      territorio:   territorio,
       access_token: authData.access_token,
       refresh_token: authData.refresh_token,
       ts:           Date.now(),

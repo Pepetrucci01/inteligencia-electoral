@@ -167,4 +167,71 @@ const SDB = {
 
 };
 
+// ============================================================
+//  TERRITORIO — Helper para filtrar queries por licencia
+// ============================================================
+
+const TERRITORIO = {
+
+  get() {
+    try {
+      const s = JSON.parse(localStorage.getItem('electoral_sesion') || 'null');
+      return s?.territorio || { tipo: 'estado' };
+    } catch(e) { return { tipo: 'estado' }; }
+  },
+
+  // Aplicar filtro a query de Supabase
+  aplicar(query, opts = {}) {
+    const t = this.get();
+    const campoMun = opts.campoMunicipio || 'municipio';
+    const campoDf  = opts.campoDF        || 'distrito_federal';
+    const campoDl  = opts.campoDL        || 'distrito_local';
+    switch(t.tipo) {
+      case 'estado': break;
+      case 'mun':
+        if(t.id_municipio) query = query.eq('id_municipio', t.id_municipio);
+        else if(t.municipio) query = query.ilike(campoMun, t.municipio);
+        break;
+      case 'df':
+        if(t.id) query = query.eq(campoDf, t.id);
+        break;
+      case 'dl':
+        if(t.id) query = query.eq(campoDl, t.id);
+        break;
+    }
+    return query;
+  },
+
+  // Filtrar array en memoria
+  perteneceArray(item, opts = {}) {
+    const t = this.get();
+    if(t.tipo === 'estado') return true;
+    const campoMun = opts.campoMunicipio || 'municipio';
+    const campoDf  = opts.campoDF        || 'distrito_federal';
+    const campoDl  = opts.campoDL        || 'distrito_local';
+    switch(t.tipo) {
+      case 'mun':
+        if(t.id_municipio) return item.id_municipio === t.id_municipio;
+        if(t.municipio) return (item[campoMun]||'').toLowerCase() === t.municipio.toLowerCase();
+        return true;
+      case 'df': return String(item[campoDf]) === String(t.id);
+      case 'dl': return String(item[campoDl]) === String(t.id);
+      default:   return true;
+    }
+  },
+
+  label() {
+    const t = this.get();
+    switch(t.tipo) {
+      case 'estado': return 'Todo el estado';
+      case 'mun':    return `Municipio: ${t.municipio || t.id_municipio}`;
+      case 'df':     return `Distrito Federal ${t.id}`;
+      case 'dl':     return `Distrito Local ${t.id}`;
+      default:       return 'Sin definir';
+    }
+  },
+
+  esEstado() { return this.get().tipo === 'estado'; },
+};
+
 console.log(`🗺 SIE Colima 2027 | Ambiente: ${ENV.toUpperCase()} | ${SUPA_URL}`);

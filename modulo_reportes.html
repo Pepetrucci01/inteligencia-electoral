@@ -888,10 +888,12 @@ async function cargarDatosMunicipios() {
       'CUAUHTEMOC': 8061, 'IXTLAHUACAN': 3286, 'MINATITLAN': 3908, 'COQUIMATLAN': 6700
     };
 
-    const { data, error } = await window.supabase
+    let q1 = window.supabase
       .from('ciudadanos')
       .select('municipio, compromiso, es_riesgo, validado, duplicado')
       .eq('licencia_id', licenciaId);
+    if(typeof TERRITORIO !== 'undefined') q1 = TERRITORIO.aplicar(q1);
+    const { data, error } = await q1;
 
     if (error || !data) return;
 
@@ -1076,10 +1078,12 @@ async function cargarDatosSecciones() {
     const sesion = JSON.parse(localStorage.getItem('electoral_sesion') || 'null');
     const licenciaId = sesion?.licencia_id || 'a1b2c3d4-0001-0000-0000-000000000001';
 
-    const { data, error } = await window.supabase
+    let q2 = window.supabase
       .from('ciudadanos')
       .select('seccion_electoral, municipio')
       .eq('licencia_id', licenciaId);
+    if(typeof TERRITORIO !== 'undefined') q2 = TERRITORIO.aplicar(q2);
+    const { data, error } = await q2;
 
     if (error || !data || !data.length) return;
 
@@ -1480,12 +1484,13 @@ async function cargarSimpatizantes() {
     let hasMore = true;
 
     while (hasMore) {
-      const { data, error } = await window.supabase
+      let qSimp = window.supabase
         .from('ciudadanos')
         .select('id, nombre, curp, edad, sexo, municipio, seccion_electoral, telefono, domicilio, compromiso, origen, capturista_id, validado, es_riesgo, es_apoyo, es_influencia, duplicado, notas, created_at')
         .eq('licencia_id', licenciaId)
-        .order('created_at', { ascending: false })
-        .range(from, from + PAGE - 1);
+        .order('created_at', { ascending: false });
+      if(typeof TERRITORIO !== 'undefined') qSimp = TERRITORIO.aplicar(qSimp);
+      const { data, error } = await qSimp.range(from, from + PAGE - 1);
 
       if (error) { console.warn('Error paginando simpatizantes:', error); break; }
       if (!data || data.length === 0) break;
@@ -1536,20 +1541,24 @@ async function cargarDatosCapturistas() {
     const sesion = JSON.parse(localStorage.getItem('electoral_sesion') || 'null');
     const licenciaId = sesion?.licencia_id || 'a1b2c3d4-0001-0000-0000-000000000001';
 
-    const { data: usuarios, error: errU } = await window.supabase
+    let qUsr = window.supabase
       .from('usuarios')
       .select('id, nombre, email, rol, municipio, seccion, activo, last_login, licencia_id')
       .eq('licencia_id', licenciaId)
       .eq('rol', 'capturista');
+    if(typeof TERRITORIO !== 'undefined') qUsr = TERRITORIO.aplicar(qUsr, {campoMunicipio:'municipio'});
+    const { data: usuarios, error: errU } = await qUsr;
 
     if (errU || !usuarios) return;
 
     // Contar capturas por capturista
-    const { data: caps } = await window.supabase
+    let qCaps = window.supabase
       .from('ciudadanos')
       .select('capturista_id')
       .eq('licencia_id', licenciaId)
       .not('capturista_id', 'is', null);
+    if(typeof TERRITORIO !== 'undefined') qCaps = TERRITORIO.aplicar(qCaps);
+    const { data: caps } = await qCaps;
 
     const capPorId = {};
     (caps || []).forEach(c => {
@@ -2321,10 +2330,12 @@ async function cargarPerfilVotante() {
     const sesion = JSON.parse(localStorage.getItem('electoral_sesion') || 'null');
     const licenciaId = sesion?.licencia_id || 'a1b2c3d4-0001-0000-0000-000000000001';
 
-    const { data, error } = await window.supabase
+    let q3 = window.supabase
       .from('ciudadanos')
       .select('edad, sexo, compromiso, es_riesgo, es_apoyo')
       .eq('licencia_id', licenciaId);
+    if(typeof TERRITORIO !== 'undefined') q3 = TERRITORIO.aplicar(q3);
+    const { data, error } = await q3;
 
     if (error || !data || !data.length) return;
 
@@ -2494,11 +2505,12 @@ async function cargarCalidad() {
     let from = 0;
     let hasMore = true;
     while (hasMore) {
-      const { data: chunk, error } = await window.supabase
+      let qCal = window.supabase
         .from('ciudadanos')
         .select('municipio, validado, duplicado, compromiso, origen, nombre, seccion_electoral')
-        .eq('licencia_id', licenciaId)
-        .range(from, from + PAGE - 1);
+        .eq('licencia_id', licenciaId);
+      if(typeof TERRITORIO !== 'undefined') qCal = TERRITORIO.aplicar(qCal);
+      const { data: chunk, error } = await qCal.range(from, from + PAGE - 1);
       if (error || !chunk || !chunk.length) break;
       allData = allData.concat(chunk);
       hasMore = chunk.length === PAGE;
