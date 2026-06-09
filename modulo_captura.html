@@ -696,8 +696,13 @@ function irPaso2() {
     // Verificar duplicado una vez más antes de continuar
     const dup = CIUDADANOS.find(c => c.curp && c.curp.toUpperCase() === curpVal);
     if (dup) {
-      errs.push('CURP ya registrada — ciudadano duplicado');
       document.getElementById('curp-status').textContent = '⚠️';
+      // Offline: NO bloqueamos. No podemos confiar en el server ni en
+      // que el array local esté completo; el conflicto (si lo hay) se
+      // resolverá al sincronizar con la regla "gana el primero".
+      if (navigator.onLine) {
+        errs.push('CURP ya registrada — ciudadano duplicado');
+      }
     }
   }
   if(!document.getElementById('f-nombre').value.trim()) errs.push('Nombre requerido');
@@ -1081,13 +1086,29 @@ function onCurpInput(val) {
   // Formato OK — verificar duplicado local primero (inmediato)
   const dup = CIUDADANOS.find(c => c.curp && c.curp.toUpperCase() === val);
   if (dup) {
-    status.textContent = '⚠️';
-    mostrarCurpBox('duplicado', '⚠️ CURP ya registrada',
-      `Esta CURP ya existe en el sistema.<br>
-       <span style="color:var(--text)">Nombre: <b>${dup.nombre}</b></span><br>
-       <span style="color:var(--text3)">ID: ${dup.id} · Capturado por: ${dup.cap_por} · Sección: ${dup.sec}</span><br>
-       <span style="color:var(--red);font-weight:600">No se puede registrar dos veces al mismo ciudadano.</span>`
-    );
+    if (navigator.onLine) {
+      status.textContent = '⚠️';
+      mostrarCurpBox('duplicado', '⚠️ CURP ya registrada',
+        `Esta CURP ya existe en el sistema.<br>
+         <span style="color:var(--text)">Nombre: <b>${dup.nombre}</b></span><br>
+         <span style="color:var(--text3)">ID: ${dup.id} · Capturado por: ${dup.cap_por} · Sección: ${dup.sec}</span><br>
+         <span style="color:var(--red);font-weight:600">No se puede registrar dos veces al mismo ciudadano.</span>`
+      );
+      return;
+    } else {
+      // Offline: avisamos pero NO bloqueamos. Se resolverá al sincronizar.
+      status.textContent = '📴';
+      mostrarCurpBox('duplicado', '📴 Posible duplicado (sin conexión)',
+        `Esta CURP parece ya estar en el sistema, pero sin conexión no se puede confirmar.<br>
+         <span style="color:var(--text3)">Si ya existe, el registro se descartará automáticamente al sincronizar (gana el primero).</span>`
+      );
+      // No hacemos return: dejamos que el flujo continúe.
+    }
+  }
+
+  // Offline: no consultamos RENAPO (no hay internet). Continuar.
+  if (!navigator.onLine) {
+    status.textContent = '📴';
     return;
   }
 
@@ -1233,6 +1254,10 @@ function capitalizar(str) {
 </script>
 <script src="theme.js"></script>
 <script src="supabase_client.js"></script>
+<script src="offline_db.js"></script>
+<script src="sync_queue.js"></script>
+<script src="conflictos.js"></script>
+<script src="sw-register.js"></script>
 <script>
 // ─── VOTO PAREJO ──────────────────────────────────────────────────────────
 let votoParejo = '';
@@ -1315,15 +1340,145 @@ function mostrarEstadoCURP(curp) {
 
 
 
+// ── Construir los objetos de datos desde 'nuevo' ─────────────
+// Extraído para reusarlo tanto online (Supabase) como offline (IndexedDB).
+// Devuelve { ciudadanoData, candidaturaData } o lanza Error si faltan campos.
+function construirDatosCaptura(nuevo) {
+  const nombreSolo  = document.getElementById('f-nombre')?.value.trim() || nuevo.nombre || null;
+  const apellidoPat = document.getElementById('f-paterno')?.value.trim() || null;
+  const apellidoMat = document.getElementById('f-materno')?.value.trim() || null;
+  const seccion     = nuevo.sec ? parseInt(nuevo.sec) : null;
+  const municipio   = nuevo.mun || null;
+  const sexo        = nuevo.sexo || null;
+  const compromiso  = nuevo.comp ? parseInt(nuevo.comp) : null;
+
+  const camposFaltantes = [];
+  if(!nombreSolo) camposFaltantes.push('nombre');
+  if(!seccion)    camposFaltantes.push('sección electoral');
+  if(!municipio)  camposFaltantes.push('municipio');
+  if(!sexo)       camposFaltantes.push('sexo');
+  if(!compromiso) camposFaltantes.push('compromiso');
+  if(camposFaltantes.length) {
+    throw new Error('Faltan campos obligatorios: ' + camposFaltantes.join(', '));
+  }
+
+  const ciudadanoData = {
+    nombre:             nombreSolo,
+    apellido_paterno:   apellidoPat,
+    apellido_materno:   apellidoMat,
+    edad:               nuevo.edad ? parseInt(nuevo.edad) : null,
+    sexo:               sexo,
+    telefono:           nuevo.tel || null,
+    curp:               nuevo.curp || null,
+    clave_elector:      document.getElementById('f-clave')?.value.trim() || null,
+    seccion_electoral:  seccion,
+    municipio:          municipio,
+    origen:             nuevo.origen || null,
+    es_riesgo:          nuevo.riesgo || false,
+    es_apoyo:           nuevo.apoyo || false,
+    es_influencia:      nuevo.influencia || false,
+    notas:              nuevo.obs || null,
+    compromiso:         compromiso,
+    licencia_id:        window._sesion?.licencia_id || window.LICENCIA_ACTIVA_ID || 'a1b2c3d4-0001-0000-0000-000000000001',
+    capturista_id:      window._sesion?.id || null,
+    responsable_id:     null,
+    validado:           false,
+    duplicado:          false,
+    sync_status:        'synced',
+  };
+
+  const candidaturaActualId = window.CANDIDATURA_ACTIVA_ID || 'a1b2c3d4-0001-0000-0000-000000000101';
+  const candidaturaData = {
+    candidatura_id:   candidaturaActualId,
+    compromiso:       nuevo.comp ? parseInt(nuevo.comp) : null,
+    voto_parejo:      (nuevo.voto_parejo || 'SI').toUpperCase(),
+    vota_gubernatura: (nuevo.candidaturas_vota || []).includes('gobernador'),
+    vota_senador:     (nuevo.candidaturas_vota || []).includes('senador'),
+    vota_dip_federal: (nuevo.candidaturas_vota || []).includes('diputado_federal'),
+    vota_dip_local:   (nuevo.candidaturas_vota || []).includes('diputado_local'),
+    vota_ayuntamiento:(nuevo.candidaturas_vota || []).includes('ayuntamiento'),
+  };
+
+  return { ciudadanoData, candidaturaData };
+}
+
+// ── Guardar offline (sin internet) en IndexedDB ──────────────
+// Marca el ciudadano como 'pending' y lo encola para sincronizar.
+async function guardarOffline(nuevo, btnGuardar) {
+  if (typeof OfflineDB === 'undefined') {
+    alert('⚠️ Sin conexión y el módulo offline no está cargado. No se pudo guardar.');
+    if(btnGuardar) { btnGuardar.textContent = '✅ Guardar registro'; btnGuardar.disabled = false; }
+    return false;
+  }
+
+  let datos;
+  try {
+    datos = construirDatosCaptura(nuevo);
+  } catch(err) {
+    alert('⚠️ ' + err.message);
+    if(btnGuardar) { btnGuardar.textContent = '✅ Guardar registro'; btnGuardar.disabled = false; }
+    return false;
+  }
+
+  // Duplicado por CURP entre los pendientes de ESTE dispositivo
+  if (datos.ciudadanoData.curp && datos.ciudadanoData.curp.length === 18) {
+    const dupLocal = await OfflineDB.buscarPorCURP(datos.ciudadanoData.curp);
+    if (dupLocal) {
+      alert('⛔ DUPLICADO LOCAL: esta CURP ya está pendiente de sincronizar en este dispositivo.');
+      if(btnGuardar) { btnGuardar.textContent = '✅ Guardar registro'; btnGuardar.disabled = false; }
+      return false;
+    }
+  }
+
+  // El ciudadano que se guarda offline arranca como 'pending'
+  datos.ciudadanoData.sync_status = 'pending';
+  const reg = await OfflineDB.guardarPendiente(datos.ciudadanoData, datos.candidaturaData);
+
+  // Reflejarlo de inmediato en la lista local con su local_id
+  _ciudadanosCargados = true;
+  CIUDADANOS.unshift({
+    id:         reg.local_id,
+    nombre:     [datos.ciudadanoData.nombre, datos.ciudadanoData.apellido_paterno, datos.ciudadanoData.apellido_materno].filter(Boolean).join(' '),
+    edad:       datos.ciudadanoData.edad || 0,
+    sexo:       (datos.ciudadanoData.sexo || '—').toUpperCase(),
+    sec:        datos.ciudadanoData.seccion_electoral || 0,
+    mun:        datos.ciudadanoData.municipio || '—',
+    tel:        datos.ciudadanoData.telefono || '—',
+    comp:       datos.ciudadanoData.compromiso || 0,
+    origen:     datos.ciudadanoData.origen || '—',
+    riesgo:     !!datos.ciudadanoData.es_riesgo,
+    apoyo:      !!datos.ciudadanoData.es_apoyo,
+    influencia: !!datos.ciudadanoData.es_influencia,
+    curp:       datos.ciudadanoData.curp || '',
+    validado:   false, duplicado: false,
+    pendiente:  true,
+    cap_por:    datos.ciudadanoData.capturista_id || CAPTURISTA.id,
+    resp:       datos.ciudadanoData.responsable_id || datos.ciudadanoData.capturista_id || CAPTURISTA.id,
+    domicilio:  '', colonia:'', notas: datos.ciudadanoData.notas || '',
+  });
+
+  const n = await OfflineDB.contarPendientes();
+  alert('📴 Sin conexión: registro guardado localmente.\nQuedan ' + n + ' registro(s) pendiente(s) de sincronizar.');
+  if(btnGuardar) { btnGuardar.textContent = '✅ Guardar registro'; btnGuardar.disabled = false; }
+  return true;
+}
+
 // ── Guardar en Supabase ──────────────────────────────────────
 async function guardarEnSupabase(nuevo) {
+  const btnGuardar = document.querySelector('.btn-save') || document.querySelector('[onclick*="guardarRegistro"]');
+
+  // 📴 Si no hay conexión, ni intentamos Supabase: directo a IndexedDB.
+  if (!navigator.onLine) {
+    if(btnGuardar) { btnGuardar.textContent = '⏳ Guardando...'; btnGuardar.disabled = true; }
+    return await guardarOffline(nuevo, btnGuardar);
+  }
+
   // Esperar a que Supabase esté listo
   if(!window.supabase) {
     await new Promise(resolve => document.addEventListener('supabase-ready', resolve, {once:true}));
   }
 
   // Mostrar loading
-  const btnGuardar = document.querySelector('.btn-save') || document.querySelector('[onclick*="guardarRegistro"]');
   if(btnGuardar) { btnGuardar.textContent = '⏳ Guardando...'; btnGuardar.disabled = true; }
 
   try {
@@ -1349,50 +1504,8 @@ async function guardarEnSupabase(nuevo) {
       }
     }
 
-    // 3. Guardar ciudadano
-    const nombreSolo = document.getElementById('f-nombre')?.value.trim() || nuevo.nombre || null;
-    const apellidoPat = document.getElementById('f-paterno')?.value.trim() || null;
-    const apellidoMat = document.getElementById('f-materno')?.value.trim() || null;
-    const seccion = nuevo.sec ? parseInt(nuevo.sec) : null;
-    const municipio = nuevo.mun || null;
-    const sexo = nuevo.sexo || null;
-    const compromiso = nuevo.comp ? parseInt(nuevo.comp) : null;
-
-    // Validar campos obligatorios antes de intentar el INSERT
-    const camposFaltantes = [];
-    if(!nombreSolo) camposFaltantes.push('nombre');
-    if(!seccion)    camposFaltantes.push('sección electoral');
-    if(!municipio)  camposFaltantes.push('municipio');
-    if(!sexo)       camposFaltantes.push('sexo');
-    if(!compromiso) camposFaltantes.push('compromiso');
-    if(camposFaltantes.length) {
-      throw new Error('Faltan campos obligatorios: ' + camposFaltantes.join(', '));
-    }
-
-    const ciudadanoData = {
-      nombre:             nombreSolo,
-      apellido_paterno:   apellidoPat,
-      apellido_materno:   apellidoMat,
-      edad:               nuevo.edad ? parseInt(nuevo.edad) : null,
-      sexo:               sexo,
-      telefono:           nuevo.tel || null,
-      curp:               nuevo.curp || null,
-      clave_elector:      document.getElementById('f-clave')?.value.trim() || null,
-      seccion_electoral:  seccion,
-      municipio:          municipio,
-      origen:             nuevo.origen || null,
-      es_riesgo:          nuevo.riesgo || false,
-      es_apoyo:           nuevo.apoyo || false,
-      es_influencia:      nuevo.influencia || false,
-      notas:              nuevo.obs || null,
-      compromiso:         compromiso,
-      licencia_id:        window._sesion?.licencia_id || window.LICENCIA_ACTIVA_ID || 'a1b2c3d4-0001-0000-0000-000000000001',
-      capturista_id:      window._sesion?.id || null,
-      responsable_id:     null,
-      validado:           false,
-      duplicado:          false,
-      sync_status:        'synced',
-    };
+    // 3. Construir los datos (misma función que usa el modo offline)
+    const { ciudadanoData, candidaturaData } = construirDatosCaptura(nuevo);
 
     const { data: ciudadano, error: errCiudadano } = await SDB.guardarCiudadano(ciudadanoData);
     if(errCiudadano) throw new Error('Error al guardar: ' + errCiudadano.message);
@@ -1421,20 +1534,8 @@ async function guardarEnSupabase(nuevo) {
     });
 
     // 4. Guardar vínculo con candidatura + voto parejo
-    // candidatura_id: se obtiene del contexto global de candidatura activa
-    const candidaturaActualId = window.CANDIDATURA_ACTIVA_ID || 'a1b2c3d4-0001-0000-0000-000000000101';
-    const candidaturaData = {
-      ciudadano_id:     ciudadano.id,
-      candidatura_id:   candidaturaActualId,
-      compromiso:       nuevo.comp ? parseInt(nuevo.comp) : null,
-      voto_parejo:      (nuevo.voto_parejo || 'SI').toUpperCase(),
-      vota_gubernatura: (nuevo.candidaturas_vota || []).includes('gobernador'),
-      vota_senador:     (nuevo.candidaturas_vota || []).includes('senador'),
-      vota_dip_federal: (nuevo.candidaturas_vota || []).includes('diputado_federal'),
-      vota_dip_local:   (nuevo.candidaturas_vota || []).includes('diputado_local'),
-      vota_ayuntamiento:(nuevo.candidaturas_vota || []).includes('ayuntamiento'),
-    };
-
+    // (el ciudadano_id real se agrega aquí, ya que online sí lo tenemos)
+    candidaturaData.ciudadano_id = ciudadano.id;
     await SDB.guardarCandidatura(candidaturaData);
 
     // 5. Registrar en auditoría
@@ -1444,7 +1545,23 @@ async function guardarEnSupabase(nuevo) {
 
   } catch(err) {
     console.error('Error Supabase:', err);
-    alert('⚠️ Error al guardar en la base de datos: ' + err.message + '\n\nEl registro se guardó localmente.');
+
+    // Si el fallo parece de red (se cayó la conexión a media operación),
+    // guardamos de verdad en IndexedDB en lugar de mentir.
+    const esErrorRed = !navigator.onLine
+      || /network|fetch|failed|timeout|conexión|conexion/i.test(err.message || '');
+
+    if (esErrorRed) {
+      try {
+        const ok = await guardarOffline(nuevo, btnGuardar);
+        if (ok) return true;
+      } catch(e2) {
+        console.error('Fallback offline también falló:', e2);
+      }
+    }
+
+    // Error real (validación, datos, permisos): NO se guardó nada.
+    alert('⚠️ No se pudo guardar: ' + err.message);
     if(btnGuardar) { btnGuardar.textContent = '✅ Guardar registro'; btnGuardar.disabled = false; }
     return false;
   }
