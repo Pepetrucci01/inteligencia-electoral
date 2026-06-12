@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guía del configurador — Inteligencia Electoral</title>
+<style>
+  :root{
+    --bg:#0a0e1a;
+    --card:#11162a;
+    --card2:#1e2130;
+    --border:#2a2f45;
+    --blue:#3b82f6;
+    --blue-soft:rgba(59,130,246,.15);
+    --green:#22c55e;
+    --amber:#f59e0b;
+    --red:#ef4444;
+    --txt:#f1f5f9;
+    --txt2:#94a3b8;
+    --txt3:#64748b;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    background:var(--bg);
+    color:var(--txt);
+    font-family:'Cascadia Code','Consolas',monospace;
+    font-size:13px;
+    line-height:1.65;
+    padding:32px 40px 80px;
+  }
+  .wrap{max-width:880px;margin:0 auto}
+
+  /* ---- Encabezado ---- */
+  .hero{
+    border:1px solid var(--border);
+    border-left:3px solid var(--blue);
+    background:var(--card);
+    border-radius:10px;
+    padding:24px 28px;
+    margin-bottom:28px;
+  }
+  .hero h1{font-size:20px;font-weight:700;letter-spacing:.5px}
+  .hero p{color:var(--txt2);margin-top:6px;font-size:13px}
+  .hero .tag{
+    display:inline-block;margin-top:14px;
+    background:var(--blue-soft);color:var(--blue);
+    border:1px solid rgba(59,130,246,.35);
+    border-radius:6px;padding:3px 10px;font-size:11px;letter-spacing:1px;
+  }
+
+  /* ---- Flujo ---- */
+  .flow{display:flex;gap:10px;margin-bottom:32px;flex-wrap:wrap}
+  .step{
+    flex:1;min-width:180px;
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:10px;padding:16px;
+    position:relative;
+  }
+  .step .n{
+    width:26px;height:26px;border-radius:50%;
+    background:var(--blue-soft);color:var(--blue);
+    display:flex;align-items:center;justify-content:center;
+    font-size:12px;font-weight:700;margin-bottom:10px;
+    border:1px solid rgba(59,130,246,.35);
+  }
+  .step h3{font-size:13px;margin-bottom:4px}
+  .step p{color:var(--txt3);font-size:12px}
+
+  /* ---- Secciones ---- */
+  h2{
+    font-size:14px;letter-spacing:2px;text-transform:uppercase;
+    color:var(--txt2);margin:36px 0 14px;
+    padding-bottom:8px;border-bottom:1px solid var(--border);
+  }
+  .card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:10px;padding:20px 24px;
+    margin-bottom:14px;
+  }
+  .card h3{font-size:13px;color:var(--txt);margin-bottom:8px}
+  .card p{color:var(--txt2);font-size:13px}
+  .card ul{margin:10px 0 0 18px;color:var(--txt2)}
+  .card li{margin-bottom:6px}
+  .card li b{color:var(--txt)}
+  code{
+    background:var(--card2);
+    border:1px solid var(--border);
+    border-radius:5px;padding:1px 7px;
+    font-size:12px;color:var(--blue);
+  }
+  table{width:100%;border-collapse:collapse;margin-top:12px;font-size:12px}
+  th{
+    text-align:left;color:var(--txt3);font-weight:600;
+    text-transform:uppercase;letter-spacing:1px;font-size:10px;
+    padding:8px 10px;border-bottom:1px solid var(--border);
+  }
+  td{padding:9px 10px;border-bottom:1px solid var(--border);color:var(--txt2)}
+  td:first-child{color:var(--txt)}
+  tr:last-child td{border-bottom:none}
+
+  /* ---- Avisos ---- */
+  .note{
+    border-radius:10px;padding:14px 18px;margin-bottom:14px;
+    font-size:12px;display:flex;gap:12px;align-items:flex-start;
+  }
+  .note .ic{font-size:15px;line-height:1.4}
+  .note.ok{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.3);color:#86efac}
+  .note.warn{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);color:#fcd34d}
+  .note.info{background:var(--blue-soft);border:1px solid rgba(59,130,246,.35);color:#93c5fd}
+
+  /* ---- Semáforo ---- */
+  .sem{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  .sem div{
+    flex:1;min-width:160px;border-radius:8px;padding:12px 14px;
+    border:1px solid var(--border);background:var(--card2);font-size:12px;
+  }
+  .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:8px}
+  .d-g{background:var(--green)} .d-a{background:var(--amber)} .d-r{background:var(--red)}
+  .sem p{color:var(--txt3);margin-top:4px}
+
+  /* ---- FAQ ---- */
+  details{
+    background:var(--card);border:1px solid var(--border);
+    border-radius:10px;margin-bottom:10px;
+  }
+  summary{
+    padding:14px 20px;cursor:pointer;font-size:13px;color:var(--txt);
+    list-style:none;display:flex;align-items:center;gap:10px;
+  }
+  summary::before{content:'›';color:var(--blue);font-size:16px;transition:transform .15s}
+  details[open] summary::before{transform:rotate(90deg)}
+  details .body{padding:0 20px 16px 38px;color:var(--txt2);font-size:12px}
+
+  footer{
+    margin-top:48px;padding-top:18px;border-top:1px solid var(--border);
+    color:var(--txt3);font-size:11px;text-align:center;letter-spacing:.5px;
+  }
+  @media (max-width:640px){
+    body{padding:20px 16px 60px}
+    .flow{flex-direction:column}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <h1>📘 Guía del configurador</h1>
+    <p>Cómo preparar tu información, cargarla al sistema y leer los resultados.</p>
+    <span class="tag">COLIMA 2027 · v1.0</span>
+  </div>
+
+  <!-- FLUJO GENERAL -->
+  <div class="flow">
+    <div class="step">
+      <div class="n">1</div>
+      <h3>Prepara tu Excel</h3>
+      <p>Llena la plantilla con tu estructura de campo y datos por sección.</p>
+    </div>
+    <div class="step">
+      <div class="n">2</div>
+      <h3>Carga y configura</h3>
+      <p>Sube el archivo en Meta / Config y ajusta los parámetros de tu campaña.</p>
+    </div>
+    <div class="step">
+      <div class="n">3</div>
+      <h3>Revisa resultados</h3>
+      <p>El sistema calcula tu meta y la distribuye por municipio, distrito y sección.</p>
+    </div>
+    <div class="step">
+      <div class="n">4</div>
+      <h3>Opera y monitorea</h3>
+      <p>Captura avances en campo y da seguimiento en War Room y Mi Panel.</p>
+    </div>
+  </div>
+
+  <!-- TU EXCEL -->
+  <h2>1 · Tu archivo Excel</h2>
+
+  <div class="card">
+    <h3>Qué debe contener</h3>
+    <p>El sistema trabaja con la plantilla oficial que se te entrega al activar tu licencia. Verifica que incluya:</p>
+    <ul>
+      <li><b>Hoja de estructura:</b> tus coordinadores, líderes y capturistas con su zona asignada.</li>
+      <li><b>Datos por sección electoral:</b> las 392 secciones de Colima con su municipio y distrito.</li>
+      <li><b>Columnas completas:</b> no elimines ni renombres columnas de la plantilla; el sistema las busca por nombre exacto.</li>
+    </ul>
+  </div>
+
+  <div class="note warn">
+    <span class="ic">⚠️</span>
+    <span>Guarda el archivo en formato <code>.xlsx</code>. No uses celdas combinadas ni agregues filas de totales: el sistema las interpretará como datos.</span>
+  </div>
+
+  <div class="card">
+    <h3>Cobertura territorial (Colima)</h3>
+    <table>
+      <tr><th>Nivel</th><th>Cantidad</th><th>Notas</th></tr>
+      <tr><td>Municipios</td><td>10</td><td>Cobertura estatal completa</td></tr>
+      <tr><td>Distritos locales</td><td>16</td><td>—</td></tr>
+      <tr><td>Distritos federales</td><td>2</td><td>DF-01 Colima · DF-02 Valle de Las Garzas</td></tr>
+      <tr><td>Secciones</td><td>392</td><td>Unidad mínima de planeación</td></tr>
+      <tr><td>Casillas</td><td>~1,023</td><td>Estimado para la jornada</td></tr>
+    </table>
+  </div>
+
+  <!-- PARÁMETROS -->
+  <h2>2 · Parámetros</h2>
+
+  <div class="card">
+    <h3>Qué se configura</h3>
+    <ul>
+      <li><b>Tipo de elección:</b> gubernatura, diputación local o presidencia municipal. Define el ámbito territorial de tu meta.</li>
+      <li><b>Margen de seguridad (%):</b> colchón adicional sobre el escenario base. Un margen mayor produce una meta más exigente.</li>
+      <li><b>Zona de operación:</b> si tu candidatura es municipal o distrital, selecciona únicamente tus secciones; la meta se calcula solo sobre tu territorio.</li>
+    </ul>
+  </div>
+
+  <div class="note info">
+    <span class="ic">🔒</span>
+    <span>El cálculo de la meta utiliza una metodología propietaria del sistema basada en resultados históricos y comportamiento por casilla. Los parámetros que tú ajustas modifican el resultado final, pero la fórmula interna no es editable ni visible.</span>
+  </div>
+
+  <!-- RESULTADOS -->
+  <h2>3 · Resultados</h2>
+
+  <div class="card">
+    <h3>Qué te entrega el sistema</h3>
+    <ul>
+      <li><b>Meta global proyectada:</b> el número de votos objetivo para tu candidatura (visible en el encabezado del sistema).</li>
+      <li><b>Distribución territorial:</b> la meta desglosada por municipio, distrito y sección, lista para asignarse a tu estructura.</li>
+      <li><b>Avance vs. meta:</b> conforme tus capturistas registran simpatizantes, cada nivel muestra su porcentaje de cumplimiento.</li>
+      <li><b>Semáforo de cumplimiento:</b> lectura visual rápida del estado de cada zona.</li>
+    </ul>
+    <div class="sem">
+      <div><span class="dot d-g"></span><b>Verde</b><p>En ruta o por encima de la meta</p></div>
+      <div><span class="dot d-a"></span><b>Ámbar</b><p>Avance por debajo del ritmo esperado</p></div>
+      <div><span class="dot d-r"></span><b>Rojo</b><p>Zona crítica · requiere refuerzo</p></div>
+    </div>
+  </div>
+
+  <div class="note ok">
+    <span class="ic">✓</span>
+    <span>Tus datos solo son visibles para tu licencia. Ningún otro candidato, equipo o partido tiene acceso a tu información.</span>
+  </div>
+
+  <!-- MÓDULOS -->
+  <h2>4 · Módulos del sistema</h2>
+
+  <div class="card">
+    <table>
+      <tr><th>Módulo</th><th>Para qué sirve</th></tr>
+      <tr><td>⚡ War Room</td><td>Monitoreo en vivo de la operación: avances, alertas y jornada electoral.</td></tr>
+      <tr><td>👥 Capturistas</td><td>Administración de tu equipo de campo y su rendimiento individual.</td></tr>
+      <tr><td>🗺️ Mapa</td><td>Visor territorial: secciones, avance y cobertura geográfica.</td></tr>
+      <tr><td>✏️ Captura</td><td>Registro de simpatizantes y promovidos desde campo.</td></tr>
+      <tr><td>📊 Mi Panel</td><td>Tablero personal según tu rol (F1/F2 para cambiar de vista).</td></tr>
+      <tr><td>⚙️ Meta / Config</td><td>Carga de tu Excel, parámetros y cálculo de la meta.</td></tr>
+      <tr><td>📑 Reportes</td><td>Reportes ejecutivos y exportables de avance.</td></tr>
+      <tr><td>🔐 Administración</td><td>Usuarios, roles y permisos (solo perfil administrador).</td></tr>
+    </table>
+  </div>
+
+  <!-- FAQ -->
+  <h2>5 · Preguntas frecuentes</h2>
+
+  <details>
+    <summary>Subí mi Excel y no aparecen datos, ¿qué hago?</summary>
+    <div class="body">Verifica que el archivo sea la plantilla oficial sin columnas renombradas, en formato .xlsx y sin celdas combinadas. Si el problema persiste, contacta a soporte con una captura de pantalla del mensaje que te muestra el sistema.</div>
+  </details>
+
+  <details>
+    <summary>¿Puedo cambiar los parámetros después de calcular la meta?</summary>
+    <div class="body">Sí. Puedes recalcular cuantas veces necesites desde Meta / Config. Toma en cuenta que al recalcular, los porcentajes de avance se reexpresan contra la nueva meta.</div>
+  </details>
+
+  <details>
+    <summary>¿Quién puede ver mi información?</summary>
+    <div class="body">Únicamente los usuarios dados de alta bajo tu licencia, con los permisos que tú definas por rol. La información de cada candidatura está aislada: nadie fuera de tu equipo puede consultarla.</div>
+  </details>
+
+  <details>
+    <summary>¿Cómo se asignan las metas a mi estructura?</summary>
+    <div class="body">El sistema distribuye la meta global hacia abajo: estado → municipio → distrito → sección. Cada coordinador y líder ve la meta de su zona y el avance de su gente, sin acceso a zonas ajenas.</div>
+  </details>
+
+  <details>
+    <summary>¿Qué pasa el día de la elección?</summary>
+    <div class="body">El módulo War Room entra en modo jornada: seguimiento de apertura de casillas, movilización y reporte de incidencias en tiempo real, contra el reloj de los 354 días que ves en el encabezado.</div>
+  </details>
+
+  <footer>
+    INTELIGENCIA ELECTORAL · COLIMA 2027 · MEFT CONSULTING<br>
+    Guía del configurador · v1.0
+  </footer>
+
+</div>
+</body>
+</html>
