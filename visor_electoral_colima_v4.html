@@ -52,7 +52,7 @@ select{background:#0f3460;color:#eee;border:1px solid #444;border-radius:4px;pad
 .divider{height:1px;background:#333;margin:8px 0;}
 
 /* Lider: ocultar tabs estratégicos */
-.tab-lider-ocultar { display: none !important; }
+.tab-lider-ocultar.oculto-lider { display: none !important; }
 
 #btn-back-menu {
   display: none;
@@ -557,7 +557,7 @@ cargarAvanceSupabase();
   if (!window._esLider) return;
 
   // Ocultar tabs estratégicos (ya tienen la clase CSS, solo como seguro)
-  document.querySelectorAll('.tab-lider-ocultar').forEach(el => el.style.display='none');
+  document.querySelectorAll('.tab-lider-ocultar').forEach(el => el.classList.add('oculto-lider'));
 
   const sec   = window._seccionLider;
   const mun   = window._municipioLider;
