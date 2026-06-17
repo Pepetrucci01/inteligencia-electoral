@@ -322,7 +322,7 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
     <div class="card" style="margin-bottom:14px">
       <div class="card-h">
         <span class="card-title">Avance por municipio vs. meta 2027</span>
-        <span style="font-size:10px;font-family:var(--mono);color:var(--text3)">10 municipios · 393 secciones</span>
+        <span id="mun-table-caption" style="font-size:10px;font-family:var(--mono);color:var(--text3)">10 municipios · 393 secciones</span>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border2)">
         <div>
@@ -850,44 +850,87 @@ let f1s={nivel:'candidato',df:null,mun:null,dl:null,sec:null,cap:null};
 function renderMunF1(){
   const p=parseFloat(document.getElementById('cfg-pct').value)||6;
   const munFiltro = filtros ? filtros.mun : '';
+  const secFiltro = filtros ? filtros.sec : '';
   const semFiltro = filtros ? filtros.sem : '';
 
-  let munsBase = MUNS;
-  // Filtrar por municipio
-  if(munFiltro) munsBase = munsBase.filter(m=>m.id===munFiltro);
-  // Filtrar por semáforo
-  if(semFiltro) munsBase = munsBase.filter(m=>{
-    const pv=pct(m.cap,Math.round(m.meta*(p/6)));
+  // Secciones (objeto) de un municipio: datos reales si existen, si no demo
+  const secsDeMun = (munId) => (window.SECS_REAL && window.SECS_REAL[munId] && window.SECS_REAL[munId].length)
+    ? window.SECS_REAL[munId]
+    : DLS.filter(dl=>dl.mun===munId).flatMap(dl=>SECS[dl.id]||[]);
+  // Buscar una sección por id en datos reales o demo
+  const findSec = (id) => Object.values(window.SECS_REAL||{}).flat().find(s=>s.id===id)
+    || Object.values(SECS).flat().find(s=>s.id===id);
+
+  // ── Nivel de la tabla ───────────────────────────────────────────
+  // sin filtro → municipios · municipio → sus secciones · sección → esa sección
+  let nivelTabla='mun', rows=[];
+  if(secFiltro){
+    const sec=findSec(secFiltro);
+    if(sec){ nivelTabla='sec'; rows=[sec]; }
+    else   { nivelTabla='mun'; rows=MUNS.slice(); }
+  } else if(munFiltro){
+    nivelTabla='sec'; rows=secsDeMun(munFiltro);
+  } else {
+    nivelTabla='mun'; rows=MUNS.slice();
+  }
+
+  // Filtro por semáforo (aplica a ambos niveles)
+  if(semFiltro) rows=rows.filter(r=>{
+    const pv=pct(r.cap,Math.round((r.meta||0)*(p/6)));
     if(semFiltro==='verde')    return pv>=10;
     if(semFiltro==='amarillo') return pv>=5&&pv<10;
     if(semFiltro==='rojo')     return pv<5;
     return true;
   });
 
-  const munsSorted = WR_SORT.col ? [...munsBase].sort((a,b)=>{
-    const pa = pct(a.cap, Math.round(a.meta*(p/6)));
-    const pb = pct(b.cap, Math.round(b.meta*(p/6)));
-    const va = WR_SORT.col==='pct' ? parseFloat(pa) : WR_SORT.col==='n' ? a.n : a[WR_SORT.col];
-    const vb = WR_SORT.col==='pct' ? parseFloat(pb) : WR_SORT.col==='n' ? b.n : b[WR_SORT.col];
+  // Ordenamiento (mismo control WR_SORT en ambos niveles)
+  const sortVal=(r,col)=>{
+    if(col==='pct') return pct(r.cap,Math.round((r.meta||0)*(p/6)));
+    if(col==='n')   return nivelTabla==='sec' ? r.num : r.n;
+    if(col==='v24') return nivelTabla==='sec' ? 0 : (r.p24||0);
+    return r[col];
+  };
+  const rowsSorted = WR_SORT.col ? [...rows].sort((a,b)=>{
+    const va=sortVal(a,WR_SORT.col), vb=sortVal(b,WR_SORT.col);
     if(typeof va==='string') return WR_SORT.asc ? va.localeCompare(vb) : vb.localeCompare(va);
     return WR_SORT.asc ? va-vb : vb-va;
-  }) : munsBase;
+  }) : rows;
 
-  document.getElementById('mun-tbody').innerHTML=munsSorted.map(m=>{
-    const meta=Math.round(m.meta*(p/6));
-    const pv=pct(m.cap,meta);const c=semC(pv);
-    return`<tr onclick="drillF1('mun','${m.id}')" class="${f1s.mun===m.id?'sel':''}">
-      <td><div class="nm">${m.n}</div><div class="sub">${m.secs} secciones</div></td>
-      <td class="mono" style="text-align:center">${fmt(m.cap)}</td>
+  // Subtítulo contextual
+  const capEl=document.getElementById('mun-table-caption');
+  if(capEl){
+    if(nivelTabla==='sec' && secFiltro) capEl.textContent=`1 sección · ${rows[0]?rows[0].munNombre:''}`;
+    else if(nivelTabla==='sec')         capEl.textContent=`${rows.length} secciones · ${MUNS.find(m=>m.id===munFiltro)?.n||''}`;
+    else                                capEl.textContent='10 municipios · 393 secciones';
+  }
+
+  // ── Render ──────────────────────────────────────────────────────
+  document.getElementById('mun-tbody').innerHTML=rowsSorted.map(r=>{
+    const meta=Math.round((r.meta||0)*(p/6));
+    const pv=pct(r.cap,meta); const c=semC(pv);
+    const bar=`<td style="text-align:center"><div class="mbar" style="max-width:90px;margin:0 auto"><div class="mbar-f" style="width:${Math.min(pv/20*100,100)}%;background:${c}"></div></div></td>`;
+    if(nivelTabla==='sec'){
+      return`<tr onclick="drillF1('sec','${r.id}')" class="${f1s.sec===r.id?'sel':''}">
+        <td><div class="nm">Secc. ${r.num}</div><div class="sub">${r.munNombre||''}</div></td>
+        <td class="mono" style="text-align:center">${fmt(r.cap)}</td>
+        <td class="mono" style="text-align:center;color:var(--text2)">${fmt(meta)}</td>
+        <td class="mono" style="text-align:center;color:${c};font-weight:600">${pv}%</td>
+        ${bar}
+        <td style="text-align:center;font-size:14px">${semI(pv)}</td>
+        <td class="mono" style="text-align:center;color:var(--text3);font-size:10px">—</td>
+      </tr>`;
+    }
+    return`<tr onclick="drillF1('mun','${r.id}')" class="${f1s.mun===r.id?'sel':''}">
+      <td><div class="nm">${r.n}</div><div class="sub">${r.secs} secciones</div></td>
+      <td class="mono" style="text-align:center">${fmt(r.cap)}</td>
       <td class="mono" style="text-align:center;color:var(--text2)">${fmt(meta)}</td>
       <td class="mono" style="text-align:center;color:${c};font-weight:600">${pv}%</td>
-      <td style="text-align:center"><div class="mbar" style="max-width:90px;margin:0 auto"><div class="mbar-f" style="width:${Math.min(pv/20*100,100)}%;background:${c}"></div></div></td>
+      ${bar}
       <td style="text-align:center;font-size:14px">${semI(pv)}</td>
-      <td class="mono" style="text-align:center;color:${m.g24==='Partido A'?'var(--green)':'var(--red)'};font-size:10px" title="Votos 2024: ${fmt(m.v24)} (${m.p24}% · ganó ${m.g24})">${m.p24}%</td>
+      <td class="mono" style="text-align:center;color:${r.g24==='Partido A'?'var(--green)':'var(--red)'};font-size:10px" title="Votos 2024: ${fmt(r.v24)} (${r.p24}% · ganó ${r.g24})">${r.p24}%</td>
     </tr>`;
   }).join('');
 }
-
 let WR_SORT = {col: null, asc: true};
 
 function sortWR(col) {
