@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guía del configurador — Inteligencia Electoral</title>
+<style>
+  :root{
+    --bg:#0a0e1a;
+    --card:#11162a;
+    --card2:#1e2130;
+    --border:#2a2f45;
+    --blue:#3b82f6;
+    --blue-soft:rgba(59,130,246,.15);
+    --green:#22c55e;
+    --green-soft:rgba(34,197,94,.12);
+    --amber:#f59e0b;
+    --amber-soft:rgba(245,158,11,.12);
+    --red:#ef4444;
+    --red-soft:rgba(239,68,68,.12);
+    --txt:#f1f5f9;
+    --txt2:#94a3b8;
+    --txt3:#64748b;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    background:var(--bg);
+    color:var(--txt);
+    font-family:'Cascadia Code','Consolas','SF Mono',monospace;
+    font-size:13px;
+    line-height:1.65;
+    padding:32px 40px 80px;
+  }
+  .wrap{max-width:900px;margin:0 auto}
+
+  /* ---- Hero ---- */
+  .hero{
+    border:1px solid var(--border);
+    border-left:3px solid var(--blue);
+    background:var(--card);
+    border-radius:10px;
+    padding:26px 30px;
+    margin-bottom:30px;
+  }
+  .hero h1{font-size:22px;font-weight:700;letter-spacing:.5px;display:flex;align-items:center;gap:10px}
+  .hero p{color:var(--txt2);margin-top:8px;font-size:13px}
+  .hero .tag{
+    display:inline-block;margin-top:16px;
+    background:var(--blue-soft);color:var(--blue);
+    border:1px solid rgba(59,130,246,.3);
+    border-radius:6px;padding:5px 12px;font-size:11px;letter-spacing:.05em;
+  }
+
+  /* ---- Pasos ---- */
+  .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:36px}
+  .step{
+    background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px 18px 20px;
+  }
+  .step .num{
+    width:30px;height:30px;border-radius:50%;background:var(--blue-soft);color:var(--blue);
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;margin-bottom:14px;
+    border:1px solid rgba(59,130,246,.3);
+  }
+  .step h3{font-size:14px;font-weight:600;margin-bottom:7px}
+  .step p{color:var(--txt2);font-size:12px}
+
+  /* ---- Secciones ---- */
+  .sec{margin-bottom:34px}
+  .sec-eyebrow{
+    font-size:11px;letter-spacing:.14em;color:var(--txt3);text-transform:uppercase;
+    margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);
+  }
+  .sec-eyebrow b{color:var(--blue);font-weight:700;margin-right:8px}
+  .panel{
+    background:var(--card);border:1px solid var(--border);border-radius:10px;padding:22px 26px;
+  }
+  .panel h4{font-size:13px;font-weight:600;margin-bottom:12px;color:var(--txt)}
+  .panel p{color:var(--txt2);margin-bottom:12px}
+  .panel p:last-child{margin-bottom:0}
+
+  ul.lst{list-style:none;margin:6px 0 4px}
+  ul.lst li{position:relative;padding-left:20px;margin-bottom:11px;color:var(--txt2)}
+  ul.lst li::before{content:'▸';position:absolute;left:0;color:var(--blue)}
+  ul.lst li b{color:var(--txt);font-weight:600}
+
+  .hint{
+    margin-top:16px;background:var(--blue-soft);border:1px solid rgba(59,130,246,.25);
+    border-radius:7px;padding:11px 14px;color:var(--txt2);font-size:12px;
+  }
+  .hint b{color:var(--blue)}
+
+  /* ---- Parámetros ---- */
+  .params{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-top:6px}
+  .param{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:14px 16px}
+  .param .pk{font-size:11px;letter-spacing:.05em;color:var(--txt3);text-transform:uppercase;margin-bottom:5px}
+  .param .pv{font-size:12px;color:var(--txt2)}
+  .param .pv b{color:var(--txt)}
+
+  /* ---- Semáforo ---- */
+  .semaforo{display:flex;flex-direction:column;gap:12px;margin-top:6px}
+  .sf{display:flex;align-items:flex-start;gap:12px}
+  .sf .dot{width:14px;height:14px;border-radius:50%;margin-top:4px;flex-shrink:0}
+  .sf.v .dot{background:var(--green)}
+  .sf.a .dot{background:var(--amber)}
+  .sf.r .dot{background:var(--red)}
+  .sf .txt b{color:var(--txt);font-weight:600}
+  .sf .txt span{color:var(--txt2)}
+
+  /* ---- Módulos ---- */
+  .mods{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin-top:6px}
+  .mod{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:14px 16px}
+  .mod .mn{font-weight:600;font-size:13px;margin-bottom:5px}
+  .mod .md{color:var(--txt2);font-size:12px}
+
+  /* ---- FAQ ---- */
+  .faq{display:flex;flex-direction:column;gap:0}
+  .qa{border-bottom:1px solid var(--border);padding:16px 0}
+  .qa:last-child{border-bottom:none}
+  .qa .q{font-weight:600;font-size:13px;margin-bottom:6px;color:var(--txt)}
+  .qa .a{color:var(--txt2);font-size:12px}
+
+  .footer{
+    margin-top:40px;text-align:center;color:var(--txt3);font-size:11px;
+    padding-top:20px;border-top:1px solid var(--border);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HERO -->
+  <div class="hero">
+    <h1>📘 Guía del configurador</h1>
+    <p>Cómo preparar tu información, cargarla al sistema y leer los resultados.</p>
+    <span class="tag">COLIMA 2027 · v1.0</span>
+  </div>
+
+  <!-- PASOS -->
+  <div class="steps">
+    <div class="step">
+      <div class="num">1</div>
+      <h3>Prepara tu Excel</h3>
+      <p>Llena la plantilla con tu estructura de campo y datos por sección.</p>
+    </div>
+    <div class="step">
+      <div class="num">2</div>
+      <h3>Carga y configura</h3>
+      <p>Sube el archivo en Meta / Config y ajusta los parámetros de tu campaña.</p>
+    </div>
+    <div class="step">
+      <div class="num">3</div>
+      <h3>Revisa resultados</h3>
+      <p>El sistema calcula tu meta y la distribuye por municipio, distrito y sección.</p>
+    </div>
+    <div class="step">
+      <div class="num">4</div>
+      <h3>Opera y monitorea</h3>
+      <p>Captura avances en campo y da seguimiento en War Room y Mi Panel.</p>
+    </div>
+  </div>
+
+  <!-- 1 · EXCEL -->
+  <div class="sec">
+    <div class="sec-eyebrow"><b>1</b>Tu archivo Excel</div>
+    <div class="panel">
+      <h4>Qué debe contener</h4>
+      <p>El sistema trabaja con la plantilla oficial que se te entrega al activar tu licencia. Antes de subirla, verifica que incluya:</p>
+      <ul class="lst">
+        <li><b>Hoja de estructura:</b> tus coordinadores, líderes y capturistas con su zona asignada (municipio y sección).</li>
+        <li><b>Datos por sección electoral:</b> las 392 secciones de Colima con su municipio y distrito.</li>
+        <li><b>Columnas completas:</b> cada renglón con los campos requeridos por la plantilla. No dejes vacías las celdas obligatorias.</li>
+      </ul>
+      <div class="hint"><b>Consejo:</b> usa la plantilla tal cual. No cambies los nombres de las columnas ni el orden de las hojas — el asistente las reconoce por su nombre exacto.</div>
+    </div>
+  </div>
+
+  <!-- 2 · CARGA Y CONFIGURA -->
+  <div class="sec">
+    <div class="sec-eyebrow"><b>2</b>Carga y configura</div>
+    <div class="panel">
+      <h4>Dónde se sube</h4>
+      <p>Entra a <b>Meta / Config → Configurador de meta</b> y sigue el asistente paso a paso: Estado → Excel → Columnas → Meta.</p>
+      <h4 style="margin-top:18px">Parámetros que defines</h4>
+      <div class="params">
+        <div class="param"><div class="pk">Año de elección</div><div class="pv">El ciclo que trabajas. Ej. <b>2027</b>.</div></div>
+        <div class="param"><div class="pk">% sobre voto ganador</div><div class="pv">El margen objetivo sobre el resultado de referencia.</div></div>
+        <div class="param"><div class="pk">Meta por capturista</div><div class="pv">Cuántos registros esperas por persona.</div></div>
+        <div class="param"><div class="pk">Estructura de campo</div><div class="pv">Cuántos operadores contempla tu estructura.</div></div>
+      </div>
+      <p style="margin-top:16px">Con esos parámetros, el sistema calcula tu <b>meta estatal</b> y la reparte automáticamente por municipio, distrito y sección. Puedes recalcularla cuando quieras desde el botón <b>Recalcular meta</b>.</p>
+    </div>
+  </div>
+
+  <!-- 3 · RESULTADOS -->
+  <div class="sec">
+    <div class="sec-eyebrow"><b>3</b>Revisa resultados</div>
+    <div class="panel">
+      <h4>Cómo leer el semáforo</h4>
+      <div class="semaforo">
+        <div class="sf v"><div class="dot"></div><div class="txt"><b>Verde — en meta.</b> <span>La sección o municipio va en o por encima de lo esperado.</span></div></div>
+        <div class="sf a"><div class="dot"></div><div class="txt"><b>Amarillo — atención.</b> <span>Avance parcial; conviene reforzar esa zona.</span></div></div>
+        <div class="sf r"><div class="dot"></div><div class="txt"><b>Rojo — atrasado.</b> <span>Prioriza esta zona; va por debajo de lo esperado.</span></div></div>
+      </div>
+      <div class="hint"><b>Dónde verlo:</b> el avance aparece en <b>War Room</b> (vista estatal), en el <b>Mapa</b> (por sección) y en <b>Mi Panel</b> (tu zona, según tu rol).</div>
+    </div>
+  </div>
+
+  <!-- 4 · MÓDULOS -->
+  <div class="sec">
+    <div class="sec-eyebrow"><b>4</b>Opera y monitorea</div>
+    <div class="panel">
+      <h4>Para qué sirve cada módulo</h4>
+      <div class="mods">
+        <div class="mod"><div class="mn">⚡ War Room</div><div class="md">Avance estatal en vivo, por municipio y por capturista.</div></div>
+        <div class="mod"><div class="mn">🗺 Mapa</div><div class="md">Mapa electoral por sección con capas de avance y resultados.</div></div>
+        <div class="mod"><div class="mn">✍️ Captura</div><div class="md">Alta de simpatizantes en campo, con nivel de compromiso.</div></div>
+        <div class="mod"><div class="mn">👥 Capturistas</div><div class="md">Seguimiento de tu estructura y alertas a quienes van en rojo.</div></div>
+        <div class="mod"><div class="mn">📊 Reportes</div><div class="md">Exportables por municipio, sección y perfil del votante.</div></div>
+        <div class="mod"><div class="mn">🧮 Mi Panel</div><div class="md">Tu vista personal según tu rol y tu zona asignada.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAQ -->
+  <div class="sec">
+    <div class="sec-eyebrow">Preguntas frecuentes</div>
+    <div class="panel">
+      <div class="faq">
+        <div class="qa">
+          <div class="q">¿Puedo cambiar la meta después de cargarla?</div>
+          <div class="a">Sí. Entra a Meta / Config y usa <b>Recalcular meta</b> las veces que necesites; el sistema vuelve a repartir los números por territorio.</div>
+        </div>
+        <div class="qa">
+          <div class="q">¿Quién puede ver mis datos?</div>
+          <div class="a">Solo tú y tu estructura. Cada licencia está aislada: ninguna otra campaña ni candidatura puede ver tu información.</div>
+        </div>
+        <div class="qa">
+          <div class="q">¿Qué pasa si subo el Excel con un error?</div>
+          <div class="a">El asistente valida las columnas antes de guardar. Si algo no cuadra, te avisa para que lo corrijas y vuelvas a cargar, sin afectar lo que ya tenías.</div>
+        </div>
+        <div class="qa">
+          <div class="q">¿Necesito internet para capturar en campo?</div>
+          <div class="a">La captura funciona aunque se caiga la señal y sincroniza sola cuando vuelve la conexión.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">Inteligencia Electoral · Guía del configurador · Colima 2027 · v1.0</div>
+
+</div>
+</body>
+</html>
