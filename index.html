@@ -523,6 +523,36 @@ document.addEventListener('keydown', e=>{
   } catch(e){}
 })();
 
+// ── Gate mínimo por rol (T6) — protege módulos sensibles ──────────────────
+// Configurador de meta (IP: metodología propietaria) y Administración
+// solo para admin / super_admin. El resto de módulos queda abierto.
+(function gateModulosPorRol(){
+  const ADMINS = ['admin','super_admin','superadmin','administrador'];
+  const rol = (window._sesion?.rol || '').toLowerCase().trim();
+  if(ADMINS.includes(rol)) return; // admin ve todo
+  ['meta','adm'].forEach(id => {
+    const nav = document.getElementById('nav-'+id);
+    if(nav) nav.style.display = 'none';
+    document.querySelectorAll(`[onclick*="load('${id}'"]`).forEach(el => {
+      const card = el.closest('.mc');
+      (card || el).style.display = 'none';
+    });
+  });
+})();
+
+// Defensa en profundidad: bloquear load() de módulos restringidos
+// (por si alguien intenta abrirlos por código aunque el botón esté oculto)
+const _loadGate = window.load;
+window.load = function(id){
+  const ADMINS = ['admin','super_admin','superadmin','administrador'];
+  const rol = (window._sesion?.rol || '').toLowerCase().trim();
+  if((id === 'meta' || id === 'adm') && !ADMINS.includes(rol)){
+    alert('No tienes permisos para abrir este módulo.');
+    return;
+  }
+  return _loadGate.apply(this, arguments);
+};
+
 function cerrarSesion(){
   localStorage.removeItem('electoral_sesion');
   window.location.href = 'login.html';
