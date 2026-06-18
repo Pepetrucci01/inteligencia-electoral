@@ -164,6 +164,13 @@ iframe{width:100%;height:100%;border:none;display:block;}
 </head>
 <body>
 <script>
+// ── Candado de dominio — solo corre en dominios autorizados ───────────────
+(function(){
+  const ALLOW = ['votera.mx','www.votera.mx','localhost','127.0.0.1'];
+  const h = location.hostname;
+  const ok = ALLOW.includes(h) || h.includes('inteligencia-electoral');
+  if(!ok){ location.replace('https://inteligencia-electoral.vercel.app/'); }
+})();
 // Guard de sesión — redirigir a login si no hay sesión válida
 (function(){
   try {
@@ -521,6 +528,23 @@ document.addEventListener('keydown', e=>{
       if(r) r.textContent = u.rol || '';
     }
   } catch(e){}
+})();
+
+// ── Marca de agua por usuario (disuasivo anti-filtración) ─────────────────
+(function(){
+  const u = window._sesion || {};
+  const lic = u.licencia_id ? String(u.licencia_id).slice(0,8) : '';
+  const idLine = [u.nombre, u.rol, lic].filter(Boolean).join(' · ') || 'DEMO';
+  const txt = (idLine + ' · ' + new Date().toLocaleDateString('es-MX'))
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const svg = "<svg xmlns='http://www.w3.org/2000/svg' width='430' height='210'>"
+    + "<text x='12' y='120' transform='rotate(-28 12 120)' fill='white' fill-opacity='0.06' font-family='Arial,Helvetica,sans-serif' font-size='14'>"
+    + txt + "</text></svg>";
+  const wm = document.createElement('div');
+  wm.setAttribute('aria-hidden','true');
+  wm.style.cssText = 'position:fixed;inset:0;z-index:99999;pointer-events:none;'
+    + 'background-image:url("data:image/svg+xml;utf8,' + encodeURIComponent(svg) + '");background-repeat:repeat';
+  document.body.appendChild(wm);
 })();
 
 // ── Gate mínimo por rol (T6) — protege módulos sensibles ──────────────────
