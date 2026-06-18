@@ -2453,39 +2453,43 @@ async function cargarKPIsReales() {
     // Actualizar KPIs en el DOM
     const fmt = n => n.toLocaleString('es-MX');
 
-    // Guardar en variable global para que recalc() la use
-    _totalCapturadosReal = total;
-    
-    // Total capturados — usando IDs fijos
-    const elTotalCap = document.getElementById('kpi-total-cap');
-    if(elTotalCap) elTotalCap.textContent = fmt(total);
-    const elSeguro = document.getElementById('kpi-seguro-vota');
-    if(elSeguro) elSeguro.textContent = fmt(seguro);
-    
-    // Riesgo alto
-    const riesgoEl = document.querySelector('.kpi.re .kv');
-    if(riesgoEl) riesgoEl.textContent = fmt(riesgo);
+    // Fallback de estabilidad: si NO llegó dato real (RLS / sin sesión / error),
+    // no sobrescribir las tarjetas — conservar los valores simulados del HTML.
+    if(total > 0){
+      // Guardar en variable global para que recalc() la use
+      _totalCapturadosReal = total;
 
-    // Requieren atención (indecisos)
-    const elAten = document.getElementById('kpi-atencion');
-    if(elAten) elAten.textContent = fmt(atencion);
-    // Registros a depurar (duplicados)
-    const elDep = document.getElementById('kpi-depurar');
-    if(elDep) elDep.textContent = fmt(depurar);
+      // Total capturados — usando IDs fijos
+      const elTotalCap = document.getElementById('kpi-total-cap');
+      if(elTotalCap) elTotalCap.textContent = fmt(total);
+      const elSeguro = document.getElementById('kpi-seguro-vota');
+      if(elSeguro) elSeguro.textContent = fmt(seguro);
 
-    // Barra de progreso
-    const pbNums = document.getElementById('pb-nums');
-    if(pbNums) pbNums.textContent = `${fmt(total)} / 197,297 capturados`;
-    
-    // Barra fill
-    const pbFill = document.getElementById('pb-fill');
-    const meta = 197297;
-    const pct = Math.min(100, Math.round((total / meta) * 100));
-    if(pbFill) pbFill.style.width = pct + '%';
-    const pbPct = document.getElementById('pb-pct');
-    if(pbPct) pbPct.textContent = (total / meta * 100).toFixed(1) + '%';
+      // Riesgo alto
+      const riesgoEl = document.querySelector('.kpi.re .kv');
+      if(riesgoEl) riesgoEl.textContent = fmt(riesgo);
 
-    console.log(`✅ KPIs cargados: ${total} ciudadanos, ${seguro} seguro vota, ${riesgo} en riesgo`);
+      // Requieren atención (indecisos)
+      const elAten = document.getElementById('kpi-atencion');
+      if(elAten) elAten.textContent = fmt(atencion);
+      // Registros a depurar (duplicados)
+      const elDep = document.getElementById('kpi-depurar');
+      if(elDep) elDep.textContent = fmt(depurar);
+
+      // Barra de progreso
+      const pbNums = document.getElementById('pb-nums');
+      if(pbNums) pbNums.textContent = `${fmt(total)} / 197,297 capturados`;
+      const pbFill = document.getElementById('pb-fill');
+      const meta = 197297;
+      const pct = Math.min(100, Math.round((total / meta) * 100));
+      if(pbFill) pbFill.style.width = pct + '%';
+      const pbPct = document.getElementById('pb-pct');
+      if(pbPct) pbPct.textContent = (total / meta * 100).toFixed(1) + '%';
+
+      console.log(`✅ KPIs cargados: ${total} ciudadanos, ${seguro} seguro vota, ${riesgo} en riesgo`);
+    } else {
+      console.warn('⚠️ KPIs: total=0 (RLS/sin sesión); se conservan los valores simulados.');
+    }
   } catch(e) {
     console.warn('Error cargando KPIs:', e);
   }
