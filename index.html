@@ -550,14 +550,21 @@ function cerrarSesion(){
     const pct    = Math.min(100, ((total / META) * 100).toFixed(1));
 
     const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
-    set('hub-kpi-total',  fmt(total));
-    set('hub-kpi-seguro', fmt(seguro));
-    set('hub-kpi-riesgo', fmt(riesgo));
-    set('hub-pb-pct',  pct + '%');
-    set('hub-pb-nums', fmt(total) + ' / ' + fmt(META));
-    const fill = document.getElementById('hub-pb-fill');
-    if(fill) fill.style.width = pct + '%';
-    console.log(`✅ Hub KPIs: ${total} capturados`);
+
+    // Fallback de estabilidad: si NO llegó dato real (RLS / sin sesión / error),
+    // no sobrescribir las tarjetas — conservar los valores simulados del HTML.
+    if(total > 0){
+      set('hub-kpi-total',  fmt(total));
+      set('hub-kpi-seguro', fmt(seguro));
+      set('hub-kpi-riesgo', fmt(riesgo));
+      set('hub-pb-pct',  pct + '%');
+      set('hub-pb-nums', fmt(total) + ' / ' + fmt(META));
+      const fill = document.getElementById('hub-pb-fill');
+      if(fill) fill.style.width = pct + '%';
+      console.log(`✅ Hub KPIs: ${total} capturados`);
+    } else {
+      console.warn('⚠️ Hub KPIs: total=0 (RLS/sin sesión); se conservan los valores simulados.');
+    }
   } catch(e) {
     console.warn('Hub KPIs error:', e);
   }
