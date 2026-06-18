@@ -233,6 +233,14 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
 </head>
 <script>
 (function(){
+  // Candado de dominio — solo corre en dominios autorizados
+  const ALLOW = ['votera.mx','www.votera.mx','localhost','127.0.0.1'];
+  const h = location.hostname;
+  if(!(ALLOW.includes(h) || h.includes('inteligencia-electoral'))){
+    location.replace('https://inteligencia-electoral.vercel.app/');
+  }
+})();
+(function(){
   try {
     const s = JSON.parse(localStorage.getItem('electoral_sesion') || 'null');
     if (!s || !s.ts) { window.location.replace('login.html'); return; }
@@ -2680,6 +2688,23 @@ function cerrarDetalleAlerta() {
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
+  // ── Marca de agua por usuario (disuasivo anti-filtración) ───────────────
+  (function(){
+    const u = window._sesion || {};
+    const lic = u.licencia_id ? String(u.licencia_id).slice(0,8) : '';
+    const idLine = [u.nombre, u.rol, lic].filter(Boolean).join(' · ') || 'DEMO';
+    const txt = (idLine + ' · ' + new Date().toLocaleDateString('es-MX'))
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const svg = "<svg xmlns='http://www.w3.org/2000/svg' width='430' height='210'>"
+      + "<text x='12' y='120' transform='rotate(-28 12 120)' fill='white' fill-opacity='0.06' font-family='Arial,Helvetica,sans-serif' font-size='14'>"
+      + txt + "</text></svg>";
+    const wm = document.createElement('div');
+    wm.setAttribute('aria-hidden','true');
+    wm.style.cssText = 'position:fixed;inset:0;z-index:99999;pointer-events:none;'
+      + 'background-image:url("data:image/svg+xml;utf8,' + encodeURIComponent(svg) + '");background-repeat:repeat';
+    document.body.appendChild(wm);
+  })();
+
   // Poblar selectores de municipio
   const munOpts = MUNS.map(m=>`<option value="${m.id}">${m.n}</option>`).join('');
   const fltMun = document.getElementById('flt-mun');
