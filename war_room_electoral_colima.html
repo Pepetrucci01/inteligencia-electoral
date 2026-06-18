@@ -313,9 +313,9 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
       <div class="kpi bl"><div class="kl">Meta estatal <span data-theme="sistema-anio">2027</span></div><div class="kv" id="kpi-meta">197,297</div><div class="ks">votos proyectados</div></div>
       <div class="kpi gr"><div class="kl">Total capturados</div><div class="kv" id="kpi-total-cap">14,300</div><div class="ks">registros activos</div></div>
       <div class="kpi gr"><div class="kl">Seguro vota</div><div class="kv" id="kpi-seguro-vota">3,432</div><div class="ks">nivel compromiso 3+4</div></div>
-      <div class="kpi am"><div class="kl">Prioridad alta</div><div class="kv">2,757</div><div class="ks">requieren atención</div></div>
+      <div class="kpi am"><div class="kl">Prioridad alta</div><div class="kv" id="kpi-atencion">2,757</div><div class="ks">requieren atención</div></div>
       <div class="kpi re"><div class="kl">Riesgo alto</div><div class="kv">2,203</div><div class="ks">posible fuga de voto</div></div>
-      <div class="kpi pu"><div class="kl">Duplicados</div><div class="kv">408</div><div class="ks">registros a depurar</div></div>
+      <div class="kpi pu"><div class="kl">Duplicados</div><div class="kv" id="kpi-depurar">408</div><div class="ks">registros a depurar</div></div>
     </div>
 
     <!-- TABLA MUNICIPIOS — ANCHO COMPLETO -->
@@ -948,7 +948,7 @@ function sortWR(col) {
 
 function recalc(){
   const p=parseFloat(document.getElementById('cfg-pct').value)||6;
-  const meta=Math.round(195000*(p/6));
+  const meta=Math.round(197297*(p/6));
   document.getElementById('meta-calc').textContent=fmt(meta);
   document.getElementById('kpi-meta').textContent=fmt(meta);
   const capActual = _totalCapturadosReal;
@@ -2436,6 +2436,20 @@ async function cargarKPIsReales() {
     );
     const riesgo = parseInt(rRiesgo.headers.get('Content-Range')?.split('/')[1] || 0);
 
+    // Requieren atención (indecisos, compromiso = 2)
+    const rAten = await fetch(
+      `${SUPA_URL}/rest/v1/ciudadanos?select=id&licencia_id=eq.${window._sesion?.licencia_id||LICENCIA_ID}&compromiso=eq.2`,
+      { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}`, 'Prefer': 'count=exact', 'Range': '0-0' } }
+    );
+    const atencion = parseInt(rAten.headers.get('Content-Range')?.split('/')[1] || 0);
+
+    // Registros a depurar (duplicados)
+    const rDup = await fetch(
+      `${SUPA_URL}/rest/v1/ciudadanos?select=id&licencia_id=eq.${window._sesion?.licencia_id||LICENCIA_ID}&duplicado=eq.true`,
+      { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}`, 'Prefer': 'count=exact', 'Range': '0-0' } }
+    );
+    const depurar = parseInt(rDup.headers.get('Content-Range')?.split('/')[1] || 0);
+
     // Actualizar KPIs en el DOM
     const fmt = n => n.toLocaleString('es-MX');
 
@@ -2452,6 +2466,13 @@ async function cargarKPIsReales() {
     const riesgoEl = document.querySelector('.kpi.re .kv');
     if(riesgoEl) riesgoEl.textContent = fmt(riesgo);
 
+    // Requieren atención (indecisos)
+    const elAten = document.getElementById('kpi-atencion');
+    if(elAten) elAten.textContent = fmt(atencion);
+    // Registros a depurar (duplicados)
+    const elDep = document.getElementById('kpi-depurar');
+    if(elDep) elDep.textContent = fmt(depurar);
+
     // Barra de progreso
     const pbNums = document.getElementById('pb-nums');
     if(pbNums) pbNums.textContent = `${fmt(total)} / 197,297 capturados`;
@@ -2461,6 +2482,8 @@ async function cargarKPIsReales() {
     const meta = 197297;
     const pct = Math.min(100, Math.round((total / meta) * 100));
     if(pbFill) pbFill.style.width = pct + '%';
+    const pbPct = document.getElementById('pb-pct');
+    if(pbPct) pbPct.textContent = (total / meta * 100).toFixed(1) + '%';
 
     console.log(`✅ KPIs cargados: ${total} ciudadanos, ${seguro} seguro vota, ${riesgo} en riesgo`);
   } catch(e) {
