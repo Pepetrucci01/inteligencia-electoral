@@ -158,8 +158,10 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
 
 /* BREADCRUMB */
 .bc{background:var(--bg4);border:1px solid var(--border2);border-radius:8px;padding:8px 14px;display:flex;align-items:center;gap:6px;font-size:11px;font-family:var(--mono);flex-wrap:wrap;margin-bottom:14px;}
-.bc-item{cursor:pointer;color:var(--text3);transition:color .15s;}
+.bc-item{cursor:pointer;color:var(--text2);transition:color .15s;}
 .bc-item:hover{color:var(--accent);}
+.bc-item.disabled{color:var(--text3);opacity:.4;cursor:default;}
+.bc-item.disabled:hover{color:var(--text3);}
 .bc-item.active{color:var(--text);font-weight:600;}
 .bc-sep{color:var(--text3);opacity:.4;}
 
@@ -497,7 +499,7 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
 
     <!-- DIVIDER CUADRANTES F1 -->
     <div class="divider"></div>
-    <div class="section-title">📍 Navegación territorial por cuadrantes — clic en cualquier nivel para profundizar</div>
+    <div class="section-title">📍 Navegación territorial por cuadrantes — clic en las tarjetas para profundizar · usa la ruta de arriba para regresar</div>
 
     <!-- RESUMEN SEMÁFORO GLOBAL -->
     <div id="semaforo-global" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px"></div>
@@ -1146,7 +1148,7 @@ function detalleSecF1(sec){
 function updateBcF1(){
   ['df','mun','dl','sec','cap'].forEach(id=>{
     const el=document.getElementById('bc1-'+id);
-    if(el){el.classList.remove('active');el.textContent={df:'Dist. Federal',mun:'Municipio',dl:'Dist. Local',sec:'Sección',cap:'Capturista'}[id];}
+    if(el){el.classList.remove('active');el.classList.add('disabled');el.textContent={df:'Dist. Federal',mun:'Municipio',dl:'Dist. Local',sec:'Sección',cap:'Capturista'}[id];}
   });
   document.querySelectorAll('#bc-f1 .bc-item').forEach(e=>e.classList.remove('active'));
   document.querySelectorAll('#bc-f1 .bc-item')[0].classList.add('active');
@@ -1155,6 +1157,7 @@ function updateBcF1(){
   if(f1s.dl){const e=document.getElementById('bc1-dl');if(e){e.classList.add('active');e.textContent='DL '+f1s.dl.replace('DL','');}}
   if(f1s.sec){const s=Object.values(SECS).flat().find(x=>x.id===f1s.sec);const e=document.getElementById('bc1-sec');if(e&&s){e.classList.add('active');e.textContent='Secc. '+s.num;}}
   if(f1s.cap){const cap=Object.values(CAPS).flat().find(c=>c.id===f1s.cap);const e=document.getElementById('bc1-cap');if(e&&cap){e.classList.add('active');e.textContent=cap.nombre.split(' ')[0];}}
+  document.querySelectorAll('#bc-f1 .bc-item.active').forEach(e=>e.classList.remove('disabled'));
 }
 
 // ══════════════════════════════════════════════════
@@ -1809,13 +1812,14 @@ function actualizarHistorialAlertas(){
 function updateBcF2(){
   ['df','mun','dl','sec','cas'].forEach(id=>{
     const el=document.getElementById('bc2-'+id);
-    if(el){el.classList.remove('active');el.textContent={df:'Dist. Federal',mun:'Municipio',dl:'Dist. Local',sec:'Sección',cas:'Casilla'}[id];}
+    if(el){el.classList.remove('active');el.classList.add('disabled');el.textContent={df:'Dist. Federal',mun:'Municipio',dl:'Dist. Local',sec:'Sección',cas:'Casilla'}[id];}
   });
   if(f2s.df){const e=document.getElementById('bc2-df');if(e){e.classList.add('active');e.textContent=f2s.df;}}
   if(f2s.mun){const m=MUNS.find(x=>x.id===f2s.mun);const e=document.getElementById('bc2-mun');if(e&&m){e.classList.add('active');e.textContent=m.n;}}
   if(f2s.dl){const e=document.getElementById('bc2-dl');if(e){e.classList.add('active');e.textContent='DL '+f2s.dl.replace('DL','');}}
   if(f2s.sec){const s=Object.values(SECS).flat().find(x=>x.id===f2s.sec);const e=document.getElementById('bc2-sec');if(e&&s){e.classList.add('active');e.textContent='Secc.'+s.num;}}
   if(f2s.cas){const e=document.getElementById('bc2-cas');if(e){e.classList.add('active');e.textContent=f2s.cas;}}
+  document.querySelectorAll('#bc-f2 .bc-item.active').forEach(e=>e.classList.remove('disabled'));
 }
 
 function simActualizar(){
@@ -2746,6 +2750,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 
   renderMunF1();
   renderCuadF1();
+  updateBcF1();
   renderTablaCapturistas();
   cargarKPIsReales();
   cargarDatosReales(); // ← carga datos reales y re-renderiza con Supabase
