@@ -2309,6 +2309,12 @@ async function cargarDatosReales() {
     );
     const secciones = await rMetas.json();
 
+    // Si la respuesta no es un array (error/RLS), conservar simulados y salir.
+    if (!Array.isArray(secciones)) {
+      console.warn('⚠️ Metas: respuesta no válida, se conservan simulados', secciones);
+      return;
+    }
+
     // Agrupar meta por municipio
     const metasPorMun = {};
     const secsPorMun  = {};
@@ -2325,6 +2331,12 @@ async function cargarDatosReales() {
       { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${window._sesion?.access_token || SUPA_KEY}` } }
     );
     const ciudadanos = await rCap.json();
+
+    // Si la respuesta no es un array (error/RLS/401), conservar simulados y salir.
+    if (!Array.isArray(ciudadanos)) {
+      console.warn('⚠️ Ciudadanos: respuesta no válida, se conservan simulados', ciudadanos);
+      return;
+    }
 
     const capPorMun = {};
     ciudadanos.forEach(c => {
@@ -2393,6 +2405,13 @@ async function cargarKPIsReales() {
       `${SUPA_URL}/rest/v1/ciudadanos?select=id&licencia_id=eq.${licId}${filtroTerr}`,
       { headers: hAuth }
     );
+
+    // ⛔ Si la lectura falló (RLS/401), NO tocar las tarjetas: conservar simulados
+    if (!rTotal.ok) {
+      console.warn('KPIs: lectura bloqueada (' + rTotal.status + '), se conservan los simulados');
+      return;
+    }
+
     const total = parseInt(rTotal.headers.get('Content-Range')?.split('/')[1] || 0);
 
     // Seguro vota (compromiso 3 o 4)
@@ -2400,44 +2419,46 @@ async function cargarKPIsReales() {
       `${SUPA_URL}/rest/v1/ciudadanos?select=id&licencia_id=eq.${licId}&compromiso=gte.3${filtroTerr}`,
       { headers: hAuth }
     );
-    const seguro = parseInt(rSeg.headers.get('Content-Range')?.split('/')[1] || 0);
+    const seguro = rSeg.ok ? parseInt(rSeg.headers.get('Content-Range')?.split('/')[1] || 0) : 0;
 
     // En riesgo
     const rRiesgo = await fetch(
       `${SUPA_URL}/rest/v1/ciudadanos?select=id&licencia_id=eq.${licId}&es_riesgo=eq.true${filtroTerr}`,
       { headers: hAuth }
     );
-    const riesgo = parseInt(rRiesgo.headers.get('Content-Range')?.split('/')[1] || 0);
+    const riesgo = rRiesgo.ok ? parseInt(rRiesgo.headers.get('Content-Range')?.split('/')[1] || 0) : 0;
 
     // Actualizar KPIs en el DOM
     const fmt = n => n.toLocaleString('es-MX');
 
-    // Guardar en variable global para que recalc() la use
-    _totalCapturadosReal = total;
-    
-    // Total capturados — usando IDs fijos
+    // Guardar en variable global para que recalc() la use (solo si hay dato real)
+    if (total > 0) _totalCapturadosReal = total;
+
+    // Solo escribir cada KPI si el valor real es > 0.
+    // Un 0 casi siempre significa "no pude leer", no "hay cero capturados".
     const elTotalCap = document.getElementById('kpi-total-cap');
-    if(elTotalCap) elTotalCap.textContent = fmt(total);
+    if(total > 0 && elTotalCap) elTotalCap.textContent = fmt(total);
     const elSeguro = document.getElementById('kpi-seguro-vota');
-    if(elSeguro) elSeguro.textContent = fmt(seguro);
-    
+    if(seguro > 0 && elSeguro) elSeguro.textContent = fmt(seguro);
+
     // Riesgo alto
     const riesgoEl = document.querySelector('.kpi.re .kv');
-    if(riesgoEl) riesgoEl.textContent = fmt(riesgo);
+    if(riesgo > 0 && riesgoEl) riesgoEl.textContent = fmt(riesgo);
 
-    // Barra de progreso
-    const pbNums = document.getElementById('pb-nums');
-    if(pbNums) pbNums.textContent = `${fmt(total)} / 197,297 capturados`;
-    
-    // Barra fill
-    const pbFill = document.getElementById('pb-fill');
-    const meta = 197297;
-    const pct = Math.min(100, Math.round((total / meta) * 100));
-    if(pbFill) pbFill.style.width = pct + '%';
+    // Barra de progreso — solo actualizar si hay total real (>0)
+    if (total > 0) {
+      const pbNums = document.getElementById('pb-nums');
+      if(pbNums) pbNums.textContent = `${fmt(total)} / 197,297 capturados`;
+
+      const pbFill = document.getElementById('pb-fill');
+      const meta = 197297;
+      const pct = Math.min(100, Math.round((total / meta) * 100));
+      if(pbFill) pbFill.style.width = pct + '%';
+    }
 
     console.log(`✅ KPIs cargados: ${total} ciudadanos, ${seguro} seguro vota, ${riesgo} en riesgo`);
   } catch(e) {
-    console.warn('Error cargando KPIs:', e);
+    console.warn('Error cargando KPIs (se conservan simulados):', e);
   }
 }
 
