@@ -1112,81 +1112,18 @@ function onCurpInput(val) {
     return;
   }
 
-  // Formato OK, no duplicado — consultar RENAPO con debounce
-  status.textContent = '';
-  mostrarCurpBox('validando',
-    '<span class="spinner-curp"></span> Consultando RENAPO...',
-    'Verificando que la CURP sea válida y obteniendo datos oficiales...'
-  );
-
-  curpTimer = setTimeout(() => consultarRenapo(val), 800);
+  // Online y formato OK — validar localmente (sin RENAPO).
+  // La API de RENAPO no es accesible desde el navegador (CORS / requiere
+  // credenciales oficiales). Validamos formato e inferimos los datos que
+  // la propia CURP codifica. Instantáneo, sin falsos "sin conexión".
+  validarCurpLocal(val);
 }
 
-async function consultarRenapo(curp) {
+function validarCurpLocal(curp) {
+  curpValidada = true;
   const status = document.getElementById('curp-status');
-  try {
-    // API pública de RENAPO (CORS proxy para frontend)
-    // En producción usar: https://api.renapo.gob.mx/suap/getRCurp/?curp=
-    const url = `https://api.renapo.gob.mx/suap/getRCurp/?curp=${curp}&_=` + Date.now();
-    
-    const resp = await Promise.race([
-      fetch(url, { method: 'GET', mode: 'cors' }),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
-    ]);
+  status.textContent = '✅';
 
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    const data = await resp.json();
-
-    if (data && data.message === 'OK' && data.result) {
-      const r = data.result;
-      datosRenapo = {
-        nombre:   capitalizar(r.nombres || ''),
-        paterno:  capitalizar(r.primerApellido || ''),
-        materno:  capitalizar(r.segundoApellido || ''),
-        sexo:     r.sexo === 'H' ? 'HOMBRE' : 'MUJER',
-        nacimiento: r.fechaNacimiento || '',
-        estado:   r.claveEntidad || '',
-      };
-      datosRenapo.edad = calcularEdad(datosRenapo.nacimiento);
-      curpValidada = true;
-      status.textContent = '✅';
-      mostrarCurpBox('ok', '✅ CURP verificada con RENAPO',
-        `<div class="curp-autocompletado">
-          <div class="curp-autocompletado-title">📋 Datos oficiales — se autocompletará el formulario</div>
-          <div class="curp-field"><span class="curp-field-lbl">Nombre(s)</span><span class="curp-field-val">${datosRenapo.nombre}</span></div>
-          <div class="curp-field"><span class="curp-field-lbl">Ap. Paterno</span><span class="curp-field-val">${datosRenapo.paterno}</span></div>
-          <div class="curp-field"><span class="curp-field-lbl">Ap. Materno</span><span class="curp-field-val">${datosRenapo.materno}</span></div>
-          <div class="curp-field"><span class="curp-field-lbl">Sexo</span><span class="curp-field-val">${datosRenapo.sexo}</span></div>
-          <div class="curp-field"><span class="curp-field-lbl">Edad</span><span class="curp-field-val">${datosRenapo.edad} años</span></div>
-          <div class="curp-field"><span class="curp-field-lbl">Nacimiento</span><span class="curp-field-val">${datosRenapo.nacimiento}</span></div>
-        </div>
-        <button class="btn-aplicar" onclick="aplicarDatosRenapo()">✓ Aplicar datos al formulario</button>`
-      );
-    } else {
-      throw new Error('CURP no encontrada');
-    }
-  } catch(e) {
-    // Sin internet o API no disponible — modo offline
-    if (e.message === 'timeout' || e.message.includes('fetch') || e.message.includes('Failed')) {
-      modoOfflineCurp(curp);
-    } else {
-      // CURP con formato válido pero no existe en RENAPO
-      status.textContent = '⚠️';
-      mostrarCurpBox('error', '⚠️ CURP no encontrada en RENAPO',
-        'La CURP tiene formato correcto pero no aparece en el registro nacional. ' +
-        'Verifica que esté bien escrita o pide la credencial de elector al ciudadano.'
-      );
-    }
-  }
-}
-
-function modoOfflineCurp(curp) {
-  // Sin internet: validar formato e inferir datos básicos de la CURP
-  curpValidada = true; // Permitir continuar en modo offline
-  const status = document.getElementById('curp-status');
-  status.textContent = '🔶';
-
-  // La CURP codifica: sexo (pos 10), año nac (pos 4-5), mes (6-7), día (8-9)
   try {
     const anio  = parseInt(curp.substring(4,6));
     const mes   = parseInt(curp.substring(6,8));
@@ -1197,15 +1134,14 @@ function modoOfflineCurp(curp) {
 
     datosRenapo = { sexo, edad, nombre:'', paterno:'', materno:'', nacimiento: `${dia}/${mes}/${anioCompleto}` };
 
-    mostrarCurpBox('offline', '🔶 Sin conexión — modo offline',
-      `Formato de CURP válido. Sin internet no se pueden obtener datos de RENAPO.<br>
-       <span style="color:var(--text2)">Datos inferidos de la CURP:</span><br>
+    mostrarCurpBox('ok', '✅ CURP con formato válido',
+      `<span style="color:var(--text2)">Datos inferidos de la CURP:</span><br>
        <span style="font-family:var(--mono);color:var(--text)">Sexo: <b>${sexo}</b> · Edad aprox: <b>${edad} años</b> · Nac: <b>${dia}/${mes}/${anioCompleto}</b></span><br>
-       <span style="color:var(--purple)">Llena los datos manualmente. Se sincronizará cuando haya internet.</span>`
+       <span style="color:var(--text3)">Completa nombre y apellidos manualmente.</span>`
     );
   } catch(e2) {
-    mostrarCurpBox('offline', '🔶 Sin conexión — modo offline',
-      'No hay internet. La CURP tiene formato válido y no está duplicada en el sistema. Puedes continuar llenando los datos manualmente.');
+    mostrarCurpBox('ok', '✅ CURP con formato válido',
+      'La CURP tiene formato válido y no está duplicada. Completa los datos manualmente.');
   }
 }
 
