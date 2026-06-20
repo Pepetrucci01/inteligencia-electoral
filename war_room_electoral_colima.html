@@ -864,6 +864,11 @@ Object.values(SECS).flat().forEach(sec=>{
 function pct(c,m){return m>0?Math.min(parseFloat((c/m*100).toFixed(1)),100):0;}
 function semC(p){return p>=10?'var(--green)':p>=5?'var(--amber)':'var(--red)';}
 function semI(p){return p>=10?'🟢':p>=5?'🟡':'🔴';}
+// ── Conteo de capturistas por territorio (agrega CAPS hacia arriba) ──
+function capsSec(secId){return (CAPS[secId]||[]).length;}
+function capsDL(dlId){return (SECS[dlId]||[]).reduce((s,sec)=>s+capsSec(sec.id),0);}
+function capsMun(munId){return DLS.filter(dl=>dl.mun===munId).reduce((s,dl)=>s+capsDL(dl.id),0);}
+function capsDF(dfId){const df=DFS.find(d=>d.id===dfId);return df?df.munIds.reduce((s,mid)=>s+capsMun(mid),0):0;}
 function casStats(secIds){
   const cas=secIds.flatMap(id=>CAS_SEC[id]||[]);
   return{total:cas.length,ab:cas.filter(c=>c.estatus==='abierta').length,
@@ -1044,7 +1049,7 @@ function renderCuadF1(){
           <div style="font-size:24px;font-weight:700;font-family:var(--mono);color:${dc};line-height:1;margin-bottom:4px">${dpv}%</div>
           <div style="height:5px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden;margin-bottom:6px"><div style="width:${dpv}%;height:100%;background:${dc};border-radius:99px"></div></div>
           <div style="font-size:11px;font-family:var(--mono);color:var(--text2)">${fmt(df.cap)} / ${fmt(df.meta)}</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px">${df.secs} secciones · ${df.cas} casillas</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px">${df.secs} secciones · ${df.cas} casillas · ${capsDF(df.id)} capturistas</div>
           <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px"><span style="font-size:16px">${semI(dpv)}</span><span style="color:var(--text3)">Ver municipios →</span></div>
         </div>`;
       }).join('')}
@@ -1055,14 +1060,14 @@ function renderCuadF1(){
     const df=DFS.find(d=>d.id===f1s.df);
     const muns=filtrarPorSem(MUNS.filter(m=>df.munIds.includes(m.id)),m=>m.cap,m=>m.meta);
     html+=buildCuadF1('Municipio','Municipios en '+df.n,muns,
-      m=>m.cap,m=>m.meta,m=>m.n,m=>`${m.secs} secc.`,
+      m=>m.cap,m=>m.meta,m=>m.n,m=>`${m.secs} secc. · ${capsMun(m.id)} capt.`,
       m=>`drillF1('mun','${m.id}')`,f1s.mun);
   }
   if(f1s.mun){
     const mun=MUNS.find(m=>m.id===f1s.mun);
     const dls=filtrarPorSem(DLS.filter(dl=>dl.mun===f1s.mun),dl=>dl.cap,dl=>dl.meta);
     html+=buildCuadF1('Dist. Local','Distritos locales en '+mun.n,dls,
-      dl=>dl.cap,dl=>dl.meta,dl=>dl.n,dl=>`${dl.secs} secc.`,
+      dl=>dl.cap,dl=>dl.meta,dl=>dl.n,dl=>`${dl.secs} secc. · ${capsDL(dl.id)} capt.`,
       dl=>`drillF1('dl','${dl.id}')`,f1s.dl);
   }
   if(f1s.dl){
