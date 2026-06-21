@@ -301,6 +301,17 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 
   <!-- PASO 1 -->
   <div id="paso1">
+    <!-- AVISO DE PRIVACIDAD Y CONSENTIMIENTO -->
+    <div class="form-section" id="aviso-privacidad-box" style="border-left:4px solid var(--accent,#3b82f6);">
+      <div class="form-section-title">Aviso de privacidad</div>
+      <p style="font-size:13px;line-height:1.5;margin:0 0 10px;opacity:.85;">Los datos se recaban por el partido o candidato responsable, con la finalidad de organizar la campaña. El ciudadano puede ejercer sus derechos ARCO (acceso, rectificación, cancelación y oposición). El aviso de privacidad completo está disponible para el titular.</p>
+      <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;font-size:13px;line-height:1.4;">
+        <input type="checkbox" id="f-consent" style="margin-top:2px;accent-color:var(--accent,#3b82f6);flex-shrink:0;">
+        <span>Confirmo que informé al ciudadano el aviso de privacidad y que otorga su consentimiento <strong>expreso</strong> para el tratamiento de sus datos personales, incluida su preferencia política. <span class="req">*</span></span>
+      </label>
+    </div>
+
+
     <div class="form-section">
       <div class="form-section-title">Datos personales</div>
       <div class="form-group">
@@ -638,6 +649,12 @@ function actualizarSecciones() {}
 // ─── PASO 1 → 2 ────────────────────────────────────────────────────────────
 function irPaso2() {
   const errs = [];
+  // Consentimiento del ciudadano (aviso de privacidad) — requerido antes de datos sensibles
+  const consentEl = document.getElementById('f-consent');
+  if (!consentEl || !consentEl.checked) {
+    errs.push('Falta el consentimiento del ciudadano (aviso de privacidad)');
+  }
+
   // Validar CURP primero
   const curpVal = (document.getElementById('f-curp').value || '').trim();
   if (!curpVal) {
@@ -765,6 +782,7 @@ function nuevoRegistro() {
     if(el) el.value='';
   });
   compSel=0; origenSel=''; toggles={riesgo:false,apoyo:false,influencia:false}; votoParejo='';
+  var cc=document.getElementById('f-consent'); if(cc) cc.checked=false;
   [1,2,3,4].forEach(i=>document.getElementById('comp-'+i).className='comp-btn');
   ['casa','ref','evento','digital'].forEach(x=>document.getElementById('orig-'+x).classList.remove('selected'));
   ['riesgo','apoyo','influencia'].forEach(k=>document.getElementById('tog-'+k).classList.remove('on'));
