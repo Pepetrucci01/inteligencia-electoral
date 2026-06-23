@@ -8,7 +8,7 @@
 //     evita servir versiones obsoletas.
 // ============================================================
 
-const CACHE_VERSION = 'sie-captura-v2';
+const CACHE_VERSION = 'sie-captura-v3';
 
 // Archivos propios: se sirven "network-first" (fresco si hay red).
 const ARCHIVOS_APP = [
@@ -91,7 +91,20 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Archivos propios y navegación: network-first con fallback a caché.
+  // ¿Es uno de los archivos que SÍ queremos disponibles offline?
+  // Solo estos (los de captura) se cachean y tienen respaldo offline.
+  // El resto de módulos (admin, war room, etc.) van SIEMPRE a la red:
+  // si falla, falla — NO se sirve una copia vieja cacheada, que fue
+  // justo lo que sirvió un modulo_admin.html obsoleto y rebotaba al login.
+  const esArchivoApp = ARCHIVOS_APP.some(a => url.endsWith(a.replace('./', '')));
+
+  if (!esArchivoApp) {
+    // Módulos no-offline (admin, war room, login, etc.): network-only.
+    // Sin caché de por medio, siempre la versión fresca del servidor.
+    return; // deja pasar a la red normal del navegador
+  }
+
+  // Archivos propios de captura: network-first con fallback a caché.
   event.respondWith(
     fetch(req)
       .then(resp => {
@@ -105,8 +118,9 @@ self.addEventListener('fetch', (event) => {
         return resp;
       })
       .catch(() =>
-        // Sin red: servir de caché. Si es navegación y no hay copia,
-        // devolver el módulo de captura cacheado como respaldo.
+        // Sin red: servir de caché. Solo aplica a archivos de captura.
+        // Si es la navegación a captura y no hay copia exacta, usar
+        // el módulo de captura cacheado como respaldo.
         caches.match(req).then(hit =>
           hit || caches.match('./modulo_captura.html')
         )
