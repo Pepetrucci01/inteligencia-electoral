@@ -25,6 +25,9 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--sans);}
 .tb-title{font-size:14px;font-weight:600;letter-spacing:.02em;}
 .tb-sub{font-size:10px;color:var(--text3);font-family:var(--mono);}
 .tb-r{display:flex;align-items:center;gap:12px;}
+.badge-alcance{display:flex;align-items:center;gap:6px;font-size:11px;font-family:var(--mono);font-weight:600;padding:4px 12px;border-radius:99px;letter-spacing:.02em;white-space:nowrap;}
+.badge-alcance.estatal{color:var(--accent);background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.3);}
+.badge-alcance.municipal{color:var(--amber);background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);}
 .live{display:flex;align-items:center;gap:6px;font-size:11px;font-family:var(--mono);color:var(--green);background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25);padding:4px 12px;border-radius:99px;}
 .dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
@@ -253,6 +256,7 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
     <div><div class="tb-title">WAR ROOM ELECTORAL</div><div class="tb-sub">ESTADO DE <span data-theme="sistema-titulo">COLIMA 2027</span></div></div>
   </div>
   <div class="tb-r">
+    <div id="badge-alcance" class="badge-alcance" style="display:none"></div>
     <div class="live"><div class="dot"></div>SISTEMA ACTIVO</div>
     <div class="clock" id="clock">--:--:--</div>
   </div>
@@ -313,16 +317,16 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
       <div class="kpi bl"><div class="kl">Meta estatal <span data-theme="sistema-anio">2027</span></div><div class="kv" id="kpi-meta">197,297</div><div class="ks">votos proyectados</div></div>
       <div class="kpi gr"><div class="kl">Total capturados</div><div class="kv" id="kpi-total-cap">14,300</div><div class="ks">registros activos</div></div>
       <div class="kpi gr"><div class="kl">Seguro vota</div><div class="kv" id="kpi-seguro-vota">3,432</div><div class="ks">nivel compromiso 3+4</div></div>
-      <div class="kpi am"><div class="kl">Prioridad alta</div><div class="kv">2,757</div><div class="ks">requieren atención</div></div>
+      <div class="kpi am"><div class="kl">Prioridad alta</div><div class="kv" id="kpi-atencion">2,757</div><div class="ks">requieren atención</div></div>
       <div class="kpi re"><div class="kl">Riesgo alto</div><div class="kv">2,203</div><div class="ks">posible fuga de voto</div></div>
-      <div class="kpi pu"><div class="kl">Duplicados</div><div class="kv">408</div><div class="ks">registros a depurar</div></div>
+      <div class="kpi pu"><div class="kl">Duplicados</div><div class="kv" id="kpi-depurar">408</div><div class="ks">registros a depurar</div></div>
     </div>
 
     <!-- TABLA MUNICIPIOS — ANCHO COMPLETO -->
     <div class="card" style="margin-bottom:14px">
       <div class="card-h">
         <span class="card-title">Avance por municipio vs. meta 2027</span>
-        <span style="font-size:10px;font-family:var(--mono);color:var(--text3)">10 municipios · 393 secciones</span>
+        <span id="mun-table-caption" style="font-size:10px;font-family:var(--mono);color:var(--text3)">10 municipios · 393 secciones</span>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border2)">
         <div>
@@ -745,16 +749,20 @@ DFS.forEach(df=>{
   df.cas=MUNS.filter(m=>df.munIds.includes(m.id)).reduce((s,m)=>s+m.cas,0);
 });
 
-// Distritos locales
+// Distritos locales — MAPEO REAL por municipio
+// Fuente: secciones_electorales_colima (base Colima 2027).
+const DL_LOCALES_POR_MUN = {
+  TEC:[9,10,15,16], MIN:[14], IXT:[3], CML:[4], ARM:[9],
+  VDA:[4,6,7,8], MAN:[11,12,13,14], COL:[1,2,3,5], CUA:[6], COQ:[5],
+};
 const DLS = [];
-let dlN=1;
 MUNS.forEach(m=>{
-  const n=Math.max(1,Math.round(m.secs/20));
-  for(let i=0;i<n;i++){
-    DLS.push({id:'DL'+dlN,n:'Distrito Local '+dlN,mun:m.id,munNombre:m.n,
-      cap:Math.round(m.cap/n),meta:Math.round(m.meta/n),secs:Math.round(m.secs/n),cas:Math.round(m.cas/n)});
-    dlN++;
-  }
+  const nums = DL_LOCALES_POR_MUN[m.id] || [];
+  const n = Math.max(1, nums.length);
+  nums.forEach(num=>{
+    DLS.push({id:'DL_'+m.id+'_'+num, num:num, n:'Distrito Local '+num, mun:m.id, munNombre:m.n,
+      cap:Math.round(m.cap/n), meta:Math.round(m.meta/n), secs:Math.round(m.secs/n), cas:Math.round(m.cas/n)});
+  });
 });
 
 // Secciones
@@ -831,6 +839,11 @@ Object.values(SECS).flat().forEach(sec=>{
 function pct(c,m){return m>0?Math.min(parseFloat((c/m*100).toFixed(1)),100):0;}
 function semC(p){return p>=10?'var(--green)':p>=5?'var(--amber)':'var(--red)';}
 function semI(p){return p>=10?'🟢':p>=5?'🟡':'🔴';}
+// ── Conteo de capturistas por territorio (agrega CAPS hacia arriba) ──
+function capsSec(secId){return (CAPS[secId]||[]).length;}
+function capsDL(dlId){return (SECS[dlId]||[]).reduce((s,sec)=>s+capsSec(sec.id),0);}
+function capsMun(munId){return DLS.filter(dl=>dl.mun===munId).reduce((s,dl)=>s+capsDL(dl.id),0);}
+function capsDF(dfId){const df=DFS.find(d=>d.id===dfId);return df?df.munIds.reduce((s,mid)=>s+capsMun(mid),0):0;}
 function casStats(secIds){
   const cas=secIds.flatMap(id=>CAS_SEC[id]||[]);
   return{total:cas.length,ab:cas.filter(c=>c.estatus==='abierta').length,
@@ -850,40 +863,84 @@ let f1s={nivel:'candidato',df:null,mun:null,dl:null,sec:null,cap:null};
 function renderMunF1(){
   const p=parseFloat(document.getElementById('cfg-pct').value)||6;
   const munFiltro = filtros ? filtros.mun : '';
+  const secFiltro = filtros ? filtros.sec : '';
   const semFiltro = filtros ? filtros.sem : '';
 
-  let munsBase = MUNS;
-  // Filtrar por municipio
-  if(munFiltro) munsBase = munsBase.filter(m=>m.id===munFiltro);
-  // Filtrar por semáforo
-  if(semFiltro) munsBase = munsBase.filter(m=>{
-    const pv=pct(m.cap,Math.round(m.meta*(p/6)));
+  // Secciones (objeto) de un municipio: datos reales si existen, si no demo
+  const secsDeMun = (munId) => (window.SECS_REAL && window.SECS_REAL[munId] && window.SECS_REAL[munId].length)
+    ? window.SECS_REAL[munId]
+    : DLS.filter(dl=>dl.mun===munId).flatMap(dl=>SECS[dl.id]||[]);
+  // Buscar una sección por id en datos reales o demo
+  const findSec = (id) => Object.values(window.SECS_REAL||{}).flat().find(s=>s.id===id)
+    || Object.values(SECS).flat().find(s=>s.id===id);
+
+  // ── Nivel de la tabla ───────────────────────────────────────────
+  // sin filtro → municipios · municipio → sus secciones · sección → esa sección
+  let nivelTabla='mun', rows=[];
+  if(secFiltro){
+    const sec=findSec(secFiltro);
+    if(sec){ nivelTabla='sec'; rows=[sec]; }
+    else   { nivelTabla='mun'; rows=MUNS.slice(); }
+  } else if(munFiltro){
+    nivelTabla='sec'; rows=secsDeMun(munFiltro);
+  } else {
+    nivelTabla='mun'; rows=MUNS.slice();
+  }
+
+  // Filtro por semáforo (aplica a ambos niveles)
+  if(semFiltro) rows=rows.filter(r=>{
+    const pv=pct(r.cap,Math.round((r.meta||0)*(p/6)));
     if(semFiltro==='verde')    return pv>=10;
     if(semFiltro==='amarillo') return pv>=5&&pv<10;
     if(semFiltro==='rojo')     return pv<5;
     return true;
   });
 
-  const munsSorted = WR_SORT.col ? [...munsBase].sort((a,b)=>{
-    const pa = pct(a.cap, Math.round(a.meta*(p/6)));
-    const pb = pct(b.cap, Math.round(b.meta*(p/6)));
-    const va = WR_SORT.col==='pct' ? parseFloat(pa) : WR_SORT.col==='n' ? a.n : a[WR_SORT.col];
-    const vb = WR_SORT.col==='pct' ? parseFloat(pb) : WR_SORT.col==='n' ? b.n : b[WR_SORT.col];
+  // Ordenamiento (mismo control WR_SORT en ambos niveles)
+  const sortVal=(r,col)=>{
+    if(col==='pct') return pct(r.cap,Math.round((r.meta||0)*(p/6)));
+    if(col==='n')   return nivelTabla==='sec' ? r.num : r.n;
+    if(col==='v24') return nivelTabla==='sec' ? 0 : (r.p24||0);
+    return r[col];
+  };
+  const rowsSorted = WR_SORT.col ? [...rows].sort((a,b)=>{
+    const va=sortVal(a,WR_SORT.col), vb=sortVal(b,WR_SORT.col);
     if(typeof va==='string') return WR_SORT.asc ? va.localeCompare(vb) : vb.localeCompare(va);
     return WR_SORT.asc ? va-vb : vb-va;
-  }) : munsBase;
+  }) : rows;
 
-  document.getElementById('mun-tbody').innerHTML=munsSorted.map(m=>{
-    const meta=Math.round(m.meta*(p/6));
-    const pv=pct(m.cap,meta);const c=semC(pv);
-    return`<tr onclick="drillF1('mun','${m.id}')" class="${f1s.mun===m.id?'sel':''}">
-      <td><div class="nm">${m.n}</div><div class="sub">${m.secs} secciones</div></td>
-      <td class="mono" style="text-align:center">${fmt(m.cap)}</td>
+  // Subtítulo contextual
+  const capEl=document.getElementById('mun-table-caption');
+  if(capEl){
+    if(nivelTabla==='sec' && secFiltro) capEl.textContent=`1 sección · ${rows[0]?rows[0].munNombre:''}`;
+    else if(nivelTabla==='sec')         capEl.textContent=`${rows.length} secciones · ${MUNS.find(m=>m.id===munFiltro)?.n||''}`;
+    else                                capEl.textContent='10 municipios · 393 secciones';
+  }
+
+  // ── Render ──────────────────────────────────────────────────────
+  document.getElementById('mun-tbody').innerHTML=rowsSorted.map(r=>{
+    const meta=Math.round((r.meta||0)*(p/6));
+    const pv=pct(r.cap,meta); const c=semC(pv);
+    const bar=`<td style="text-align:center"><div class="mbar" style="max-width:90px;margin:0 auto"><div class="mbar-f" style="width:${Math.min(pv/20*100,100)}%;background:${c}"></div></div></td>`;
+    if(nivelTabla==='sec'){
+      return`<tr onclick="drillF1('sec','${r.id}')" class="${f1s.sec===r.id?'sel':''}">
+        <td><div class="nm">Secc. ${r.num}</div><div class="sub">${r.munNombre||''}</div></td>
+        <td class="mono" style="text-align:center">${fmt(r.cap)}</td>
+        <td class="mono" style="text-align:center;color:var(--text2)">${fmt(meta)}</td>
+        <td class="mono" style="text-align:center;color:${c};font-weight:600">${pv}%</td>
+        ${bar}
+        <td style="text-align:center;font-size:14px">${semI(pv)}</td>
+        <td class="mono" style="text-align:center;color:var(--text3);font-size:10px">—</td>
+      </tr>`;
+    }
+    return`<tr onclick="drillF1('mun','${r.id}')" class="${f1s.mun===r.id?'sel':''}">
+      <td><div class="nm">${r.n}</div><div class="sub">${r.secs} secciones</div></td>
+      <td class="mono" style="text-align:center">${fmt(r.cap)}</td>
       <td class="mono" style="text-align:center;color:var(--text2)">${fmt(meta)}</td>
       <td class="mono" style="text-align:center;color:${c};font-weight:600">${pv}%</td>
-      <td style="text-align:center"><div class="mbar" style="max-width:90px;margin:0 auto"><div class="mbar-f" style="width:${Math.min(pv/20*100,100)}%;background:${c}"></div></div></td>
+      ${bar}
       <td style="text-align:center;font-size:14px">${semI(pv)}</td>
-      <td class="mono" style="text-align:center;color:${m.g24==='Partido A'?'var(--green)':'var(--red)'};font-size:10px" title="Votos 2024: ${fmt(m.v24)} (${m.p24}% · ganó ${m.g24})">${m.p24}%</td>
+      <td class="mono" style="text-align:center;color:${r.g24==='Partido A'?'var(--green)':'var(--red)'};font-size:10px" title="Votos 2024: ${fmt(r.v24)} (${r.p24}% · ganó ${r.g24})">${r.p24}%</td>
     </tr>`;
   }).join('');
 }
@@ -905,7 +962,7 @@ function sortWR(col) {
 
 function recalc(){
   const p=parseFloat(document.getElementById('cfg-pct').value)||6;
-  const meta=Math.round(195000*(p/6));
+  const meta=Math.round(197297*(p/6));
   document.getElementById('meta-calc').textContent=fmt(meta);
   document.getElementById('kpi-meta').textContent=fmt(meta);
   const capActual = _totalCapturadosReal;
@@ -968,7 +1025,7 @@ function renderCuadF1(){
           <div style="font-size:24px;font-weight:700;font-family:var(--mono);color:${dc};line-height:1;margin-bottom:4px">${dpv}%</div>
           <div style="height:5px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden;margin-bottom:6px"><div style="width:${dpv}%;height:100%;background:${dc};border-radius:99px"></div></div>
           <div style="font-size:11px;font-family:var(--mono);color:var(--text2)">${fmt(df.cap)} / ${fmt(df.meta)}</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px">${df.secs} secciones · ${df.cas} casillas</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px">${df.secs} secciones · ${df.cas} casillas · ${capsDF(df.id)} capturistas</div>
           <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px"><span style="font-size:16px">${semI(dpv)}</span><span style="color:var(--text3)">Ver municipios →</span></div>
         </div>`;
       }).join('')}
@@ -979,14 +1036,14 @@ function renderCuadF1(){
     const df=DFS.find(d=>d.id===f1s.df);
     const muns=filtrarPorSem(MUNS.filter(m=>df.munIds.includes(m.id)),m=>m.cap,m=>m.meta);
     html+=buildCuadF1('Municipio','Municipios en '+df.n,muns,
-      m=>m.cap,m=>m.meta,m=>m.n,m=>`${m.secs} secc.`,
+      m=>m.cap,m=>m.meta,m=>m.n,m=>`${m.secs} secc. · ${capsMun(m.id)} capt.`,
       m=>`drillF1('mun','${m.id}')`,f1s.mun);
   }
   if(f1s.mun){
     const mun=MUNS.find(m=>m.id===f1s.mun);
     const dls=filtrarPorSem(DLS.filter(dl=>dl.mun===f1s.mun),dl=>dl.cap,dl=>dl.meta);
     html+=buildCuadF1('Dist. Local','Distritos locales en '+mun.n,dls,
-      dl=>dl.cap,dl=>dl.meta,dl=>dl.n,dl=>`${dl.secs} secc.`,
+      dl=>dl.cap,dl=>dl.meta,dl=>dl.n,dl=>`${dl.secs} secc. · ${capsDL(dl.id)} capt.`,
       dl=>`drillF1('dl','${dl.id}')`,f1s.dl);
   }
   if(f1s.dl){
@@ -1086,7 +1143,7 @@ function updateBcF1(){
   document.querySelectorAll('#bc-f1 .bc-item')[0].classList.add('active');
   if(f1s.df){const e=document.getElementById('bc1-df');if(e){e.classList.add('active');e.textContent=f1s.df;}}
   if(f1s.mun){const e=document.getElementById('bc1-mun');const m=MUNS.find(x=>x.id===f1s.mun);if(e&&m){e.classList.add('active');e.textContent=m.n;}}
-  if(f1s.dl){const e=document.getElementById('bc1-dl');if(e){e.classList.add('active');e.textContent='DL '+f1s.dl.replace('DL','');}}
+  if(f1s.dl){const e=document.getElementById('bc1-dl');if(e){e.classList.add('active');const _dl=DLS.find(d=>d.id===f1s.dl);e.textContent='DL '+(_dl?_dl.num:f1s.dl.replace('DL',''));}}
   if(f1s.sec){const s=Object.values(SECS).flat().find(x=>x.id===f1s.sec);const e=document.getElementById('bc1-sec');if(e&&s){e.classList.add('active');e.textContent='Secc. '+s.num;}}
   if(f1s.cap){const cap=Object.values(CAPS).flat().find(c=>c.id===f1s.cap);const e=document.getElementById('bc1-cap');if(e&&cap){e.classList.add('active');e.textContent=cap.nombre.split(' ')[0];}}
 }
@@ -1747,7 +1804,7 @@ function updateBcF2(){
   });
   if(f2s.df){const e=document.getElementById('bc2-df');if(e){e.classList.add('active');e.textContent=f2s.df;}}
   if(f2s.mun){const m=MUNS.find(x=>x.id===f2s.mun);const e=document.getElementById('bc2-mun');if(e&&m){e.classList.add('active');e.textContent=m.n;}}
-  if(f2s.dl){const e=document.getElementById('bc2-dl');if(e){e.classList.add('active');e.textContent='DL '+f2s.dl.replace('DL','');}}
+  if(f2s.dl){const e=document.getElementById('bc2-dl');if(e){e.classList.add('active');const _dl=DLS.find(d=>d.id===f2s.dl);e.textContent='DL '+(_dl?_dl.num:f2s.dl.replace('DL',''));}}
   if(f2s.sec){const s=Object.values(SECS).flat().find(x=>x.id===f2s.sec);const e=document.getElementById('bc2-sec');if(e&&s){e.classList.add('active');e.textContent='Secc.'+s.num;}}
   if(f2s.cas){const e=document.getElementById('bc2-cas');if(e){e.classList.add('active');e.textContent=f2s.cas;}}
 }
@@ -2314,7 +2371,7 @@ async function fetchCiudadanosPaginado(filtroTerr) {
       const hasta = desde + PAGE - 1;
       console.log(`📄 Paginado: pidiendo bloque ${desde}-${hasta}...`);
       const r = await fetch(
-        `${SUPA_URL}/rest/v1/ciudadanos?select=municipio,seccion_electoral,compromiso,es_riesgo&licencia_id=eq.${LICENCIA_ID}${filtroTerr}`,
+        `${SUPA_URL}/rest/v1/ciudadanos?select=municipio,seccion_electoral,compromiso,es_riesgo,duplicado&licencia_id=eq.${LICENCIA_ID}${filtroTerr}`,
         { headers: { ...headers, 'Range-Unit': 'items', 'Range': `${desde}-${hasta}` } }
       );
 
@@ -2338,6 +2395,157 @@ async function fetchCiudadanosPaginado(filtroTerr) {
   } catch (e) {
     console.warn('Paginado: error de red', e);
     return todos.length ? todos : null;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// C7 — CARGA VÍA RPC (get_war_room_kpis)
+// ──────────────────────────────────────────────────────────────────
+// Reemplaza el patrón "paginar todas las filas + contar en JS" por
+// UNA sola llamada al RPC SECURITY DEFINER, que:
+//   • cuenta en la base (escala a cientos de miles sin tocar el cliente)
+//   • respeta el alcance por rol SIN el bug del municipio NULL del
+//     Coordinador General (la base decide, no el frontend)
+//   • devuelve solo agregados (cero PII al navegador)
+// Si el RPC falla por cualquier motivo, cae a cargarDatosReales()
+// (paginación), y esa a su vez a los datos simulados. Triple red.
+// ══════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════
+// BADGE DE ALCANCE — distingue Coordinador General de Municipal
+// ──────────────────────────────────────────────────────────────────
+// El rol en la base es 'coordinador' para ambos; se distinguen por
+// el municipio (igual que el RPC): NULL/vacío = General (estatal),
+// con municipio = Municipal (acotado a su municipio).
+// ══════════════════════════════════════════════════════════════════
+function pintarBadgeAlcance() {
+  try {
+    const el = document.getElementById('badge-alcance');
+    if (!el) return;
+    const s = window._sesion || {};
+    const rol = s.rol;
+    const mun = (s.municipio || '').trim();
+
+    let texto = '', clase = '';
+
+    if (rol === 'super_admin' || rol === 'admin') {
+      texto = '🌐 Vista Estatal';
+      clase = 'estatal';
+    } else if (rol === 'coordinador' && !mun) {
+      texto = '🌐 Coordinador General · Estatal';
+      clase = 'estatal';
+    } else if (rol === 'coordinador' && mun) {
+      // Capitalizar el municipio (viene en mayúsculas de la BD)
+      const munLindo = mun.charAt(0).toUpperCase() + mun.slice(1).toLowerCase();
+      texto = '📍 Coordinador Municipal · ' + munLindo;
+      clase = 'municipal';
+    } else {
+      el.style.display = 'none';
+      return;
+    }
+
+    el.textContent = texto;
+    el.className = 'badge-alcance ' + clase;
+    el.style.display = 'flex';
+  } catch (e) {
+    console.warn('No se pudo pintar badge de alcance:', e);
+  }
+}
+
+async function cargarDesdeRPC() {
+  try {
+    // El RPC se invoca por REST: POST /rest/v1/rpc/<nombre>.
+    // Usamos el token del usuario (no la anon key sola) para que
+    // auth.uid() dentro de la función identifique correctamente al
+    // usuario y aplique su alcance territorial.
+    const token = window._sesion?.access_token || SUPA_KEY;
+    const r = await fetch(`${SUPA_URL}/rest/v1/rpc/get_war_room_kpis`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPA_KEY,
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: '{}',
+    });
+
+    if (!r.ok) {
+      console.warn(`⚠️ RPC get_war_room_kpis status ${r.status}, cayendo a paginación`);
+      return cargarDatosReales();   // fallback al método anterior
+    }
+
+    const data = await r.json();
+    if (!data || typeof data !== 'object' || data.total === undefined) {
+      console.warn('⚠️ RPC devolvió respuesta inesperada, cayendo a paginación:', data);
+      return cargarDatosReales();
+    }
+
+    console.log(`✅ RPC War Room [${data.alcance}]: ${data.total} ciudadanos (generado ${data.generado})`);
+
+    // ── 1. KPIs principales (escritos directo al DOM) ──────────────
+    const fmt = n => Number(n || 0).toLocaleString('es-MX');
+    const total = data.total || 0;
+    if (total > 0) _totalCapturadosReal = total;
+
+    const setTxt = (id, val) => {
+      const el = document.getElementById(id);
+      if (el && val > 0) el.textContent = fmt(val);
+    };
+    setTxt('kpi-total-cap', total);
+    setTxt('kpi-seguro-vota', data.seguro);     // "seguro vota" = compromiso >= 3
+    setTxt('kpi-atencion', data.atencion);      // compromiso = 2 (indecisos)
+    setTxt('kpi-depurar', data.depurar);        // duplicados
+
+    const riesgoEl = document.querySelector('.kpi.re .kv');
+    if (riesgoEl && (data.riesgo || 0) > 0) riesgoEl.textContent = fmt(data.riesgo);
+
+    // Barra de progreso global
+    if (total > 0) {
+      const meta = data.meta || 197297;
+      const pbNums = document.getElementById('pb-nums');
+      if (pbNums) pbNums.textContent = `${fmt(total)} / ${fmt(meta)} capturados`;
+      const pbFill = document.getElementById('pb-fill');
+      if (pbFill) pbFill.style.width = Math.min(100, Math.round((total / meta) * 100)) + '%';
+      const pbPct = document.getElementById('pb-pct');
+      if (pbPct) pbPct.textContent = (total / meta * 100).toFixed(1) + '%';
+    }
+
+    // ── 2. Capturados por municipio → actualizar MUNS ──────────────
+    // El RPC devuelve por_municipio con claves tal cual están en la BD
+    // (mayúsculas). Reusamos la misma normalización que el método viejo.
+    const norm = s => (s || '').toUpperCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const porMun = data.por_municipio || {};
+    const porMunNorm = {};
+    Object.keys(porMun).forEach(k => { porMunNorm[norm(k)] = porMun[k]; });
+
+    MUNS.forEach(m => {
+      const k = norm(m.n);
+      if (porMunNorm[k] !== undefined) m.cap = porMunNorm[k];
+    });
+
+    // ── 3. Avance por sección (tabla de secciones) ─────────────────
+    window.AVANCE_SECCION = {};
+    const porSec = data.por_seccion || {};
+    Object.keys(porSec).forEach(s => { window.AVANCE_SECCION[s] = porSec[s]; });
+
+    // ── 4. Recalcular totales de Distritos Federales desde municipios ─
+    // (igual que el método viejo: los distritos se derivan de MUNS,
+    //  que ya funciona y no requiere datos extra del backend)
+    DFS.forEach(df => {
+      df.cap = MUNS.filter(m => df.munIds.includes(m.id)).reduce((s, m) => s + m.cap, 0);
+    });
+
+    // ── 5. Re-render con datos reales ──────────────────────────────
+    renderMunF1();
+    renderTablaCapturistas();
+
+    // Guardar el bloque de KPIs por si otra parte del código lo necesita
+    window._kpisRPC = data;
+
+    console.log('✅ War Room cargado vía RPC (sin paginación)');
+  } catch (e) {
+    console.warn('⚠️ Error en cargarDesdeRPC, cayendo a paginación:', e);
+    return cargarDatosReales();
   }
 }
 
@@ -2450,10 +2658,12 @@ async function cargarKPIsReales() {
       return;
     }
 
-    // Calcular los 3 KPIs en memoria — instantáneo, cero consultas.
-    const total  = datos.length;
-    const seguro = datos.filter(c => (c.compromiso || 0) >= 3).length;
-    const riesgo = datos.filter(c => c.es_riesgo === true).length;
+    // Calcular los KPIs en memoria — instantáneo, cero consultas.
+    const total    = datos.length;
+    const seguro   = datos.filter(c => (c.compromiso || 0) >= 3).length;
+    const riesgo   = datos.filter(c => c.es_riesgo === true).length;
+    const atencion = datos.filter(c => (c.compromiso || 0) === 2).length;  // indecisos
+    const depurar  = datos.filter(c => c.duplicado === true).length;       // duplicados
 
     const fmt = n => n.toLocaleString('es-MX');
 
@@ -2467,15 +2677,23 @@ async function cargarKPIsReales() {
     if(seguro > 0 && elSeguro) elSeguro.textContent = fmt(seguro);
     const riesgoEl = document.querySelector('.kpi.re .kv');
     if(riesgo > 0 && riesgoEl) riesgoEl.textContent = fmt(riesgo);
+    // Requieren atención (indecisos) y registros a depurar (duplicados)
+    const elAten = document.getElementById('kpi-atencion');
+    if(atencion > 0 && elAten) elAten.textContent = fmt(atencion);
+    const elDep = document.getElementById('kpi-depurar');
+    if(depurar > 0 && elDep) elDep.textContent = fmt(depurar);
 
     // Barra de progreso
     if (total > 0) {
+      const meta = 197297;
       const pbNums = document.getElementById('pb-nums');
       if(pbNums) pbNums.textContent = `${fmt(total)} / 197,297 capturados`;
       const pbFill = document.getElementById('pb-fill');
-      const meta = 197297;
-      const pct = Math.min(100, Math.round((total / meta) * 100));
-      if(pbFill) pbFill.style.width = pct + '%';
+      const pctEntero = Math.min(100, Math.round((total / meta) * 100));
+      if(pbFill) pbFill.style.width = pctEntero + '%';
+      // Bonus: porcentaje con decimal en pb-pct (antes quedaba fijo en 7.2%)
+      const pbPct = document.getElementById('pb-pct');
+      if(pbPct) pbPct.textContent = (total / meta * 100).toFixed(1) + '%';
     }
 
     console.log(`✅ KPIs cargados (en memoria): ${total} ciudadanos, ${seguro} seguro vota, ${riesgo} en riesgo`);
@@ -2766,7 +2984,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   renderCuadF1();
   renderTablaCapturistas();
   cargarKPIsReales();
-  cargarDatosReales(); // ← carga datos reales y re-renderiza con Supabase
+  cargarDesdeRPC(); // ← C7: carga vía RPC (escala, sin bug de municipio NULL). Cae a paginación si falla.
+  pintarBadgeAlcance(); // ← muestra el alcance del usuario (General estatal / Municipal) en la barra
   actualizarConteoAlerta();
   actualizarHistorialAlertas();
   renderSemaforoGlobal();

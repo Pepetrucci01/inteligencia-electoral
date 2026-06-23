@@ -167,3 +167,107 @@ function adjustColor(hex, amount) {
     document.addEventListener('DOMContentLoaded', () => applyTheme(theme));
   }
 })();
+
+// ══════════════════════════════════════════════════════════════════
+//  BADGE DE ALCANCE — distingue Coordinador General de Municipal
+//  ────────────────────────────────────────────────────────────────
+//  Se auto-inyecta en la .topbar de CUALQUIER módulo que cargue
+//  theme.js. No requiere editar el HTML de cada módulo.
+//
+//  El rol en la base es 'coordinador' para ambos tipos; se
+//  distinguen por el municipio (igual que el RPC get_war_room_kpis):
+//    municipio NULL/vacío  -> Coordinador General (estatal)
+//    municipio asignado    -> Coordinador Municipal (su municipio)
+//  super_admin / admin     -> Vista Estatal
+// ══════════════════════════════════════════════════════════════════
+function _leerSesionAlcance() {
+  // Prioriza window._sesion (lo expone auth-guard); cae a localStorage.
+  try {
+    if (window._sesion && window._sesion.rol) return window._sesion;
+    const raw = localStorage.getItem('electoral_sesion');
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
+}
+
+function _calcularAlcance(sesion) {
+  if (!sesion || !sesion.rol) return null;
+  const rol = sesion.rol;
+  const mun = (sesion.municipio || '').trim();
+
+  if (rol === 'super_admin' || rol === 'admin') {
+    return { texto: '🌐 Vista Estatal', clase: 'estatal' };
+  }
+  if (rol === 'coordinador' && !mun) {
+    return { texto: '🌐 Coordinador General · Estatal', clase: 'estatal' };
+  }
+  if (rol === 'coordinador' && mun) {
+    const munLindo = mun.charAt(0).toUpperCase() + mun.slice(1).toLowerCase();
+    return { texto: '📍 Coordinador Municipal · ' + munLindo, clase: 'municipal' };
+  }
+  // jefe_seccion / capturista u otros: no mostrar (su alcance es obvio
+  // por el propio módulo; el badge es para distinguir coordinadores).
+  return null;
+}
+
+function montarBadgeAlcance() {
+  try {
+    // Evitar duplicados si se llama más de una vez, o si el módulo
+    // ya tiene su propio badge de alcance (ej. War Room usa #badge-alcance).
+    if (document.getElementById('badge-alcance-global')) return;
+    if (document.getElementById('badge-alcance')) return;
+
+    const sesion = _leerSesionAlcance();
+    const info = _calcularAlcance(sesion);
+    if (!info) return;   // rol sin badge (capturista, jefe_seccion, sin sesión)
+
+    const topbar = document.querySelector('.topbar');
+    if (!topbar) return; // módulo sin topbar estándar
+
+    // Inyectar estilos una sola vez
+    if (!document.getElementById('badge-alcance-css')) {
+      const st = document.createElement('style');
+      st.id = 'badge-alcance-css';
+      st.textContent =
+        '.badge-alcance-global{display:inline-flex;align-items:center;gap:6px;' +
+        'font-size:11px;font-family:var(--mono,monospace);font-weight:600;' +
+        'padding:4px 12px;border-radius:99px;letter-spacing:.02em;white-space:nowrap;}' +
+        '.badge-alcance-global.estatal{color:var(--accent,#3b82f6);' +
+        'background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.3);}' +
+        '.badge-alcance-global.municipal{color:var(--amber,#f59e0b);' +
+        'background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);}';
+      document.head.appendChild(st);
+    }
+
+    const badge = document.createElement('div');
+    badge.id = 'badge-alcance-global';
+    badge.className = 'badge-alcance-global ' + info.clase;
+    badge.textContent = info.texto;
+
+    // Colocación: si hay un contenedor derecho conocido, va al inicio de él;
+    // si no, se agrega al final de la topbar (que suele ser flex).
+    const derecha = topbar.querySelector('.topbar-right, .tb-r');
+    if (derecha) {
+      derecha.insertBefore(badge, derecha.firstChild);
+    } else {
+      // Empujar a la derecha si la topbar es flex sin contenedor
+      badge.style.marginLeft = 'auto';
+      topbar.appendChild(badge);
+    }
+  } catch (e) {
+    console.warn('No se pudo montar el badge de alcance:', e);
+  }
+}
+
+// Auto-montar al cargar (espera al DOM y a que exista la sesión)
+(function() {
+  function intentar() {
+    montarBadgeAlcance();
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', intentar);
+  } else {
+    intentar();
+  }
+  // Reintento tardío por si la sesión se hidrata después (async)
+  setTimeout(intentar, 1200);
+})();
