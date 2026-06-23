@@ -238,7 +238,7 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
     if (!s || !s.ts) { window.location.replace('login.html'); return; }
     const horas = (Date.now() - s.ts) / 3600000;
     if (horas >= 8) { localStorage.removeItem('electoral_sesion'); window.location.replace('login.html'); return; }
-    const rolesPermitidos = ["coordinador", "admin", "superadmin"];
+    const rolesPermitidos = ["coordinador", "admin", "super_admin"];
     if (!rolesPermitidos.includes(s.rol)) { window.location.replace('login.html'); return; }
     window._sesion = s;
   } catch(e) { window.location.replace('login.html'); }
@@ -2298,6 +2298,49 @@ function buildFiltroTerritorial() {
   return '';
 }
 
+// Trae ciudadanos en bloques de 1000 para no exceder el statement timeout.
+// Devuelve un array con todos, o null si algún bloque falla.
+async function fetchCiudadanosPaginado(filtroTerr) {
+  const PAGE = 1000;
+  let desde = 0;
+  let todos = [];
+  const headers = {
+    'apikey': SUPA_KEY,
+    'Authorization': `Bearer ${window._sesion?.access_token || SUPA_KEY}`,
+  };
+
+  try {
+    while (true) {
+      const hasta = desde + PAGE - 1;
+      console.log(`📄 Paginado: pidiendo bloque ${desde}-${hasta}...`);
+      const r = await fetch(
+        `${SUPA_URL}/rest/v1/ciudadanos?select=municipio,seccion_electoral,compromiso,es_riesgo&licencia_id=eq.${LICENCIA_ID}${filtroTerr}`,
+        { headers: { ...headers, 'Range-Unit': 'items', 'Range': `${desde}-${hasta}` } }
+      );
+
+      if (!r.ok) {
+        console.warn(`❌ Paginado: bloque ${desde}-${hasta} falló con status ${r.status}`);
+        return todos.length ? todos : null;
+      }
+
+      const bloque = await r.json();
+      console.log(`✅ Paginado: bloque trajo ${Array.isArray(bloque) ? bloque.length : 'NO-ARRAY'} registros`);
+      if (!Array.isArray(bloque) || bloque.length === 0) break;
+
+      todos = todos.concat(bloque);
+      if (bloque.length < PAGE) break;   // último bloque
+      desde += PAGE;
+
+      // Tope de seguridad: no más de 50 bloques (50k registros).
+      if (desde > 50000) break;
+    }
+    return todos;
+  } catch (e) {
+    console.warn('Paginado: error de red', e);
+    return todos.length ? todos : null;
+  }
+}
+
 async function cargarDatosReales() {
   try {
     const filtroTerr = buildFiltroTerritorial();
@@ -2325,18 +2368,20 @@ async function cargarDatosReales() {
       secsPorMun[k]  = (secsPorMun[k]  || 0) + 1;
     });
 
-    // ── 2. Capturados por municipio desde ciudadanos ──
-    const rCap = await fetch(
-      `${SUPA_URL}/rest/v1/ciudadanos?select=municipio,seccion_electoral&licencia_id=eq.${LICENCIA_ID}${filtroTerr}`,
-      { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${window._sesion?.access_token || SUPA_KEY}` } }
-    );
-    const ciudadanos = await rCap.json();
+    // ── 2. Capturados desde ciudadanos (PAGINADO para evitar timeout) ──
+    // Antes se traían TODAS las filas de golpe → la consulta excedía el
+    // statement timeout (8s) de Supabase y devolvía error 57014.
+    // Ahora se trae en bloques de 1000 con Range, que la base sí aguanta.
+    const ciudadanos = await fetchCiudadanosPaginado(filtroTerr);
 
-    // Si la respuesta no es un array (error/RLS/401), conservar simulados y salir.
+    // Si falló la carga (devolvió null), conservar simulados y salir.
     if (!Array.isArray(ciudadanos)) {
-      console.warn('⚠️ Ciudadanos: respuesta no válida, se conservan simulados', ciudadanos);
+      console.warn('⚠️ Ciudadanos: no se pudieron cargar, se conservan simulados');
       return;
     }
+
+    // Guardar para reusar en los KPIs (evita re-consultar la base).
+    window._ciudadanosCargados = ciudadanos;
 
     const capPorMun = {};
     ciudadanos.forEach(c => {
@@ -2392,9 +2437,55 @@ async function cargarDatosReales() {
 }
 
 // ══════════════════════════════════════════════════
-// CARGA KPIs REALES DESDE SUPABASE
+// CARGA KPIs REALES — calcula de los datos ya cargados
+// (NO re-consulta la base; evita el timeout del count=exact con RLS)
 // ══════════════════════════════════════════════════
 async function cargarKPIsReales() {
+  try {
+    const datos = window._ciudadanosCargados;
+
+    // Si no hay datos cargados (la carga paginada falló), conservar simulados.
+    if (!Array.isArray(datos) || datos.length === 0) {
+      console.warn('KPIs: no hay datos cargados, se conservan los simulados');
+      return;
+    }
+
+    // Calcular los 3 KPIs en memoria — instantáneo, cero consultas.
+    const total  = datos.length;
+    const seguro = datos.filter(c => (c.compromiso || 0) >= 3).length;
+    const riesgo = datos.filter(c => c.es_riesgo === true).length;
+
+    const fmt = n => n.toLocaleString('es-MX');
+
+    // Guardar total real para recalc()
+    if (total > 0) _totalCapturadosReal = total;
+
+    // Escribir KPIs (solo si hay dato real > 0)
+    const elTotalCap = document.getElementById('kpi-total-cap');
+    if(total > 0 && elTotalCap) elTotalCap.textContent = fmt(total);
+    const elSeguro = document.getElementById('kpi-seguro-vota');
+    if(seguro > 0 && elSeguro) elSeguro.textContent = fmt(seguro);
+    const riesgoEl = document.querySelector('.kpi.re .kv');
+    if(riesgo > 0 && riesgoEl) riesgoEl.textContent = fmt(riesgo);
+
+    // Barra de progreso
+    if (total > 0) {
+      const pbNums = document.getElementById('pb-nums');
+      if(pbNums) pbNums.textContent = `${fmt(total)} / 197,297 capturados`;
+      const pbFill = document.getElementById('pb-fill');
+      const meta = 197297;
+      const pct = Math.min(100, Math.round((total / meta) * 100));
+      if(pbFill) pbFill.style.width = pct + '%';
+    }
+
+    console.log(`✅ KPIs cargados (en memoria): ${total} ciudadanos, ${seguro} seguro vota, ${riesgo} en riesgo`);
+  } catch(e) {
+    console.warn('Error calculando KPIs (se conservan simulados):', e);
+  }
+}
+
+// Versión vieja basada en consultas (conservada por si se necesita)
+async function cargarKPIsReales_OLD() {
   try {
     const filtroTerr = buildFiltroTerritorial();
     const licId = window._sesion?.licencia_id || LICENCIA_ID;
