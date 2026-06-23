@@ -50,6 +50,37 @@ function redirigirLogin() {
   }
 }
 
+// ── Defensa en profundidad: exigir rol al cargar un módulo ─────
+// Uso en cada módulo sensible, justo después de cargar auth-guard.js:
+//   exigirRol(['admin','super_admin']);
+// Si el rol de la sesión no está en la lista, rebota a login.
+// Esto protege aunque alguien abra el archivo por URL directa
+// (ocultar el botón en el menú NO es suficiente).
+function exigirRol(rolesPermitidos) {
+  const rol = window._sesion?.rol;
+  if (!rol || !rolesPermitidos.includes(rol)) {
+    console.warn('Acceso denegado para rol:', rol, '— se requiere:', rolesPermitidos.join('/'));
+    window.location.replace('login.html');
+    return false;
+  }
+  return true;
+}
+
+// ── Ocultar elementos del menú según rol ──────────────────────
+// Marca en el HTML con data-rol="admin,super_admin" los enlaces/botones
+// que solo ciertos roles deben ver. Esta función los oculta si el rol
+// actual no aplica. Llamar tras DOMContentLoaded.
+function aplicarVisibilidadPorRol() {
+  const rol = window._sesion?.rol;
+  document.querySelectorAll('[data-rol]').forEach(el => {
+    const permitidos = (el.getAttribute('data-rol') || '').split(',').map(s => s.trim());
+    if (!permitidos.includes(rol)) el.style.display = 'none';
+  });
+}
+if (typeof document !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', aplicarVisibilidadPorRol);
+}
+
 // ── Cerrar sesión ──────────────────────────────────────────────
 function cerrarSesion() {
   // Invalidar token en Supabase
