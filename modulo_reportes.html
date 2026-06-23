@@ -195,6 +195,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
 
 <div class="report-tabs">
   <div class="rtab active" id="tab-resumen" onclick="showTab('resumen')">📊 Resumen ejecutivo</div>
+  <div class="rtab" id="tab-diagnostico" onclick="showTab('diagnostico')" style="color:var(--purple);font-weight:600">✨ Diagnóstico IA</div>
   <div class="rtab" id="tab-avance" onclick="showTab('avance')">📈 Avance & ritmo</div>
   <div class="rtab" id="tab-calidad" onclick="showTab('calidad')">✅ Calidad del padrón</div>
   <div class="rtab" id="tab-municipal" onclick="showTab('municipal')">🏙 Por municipio</div>
@@ -258,6 +259,75 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
         <div class="bar-row"><div class="bar-label">Cuauhtémoc</div><div class="bar-track"><div class="bar-fill" style="width:18%;background:var(--amber)"></div></div><div class="bar-val">619</div><div class="bar-pct">2.6%</div></div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ═══════════ DIAGNÓSTICO IA ═══════════ -->
+<div class="screen" id="sc-diagnostico">
+  <style>
+    .diag-hero{background:linear-gradient(135deg,var(--bg2),var(--bg3));border:1px solid var(--border2);border-radius:12px;padding:30px 24px;text-align:center;margin-bottom:18px;}
+    .diag-hero h2{font-size:16px;font-weight:600;margin-bottom:6px;letter-spacing:.02em;}
+    .diag-hero p{font-size:12px;color:var(--text2);font-family:var(--mono);line-height:1.6;max-width:580px;margin:0 auto 20px;}
+    .diag-btn{display:inline-flex;align-items:center;gap:9px;padding:12px 26px;border-radius:9px;border:none;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;font-family:var(--sans);font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;box-shadow:0 4px 18px rgba(124,58,237,.35);}
+    .diag-btn:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(124,58,237,.5);}
+    .diag-btn:disabled{opacity:.55;cursor:default;transform:none;box-shadow:none;}
+    .diag-spin{width:15px;height:15px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:diagspin .7s linear infinite;}
+    @keyframes diagspin{to{transform:rotate(360deg);}}
+    .diag-loading{display:none;text-align:center;padding:34px 20px;}
+    .diag-loading.show{display:block;}
+    .diag-step{font-family:var(--mono);font-size:12px;color:var(--text3);margin:7px 0;opacity:.35;transition:opacity .3s,color .3s;}
+    .diag-step.done{color:var(--green);opacity:1;}
+    .diag-step.done::before{content:"✓ ";}
+    .diag-step.active{color:var(--purple);opacity:1;}
+    .diag-report{display:none;}
+    .diag-report.show{display:block;animation:diagfade .5s ease;}
+    @keyframes diagfade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+    .diag-actions{display:flex;gap:9px;justify-content:flex-end;margin-bottom:14px;}
+    .diag-doc{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:22px 24px;}
+    .diag-verdict{display:flex;align-items:flex-start;gap:14px;padding:16px 18px;border-radius:10px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);margin-bottom:20px;}
+    .diag-verdict .dv-dot{width:14px;height:14px;border-radius:50%;background:var(--red);flex-shrink:0;margin-top:3px;box-shadow:0 0 12px rgba(239,68,68,.6);}
+    .diag-verdict .dv-text{font-size:13px;line-height:1.6;}
+    .diag-verdict .dv-text b{color:var(--red);}
+    .diag-sec{margin-bottom:20px;}
+    .diag-sec h3{font-size:11px;font-family:var(--mono);color:var(--purple);text-transform:uppercase;letter-spacing:.07em;margin-bottom:9px;}
+    .diag-sec p{font-size:13px;line-height:1.7;color:var(--text);margin-bottom:8px;}
+    .diag-sec .hl{color:var(--amber);font-weight:600;}
+    .diag-sec .hlg{color:var(--green);font-weight:600;}
+    .diag-sec .hr{color:var(--red);font-weight:600;}
+    .diag-rank{list-style:none;padding:0;margin:6px 0 0;}
+    .diag-rank li{display:flex;align-items:center;gap:10px;font-size:12px;font-family:var(--mono);padding:5px 0;border-bottom:1px solid var(--border);}
+    .diag-rank li:last-child{border-bottom:none;}
+    .diag-rank .rk-name{flex:1;color:var(--text2);}
+    .diag-rank .rk-bar{width:120px;height:6px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden;}
+    .diag-rank .rk-fill{height:100%;border-radius:99px;}
+    .diag-rank .rk-pct{width:48px;text-align:right;}
+    .diag-rec{counter-reset:rec;list-style:none;padding:0;margin:0;}
+    .diag-rec li{position:relative;padding:10px 12px 10px 42px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;margin-bottom:7px;font-size:12.5px;line-height:1.55;}
+    .diag-rec li::before{counter-increment:rec;content:counter(rec);position:absolute;left:12px;top:10px;width:20px;height:20px;border-radius:50%;background:var(--purple);color:#fff;font-family:var(--mono);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;}
+    .diag-foot{font-size:10px;font-family:var(--mono);color:var(--text3);text-align:center;margin-top:20px;padding-top:14px;border-top:1px solid var(--border);line-height:1.7;}
+  </style>
+
+  <div class="diag-hero" id="diag-hero">
+    <h2>✨ Diagnóstico ejecutivo con Inteligencia Artificial</h2>
+    <p>La IA analiza el avance de la candidatura contra la meta estatal, el ritmo de captura, la calidad del padrón y el desempeño territorial — y entrega un reporte ejecutivo con hallazgos y recomendaciones priorizadas.</p>
+    <button class="diag-btn" id="diag-generate" onclick="generarDiagnosticoIA()"><span>✨</span> Generar diagnóstico</button>
+  </div>
+
+  <div class="diag-loading" id="diag-loading">
+    <div class="diag-spin" style="margin:0 auto 18px"></div>
+    <div class="diag-step" id="ds-1">Leyendo agregados de la candidatura…</div>
+    <div class="diag-step" id="ds-2">Evaluando ritmo de captura vs. meta…</div>
+    <div class="diag-step" id="ds-3">Analizando desempeño por municipio…</div>
+    <div class="diag-step" id="ds-4">Detectando riesgos del padrón…</div>
+    <div class="diag-step" id="ds-5">Redactando reporte ejecutivo…</div>
+  </div>
+
+  <div class="diag-report" id="diag-report">
+    <div class="diag-actions">
+      <button class="export-btn" onclick="generarDiagnosticoIA(true)">↻ Regenerar</button>
+      <button class="export-btn primary" id="diag-copy-btn" onclick="copiarDiagnostico()">⧉ Copiar reporte</button>
+    </div>
+    <div class="diag-doc" id="diag-content"></div>
   </div>
 </div>
 
@@ -2231,6 +2301,135 @@ function filtrarCalidad(mun) {
 
 // Inicializar tabla proyección
 renderProyeccion(PROYECCION_DATA);
+
+// ══════════════════════════════════════════════════════
+// DIAGNÓSTICO EJECUTIVO CON IA
+// ══════════════════════════════════════════════════════
+//
+//  ⚠️  ESTA ES LA VERSIÓN main / PROTOTIPO  ⚠️
+//  Usa un reporte HORNEADO (simulado) con calidad de IA real, construido a
+//  partir de los datos simulados del módulo. NO hace llamadas de red ni usa
+//  ninguna API key. Es 100% demo-safe: es síncrono, no puede fallar ni dejar
+//  pantalla vacía. El reporte horneado ES el fallback.
+//
+//  En DESARROLLO, generarDiagnosticoIA() se reemplaza por una llamada al
+//  PROXY BACKEND (nunca desde el frontend). El proxy:
+//    · usa la API key del lado del SERVIDOR (jamás expuesta al navegador)
+//    · filtra el contexto por licencia_id (la IA solo ve ESA candidatura)
+//    · aplica cuota de reportes por licencia_id según el tier
+//  El UI/UX queda idéntico: solo cambia DE DÓNDE sale el texto. El punto exacto
+//  de reemplazo está marcado abajo como  ◄── PUNTO DE REEMPLAZO (desarrollo).
+//  NOTA: el prompt al proxy recibe SOLO outputs (metas, capturados, %, semáforos).
+//        Nunca la fórmula de meta ni los factores de afluencia.
+// ══════════════════════════════════════════════════════
+
+// Reporte horneado: HTML con calidad IA, anclado a los KPIs simulados de Colima.
+function diagnosticoHorneado(){
+  // Ranking municipal por % de avance (cap/meta), tomado de MUN_DATA para
+  // mantener consistencia con las tablas del módulo.
+  var rank = (typeof MUN_DATA !== "undefined" ? MUN_DATA : []).map(function(m){
+    return {n:m.n, cap:m.cap, meta:m.meta, pct:(m.cap/m.meta*100)};
+  }).sort(function(a,b){return b.pct-a.pct;});
+  var maxPct = rank.length ? rank[0].pct : 1;
+  function color(p){ return p>=9?"var(--green)":(p>=6?"var(--amber)":"var(--red)"); }
+  var rankHtml = rank.map(function(r){
+    var w = Math.max(4,(r.pct/maxPct*100)).toFixed(0);
+    return "<li><span class=\"rk-name\">"+r.n+"</span>"+
+           "<span class=\"rk-bar\"><span class=\"rk-fill\" style=\"width:"+w+"%;background:"+color(r.pct)+"\"></span></span>"+
+           "<span class=\"rk-pct\" style=\"color:"+color(r.pct)+"\">"+r.pct.toFixed(1)+"%</span></li>";
+  }).join("");
+
+  return [
+    '<div class="diag-verdict">',
+      '<div class="dv-dot"></div>',
+      '<div class="dv-text"><b>VEREDICTO: ROJO — meta en riesgo.</b> Al corte de hoy la candidatura tiene <b>10,000</b> ciudadanos capturados, el <b>5.1%</b> de la meta estatal de <b>197,297</b>. El dato decisivo no es ese porcentaje, sino el <b>ritmo</b>: con 574 capturas por semana y 74 semanas restantes, la proyección al 1 de junio de 2027 es de <b>~52,476 (26.6% de la meta)</b>. Cerrar la brecha exige multiplicar el ritmo por <b>4.4×</b>.</div>',
+    '</div>',
+
+    '<div class="diag-sec">',
+      '<h3>① El hallazgo más importante — Manzanillo</h3>',
+      '<p>Manzanillo concentra la meta más alta del estado (<span class="hl">49,083</span>, una de cada cuatro adhesiones que se necesitan a nivel estatal) pero registra el <span class="hr">avance porcentual más bajo (4.3%)</span>. Es, al mismo tiempo, el mayor riesgo y la mayor palanca: cada punto que se mueva en Manzanillo desplaza la aguja estatal más que en cualquier otro municipio. <b>Es donde primero hay que volcar estructura.</b></p>',
+    '</div>',
+
+    '<div class="diag-sec">',
+      '<h3>② Desempeño territorial — avance vs meta por municipio</h3>',
+      '<p>Tres municipios marcan el ritmo y demuestran que la estructura local funciona; conviene documentar qué hacen bien esos coordinadores para replicarlo en los rezagados:</p>',
+      '<ul class="diag-rank">'+rankHtml+'</ul>',
+    '</div>',
+
+    '<div class="diag-sec">',
+      '<h3>③ Calidad del padrón</h3>',
+      '<p><span class="hr">2,203 capturados (22%)</span> están marcados en riesgo y <span class="hr">408 son duplicados</span> que inflan artificialmente el avance — depurarlos es urgente antes de reportar a dirigencia. Hay además <span class="hl">219 secciones críticas</span> (sin captura o por debajo del 5%) que hoy son territorio ciego.</p>',
+    '</div>',
+
+    '<div class="diag-sec">',
+      '<h3>④ Base de conversión</h3>',
+      '<p>El <span class="hlg">46% de lo capturado (4,601) es voto seguro</span> (compromiso ≥3): una base sólida en calidad, pero corta en volumen. El esfuerzo debe equilibrar <b>volumen</b> (cerrar la brecha de ritmo) y <b>calidad</b> (subir compromiso de lo ya capturado).</p>',
+    '</div>',
+
+    '<div class="diag-sec">',
+      '<h3>⑤ Recomendaciones priorizadas</h3>',
+      '<ol class="diag-rec">',
+        '<li>Volcar estructura adicional sobre <b>Manzanillo</b>: es la mayor palanca estatal por volumen de meta.</li>',
+        '<li>Fijar meta operativa de <b>2,531 capturas/semana</b> (4.4× el ritmo actual). Sin esto, la meta de 2027 es inalcanzable matemáticamente.</li>',
+        '<li>Depuración inmediata de los <b>408 duplicados</b> para reportar avance real a dirigencia.</li>',
+        '<li>Plan de choque para las <b>219 secciones críticas</b>: asignar responsable y primera captura en 30 días.</li>',
+        '<li>Replicar el modelo de <b>Minatitlán, Comala e Ixtlahuacán</b> (los de mejor % de avance) en los municipios rezagados.</li>',
+      '</ol>',
+    '</div>',
+
+    '<div class="diag-foot">Diagnóstico generado por IA sobre los agregados de la candidatura · Colima 2027 · VOTERA™<br>Las cifras provienen del tablero de Reportes. Este reporte es orientativo y no sustituye el criterio del equipo de campaña.</div>',
+  ].join("");
+}
+
+function generarDiagnosticoIA(regen){
+  var hero    = document.getElementById("diag-hero");
+  var loading = document.getElementById("diag-loading");
+  var report  = document.getElementById("diag-report");
+  var btn     = document.getElementById("diag-generate");
+  if(hero)   hero.style.display = "none";
+  if(report) report.classList.remove("show");
+  if(btn)    btn.disabled = true;
+  if(loading) loading.classList.add("show");
+
+  var ids = ["ds-1","ds-2","ds-3","ds-4","ds-5"];
+  var steps = ids.map(function(id){return document.getElementById(id);});
+  steps.forEach(function(s){ if(s) s.className = "diag-step"; });
+
+  var i = 0;
+  function tick(){
+    if(i>0 && steps[i-1]) steps[i-1].className = "diag-step done";
+    if(i < steps.length){
+      if(steps[i]) steps[i].className = "diag-step active";
+      i++;
+      setTimeout(tick, 460);
+    } else {
+      // ◄── PUNTO DE REEMPLAZO (desarrollo) ────────────────────────────
+      //  main:        contenido horneado local (síncrono, demo-safe).
+      //  desarrollo:  reemplazar la línea de abajo por la respuesta del
+      //               proxy backend (fetch a tu endpoint, con licencia_id).
+      var html = diagnosticoHorneado();
+      // ─────────────────────────────────────────────────────────────────
+      var cont = document.getElementById("diag-content");
+      if(cont) cont.innerHTML = html;
+      if(loading) loading.classList.remove("show");
+      if(report)  report.classList.add("show");
+    }
+  }
+  setTimeout(tick, 300);
+}
+
+function copiarDiagnostico(){
+  var el = document.getElementById("diag-content");
+  if(!el) return;
+  var txt = el.innerText || el.textContent || "";
+  var btn = document.getElementById("diag-copy-btn");
+  function ok(){ if(btn){ var t=btn.textContent; btn.textContent="✓ Copiado"; setTimeout(function(){btn.textContent=t;},1600);} }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(ok).catch(function(){});
+  } else {
+    try{ var ta=document.createElement("textarea"); ta.value=txt; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta); ok(); }catch(e){}
+  }
+}
 
 // Hook único al showTab para inicializar secciones lazy
 const _showTabBase = showTab;
