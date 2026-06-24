@@ -564,12 +564,20 @@ const SECCION_CAP = window._sesion?.seccion      || null;
 const META_CAP    = 50; // meta por capturista
 
 async function supaFetch(path) {
-  const res = await fetch(`${SUPA_URL}/rest/v1/${path}`, {
-    headers: {
-      'apikey': SUPA_KEY,
-      'Authorization': `Bearer ${window._sesion?.access_token || SUPA_KEY}`
-    }
+  const url = `${SUPA_URL}/rest/v1/${path}`;
+  const armar = () => ({
+    'apikey': SUPA_KEY,
+    'Authorization': `Bearer ${window._sesion?.access_token || JSON.parse(localStorage.getItem('electoral_sesion')||'{}')?.access_token || SUPA_KEY}`
   });
+
+  let res = await fetch(url, { headers: armar() });
+
+  // Si el token expiró (401) y theme.js expone el refresh, renovar y reintentar
+  if (res.status === 401 && window.refrescarTokenSupabase) {
+    const ok = await window.refrescarTokenSupabase();
+    if (ok) res = await fetch(url, { headers: armar() });
+  }
+
   if (!res.ok) throw new Error(`Supabase error ${res.status}`);
   return res.json();
 }

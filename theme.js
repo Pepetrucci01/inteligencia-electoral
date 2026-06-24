@@ -311,6 +311,12 @@ async function refrescarTokenSupabase() {
       );
       if (!res.ok) {
         console.warn('🔑 No se pudo refrescar el token (status ' + res.status + ')');
+        // 400/401 = el refresh_token ya no sirve (expiró tras semanas, o
+        // fue consumido). La sesión está muerta: limpiar para forzar
+        // re-login en el próximo guard. (Errores de red NO expulsan.)
+        if (res.status === 400 || res.status === 401) {
+          window._refreshTokenInvalido = true;
+        }
         return false;
       }
       const data = await res.json();

@@ -248,6 +248,15 @@ table.cap-table tr.selected{background:rgba(59,130,246,0.1);}
     </div>
   </div>
 
+  <!-- Aviso de registros pendientes de asignar (capturista_id NULL) -->
+  <div id="aviso-sin-asignar" style="display:none;margin-top:10px;padding:10px 14px;
+       background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);
+       border-radius:8px;font-family:var(--mono);font-size:12px;color:var(--amber);
+       display:none;align-items:center;gap:10px;">
+    <span style="font-size:15px;">⚠️</span>
+    <span id="aviso-sin-asignar-txt"></span>
+  </div>
+
   <div class="content-grid">
     <!-- TABLA -->
     <div class="card">
@@ -308,79 +317,96 @@ function getFiltroTerrURL() {
 
 let DATOS = []; // Se poblará desde Supabase
 
+function mostrarAvisoSinAsignar(sa) {
+  const box = document.getElementById('aviso-sin-asignar');
+  const txt = document.getElementById('aviso-sin-asignar-txt');
+  if (!box || !txt) return;
+  const n = sa?.total || 0;
+  if (n > 0) {
+    txt.textContent = `${n.toLocaleString('es-MX')} registros sin capturista asignado · pendientes de asignación`;
+    box.style.display = 'flex';
+  } else {
+    box.style.display = 'none';
+  }
+}
+
 async function cargarDatosSupabase() {
   try {
-    const filtroTerr = getFiltroTerrURL();
-    // Paginación completa de ciudadanos
-    let todos = [];
-    let from = 0;
-    const pageSize = 1000;
-    while (true) {
-      const res = await fetch(
-        `${SUPA_URL}/rest/v1/ciudadanos?select=id,capturista_id,compromiso,es_riesgo,municipio,created_at,seccion_electoral,nombre,apellido_paterno&licencia_id=eq.${LICENCIA_ID}${filtroTerr}&limit=${pageSize}&offset=${from}`,
-        { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${window._sesion?.access_token || SUPA_KEY}` } }
-      );
-      if (!res.ok) break;
-      const chunk = await res.json();
-      if (!Array.isArray(chunk) || chunk.length === 0) break;
-      todos = todos.concat(chunk);
-      if (chunk.length < pageSize) break;
-      from += pageSize;
+    // ── Carga vía RPC (get_capturistas_stats) ──────────────────
+    // Reemplaza la paginación de 14K+ filas por UNA llamada que
+    // agrupa en la base. Escala a producción y respeta el alcance
+    // por rol (estatal/municipal) sin el bug del municipio NULL.
+    // Usa supaFetch (de theme.js): refresca el token si expiró y
+    // reintenta, evitando los 401 que tiraban a datos simulados.
+    const _fetch = window.supaFetch || fetch;
+    const res = await _fetch(`${SUPA_URL}/rest/v1/rpc/get_capturistas_stats`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPA_KEY,
+        'Authorization': `Bearer ${window._sesion?.access_token || SUPA_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: '{}',
+    });
+
+    if (!res.ok) {
+      console.warn(`⚠️ RPC get_capturistas_stats status ${res.status}, usando simulados`);
+      cargarDatosSimulados();
+      return;
     }
 
-    // Agrupar por capturista_id — si es NULL usar 'SIN_ASIGNAR'
-    const mapa = {};
-    todos.forEach(c => {
-      const id = c.capturista_id || 'SIN_ASIGNAR';
-      if (!mapa[id]) {
-        mapa[id] = {
-          ID_CAPTURISTA: id,
-          CAPTURADO_POR: id === 'SIN_ASIGNAR' ? 'Sin asignar' : id,
-          MUNICIPIO: c.municipio || '—',
-          total: 0, meta: 50, faltantes: 0,
-          validados: 0, seguros: 0, riesgo_alto: 0,
-          duplicados: 0, score: 0,
-          ultima_fecha: null,
-          pct_val: 0, pct_seg: 0, pct_meta: 0,
-          moviliza: 0, simpatizantes: 0, contactos: 0,
-          alta_prob: 0, casa: 0, referido: 0, evento: 0, digital: 0
-        };
-      }
-      const e = mapa[id];
-      e.total++;
-      if ((c.compromiso || 0) >= 3) e.seguros++;
-      if ((c.compromiso || 0) >= 2) e.validados++;
-      if (c.es_riesgo) e.riesgo_alto++;
-      if (c.created_at) {
-        const f = new Date(c.created_at);
-        if (!e.ultima_fecha || f > e.ultima_fecha) e.ultima_fecha = f;
-      }
-      if (c.municipio && e.MUNICIPIO === '—') e.MUNICIPIO = c.municipio;
+    const data = await res.json();
+    if (!data || !Array.isArray(data.capturistas)) {
+      console.warn('⚠️ RPC devolvió respuesta inesperada, usando simulados:', data);
+      cargarDatosSimulados();
+      return;
+    }
+
+    // Mapear la respuesta del RPC al formato que espera el render (DATOS)
+    DATOS = data.capturistas.map(c => {
+      const ultima = c.ultima ? new Date(c.ultima) : null;
+      return {
+        ID_CAPTURISTA: c.id,
+        CAPTURADO_POR: c.nombre,
+        MUNICIPIO:     c.municipio || '—',
+        total:         c.total || 0,
+        meta:          c.meta || 50,
+        faltantes:     c.faltantes || 0,
+        validados:     c.validados || 0,
+        seguros:       c.seguros || 0,
+        riesgo_alto:   c.riesgo_alto || 0,
+        duplicados:    c.duplicados || 0,
+        score:         c.score || 0,
+        pct_meta:      c.pct_meta || 0,
+        pct_val:       c.pct_val || 0,
+        pct_seg:       c.pct_seg || 0,
+        ultima_fecha:  ultima,
+        ultima_str:    ultima
+          ? ultima.toLocaleDateString('es-MX', {day:'2-digit',month:'2-digit',year:'numeric'})
+          : '—',
+        // Campos que el detalle puede referenciar (defaults seguros)
+        moviliza: 0, simpatizantes: c.total || 0, contactos: 0,
+        alta_prob: c.seguros || 0, casa: 0, referido: 0, evento: 0, digital: 0
+      };
     });
 
-    // Calcular porcentajes y score
-    Object.values(mapa).forEach(e => {
-      e.faltantes  = Math.max(0, e.meta - e.total);
-      e.pct_meta   = e.meta > 0 ? +((e.total    / e.meta)  * 100).toFixed(1) : 0;
-      e.pct_val    = e.total > 0 ? +((e.validados / e.total) * 100).toFixed(1) : 0;
-      e.pct_seg    = e.total > 0 ? +((e.seguros   / e.total) * 100).toFixed(1) : 0;
-      e.score      = +((e.pct_val * 0.5 + e.pct_seg * 0.5)).toFixed(1);
-      e.ultima_str = e.ultima_fecha
-        ? e.ultima_fecha.toLocaleDateString('es-MX', {day:'2-digit',month:'2-digit',year:'numeric'})
-        : '—';
-    });
+    // Guardar el bloque "sin asignar" por si se quiere mostrar aparte
+    window._sinAsignar = data.sin_asignar || null;
+    window._rpcCapturistas = data;
 
-    DATOS = Object.values(mapa);
+    // Mostrar aviso de registros pendientes de asignar
+    mostrarAvisoSinAsignar(data.sin_asignar);
 
-    // Si no hay datos, o todos son SIN_ASIGNAR (capturista_id NULL),
-    // usar datos simulados para mostrar la tabla completa
-    const soloSinAsignar = DATOS.length === 0 ||
-      (DATOS.length === 1 && DATOS[0].ID_CAPTURISTA === 'SIN_ASIGNAR');
-    if (soloSinAsignar) { cargarDatosSimulados(); return; }
+    // Si no hay capturistas reales, mostrar simulados (entorno de demo)
+    if (DATOS.length === 0) {
+      console.log('ℹ️ Sin capturistas con registros asignados; usando simulados');
+      cargarDatosSimulados();
+      return;
+    }
 
     aplicarFiltros();
 
-    // Poblar selector de municipio
+    // Poblar selector de municipio con los municipios presentes
     const munsSet = new Set(DATOS.map(d => d.MUNICIPIO).filter(m => m && m !== '—'));
     const sel = document.getElementById('filtro-municipio');
     if (sel) {
@@ -394,7 +420,9 @@ async function cargarDatosSupabase() {
       });
     }
 
-    console.log(`✅ panel_capturistas: ${DATOS.length} capturistas, ${todos.length} ciudadanos`);
+    const sa = data.sin_asignar?.total || 0;
+    console.log(`✅ panel_capturistas vía RPC [${data.alcance}]: ${DATOS.length} capturistas` +
+                (sa > 0 ? ` · ${sa.toLocaleString('es-MX')} registros sin asignar` : ''));
   } catch(e) {
     console.error('Error cargando datos capturistas:', e);
     cargarDatosSimulados();
@@ -696,7 +724,15 @@ getDatos = function() {
   });
 };
 
-cargarDatosSupabase();
+// Esperar a que supaFetch (de theme.js) esté disponible antes de la
+// primera carga, para que el auto-refresh de token aplique desde el inicio.
+(function _arrancarCarga(intentos){
+  if (window.supaFetch || intentos > 40) {   // ~2s máx de espera
+    cargarDatosSupabase();
+  } else {
+    setTimeout(() => _arrancarCarga(intentos + 1), 50);
+  }
+})(0);
 setInterval(cargarDatosSupabase, 120000);
 </script>
 <script>

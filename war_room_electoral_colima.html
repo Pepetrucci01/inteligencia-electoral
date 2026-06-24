@@ -2458,7 +2458,8 @@ async function cargarDesdeRPC() {
     // auth.uid() dentro de la función identifique correctamente al
     // usuario y aplique su alcance territorial.
     const token = window._sesion?.access_token || SUPA_KEY;
-    const r = await fetch(`${SUPA_URL}/rest/v1/rpc/get_war_room_kpis`, {
+    const _fetch = window.supaFetch || fetch;
+    const r = await _fetch(`${SUPA_URL}/rest/v1/rpc/get_war_room_kpis`, {
       method: 'POST',
       headers: {
         'apikey': SUPA_KEY,
