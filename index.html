@@ -443,6 +443,11 @@ iframe{width:100%;height:100%;border:none;display:block;}
 </div><!-- /shell -->
 
 <script>
+// APP_BUILD: versión de build para cache-busting de los módulos en iframe.
+// ⚠️ SUBE este número en cada deploy con cambios en los módulos, para que
+// el navegador tome la versión nueva y no una copia vieja cacheada.
+const APP_BUILD = '20260624';
+
 let collapsed = false;
 
 function tick(){
@@ -486,7 +491,11 @@ function load(id, file, title, sub){
   document.getElementById('ld-txt').textContent = 'Cargando ' + title + '...';
   const fr = document.getElementById('fr');
   fr.onload = () => setTimeout(()=>ld.classList.add('gone'), 250);
-  fr.src = file;
+  // Cache-busting: añade ?v=<build> para que el navegador no sirva una
+  // copia vieja del módulo desde caché (problema típico al cargar en
+  // iframe tras un deploy). APP_BUILD se define una vez por sesión.
+  const sep = file.includes('?') ? '&' : '?';
+  fr.src = file + sep + 'v=' + APP_BUILD;
 }
 
 function showHub(){

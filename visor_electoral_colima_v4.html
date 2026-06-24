@@ -187,36 +187,36 @@ async function cargarAvanceSupabase() {
     if (LICENCIA_ID) { console.log('\ud83d\udd12 Avance filtrado por licencia_id:', LICENCIA_ID); }
     else { console.warn('\u26a0\ufe0f Sesion sin licencia_id \u2014 avance SIN filtrar (revisar login.html)'); }
     // ─────────────────────────────────────────────────────────────
-    // Traer todos los ciudadanos registrados (solo columna seccion_electoral)
-    // Supabase REST: select con count agrupado no está directo, traemos la columna y agrupamos en JS
-    let allData = [];
-    let from = 0;
-    const pageSize = 1000;
-    while(true) {
-      let url = `${SUPABASE_URL}/rest/v1/ciudadanos?select=seccion_electoral&limit=${pageSize}&offset=${from}`;
-      if (LICENCIA_ID) url += `&licencia_id=eq.${LICENCIA_ID}`;
-      const res = await fetch(
-        url,
-        { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
-      );
-      if(!res.ok) break;
-      const chunk = await res.json();
-      if(!Array.isArray(chunk) || chunk.length === 0) break;
-      allData = allData.concat(chunk);
-      if(chunk.length < pageSize) break;
-      from += pageSize;
+    // ── Conteo por sección vía RPC (sin paginar la tabla pesada) ──
+    // Antes se paginaban 14K+ filas, lo que causaba 500 Internal Server
+    // Error por timeout. El RPC agrega en la base y devuelve {seccion: n}.
+    const _fetch = window.supaFetch || fetch;
+    const token = window._sesion?.access_token
+      || (_ses && _ses.access_token) || SUPABASE_KEY;
+    const res = await _fetch(`${SUPABASE_URL}/rest/v1/rpc/get_avance_por_seccion`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: '{}',
+    });
+
+    if (!res.ok) {
+      console.warn('⚠️ RPC get_avance_por_seccion status ' + res.status);
+      return;
     }
 
-    // Agrupar por seccion_electoral
-    const conteo = {};
-    allData.forEach(row => {
-      const s = row.seccion_electoral;
-      if(s != null) conteo[s] = (conteo[s] || 0) + 1;
-    });
+    const conteo = await res.json();
+    if (!conteo || typeof conteo !== 'object') {
+      console.warn('⚠️ RPC devolvió respuesta inesperada:', conteo);
+      return;
+    }
     window.AVANCE_SECCION = conteo;
 
-    // Actualizar stats bar
-    const total = allData.length;
+    // Total = suma de todos los conteos por sección
+    const total = Object.values(conteo).reduce((a, b) => a + (b || 0), 0);
     document.getElementById('sAvance').textContent = total.toLocaleString() + ' ciudadanos';
 
     // Si la capa activa es 'meta', re-renderizar para mostrar colores reales
