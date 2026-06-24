@@ -239,7 +239,7 @@ iframe{width:100%;height:100%;border:none;display:block;}
       <span class="nav-badge" style="background:rgba(34,197,94,.12);color:var(--green)">F1/F2</span>
       <div class="nav-tip">Mi Panel Capturista</div>
     </div>
-    <div class="nav-item" id="nav-meta" onclick="load('meta','configurador_meta_estados.html','Configurador de meta','Carga Excel por estado')">
+    <div class="nav-item" id="nav-meta" data-rol="admin,super_admin" onclick="load('meta','configurador_meta_estados.html','Configurador de meta','Carga Excel por estado')">
       <div class="nav-icon" style="background:rgba(245,158,11,.12);color:var(--amber)">⚙️</div>
       <span class="nav-label">Meta / Config</span>
       <div class="nav-tip">Configurador de meta</div>
@@ -251,7 +251,7 @@ iframe{width:100%;height:100%;border:none;display:block;}
     </div>
 
     <div class="nav-section">Sistema</div>
-    <div class="nav-item admin-item" id="nav-adm" onclick="load('adm','modulo_admin.html','Administración','Usuarios · licencias · auditoría')">
+    <div class="nav-item admin-item" id="nav-adm" data-rol="admin,super_admin" onclick="load('adm','modulo_admin.html','Administración','Usuarios · licencias · auditoría')">
       <div class="nav-icon" style="background:rgba(239,68,68,.12);color:var(--red)">🔒</div>
       <span class="nav-label">Administración</span>
       <span class="nav-badge" style="background:rgba(239,68,68,.12);color:var(--red)">ADMIN</span>
@@ -379,7 +379,7 @@ iframe{width:100%;height:100%;border:none;display:block;}
         <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(34,197,94,.1);color:var(--green)">Fase 1 captura</span><span class="tag" style="background:rgba(34,197,94,.1);color:var(--green)">Fase 2 elección</span></div><span class="arr">→</span></div>
       </div>
 
-      <div class="mc meta" onclick="load('meta','configurador_meta_estados.html','Configurador de meta','Carga Excel por estado')">
+      <div class="mc meta" data-rol="admin,super_admin" onclick="load('meta','configurador_meta_estados.html','Configurador de meta','Carga Excel por estado')">
         <div class="mc-head"><div class="mc-icon" style="background:rgba(245,158,11,.15)">⚙️</div><div><div class="mc-name">Configurador de meta</div><div class="mc-sub">Multi-estado · Excel</div></div></div>
         <div class="mc-desc">Carga Excel de secciones de cualquier estado, detecta columnas automáticamente, aplica factores de afluencia y exporta.</div>
         <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(245,158,11,.1);color:var(--amber)">32 estados</span><span class="tag" style="background:rgba(245,158,11,.1);color:var(--amber)">Exporta .xlsx</span></div><span class="arr">→</span></div>
@@ -391,7 +391,7 @@ iframe{width:100%;height:100%;border:none;display:block;}
         <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(168,85,247,.1);color:var(--purple)">6 secciones</span><span class="tag" style="background:rgba(168,85,247,.1);color:var(--purple)">PDF + Excel</span></div><span class="arr">→</span></div>
       </div>
 
-      <div class="mc adm" onclick="load('adm','modulo_admin.html','Administración','Usuarios · licencias · auditoría · seguridad')">
+      <div class="mc adm" data-rol="admin,super_admin" onclick="load('adm','modulo_admin.html','Administración','Usuarios · licencias · auditoría · seguridad')">
         <div class="mc-head"><div class="mc-icon" style="background:rgba(239,68,68,.15)">🔒</div><div><div class="mc-name">Administración</div><div class="mc-sub">Solo super admin</div></div></div>
         <div class="mc-desc">Usuarios y roles, licencias multi-estado, matriz de permisos, auditoría de actividad y configuración del sistema.</div>
         <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(239,68,68,.1);color:var(--red)">Restringido</span><span class="tag" style="background:rgba(239,68,68,.1);color:var(--red)">6 licencias</span></div><span class="arr">→</span></div>
@@ -519,6 +519,15 @@ document.addEventListener('keydown', e=>{
       if(n) n.textContent = u.nombre || '';
       const r = document.getElementById('tb-rol');
       if(r) r.textContent = u.rol || '';
+
+      // Ocultar items del menú/hub que el rol actual no puede usar.
+      // Marca en el HTML con data-rol="admin,super_admin" lo restringido.
+      const rolActual = u.rol;
+      document.querySelectorAll('[data-rol]').forEach(elx => {
+        const permitidos = (elx.getAttribute('data-rol') || '')
+          .split(',').map(x => x.trim());
+        if (!permitidos.includes(rolActual)) elx.style.display = 'none';
+      });
     }
   } catch(e){}
 })();
