@@ -271,3 +271,129 @@ function montarBadgeAlcance() {
   // Reintento tardío por si la sesión se hidrata después (async)
   setTimeout(intentar, 1200);
 })();
+
+// ══════════════════════════════════════════════════════════════════
+//  AUTO-REFRESH DE TOKEN + supaFetch()
+//  ────────────────────────────────────────────────────────────────
+//  Problema: el access_token de Supabase expira en 1 hora. Cuando
+//  caduca, los fetch/RPC dan 401 y los módulos caen a simulados.
+//  El refresh_token dura mucho más; con él se obtiene un token nuevo.
+//
+//  supaFetch(url, options) envuelve fetch() y:
+//    1. Refresca proactivamente si el token está por expirar (>55 min).
+//    2. Si aun así da 401, refresca de forma reactiva y reintenta 1 vez.
+//  Úsalo en lugar de fetch() para llamadas autenticadas a Supabase.
+// ══════════════════════════════════════════════════════════════════
+const _SUPA_URL_THEME = 'https://dyirhwwmykskpuvzcafx.supabase.co';
+const _SUPA_ANON_THEME = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5aXJod3dteWtza3B1dnpjYWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NTk3ODgsImV4cCI6MjA5NTEzNTc4OH0.2xe4cHqORGng1hnYPJ9ZiyT0r87fMijbUEJqBy3-xoI';
+const _SESION_KEY_THEME = 'electoral_sesion';
+
+let _refrescandoToken = null; // evita refrescos paralelos
+
+async function refrescarTokenSupabase() {
+  // Si ya hay un refresh en curso, esperar a ese (no lanzar otro)
+  if (_refrescandoToken) return _refrescandoToken;
+
+  _refrescandoToken = (async () => {
+    try {
+      const raw = localStorage.getItem(_SESION_KEY_THEME);
+      if (!raw) return false;
+      const sesion = JSON.parse(raw);
+      if (!sesion?.refresh_token) return false;
+
+      const res = await fetch(
+        `${_SUPA_URL_THEME}/auth/v1/token?grant_type=refresh_token`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': _SUPA_ANON_THEME },
+          body: JSON.stringify({ refresh_token: sesion.refresh_token }),
+        }
+      );
+      if (!res.ok) {
+        console.warn('🔑 No se pudo refrescar el token (status ' + res.status + ')');
+        return false;
+      }
+      const data = await res.json();
+      if (!data.access_token) return false;
+
+      // Actualizar la sesión guardada con el token nuevo
+      sesion.access_token  = data.access_token;
+      sesion.refresh_token = data.refresh_token || sesion.refresh_token;
+      sesion.ts = Date.now();
+      localStorage.setItem(_SESION_KEY_THEME, JSON.stringify(sesion));
+      if (window._sesion) {
+        window._sesion.access_token  = sesion.access_token;
+        window._sesion.refresh_token = sesion.refresh_token;
+        window._sesion.ts = sesion.ts;
+      }
+
+      // Sincronizar el cliente SDK de Supabase (módulos que lo usan,
+      // como captura) para que sus llamadas usen el token fresco.
+      // Como el SDK tiene autoRefreshToken:false, no compite: solo
+      // recibe el token que nosotros gestionamos.
+      try {
+        if (window.supabase?.auth?.setSession) {
+          window.supabase.auth.setSession({
+            access_token:  sesion.access_token,
+            refresh_token: sesion.refresh_token,
+          });
+        }
+      } catch (e) { /* el SDK puede no estar cargado en este módulo */ }
+
+      console.log('🔑 Token de Supabase refrescado correctamente');
+      return true;
+    } catch (e) {
+      console.warn('🔑 Error al refrescar token:', e);
+      return false;
+    } finally {
+      _refrescandoToken = null;
+    }
+  })();
+
+  return _refrescandoToken;
+}
+
+function _tokenActual() {
+  try {
+    return JSON.parse(localStorage.getItem(_SESION_KEY_THEME))?.access_token || _SUPA_ANON_THEME;
+  } catch (e) { return _SUPA_ANON_THEME; }
+}
+
+async function supaFetch(url, options = {}) {
+  // Refresh proactivo si la sesión tiene >55 min (token casi expirado)
+  try {
+    const s = JSON.parse(localStorage.getItem(_SESION_KEY_THEME) || 'null');
+    if (s?.ts && (Date.now() - s.ts) / 60000 > 55) {
+      await refrescarTokenSupabase();
+    }
+  } catch (e) {}
+
+  const armarHeaders = () => ({
+    'apikey': _SUPA_ANON_THEME,
+    'Authorization': 'Bearer ' + _tokenActual(),
+    ...(options.headers || {}),
+  });
+
+  let res = await fetch(url, { ...options, headers: armarHeaders() });
+
+  // Refresh reactivo: si dio 401, refrescar y reintentar UNA vez
+  if (res.status === 401) {
+    const ok = await refrescarTokenSupabase();
+    if (ok) {
+      res = await fetch(url, { ...options, headers: armarHeaders() });
+    }
+  }
+  return res;
+}
+
+// Exponer globalmente para que los módulos lo usen
+window.supaFetch = supaFetch;
+window.refrescarTokenSupabase = refrescarTokenSupabase;
+
+// Refresh periódico cada 45 min (antes de que expire a los 60)
+setInterval(() => {
+  try {
+    const s = JSON.parse(localStorage.getItem(_SESION_KEY_THEME) || 'null');
+    if (s?.access_token) refrescarTokenSupabase();
+  } catch (e) {}
+}, 45 * 60 * 1000);

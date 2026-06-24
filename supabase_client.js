@@ -25,7 +25,18 @@ const { url: SUPA_URL, key: SUPA_KEY } = SUPABASE_CONFIG[ENV];
   const script = document.createElement('script');
   script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
   script.onload = async () => {
-    window.supabase = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+    // Crear cliente con auth manual: NO dejamos que el SDK refresque
+    // ni persista la sesión por su cuenta, porque la sesión la
+    // gestionamos nosotros (electoral_sesion + supaFetch en theme.js).
+    // Si el SDK también refresca, compite por el refresh_token (que es
+    // de un solo uso) y provoca 400 Bad Request en /auth/v1/token.
+    window.supabase = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
+      auth: {
+        autoRefreshToken: false,   // lo maneja supaFetch (theme.js)
+        persistSession:   false,   // la sesión vive en electoral_sesion
+        detectSessionInUrl: false,
+      },
+    });
     console.log(`✅ Supabase conectado [${ENV.toUpperCase()}]`);
 
     // ── Restaurar sesión desde localStorage ──────────────────
