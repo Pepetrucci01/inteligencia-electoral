@@ -159,10 +159,10 @@ select{background:#0f3460;color:#eee;border:1px solid #444;border-radius:4px;pad
     if (!s || !s.ts) { window.location.replace('login.html'); return; }
     const horas = (Date.now() - s.ts) / 3600000;
     if (horas >= 8) { localStorage.removeItem('electoral_sesion'); window.location.replace('login.html'); return; }
-    const rolesPermitidos = ['super_admin','superadmin','admin','coordinador','jefe_seccion','lider_seccion'];
+    const rolesPermitidos = ['super_admin','admin','coordinador','jefe_seccion'];
     if (!rolesPermitidos.includes(s.rol)) { window.location.replace('login.html'); return; }
     window._sesion = s;
-    window._esLider = (s.rol === 'jefe_seccion' || s.rol === 'lider_seccion');
+    window._esLider = (s.rol === 'jefe_seccion');
     window._seccionLider = s.seccion || null;
     window._municipioLider = s.municipio || null;
   } catch(e) { window.location.replace('login.html'); }
