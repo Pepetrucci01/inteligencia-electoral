@@ -187,6 +187,21 @@ table.rtable tr:hover td{background:rgba(255,255,255,0.02);}
 
 <div class="main">
 
+  <!-- SELECTOR DE MODO: Meta vs Carga de Ciudadanos -->
+  <div style="display:flex;gap:10px;margin-bottom:24px;">
+    <button id="modo-meta-btn" onclick="cambiarModo('meta')"
+      style="flex:1;padding:14px;border-radius:10px;border:1px solid var(--accent);background:rgba(59,130,246,.12);color:var(--accent);font-family:var(--mono);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;">
+      📊 Calcular meta electoral
+    </button>
+    <button id="modo-ciudadanos-btn" onclick="cambiarModo('ciudadanos')"
+      style="flex:1;padding:14px;border-radius:10px;border:1px solid var(--border2);background:var(--bg3);color:var(--text3);font-family:var(--mono);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;">
+      👥 Cargar ciudadanos por Excel
+    </button>
+  </div>
+
+  <!-- ════════ MODO META (wizard existente) ════════ -->
+  <div id="modo-meta">
+
   <!-- STEPS -->
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;">
     <div class="steps-bar" id="steps-bar" style="margin-bottom:0;flex:1;">
@@ -351,6 +366,62 @@ table.rtable tr:hover td{background:rgba(255,255,255,0.02);}
 
   <!-- PANTALLA 4: RESULTADO -->
   <div id="p4" style="display:none"></div>
+
+  </div><!-- /modo-meta -->
+
+  <!-- ════════ MODO CARGA DE CIUDADANOS ════════ -->
+  <div id="modo-ciudadanos" style="display:none">
+
+    <!-- Paso A: seleccionar archivo -->
+    <div class="card" id="cc-paso-archivo">
+      <div class="card-title">Carga masiva de ciudadanos</div>
+      <div class="card-sub">Sube un archivo Excel (.xlsx) con los ciudadanos a registrar. Usa la plantilla oficial para que las columnas coincidan. El sistema valida cada fila y te muestra un resumen antes de guardar nada.</div>
+
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:16px;">
+        <label style="flex:1;min-width:260px;border:2px dashed var(--border2);border-radius:12px;padding:28px;text-align:center;cursor:pointer;transition:border-color .2s;display:block;"
+          onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)'">
+          <input type="file" id="cc-file" accept=".xlsx,.xls,.csv" style="display:none" onchange="ccHandleFile(this.files[0])">
+          <div style="font-size:32px;margin-bottom:8px;">📄</div>
+          <div style="font-family:var(--mono);font-size:13px;color:var(--text);font-weight:600;">Haz clic para elegir tu archivo Excel</div>
+          <div style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-top:4px;">.xlsx, .xls o .csv · máx 20 MB</div>
+        </label>
+      </div>
+
+      <div style="margin-top:14px;padding:12px 14px;background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.2);border-radius:8px;font-size:12px;color:var(--text3);font-family:var(--mono);line-height:1.6;">
+        Columnas obligatorias: <b style="color:var(--accent)">nombre, apellido_paterno, curp, municipio, seccion_electoral</b>.
+        Las demás son opcionales. Descarga la plantilla oficial si no la tienes.
+      </div>
+    </div>
+
+    <!-- Paso B: preview + validación -->
+    <div class="card" id="cc-paso-preview" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+        <div>
+          <div class="card-title" style="margin:0">Revisión antes de guardar</div>
+          <div class="card-sub" id="cc-preview-sub" style="margin:4px 0 0">—</div>
+        </div>
+        <button onclick="ccReset()" style="padding:8px 14px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text3);font-family:var(--mono);font-size:12px;cursor:pointer;">↺ Elegir otro archivo</button>
+      </div>
+
+      <!-- Resumen de validación -->
+      <div id="cc-resumen" style="display:flex;gap:12px;flex-wrap:wrap;margin:16px 0;"></div>
+
+      <!-- Tabla de preview -->
+      <div class="result-table-wrap" style="max-height:380px;overflow:auto;">
+        <table class="rtable" id="cc-preview-table"></table>
+      </div>
+
+      <!-- Acción final -->
+      <div style="display:flex;gap:12px;align-items:center;margin-top:18px;flex-wrap:wrap;">
+        <button id="cc-btn-guardar" onclick="ccGuardar()"
+          style="padding:12px 22px;background:var(--green,#22c55e);border:none;border-radius:10px;color:#fff;font-family:var(--mono);font-size:14px;font-weight:700;cursor:pointer;">
+          ✓ Guardar <span id="cc-guardar-n">0</span> ciudadanos válidos
+        </button>
+        <div id="cc-guardar-status" style="font-family:var(--mono);font-size:12px;color:var(--text3);"></div>
+      </div>
+    </div>
+
+  </div><!-- /modo-ciudadanos -->
 
 </div>
 
@@ -886,6 +957,237 @@ function ayudaTab(name){
       btn.style.color = t===name ? '#f1f5f9' : '#64748b';
     }
   });
+}
+</script>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+//  IMPORTADOR DE CIUDADANOS POR EXCEL  ·  Grupo E / E1
+//  Flujo: elegir archivo → validar cada fila → preview → confirmar → insertar
+// ══════════════════════════════════════════════════════════════════
+const CC_SUPA_URL = 'https://dyirhwwmykskpuvzcafx.supabase.co';
+const CC_SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5aXJod3dteWtza3B1dnpjYWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NTk3ODgsImV4cCI6MjA5NTEzNTc4OH0.2xe4cHqORGng1hnYPJ9ZiyT0r87fMijbUEJqBy3-xoI';
+
+const CC_MUNICIPIOS = ['ARMERIA','COLIMA','COMALA','COQUIMATLAN','CUAUHTEMOC','IXTLAHUACAN','MANZANILLO','MINATITLAN','TECOMAN','VILLA DE ALVAREZ'];
+const CC_CURP_RE = /^[A-Z][AEIOUX][A-Z]{2}\d{6}[HM][A-Z]{5}[0-9A-Z]\d$/i;
+
+let ccFilasValidas = [];   // filas listas para insertar
+let ccFilasError   = [];   // filas con problemas
+
+// ── Cambiar entre modo Meta y modo Ciudadanos ──
+function cambiarModo(modo) {
+  const mMeta = document.getElementById('modo-meta');
+  const mCiud = document.getElementById('modo-ciudadanos');
+  const bMeta = document.getElementById('modo-meta-btn');
+  const bCiud = document.getElementById('modo-ciudadanos-btn');
+  const activo = (b) => { b.style.borderColor='var(--accent)'; b.style.background='rgba(59,130,246,.12)'; b.style.color='var(--accent)'; };
+  const inactivo = (b) => { b.style.borderColor='var(--border2)'; b.style.background='var(--bg3)'; b.style.color='var(--text3)'; };
+  if (modo === 'ciudadanos') {
+    mMeta.style.display='none'; mCiud.style.display='block'; activo(bCiud); inactivo(bMeta);
+  } else {
+    mMeta.style.display='block'; mCiud.style.display='none'; activo(bMeta); inactivo(bCiud);
+  }
+}
+
+// ── Normalizar texto (mayúsculas sin acentos) ──
+function ccNorm(s){ return String(s||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim(); }
+
+// ── Leer el archivo Excel ──
+function ccHandleFile(file){
+  if(!file) return;
+  if(file.size > 20*1024*1024){ alert('El archivo supera los 20 MB.'); return; }
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    try{
+      const wb = XLSX.read(ev.target.result, {type:'array'});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, {defval:''}); // objetos por header
+      if(!rows.length){ alert('El archivo no tiene filas de datos.'); return; }
+      ccValidar(rows);
+    }catch(err){
+      alert('No se pudo leer el archivo. Verifica que sea .xlsx/.xls/.csv válido.\\n\\n'+err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ── Validar todas las filas ──
+function ccValidar(rows){
+  ccFilasValidas = [];
+  ccFilasError = [];
+
+  // Detectar la fila de ejemplo de la plantilla (CURP de ejemplo) para ignorarla
+  const CURP_EJEMPLO = 'GALM880101MCLRPR05';
+
+  rows.forEach((r, idx) => {
+    // Mapear claves de forma tolerante (trim + lower en el header)
+    const get = (k) => {
+      const key = Object.keys(r).find(kk => ccNorm(kk).replace(/ \*$/,'') === ccNorm(k));
+      return key ? String(r[key]).trim() : '';
+    };
+    const nombre = get('nombre');
+    const curp = get('curp').toUpperCase();
+
+    // Fila totalmente vacía o de ejemplo → ignorar
+    if((!nombre && !curp) || curp === CURP_EJEMPLO) return;
+
+    const errores = [];
+    const ap_pat = get('apellido_paterno');
+    const municipio = ccNorm(get('municipio'));
+    const seccion = get('seccion_electoral');
+
+    if(!nombre) errores.push('falta nombre');
+    if(!ap_pat) errores.push('falta apellido paterno');
+    if(!curp) errores.push('falta CURP');
+    else if(!CC_CURP_RE.test(curp)) errores.push('CURP inválida');
+    if(!municipio) errores.push('falta municipio');
+    else if(!CC_MUNICIPIOS.includes(municipio)) errores.push('municipio no reconocido');
+    if(!seccion) errores.push('falta sección');
+    else if(isNaN(parseInt(seccion))) errores.push('sección no es número');
+
+    const fila = {
+      _row: idx + 2, // +2: fila 1 es header, base 1
+      nombre,
+      apellido_paterno: ap_pat,
+      apellido_materno: get('apellido_materno'),
+      curp,
+      clave_elector: get('clave_elector'),
+      edad: get('edad') ? parseInt(get('edad')) : null,
+      sexo: ccNorm(get('sexo')).charAt(0) || null,
+      telefono: get('telefono'),
+      municipio,
+      seccion_electoral: seccion ? parseInt(seccion) : null,
+      domicilio: get('domicilio'),
+      compromiso: get('compromiso') ? parseInt(get('compromiso')) : 1,
+      origen: get('origen').toLowerCase() || null,
+      es_apoyo: ccNorm(get('es_apoyo')) === 'SI',
+      es_influencia: ccNorm(get('es_influencia')) === 'SI',
+      es_riesgo: ccNorm(get('es_riesgo')) === 'SI',
+      notas: get('notas'),
+      _errores: errores,
+    };
+
+    if(errores.length) ccFilasError.push(fila);
+    else ccFilasValidas.push(fila);
+  });
+
+  ccMostrarPreview();
+}
+
+// ── Mostrar el preview y resumen ──
+function ccMostrarPreview(){
+  document.getElementById('cc-paso-archivo').style.display = 'none';
+  document.getElementById('cc-paso-preview').style.display = 'block';
+
+  const totalVal = ccFilasValidas.length;
+  const totalErr = ccFilasError.length;
+  document.getElementById('cc-preview-sub').textContent =
+    `${totalVal + totalErr} filas leídas · ${totalVal} válidas · ${totalErr} con errores`;
+
+  // Tarjetas de resumen
+  const resumen = document.getElementById('cc-resumen');
+  const tarjeta = (label, val, color) =>
+    `<div style="flex:1;min-width:130px;background:var(--bg3);border:1px solid var(--border2);border-left:3px solid ${color};border-radius:10px;padding:12px 14px;">
+      <div style="font-family:var(--mono);font-size:11px;color:var(--text3);text-transform:uppercase;">${label}</div>
+      <div style="font-size:24px;font-weight:700;color:${color};">${val}</div>
+    </div>`;
+  resumen.innerHTML =
+    tarjeta('Válidas', totalVal, 'var(--green,#22c55e)') +
+    tarjeta('Con errores', totalErr, totalErr ? 'var(--red,#ef4444)' : 'var(--text3)') +
+    tarjeta('Total leídas', totalVal+totalErr, 'var(--accent)');
+
+  // Tabla: primero errores (para que se vean), luego algunas válidas
+  const muestra = [...ccFilasError, ...ccFilasValidas].slice(0, 100);
+  let html = `<thead><tr>
+    <th>Fila</th><th>Estado</th><th>Nombre</th><th>CURP</th>
+    <th>Municipio</th><th>Sección</th><th>Detalle</th>
+  </tr></thead><tbody>`;
+  muestra.forEach(f => {
+    const ok = f._errores.length === 0;
+    html += `<tr>
+      <td>${f._row}</td>
+      <td style="color:${ok?'var(--green)':'var(--red)'};font-weight:600">${ok?'✓ válida':'✗ error'}</td>
+      <td>${f.nombre} ${f.apellido_paterno}</td>
+      <td style="font-family:var(--mono);font-size:11px">${f.curp||'—'}</td>
+      <td>${f.municipio||'—'}</td>
+      <td>${f.seccion_electoral||'—'}</td>
+      <td style="color:var(--red);font-size:11px">${f._errores.join(', ')||'—'}</td>
+    </tr>`;
+  });
+  html += '</tbody>';
+  document.getElementById('cc-preview-table').innerHTML = html;
+
+  // Botón guardar
+  document.getElementById('cc-guardar-n').textContent = totalVal;
+  const btn = document.getElementById('cc-btn-guardar');
+  btn.disabled = totalVal === 0;
+  btn.style.opacity = totalVal === 0 ? '.5' : '1';
+  btn.style.cursor = totalVal === 0 ? 'not-allowed' : 'pointer';
+}
+
+// ── Resetear para elegir otro archivo ──
+function ccReset(){
+  ccFilasValidas = []; ccFilasError = [];
+  document.getElementById('cc-file').value = '';
+  document.getElementById('cc-paso-preview').style.display = 'none';
+  document.getElementById('cc-paso-archivo').style.display = 'block';
+  document.getElementById('cc-guardar-status').textContent = '';
+}
+
+// ── Insertar en Supabase por lotes ──
+async function ccGuardar(){
+  if(!ccFilasValidas.length) return;
+  const btn = document.getElementById('cc-btn-guardar');
+  const status = document.getElementById('cc-guardar-status');
+  btn.disabled = true; btn.style.opacity = '.6';
+
+  const sesion = window._sesion || JSON.parse(localStorage.getItem('electoral_sesion')||'null');
+  const licencia_id = sesion?.licencia_id || null;
+  const capturista_id = sesion?.id || null;
+  const token = sesion?.access_token || CC_SUPA_KEY;
+
+  // Preparar payloads (quitar campos internos, añadir licencia/capturista)
+  const payload = ccFilasValidas.map(f => {
+    const o = {...f};
+    delete o._row; delete o._errores;
+    o.licencia_id = licencia_id;
+    o.capturista_id = capturista_id;
+    o.responsable_id = capturista_id;
+    o.origen = o.origen || 'carga_excel';
+    Object.keys(o).forEach(k => { if(o[k] === '') o[k] = null; });
+    return o;
+  });
+
+  const LOTE = 200;
+  let insertados = 0, fallidos = 0;
+  const _fetch = window.supaFetch || fetch;
+
+  for(let i=0; i<payload.length; i+=LOTE){
+    const chunk = payload.slice(i, i+LOTE);
+    status.textContent = `Guardando ${i+1}–${Math.min(i+LOTE, payload.length)} de ${payload.length}...`;
+    try{
+      const res = await _fetch(`${CC_SUPA_URL}/rest/v1/ciudadanos`, {
+        method:'POST',
+        headers:{
+          'apikey': CC_SUPA_KEY,
+          'Authorization': `Bearer ${token}`,
+          'Content-Type':'application/json',
+          'Prefer':'return=minimal',
+        },
+        body: JSON.stringify(chunk),
+      });
+      if(res.ok) insertados += chunk.length;
+      else { fallidos += chunk.length; console.warn('Lote falló:', res.status, await res.text()); }
+    }catch(e){ fallidos += chunk.length; console.warn('Error de red en lote:', e); }
+  }
+
+  status.innerHTML = `<span style="color:var(--green)">✓ ${insertados} guardados</span>` +
+    (fallidos ? ` · <span style="color:var(--red)">${fallidos} fallaron (revisa consola)</span>` : '');
+  btn.textContent = '✓ Carga completada';
+
+  if(insertados > 0 && fallidos === 0){
+    setTimeout(() => { alert(`Carga exitosa: ${insertados} ciudadanos registrados.`); ccReset(); }, 600);
+  }
 }
 </script>
 </body>
