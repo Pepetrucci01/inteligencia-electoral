@@ -415,7 +415,7 @@ table.rtable tr:hover td{background:rgba(255,255,255,0.02);}
       <div style="display:flex;gap:12px;align-items:center;margin-top:18px;flex-wrap:wrap;">
         <button id="cc-btn-guardar" onclick="ccGuardar()"
           style="padding:12px 22px;background:var(--green,#22c55e);border:none;border-radius:10px;color:#fff;font-family:var(--mono);font-size:14px;font-weight:700;cursor:pointer;">
-          ✓ Guardar <span id="cc-guardar-n">0</span> ciudadanos válidos
+          ✓ Guardar <span id="cc-guardar-n">0</span> ciudadanos nuevos
         </button>
         <div id="cc-guardar-status" style="font-family:var(--mono);font-size:12px;color:var(--text3);"></div>
       </div>
@@ -1071,7 +1071,56 @@ function ccValidar(rows){
     else ccFilasValidas.push(fila);
   });
 
-  ccMostrarPreview();
+  // Pre-check de duplicados por CURP contra la base, luego preview
+  ccChecarDuplicados().then(ccMostrarPreview);
+}
+
+// ── Pre-check: marca como duplicadas las CURP que ya existen en la base ──
+async function ccChecarDuplicados(){
+  if(!ccFilasValidas.length) return;
+  try{
+    const sesion = window._sesion || JSON.parse(localStorage.getItem('electoral_sesion')||'null');
+    const token = sesion?.access_token || CC_SUPA_KEY;
+    const _fetch = window.supaFetch || fetch;
+
+    // CURPs únicas a verificar
+    const curps = [...new Set(ccFilasValidas.map(f => f.curp))];
+
+    // Consultar en lotes (el filtro in.() tiene límite de longitud de URL)
+    const existentes = new Set();
+    const LOTE = 150;
+    for(let i=0; i<curps.length; i+=LOTE){
+      const chunk = curps.slice(i, i+LOTE);
+      const lista = chunk.map(c => `"${c}"`).join(',');
+      const url = `${CC_SUPA_URL}/rest/v1/ciudadanos?select=curp&curp=in.(${encodeURIComponent(lista)})`;
+      const res = await _fetch(url, {
+        headers: { 'apikey': CC_SUPA_KEY, 'Authorization': `Bearer ${token}` }
+      });
+      if(res.ok){
+        const filas = await res.json();
+        filas.forEach(r => existentes.add(String(r.curp).toUpperCase()));
+      } else {
+        console.warn('Pre-check duplicados: status', res.status);
+      }
+    }
+
+    if(existentes.size === 0) return;
+
+    // Mover las válidas con CURP existente a la lista de "no se insertan"
+    const nuevasValidas = [];
+    ccFilasValidas.forEach(f => {
+      if(existentes.has(f.curp)){
+        f._errores = ['ya registrada (CURP existe)'];
+        f._duplicada = true;
+        ccFilasError.push(f);
+      } else {
+        nuevasValidas.push(f);
+      }
+    });
+    ccFilasValidas = nuevasValidas;
+  }catch(e){
+    console.warn('No se pudo verificar duplicados (se continúa sin pre-check):', e);
+  }
 }
 
 // ── Mostrar el preview y resumen ──
@@ -1081,22 +1130,25 @@ function ccMostrarPreview(){
 
   const totalVal = ccFilasValidas.length;
   const totalErr = ccFilasError.length;
+  const totalDup = ccFilasError.filter(f => f._duplicada).length;
+  const totalErrForm = totalErr - totalDup;
   document.getElementById('cc-preview-sub').textContent =
-    `${totalVal + totalErr} filas leídas · ${totalVal} válidas · ${totalErr} con errores`;
+    `${totalVal + totalErr} filas leídas · ${totalVal} nuevas · ${totalDup} ya registradas · ${totalErrForm} con errores`;
 
   // Tarjetas de resumen
   const resumen = document.getElementById('cc-resumen');
   const tarjeta = (label, val, color) =>
-    `<div style="flex:1;min-width:130px;background:var(--bg3);border:1px solid var(--border2);border-left:3px solid ${color};border-radius:10px;padding:12px 14px;">
+    `<div style="flex:1;min-width:120px;background:var(--bg3);border:1px solid var(--border2);border-left:3px solid ${color};border-radius:10px;padding:12px 14px;">
       <div style="font-family:var(--mono);font-size:11px;color:var(--text3);text-transform:uppercase;">${label}</div>
       <div style="font-size:24px;font-weight:700;color:${color};">${val}</div>
     </div>`;
   resumen.innerHTML =
-    tarjeta('Válidas', totalVal, 'var(--green,#22c55e)') +
-    tarjeta('Con errores', totalErr, totalErr ? 'var(--red,#ef4444)' : 'var(--text3)') +
+    tarjeta('Nuevas', totalVal, 'var(--green,#22c55e)') +
+    tarjeta('Ya registradas', totalDup, totalDup ? 'var(--amber,#f59e0b)' : 'var(--text3)') +
+    tarjeta('Con errores', totalErrForm, totalErrForm ? 'var(--red,#ef4444)' : 'var(--text3)') +
     tarjeta('Total leídas', totalVal+totalErr, 'var(--accent)');
 
-  // Tabla: primero errores (para que se vean), luego algunas válidas
+  // Tabla: primero errores/duplicados (para que se vean), luego algunas válidas
   const muestra = [...ccFilasError, ...ccFilasValidas].slice(0, 100);
   let html = `<thead><tr>
     <th>Fila</th><th>Estado</th><th>Nombre</th><th>CURP</th>
@@ -1104,14 +1156,18 @@ function ccMostrarPreview(){
   </tr></thead><tbody>`;
   muestra.forEach(f => {
     const ok = f._errores.length === 0;
+    const dup = f._duplicada;
+    const estadoColor = ok ? 'var(--green)' : (dup ? 'var(--amber,#f59e0b)' : 'var(--red)');
+    const estadoTxt = ok ? '✓ nueva' : (dup ? '⊘ ya existe' : '✗ error');
+    const detColor = dup ? 'var(--amber,#f59e0b)' : 'var(--red)';
     html += `<tr>
       <td>${f._row}</td>
-      <td style="color:${ok?'var(--green)':'var(--red)'};font-weight:600">${ok?'✓ válida':'✗ error'}</td>
+      <td style="color:${estadoColor};font-weight:600">${estadoTxt}</td>
       <td>${f.nombre} ${f.apellido_paterno}</td>
       <td style="font-family:var(--mono);font-size:11px">${f.curp||'—'}</td>
       <td>${f.municipio||'—'}</td>
       <td>${f.seccion_electoral||'—'}</td>
-      <td style="color:var(--red);font-size:11px">${f._errores.join(', ')||'—'}</td>
+      <td style="color:${detColor};font-size:11px">${f._errores.join(', ')||'—'}</td>
     </tr>`;
   });
   html += '</tbody>';
