@@ -388,7 +388,7 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
     </style>
     <div class="card" style="margin-bottom:14px">
       <div class="card-h">
-        <span class="card-title">👤 Avance por capturista</span>
+        <span class="card-title">👤 Avance por activista</span>
         <span id="cap-tabla-count" style="font-size:10px;font-family:var(--mono);color:var(--text3)"></span>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border2)">
@@ -416,7 +416,7 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
       <div class="tw">
         <table class="t" id="cap-table">
           <thead><tr>
-            <th onclick="sortCap('nombre')" style="cursor:pointer;user-select:none">Capturista <span id="sort-cap-nombre" style="color:var(--text3)">↕</span></th>
+            <th onclick="sortCap('nombre')" style="cursor:pointer;user-select:none">Activista <span id="sort-cap-nombre" style="color:var(--text3)">↕</span></th>
             <th onclick="sortCap('secNum')" style="cursor:pointer;user-select:none;text-align:center">Sección <span id="sort-cap-secNum" style="color:var(--text3)">↕</span></th>
             <th onclick="sortCap('munNombre')" style="cursor:pointer;user-select:none;text-align:center">Municipio <span id="sort-cap-munNombre" style="color:var(--text3)">↕</span></th>
             <th class="r" onclick="sortCap('cap')" style="cursor:pointer;user-select:none;text-align:center">Capturados <span id="sort-cap-cap" style="color:var(--text3)">↕</span></th>
@@ -495,7 +495,7 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
       <span class="bc-sep">›</span>
       <span class="bc-item" id="bc1-sec" onclick="if(f1s.sec)drillF1('sec',f1s.sec)">Sección</span>
       <span class="bc-sep">›</span>
-      <span class="bc-item" id="bc1-cap" onclick="if(f1s.cap)drillF1('cap',f1s.cap)">Capturista</span>
+      <span class="bc-item" id="bc1-cap" onclick="if(f1s.cap)drillF1('cap',f1s.cap)">Activista</span>
     </div>
 
     <div id="cuad-f1"></div>
@@ -573,7 +573,7 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
           <div id="f2-alertas-list"></div>
         </div>
         <div class="card">
-          <div class="card-h"><span class="card-title">⚡ Enviar alerta a capturistas</span></div>
+          <div class="card-h"><span class="card-title">⚡ Enviar alerta a activistas</span></div>
           <div class="card-b">
             <div style="font-size:11px;color:var(--text2);margin-bottom:10px">Notifica a los capturistas que van en rojo o sin reporte. El mensaje llega dentro del sistema y por WhatsApp.</div>
 
@@ -583,7 +583,7 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
               <option value="rojos">Solo secciones en rojo (bajo meta)</option>
               <option value="sinreporte">Sin reporte de avance</option>
               <option value="municipio">Por municipio</option>
-              <option value="todos">Todos los capturistas</option>
+              <option value="todos">Todos los activistas</option>
             </select>
             <select id="alerta-mun" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:7px 10px;outline:none;margin-bottom:10px;display:none" onchange="actualizarConteoAlerta()">
               <option value="">Todos los municipios</option>
@@ -1025,7 +1025,7 @@ function renderCuadF1(){
           <div style="font-size:24px;font-weight:700;font-family:var(--mono);color:${dc};line-height:1;margin-bottom:4px">${dpv}%</div>
           <div style="height:5px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden;margin-bottom:6px"><div style="width:${dpv}%;height:100%;background:${dc};border-radius:99px"></div></div>
           <div style="font-size:11px;font-family:var(--mono);color:var(--text2)">${fmt(df.cap)} / ${fmt(df.meta)}</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px">${df.secs} secciones · ${df.cas} casillas · ${capsDF(df.id)} capturistas</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px">${df.secs} secciones · ${df.cas} casillas · ${capsDF(df.id)} activistas</div>
           <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px"><span style="font-size:16px">${semI(dpv)}</span><span style="color:var(--text3)">Ver municipios →</span></div>
         </div>`;
       }).join('')}
@@ -1156,7 +1156,7 @@ function buildCuadCapturistas(caps){
   const cols=Math.min(caps.length,4);
   return`<div style="margin-bottom:14px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-      <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em">👤 Cuadrante Capturistas — ${caps.length} asignados</div>
+      <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em">👤 Cuadrante Activistas — ${caps.length} asignados</div>
       <div style="display:flex;gap:6px">
         <span style="font-size:10px;color:var(--green)">🟢 ${caps.filter(c=>pct(c.cap,c.meta)>=70).length}</span>
         <span style="font-size:10px;color:var(--amber)">🟡 ${caps.filter(c=>{const p=pct(c.cap,c.meta);return p>=40&&p<70;}).length}</span>

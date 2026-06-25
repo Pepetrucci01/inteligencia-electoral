@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Panel de Capturistas — Colima 2027</title>
+<title>Panel de Activistas — Colima 2027</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
@@ -188,7 +188,7 @@ table.cap-table tr.selected{background:rgba(59,130,246,0.1);}
   <div class="topbar-left">
     <div class="logo-mark">CP</div>
     <div>
-      <div class="topbar-title">Panel de Capturistas</div>
+      <div class="topbar-title">Panel de Activistas</div>
       <div class="topbar-sub">GESTIÓN DE ESTRUCTURA · COLIMA 2027</div>
     </div>
   </div>
@@ -216,7 +216,7 @@ table.cap-table tr.selected{background:rgba(59,130,246,0.1);}
   <div class="filter-sep"></div>
   <span class="filter-label">BUSCAR</span>
   <input type="text" id="fil-search" placeholder="ID o nombre..." oninput="aplicarFiltros()" style="width:160px">
-  <span class="results-count" id="results-count">60 capturistas</span>
+  <span class="results-count" id="results-count">60 activistas</span>
 </div>
 
 <div class="main">
@@ -261,7 +261,7 @@ table.cap-table tr.selected{background:rgba(59,130,246,0.1);}
     <!-- TABLA -->
     <div class="card">
       <div class="card-header">
-        <span class="card-title">Todos los capturistas</span>
+        <span class="card-title">Todos los activistas</span>
         <span style="font-size:10px;font-family:var(--mono);color:var(--text3)">clic en fila para ver detalle</span>
       </div>
       <div style="overflow-x:auto;">
@@ -269,7 +269,7 @@ table.cap-table tr.selected{background:rgba(59,130,246,0.1);}
           <thead>
             <tr>
               <th style="text-align:center">#</th>
-              <th onclick="sortPanel('CAPTURADO_POR')" style="cursor:pointer;user-select:none;text-align:center">Capturista <span id="sort-p-CAPTURADO_POR" style="color:var(--text3)">↕</span></th>
+              <th onclick="sortPanel('CAPTURADO_POR')" style="cursor:pointer;user-select:none;text-align:center">Activista <span id="sort-p-CAPTURADO_POR" style="color:var(--text3)">↕</span></th>
               <th onclick="sortPanel('MUNICIPIO')" style="cursor:pointer;user-select:none;text-align:center">Municipio <span id="sort-p-MUNICIPIO" style="color:var(--text3)">↕</span></th>
               <th onclick="sortPanel('total')" style="cursor:pointer;user-select:none;text-align:center">Capturas <span id="sort-p-total" style="color:var(--text3)">↕</span></th>
               <th style="text-align:center">Avance</th>
@@ -289,7 +289,7 @@ table.cap-table tr.selected{background:rgba(59,130,246,0.1);}
     <div>
       <div id="detail-panel">
         <div class="card">
-          <div class="placeholder-msg">← Selecciona un capturista<br>para ver su ficha completa</div>
+          <div class="placeholder-msg">← Selecciona un activista<br>para ver su ficha completa</div>
         </div>
       </div>
     </div>
@@ -323,7 +323,7 @@ function mostrarAvisoSinAsignar(sa) {
   if (!box || !txt) return;
   const n = sa?.total || 0;
   if (n > 0) {
-    txt.textContent = `${n.toLocaleString('es-MX')} registros sin capturista asignado · pendientes de asignación`;
+    txt.textContent = `${n.toLocaleString('es-MX')} registros sin activista asignado · pendientes de asignación`;
     box.style.display = 'flex';
   } else {
     box.style.display = 'none';
@@ -527,7 +527,7 @@ function renderKPIs(d){
   document.getElementById('kpi-proceso').textContent   = proceso;
   document.getElementById('kpi-bajo').textContent      = bajo;
   document.getElementById('kpi-score-prom').textContent= prom;
-  document.getElementById('results-count').textContent = d.length+' capturistas';
+  document.getElementById('results-count').textContent = d.length+' activistas';
   const totalEl = document.getElementById('kpi-total');
   if(totalEl) totalEl.textContent = DATOS.length;
 }
