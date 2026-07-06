@@ -2722,6 +2722,8 @@ function cerrarDetalleAlerta() {
 document.addEventListener('DOMContentLoaded',()=>{
   // ── Marca de agua por usuario (disuasivo anti-filtración) ───────────────
   (function(){
+    const MARCA_AGUA_ACTIVA = false; // ⬅ cambiar a true para reactivar la marca de agua
+    if(!MARCA_AGUA_ACTIVA) return;
     const u = window._sesion || {};
     const lic = u.licencia_id ? String(u.licencia_id).slice(0,8) : '';
     const idLine = [u.nombre, u.rol, lic].filter(Boolean).join(' · ') || 'DEMO';
