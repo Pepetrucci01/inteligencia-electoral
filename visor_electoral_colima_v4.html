@@ -236,6 +236,7 @@ async function cargarAvanceSupabase() {
     <div class="tab meta-tab tab-lider-ocultar" id="tab-avance-meta" onclick="setLayer('meta',this)">🎯 AVANCE META</div>
     <div class="tab meta-tab tab-lider-ocultar" id="tab-ganador" onclick="setLayer('ganador',this)">🏆 GANADOR 2024</div>
     <div class="tab meta-tab tab-lider-ocultar" id="tab-dificultad" onclick="setLayer('estatus',this)">📊 DIFICULTAD</div>
+    <div class="tab meta-tab tab-lider-ocultar" id="tab-dia-e" onclick="setLayer('dia_e',this)">🗳️ DÍA E</div>
   </div>
   <div class="sep"></div>
   <div class="ctrl-group">
@@ -301,6 +302,15 @@ async function cargarAvanceSupabase() {
     <div class="divider"></div>
     <div style="font-size:10px;color:#666;margin-bottom:4px;">CASILLAS EN ESTA SECCIÓN <span style="float:right;color:#555;">PROY / REAL (GAP)</span></div>
     <div id="ip-casillas" style="font-size:11px;"></div>
+  </div>
+  <!-- Control DÍA E — simulación horneada (main/demo) -->
+  <div id="dia-e-ctrl" style="display:none;position:absolute;bottom:18px;left:50%;transform:translateX(-50%);z-index:1000;background:rgba(15,15,35,.94);border:1px solid #333;border-radius:10px;padding:10px 16px;min-width:320px;max-width:90vw;">
+    <div style="display:flex;justify-content:space-between;font-size:11px;color:#aaa;margin-bottom:4px;">
+      <span>🗳️ SIMULACIÓN DÍA E</span><span id="dia-e-hora" style="color:#00ff88;font-weight:700;">08:00</span>
+    </div>
+    <input type="range" id="dia-e-slider" min="480" max="1200" step="15" value="480" style="width:100%;" oninput="setHoraDiaE(this.value)">
+    <div style="display:flex;justify-content:space-between;font-size:9px;color:#666;"><span>08:00</span><span>14:00</span><span>20:00</span></div>
+    <div id="dia-e-resumen" style="font-size:10px;color:#ccc;margin-top:5px;text-align:center;"></div>
   </div>
   <div id="legend">
     <h4 id="leg-title">GOBERNADOR</h4>
@@ -373,6 +383,77 @@ function getEstatusColor(e){
   return '#555';
 }
 
+// ================== DÍA E — SIMULACIÓN HORNEADA (main/demo) ==================
+// [SWAP LUIS] En desarrollo: sustituir simularCasillaDiaE/votosCasillaDiaE por
+// lectura real de reportes_casilla_eleccion + casillas (hora_apertura, votos_favor)
+// vía Supabase con access_token. La lógica de coloreo por fase se conserva igual.
+let HORA_DIA_E = 480; // minutos desde 00:00 (08:00)
+function seedRandDiaE(str){let h=2166136261;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619);}return function(){h=Math.imul(h^h>>>15,2246822519);h=Math.imul(h^h>>>13,3266489917);return((h^=h>>>16)>>>0)/4294967296;};}
+function simularCasillaDiaE(cc,mp,mr){
+  const r=seedRandDiaE(cc);
+  const sinInstalar=r()<0.02;                      // ~2% conflictivas (no abren)
+  const instMin=465+Math.floor(r()*120);           // instalan entre 07:45 y 09:45
+  const cierreMin=1080+Math.floor(r()*45);         // cierran 18:00–18:45
+  const ritmo=0.85+r()*0.4;                        // desempeño 85%–125% de su meta real
+  return {instMin:sinInstalar?99999:instMin,cierreMin,ritmo,metaP:mp||0,metaR:mr||0};
+}
+function estadoCasillaDiaE(sim,h){
+  if(h<sim.instMin) return 'sin_instalar';
+  if(h>=sim.cierreMin) return 'cerrada';
+  if(h<sim.instMin+45) return 'instalada';
+  return 'reportando';
+}
+function votosCasillaDiaE(sim,h){
+  if(h<=sim.instMin) return 0;
+  const fin=Math.min(h,sim.cierreMin);
+  const prog=Math.max(0,Math.min(1,(fin-sim.instMin)/(sim.cierreMin-sim.instMin)));
+  const s=prog<0.5?2*prog*prog:1-Math.pow(-2*prog+2,2)/2; // curva S de afluencia
+  return Math.round(sim.metaR*sim.ritmo*s);
+}
+function statsSeccionDiaE(sec){
+  const sm=(typeof IE_METAS_CASILLA!=='undefined'&&IE_METAS_CASILLA.secciones)?IE_METAS_CASILLA.secciones[String(sec)]:null;
+  if(!sm||!sm.casillas||!sm.casillas.length) return null;
+  const h=HORA_DIA_E;let inst=0,rep=0,votos=0;
+  sm.casillas.forEach(function(c){
+    const sim=simularCasillaDiaE(c.cc,c.mp,c.mr);
+    const e=estadoCasillaDiaE(sim,h);
+    if(e!=='sin_instalar')inst++;
+    if(e==='reportando'||e==='cerrada')rep++;
+    votos+=votosCasillaDiaE(sim,h);
+  });
+  return {n:sm.casillas.length,inst:inst,rep:rep,votos:votos,metaP:sm.meta_proyectada||0};
+}
+function getDiaEColorSeccion(sec){
+  const st=statsSeccionDiaE(sec);
+  if(!st) return '#2a2a4a';
+  if(HORA_DIA_E>=1110){ // 18:30+ → semáforo de cumplimiento vs meta proyectada
+    const pct=st.metaP>0?Math.round(st.votos/st.metaP*100):0;
+    return getMetaColor(pct);
+  }
+  if(st.inst===0) return '#444';
+  if(st.inst<st.n) return '#ff4466';
+  if(st.rep<st.n) return '#ffaa00';
+  return '#00cc66';
+}
+function setHoraDiaE(v){
+  HORA_DIA_E=+v;
+  const hh=String(Math.floor(HORA_DIA_E/60)).padStart(2,'0'),mm=String(HORA_DIA_E%60).padStart(2,'0');
+  document.getElementById('dia-e-hora').textContent=hh+':'+mm;
+  if(currentLayer==='dia_e'){renderSecciones('dia_e');actualizarResumenDiaE();}
+}
+function actualizarResumenDiaE(){
+  if(typeof IE_METAS_CASILLA==='undefined'||!IE_METAS_CASILLA.secciones)return;
+  let inst=0,tot=0,votos=0;const h=HORA_DIA_E;
+  Object.values(IE_METAS_CASILLA.secciones).forEach(function(sm){(sm.casillas||[]).forEach(function(c){
+    tot++;const sim=simularCasillaDiaE(c.cc,c.mp,c.mr);
+    if(estadoCasillaDiaE(sim,h)!=='sin_instalar')inst++;
+    votos+=votosCasillaDiaE(sim,h);
+  });});
+  const pctMeta=Math.round(votos/(IE_METAS_CASILLA.meta_estatal||1)*100);
+  document.getElementById('dia-e-resumen').textContent='Casillas instaladas: '+inst+'/'+tot+' · Votos: '+votos.toLocaleString()+' ('+pctMeta+'% de la meta)';
+}
+// ================== FIN DÍA E ==================
+
 function getColor(props, layer){
   if(layer==='gobernador'||layer==='senador') return '#e94560';
   if(layer==='ayuntamiento') return MUN_COLORS[props.nom_municipio]||'#888';
@@ -387,11 +468,12 @@ function getColor(props, layer){
   }
   if(layer==='ganador') return getGanadorColor(props.ganador);
   if(layer==='estatus') return props.estatus ? getEstatusColor(props.estatus) : '#2a2a4a';
+  if(layer==='dia_e') return getDiaEColorSeccion(props.seccion);
   return '#888';
 }
 
 function buildLegend(layer){
-  const titles={gobernador:'GOBERNADOR',ayuntamiento:'AYUNTAMIENTOS',diputado_federal:'DIST. FEDERALES',senador:'SENADOR',diputado_local:'DIST. LOCALES',meta:'AVANCE META',ganador:'GANADOR 2024',estatus:'DIFICULTAD'};
+  const titles={gobernador:'GOBERNADOR',ayuntamiento:'AYUNTAMIENTOS',diputado_federal:'DIST. FEDERALES',senador:'SENADOR',diputado_local:'DIST. LOCALES',meta:'AVANCE META',ganador:'GANADOR 2024',estatus:'DIFICULTAD',dia_e:'DÍA E (SIMULACIÓN)'};
   document.getElementById('leg-title').textContent=titles[layer]||layer;
   let html='';
   if(layer==='gobernador'||layer==='senador'){
@@ -416,6 +498,20 @@ function buildLegend(layer){
     <div class="leg-item"><div class="leg-col" style="background:#ffaa00"></div>MEDIO</div>
     <div class="leg-item"><div class="leg-col" style="background:#ff4466"></div>DIFÍCIL</div>
     <div class="leg-item"><div class="leg-col" style="background:#2a2a4a;border:1px solid #555"></div>Sin datos</div>`;
+  } else if(layer==='dia_e'){
+    if(HORA_DIA_E>=1110){
+      html=`<div style="font-size:9px;color:#888;margin-bottom:4px;">CUMPLIMIENTO VS META (18:30+)</div>
+      <div class="leg-item"><div class="leg-col" style="background:#00ff88"></div>100%+ meta lograda</div>
+      <div class="leg-item"><div class="leg-col" style="background:#00cc66"></div>70-99% cerca</div>
+      <div class="leg-item"><div class="leg-col" style="background:#ffaa00"></div>40-69% en riesgo</div>
+      <div class="leg-item"><div class="leg-col" style="background:#ff4466"></div>0-39% crítico</div>`;
+    } else {
+      html=`<div style="font-size:9px;color:#888;margin-bottom:4px;">FASE OPERATIVA</div>
+      <div class="leg-item"><div class="leg-col" style="background:#00cc66"></div>Todas reportando</div>
+      <div class="leg-item"><div class="leg-col" style="background:#ffaa00"></div>Instaladas, falta reporte</div>
+      <div class="leg-item"><div class="leg-col" style="background:#ff4466"></div>Instalación parcial</div>
+      <div class="leg-item"><div class="leg-col" style="background:#444"></div>Sin instalar</div>`;
+    }
   }
   document.getElementById('leg-items').innerHTML=html;
 }
@@ -438,6 +534,10 @@ function renderSecciones(layer){
       }
       if(layer==='ganador') tip+=`<br>Ganador: ${p.ganador||'—'}`;
       if(layer==='estatus') tip+=`<br>Dificultad: ${p.estatus||'Sin datos'}`;
+      if(layer==='dia_e'){
+        const st=statsSeccionDiaE(p.seccion);
+        if(st) tip+=`<br>Instaladas: ${st.inst}/${st.n} · Votos: ${st.votos.toLocaleString()} / ${st.metaP.toLocaleString()}`;
+      }
       if(layer==='diputado_local') tip+=`<br>${p.nom_dl}`;
       if(layer==='diputado_federal') tip+=`<br>${p.nom_df}`;
       l.bindTooltip(tip,{sticky:true});
@@ -502,9 +602,11 @@ function setLayer(layer,el){
   currentLayer=layer;
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
-  const names={gobernador:'GOBERNADOR',ayuntamiento:'AYUNTAMIENTO',diputado_federal:'DIP. FEDERAL',senador:'SENADOR',diputado_local:'DIP. LOCAL',meta:'AVANCE META',ganador:'GANADOR 2024',estatus:'DIFICULTAD'};
+  const names={gobernador:'GOBERNADOR',ayuntamiento:'AYUNTAMIENTO',diputado_federal:'DIP. FEDERAL',senador:'SENADOR',diputado_local:'DIP. LOCAL',meta:'AVANCE META',ganador:'GANADOR 2024',estatus:'DIFICULTAD',dia_e:'DÍA E'};
   document.getElementById('badge').textContent=names[layer]||layer;
   document.getElementById('sLayer').textContent=names[layer]||layer;
+  document.getElementById('dia-e-ctrl').style.display = layer==='dia_e' ? 'block' : 'none';
+  if(layer==='dia_e') actualizarResumenDiaE();
   renderSecciones(layer);
 }
 
