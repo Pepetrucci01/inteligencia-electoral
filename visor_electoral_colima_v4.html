@@ -150,6 +150,7 @@ select{background:#0f3460;color:#eee;border:1px solid #444;border-radius:4px;pad
 
 </style>
 <script src="theme.js"></script>
+<script src="ie_metas_casilla_horneado.js"></script>
 
 <!-- GUARD DE SESIÓN + CONTROL ROL LIDER -->
 <script>
@@ -298,7 +299,7 @@ async function cargarAvanceSupabase() {
       <div class="meta-bar-bg"><div class="meta-bar-fill" id="ip-bar" style="width:0%;background:#00cc66;"></div></div>
     </div>
     <div class="divider"></div>
-    <div style="font-size:10px;color:#666;margin-bottom:4px;">CASILLAS EN ESTA SECCIÓN</div>
+    <div style="font-size:10px;color:#666;margin-bottom:4px;">CASILLAS EN ESTA SECCIÓN <span style="float:right;color:#555;">PROY / REAL (GAP)</span></div>
     <div id="ip-casillas" style="font-size:11px;"></div>
   </div>
   <div id="legend">
@@ -465,21 +466,35 @@ function showSeccionInfo(p){
   document.getElementById('ip-nominal').textContent=(p.lista_nominal||'—').toLocaleString();
   document.getElementById('ip-votos').textContent=(p.total_votos||'—').toLocaleString();
   document.getElementById('ip-afluencia').textContent=p.afluencia?p.afluencia+'%':'—';
-  document.getElementById('ip-meta').textContent=p.meta?Math.round(p.meta).toLocaleString()+' votos':'—';
-  document.getElementById('ip-meta-real').textContent=p.meta_real?Math.round(p.meta_real).toLocaleString()+' votos':'—';
-  document.getElementById('ip-capturistas').textContent=p.capturistas?Math.round(p.capturistas):'—';
+  // Metas horneadas v2 (IE_METAS_CASILLA) con fallback demo-safe a los datos previos
+  // [SWAP LUIS] En desarrollo: sustituir IE_METAS_CASILLA por fetch a casillas/secciones (Supabase, access_token)
+  const secMeta=(typeof IE_METAS_CASILLA!=='undefined'&&IE_METAS_CASILLA.secciones)?IE_METAS_CASILLA.secciones[String(p.seccion)]:null;
+  const metaProy=secMeta?secMeta.meta_proyectada:p.meta;
+  const metaRealV=secMeta?secMeta.meta_real:p.meta_real;
+  const estructuraV=secMeta?secMeta.estructura_real:p.capturistas;
+  document.getElementById('ip-meta').textContent=metaProy?Math.round(metaProy).toLocaleString()+' votos':'—';
+  document.getElementById('ip-meta-real').textContent=metaRealV?Math.round(metaRealV).toLocaleString()+' votos':'—';
+  document.getElementById('ip-capturistas').textContent=estructuraV?(+estructuraV).toFixed(1).replace(/\.0$/,''):'—';
   // Avance real desde Supabase
   const capturados = window.AVANCE_SECCION[p.seccion] || 0;
-  const metaRef = p.meta_real || p.meta || 0;
+  const metaRef = metaRealV || metaProy || 0;
   const pct = metaRef > 0 ? Math.min(Math.round((capturados / metaRef) * 100), 100) : 0;
   document.getElementById('ip-pct').textContent = pct + '% (' + capturados.toLocaleString() + ' cap.)';
   document.getElementById('ip-bar').style.width = pct + '%';
   document.getElementById('ip-bar').style.background = getMetaColor(pct);
   // Casillas de esta sección
-  const cas=CASILLAS.filter(c=>c.seccion==p.seccion);
-  document.getElementById('ip-casillas').innerHTML=cas.map(c=>
-    `<div style="padding:2px 0;border-bottom:1px solid #222;">${c.casilla} — ${c.tipo}</div>`
-  ).join('');
+  if(secMeta&&Array.isArray(secMeta.casillas)&&secMeta.casillas.length){
+    document.getElementById('ip-casillas').innerHTML=secMeta.casillas.map(c=>{
+      const gap=(c.mr||0)-(c.mp||0);
+      const gcol=gap>=0?'#00cc66':'#ff4466';
+      return `<div style="padding:2px 0;border-bottom:1px solid #222;display:flex;justify-content:space-between;gap:8px;"><span>${c.cc}</span><span style="white-space:nowrap;"><span style="color:#00cc66;">${(c.mp||0).toLocaleString()}</span> / <span style="color:#ffd93d;">${(c.mr||0).toLocaleString()}</span> <span style="color:${gcol};font-size:10px;">(${gap>=0?'+':''}${gap})</span></span></div>`;
+    }).join('');
+  }else{
+    const cas=CASILLAS.filter(c=>c.seccion==p.seccion);
+    document.getElementById('ip-casillas').innerHTML=cas.map(c=>
+      `<div style="padding:2px 0;border-bottom:1px solid #222;">${c.casilla} — ${c.tipo}</div>`
+    ).join('');
+  }
   document.getElementById('info-panel').style.display='block';
 }
 
