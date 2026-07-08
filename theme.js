@@ -34,9 +34,9 @@ const DEFAULT_THEME = {
 
   // Datos operativos del cliente
   sistemaEstado:  'Colima',
-  sistemaMeta:    197297,        // número — se formatea automáticamente
+  sistemaMeta:    208717,        // número — se formatea automáticamente (meta Colima 2027 depurada)
   sistemaAnio:    2027,          // año de la elección
-  fechaEleccion:  '2027-06-01', // ISO — para cuenta regresiva
+  fechaEleccion:  '2027-06-06', // ISO — para cuenta regresiva (fecha oficial elección)
 
   // Paleta
   colorPrimario:    '#3b82f6',
@@ -115,7 +115,11 @@ function applyTheme(theme) {
   });
 
   // Meta estatal (formateada con comas)
-  const metaFmt = Number(theme.sistemaMeta).toLocaleString('es-MX');
+  // [SWAP LUIS] Fuente única: si el JSON horneado está cargado, su meta_estatal
+  // manda sobre el default del tema. En Fase 4 esto vendrá de configuracion_sistema.
+  const metaVal = (typeof IE_METAS_CASILLA !== 'undefined' && IE_METAS_CASILLA.meta_estatal)
+                    ? IE_METAS_CASILLA.meta_estatal : theme.sistemaMeta;
+  const metaFmt = Number(metaVal).toLocaleString('es-MX');
   document.querySelectorAll('[data-theme="sistema-meta"]').forEach(el => {
     el.textContent = metaFmt;
   });
