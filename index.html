@@ -321,7 +321,7 @@ iframe{width:100%;height:100%;border:none;display:block;}
         <a onclick="cerrarSesion()" style="color:var(--red);cursor:pointer;text-decoration:none;font-size:10px;" title="Cerrar sesión">⏻ Salir</a>
       </span>
       <span class="tb-badge" style="background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.25)">● Sistema activo</span>
-      <span class="tb-badge" style="background:var(--bg3);color:var(--text3);border:1px solid var(--border2)" id="tb-dias">521 días</span>
+      <span class="tb-badge" style="background:var(--bg3);color:var(--text3);border:1px solid var(--border2)" id="tb-dias">334 días</span>
       <span class="clock" id="clock">--:--:--</span>
     </div>
   </div>
@@ -455,7 +455,7 @@ iframe{width:100%;height:100%;border:none;display:block;}
       </div>
       <div class="al-item">
         <div class="al-dot" style="background:var(--amber)"></div>
-        <div class="al-body"><div class="al-text">Ritmo actual insuficiente — se necesita ×4.4 más capturas por semana</div><div class="al-meta">Actual: 574/sem · Requerido: 2,531/sem · Proyección: 26.6% a jun 2027</div></div>
+        <div class="al-body"><div class="al-text">Ritmo actual insuficiente — se necesita ×7.2 más capturas por semana</div><div class="al-meta">Actual: 574/sem · Requerido: 4,140/sem · Proyección: 18.0% a jun 2027</div></div>
         <span class="al-act" onclick="load('rep','modulo_reportes.html','Reportes y análisis','Datos reales · PDF y Excel')">Ver proyección →</span>
       </div>
     </div>
@@ -474,7 +474,7 @@ function tick(){
     now.toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   // Usar fecha de elección del tema si está disponible
   const tema = typeof loadTheme === 'function' ? loadTheme() : {};
-  const fechaElec = tema.fechaEleccion || '2027-06-01';
+  const fechaElec = tema.fechaEleccion || '2027-06-06';
   const dias = Math.ceil((new Date(fechaElec) - now) / 864e5);
   document.getElementById('tb-dias').textContent = dias > 0 ? dias + ' días a elección' : 'Día de la elección';
 }
