@@ -2784,6 +2784,23 @@ document.addEventListener('DOMContentLoaded',()=>{
 <script src="ie_metas_casilla_horneado.js"></script>
 <script src="theme.js"></script>
 <script>
+// [SWAP LUIS] Corrección final de META tras theme.js: el valor horneado manda.
+(function(){
+  if(typeof IE_METAS_CASILLA==='undefined' || !IE_METAS_CASILLA.meta_estatal) return;
+  var M = IE_METAS_CASILLA.meta_estatal;
+  function f(n){ return Number(n).toLocaleString('es-MX'); }
+  function ap(){
+    var m=f(M);
+    ['meta-calc','kpi-meta','wr-meta-sub','wr-meta-pb'].forEach(function(id){
+      var el=document.getElementById(id); if(el) el.textContent=m;
+    });
+  }
+  ap();
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', ap);
+  setTimeout(ap,300); setTimeout(ap,1000);
+})();
+</script>
+<script>
 (function() {
   try {
     if (window.self === window.top) {

@@ -2464,5 +2464,21 @@ showTab = function(tab) {
 
 <script src="ie_metas_casilla_horneado.js"></script>
 <script src="theme.js"></script>
+<script>
+// [SWAP LUIS] Corrección final de META tras theme.js: el valor horneado manda.
+(function(){
+  if(typeof IE_METAS_CASILLA==='undefined' || !IE_METAS_CASILLA.meta_estatal) return;
+  var M = IE_METAS_CASILLA.meta_estatal;
+  function f(n){ return Number(n).toLocaleString('es-MX'); }
+  function ap(){
+    var m=f(M);
+    var a=document.getElementById('rep-meta-kpi'); if(a)a.textContent=m;
+    var b=document.getElementById('rep-meta-bar'); if(b)b.textContent=m+' meta';
+  }
+  ap();
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', ap);
+  setTimeout(ap,300); setTimeout(ap,1000);
+})();
+</script>
 </body>
 </html>
