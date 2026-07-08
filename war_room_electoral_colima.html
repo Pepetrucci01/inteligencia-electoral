@@ -304,7 +304,7 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
     <div class="fb-icon">✏️</div>
     <div>
       <div class="fb-title">FASE 1 — Captura de simpatizantes · En curso</div>
-      <div class="fb-sub">Avance de captura territorial · Meta: 197,297 simpatizantes · 521 días a la elección</div>
+      <div class="fb-sub">Avance de captura territorial · Meta: <span id="wr-meta-sub">197,297</span> simpatizantes · 521 días a la elección</div>
     </div>
   </div>
 
@@ -330,7 +330,7 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
       <div class="pb-lbl">AVANCE ESTATAL VS META 2027</div>
       <div class="pb-track"><div class="pb-fill" id="pb-fill" style="width:7.2%;background:linear-gradient(90deg,#1d4ed8,#3b82f6)"></div></div>
       <div class="pb-pct" id="pb-pct" style="color:var(--accent)">7.2%</div>
-      <div class="pb-nums" id="pb-nums">14,300 / 197,297 capturados</div>
+      <div class="pb-nums" id="pb-nums">14,300 / <span id="wr-meta-pb">197,297</span> capturados</div>
     </div>
 
     <!-- KPIs -->
@@ -984,9 +984,11 @@ function sortWR(col) {
   renderMunF1();
 }
 
+// [SWAP LUIS] meta base desde IE_METAS_CASILLA (208,717); fallback demo-safe
+const META_WR=(typeof IE_METAS_CASILLA!=='undefined' && IE_METAS_CASILLA.meta_estatal)?IE_METAS_CASILLA.meta_estatal:197297;
 function recalc(){
   const p=parseFloat(document.getElementById('cfg-pct').value)||6;
-  const meta=Math.round(197297*(p/6));
+  const meta=Math.round(META_WR*(p/6));
   document.getElementById('meta-calc').textContent=fmt(meta);
   document.getElementById('kpi-meta').textContent=fmt(meta);
   const capActual = _totalCapturadosReal;
@@ -2518,9 +2520,9 @@ async function cargarKPIsReales() {
 
       // Barra de progreso
       const pbNums = document.getElementById('pb-nums');
-      if(pbNums) pbNums.textContent = `${fmt(total)} / 197,297 capturados`;
+      if(pbNums) pbNums.textContent = `${fmt(total)} / ${fmt(META_WR)} capturados`;
       const pbFill = document.getElementById('pb-fill');
-      const meta = 197297;
+      const meta = META_WR;
       const pct = Math.min(100, Math.round((total / meta) * 100));
       if(pbFill) pbFill.style.width = pct + '%';
       const pbPct = document.getElementById('pb-pct');
@@ -2720,6 +2722,10 @@ function cerrarDetalleAlerta() {
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
+  // [SWAP LUIS] Sincroniza tarjetas de META visibles con IE_METAS_CASILLA (demo sin sesión)
+  (function(){ const m=(typeof fmt==='function')?fmt(META_WR):String(META_WR);
+    ['meta-calc','kpi-meta','wr-meta-sub','wr-meta-pb'].forEach(id=>{const el=document.getElementById(id); if(el) el.textContent=m;});
+  })();
   // ── Marca de agua por usuario (disuasivo anti-filtración) ───────────────
   (function(){
     const MARCA_AGUA_ACTIVA = false; // ⬅ cambiar a true para reactivar la marca de agua
@@ -2775,6 +2781,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   renderSemaforoF2();
 });
 </script>
+<script src="ie_metas_casilla_horneado.js"></script>
 <script src="theme.js"></script>
 <script>
 (function() {
