@@ -34,7 +34,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 html,body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100%;}
-.wrap{max-width:1180px;margin:0 auto;padding:20px 20px 80px;}
+.wrap{max-width:1600px;margin:0 auto;padding:20px 24px 80px;}
 
 /* ── HEADER ── */
 .head{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px;}
@@ -333,10 +333,10 @@ input:focus,select:focus,textarea:focus{border-color:var(--cyan);}
       <div style="background:var(--bg4,#1a2238);border:1px solid var(--border,#2a3350);border-radius:10px;padding:12px 16px;margin-top:6px;">
         <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3,#9aa4bf);margin-bottom:6px;">
           <span>📈 AVANCE DEL LEVANTAMIENTO</span>
-          <span id="v-hora" style="color:#2dd4bf;font-weight:700;font-family:var(--mono,monospace);">Entrevista 0 / 200</span>
+          <span id="v-hora" style="color:#2dd4bf;font-weight:700;font-family:var(--mono,monospace);">Entrevista 0 / 1,600</span>
         </div>
-        <input type="range" id="v-slider" min="0" max="200" step="1" value="0" style="width:100%;accent-color:#2dd4bf;" oninput="setAvanceVivo(this.value)">
-        <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text3,#666);margin-top:2px;"><span>Inicio</span><span>100</span><span>Muestra completa (200)</span></div>
+        <input type="range" id="v-slider" min="0" max="1600" step="8" value="0" style="width:100%;accent-color:#2dd4bf;" oninput="setAvanceVivo(this.value)">
+        <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text3,#666);margin-top:2px;"><span>Inicio</span><span>800</span><span>Muestra completa (1,600)</span></div>
         <div style="display:flex;gap:6px;margin-top:8px;justify-content:center;">
           <button class="btn" style="font-size:10px;padding:4px 10px;" onclick="playVivo()" id="v-play">▶ Reproducir</button>
           <button class="btn" style="font-size:10px;padding:4px 10px;" onclick="resetVivo()">↺ Reiniciar</button>
@@ -353,21 +353,24 @@ input:focus,select:focus,textarea:focus{border-color:var(--cyan);}
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
       <div class="card">
-        <div class="card-title" style="font-size:13px;">🗳 Intención de voto</div>
+        <div class="card-title" style="font-size:13px;">🗳 Intención de voto <button onclick="toggleInterp('int')" style="font-size:10px;padding:3px 9px;border:1px solid rgba(45,212,191,.4);background:rgba(20,184,166,.1);color:#2dd4bf;border-radius:6px;cursor:pointer;float:right;margin-top:-2px;">💡 Interpretar</button></div>
         <div class="card-sub" style="margin-bottom:8px;">Preferencia declarada · actualiza en vivo</div>
         <div style="height:260px;position:relative;"><canvas id="v-chart-intencion"></canvas></div>
+        <div id="interp-int" style="display:none;margin-top:10px;padding:10px 12px;background:rgba(20,184,166,.06);border-left:3px solid #2dd4bf;border-radius:6px;font-size:11.5px;line-height:1.55;color:var(--text2,#c3cce6);"></div>
       </div>
       <div class="card">
-        <div class="card-title" style="font-size:13px;">📈 Evolución conforme entran entrevistas</div>
+        <div class="card-title" style="font-size:13px;">📈 Evolución conforme entran entrevistas <button onclick="toggleInterp('evol')" style="font-size:10px;padding:3px 9px;border:1px solid rgba(45,212,191,.4);background:rgba(20,184,166,.1);color:#2dd4bf;border-radius:6px;cursor:pointer;float:right;margin-top:-2px;">💡 Interpretar</button></div>
         <div class="card-sub" style="margin-bottom:8px;">Cómo se estabiliza cada candidato con la muestra</div>
         <div style="height:260px;position:relative;"><canvas id="v-chart-evol"></canvas></div>
+        <div id="interp-evol" style="display:none;margin-top:10px;padding:10px 12px;background:rgba(20,184,166,.06);border-left:3px solid #2dd4bf;border-radius:6px;font-size:11.5px;line-height:1.55;color:var(--text2,#c3cce6);"></div>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-title" style="font-size:13px;">🗺 Intención por municipio</div>
+      <div class="card-title" style="font-size:13px;">🗺 Intención por municipio <button onclick="toggleInterp('mun')" style="font-size:10px;padding:3px 9px;border:1px solid rgba(45,212,191,.4);background:rgba(20,184,166,.1);color:#2dd4bf;border-radius:6px;cursor:pointer;float:right;margin-top:-2px;">💡 Interpretar</button></div>
       <div class="card-sub" style="margin-bottom:8px;">Distribución territorial del puntero conforme se levanta la muestra</div>
       <div style="height:320px;position:relative;"><canvas id="v-chart-mun"></canvas></div>
+      <div id="interp-mun" style="display:none;margin-top:10px;padding:10px 12px;background:rgba(20,184,166,.06);border-left:3px solid #2dd4bf;border-radius:6px;font-size:11.5px;line-height:1.55;color:var(--text2,#c3cce6);"></div>
     </div>
   </div>
 
@@ -685,7 +688,7 @@ renderStd(); renderCustom(); renderLista(); poblarSelectorEncuestas(); renderCru
    ═══════════════════════════════════════════════════════════ */
 const V_CANDIDATOS = ['Candidato A','Candidato B','Candidato C','Indeciso'];
 const V_COLORES    = ['#2dd4bf','#f59e0b','#a855f7','#64748b'];
-const V_MUESTRA    = 200;
+const V_MUESTRA    = 1600;
 
 // Resultado "verdadero" hacia el que converge cada municipio (determinista,
 // derivado de los datos de intención/indecisos que ya existen en CRUCE).
@@ -781,8 +784,8 @@ function construirChartsVivo(){
 function setAvanceVivo(n){
   n = +n; V_N = n;
   const s = statsVivo(n);
-  document.getElementById('v-hora').textContent = 'Entrevista ' + n + ' / ' + V_MUESTRA;
-  document.getElementById('v-k-entrev').textContent = n;
+  document.getElementById('v-hora').textContent = 'Entrevista ' + n.toLocaleString('es-MX') + ' / ' + V_MUESTRA.toLocaleString('es-MX');
+  document.getElementById('v-k-entrev').textContent = n.toLocaleString('es-MX');
   document.getElementById('v-k-pct').textContent = Math.round(n/V_MUESTRA*100) + '% de la muestra';
   // líder
   const top = s.pct.slice(0,3).indexOf(Math.max(...s.pct.slice(0,3)));
@@ -798,7 +801,7 @@ function setAvanceVivo(n){
   vChartInt.data.datasets[0].data = s.pct;
   vChartInt.update('none');
   // evolución: recomputar la serie de 0..n en pasos de 10
-  const step = 10;
+  const step = 80;
   const labels=[], series=[[],[],[],[]];
   for(let k=step;k<=n;k+=step){
     const sk = statsVivo(k);
@@ -816,6 +819,75 @@ function setAvanceVivo(n){
     });
   }
   vChartMun.update('none');
+  actualizarInterp(s);
+}
+
+/* ── Interpretaciones dinámicas de cada gráfica ── */
+function toggleInterp(k){
+  const el = document.getElementById('interp-'+k);
+  if(!el) return;
+  el.style.display = (el.style.display === 'none' || !el.style.display) ? 'block' : 'none';
+  actualizarInterp(statsVivo(V_N));
+}
+
+function actualizarInterp(s){
+  const n = s.n, pct = s.pct;
+  const nombres = V_CANDIDATOS;
+  // ranking de los 3 candidatos (sin indecisos)
+  const orden = [0,1,2].sort((a,b)=>pct[b]-pct[a]);
+  const lider = orden[0], segundo = orden[1];
+  const ventaja = +(pct[lider]-pct[segundo]).toFixed(1);
+
+  // Panel 1: Intención (dona)
+  const elInt = document.getElementById('interp-int');
+  if(elInt && elInt.style.display==='block'){
+    if(n===0){ elInt.innerHTML='Aún no hay entrevistas. Mueve el control o pulsa <b>Reproducir</b> para comenzar el levantamiento.'; }
+    else{
+      const empate = ventaja <= s.margen;
+      elInt.innerHTML =
+        `Con <b>${n.toLocaleString('es-MX')}</b> entrevistas, <b>${nombres[lider]}</b> encabeza con <b>${pct[lider]}%</b>, seguido de ${nombres[segundo]} con ${pct[segundo]}%. `+
+        `La ventaja es de <b>${ventaja} puntos</b>. Los indecisos son <b>${pct[3]}%</b> — la bolsa que aún puede mover el resultado.`+
+        (empate
+          ? `<br><span style="color:var(--amber,#f59e0b);">⚠ La ventaja (${ventaja} pts) está dentro del margen de error (±${s.margen}%): técnicamente es un <b>empate estadístico</b>, no una diferencia confiable todavía.</span>`
+          : `<br><span style="color:var(--green,#22c55e);">✓ La ventaja (${ventaja} pts) supera el margen de error (±${s.margen}%): la diferencia ya es estadísticamente significativa.</span>`);
+    }
+  }
+
+  // Panel 2: Evolución (línea)
+  const elEvol = document.getElementById('interp-evol');
+  if(elEvol && elEvol.style.display==='block'){
+    if(n < 160){ elEvol.innerHTML = `Con pocas entrevistas (<b>${n.toLocaleString('es-MX')}</b>) los porcentajes <b>saltan mucho</b>: cada nueva respuesta pesa demasiado. Por eso una muestra pequeña no es confiable.`; }
+    else{
+      elEvol.innerHTML =
+        `Esta línea muestra cómo se <b>estabiliza</b> cada candidato conforme entran entrevistas. `+
+        `Al inicio los valores brincan; hacia el final se aplanan y convergen a su valor real. `+
+        `Ese "aplanamiento" es la señal de que la muestra ya es suficiente — por eso se levantan <b>${V_MUESTRA.toLocaleString('es-MX')}</b> entrevistas y no menos. `+
+        `El margen de error actual es <b>±${s.margen}%</b>${n>=V_MUESTRA?' (el objetivo de la metodología).':', y sigue bajando conforme avanza.'}`;
+    }
+  }
+
+  // Panel 3: Municipio (barras apiladas)
+  const elMun = document.getElementById('interp-mun');
+  if(elMun && elMun.style.display==='block'){
+    if(n===0){ elMun.innerHTML='Aún no hay entrevistas levantadas por municipio.'; }
+    else{
+      // municipio donde el líder va más fuerte y más débil
+      let mejorMun={nombre:'',val:-1}, peorMun={nombre:'',val:101};
+      s.porMun.forEach((mm,i)=>{
+        const tot=mm[0]+mm[1]+mm[2]+mm[3];
+        if(tot<3) return; // ignora municipios con muy pocas entrevistas aún
+        const p=mm[lider]/tot*100;
+        if(p>mejorMun.val){ mejorMun={nombre:CRUCE[i].n,val:+p.toFixed(0)}; }
+        if(p<peorMun.val){ peorMun={nombre:CRUCE[i].n,val:+p.toFixed(0)}; }
+      });
+      elMun.innerHTML =
+        `Cada barra es un municipio y muestra cómo se reparte el voto ahí. `+
+        (mejorMun.val>=0
+          ? `Hoy <b>${nombres[lider]}</b> va más fuerte en <b>${mejorMun.nombre}</b> (${mejorMun.val}%) y más débil en <b>${peorMun.nombre}</b> (${peorMun.val}%). `
+          : '')+
+        `Esto te dice <b>dónde concentrar esfuerzo</b>: los municipios donde vas abajo son tu oportunidad de crecimiento territorial.`;
+    }
+  }
 }
 
 function playVivo(){
@@ -824,7 +896,7 @@ function playVivo(){
   btn.textContent='⏸ Pausar';
   if(V_N>=V_MUESTRA) V_N=0;
   vPlayTimer = setInterval(()=>{
-    V_N += 2;
+    V_N += 16;
     if(V_N>=V_MUESTRA){ V_N=V_MUESTRA; setAvanceVivo(V_N); clearInterval(vPlayTimer); vPlayTimer=null; btn.textContent='▶ Reproducir'; return; }
     setAvanceVivo(V_N);
   }, 60);
