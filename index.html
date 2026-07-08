@@ -660,6 +660,34 @@ function cerrarSesion(){
 </script>
 <script src="ie_metas_casilla_horneado.js"></script>
 <script src="theme.js"></script>
+<script>
+// [SWAP LUIS] Corrección final de META: corre DESPUÉS de theme.js para que el
+// valor horneado (208,717) tenga la última palabra sobre las tarjetas que
+// theme.js rellena desde config. En Fase 4, theme.js leerá sistema_meta de
+// Supabase y este bloque se puede retirar.
+(function(){
+  if(typeof IE_METAS_CASILLA==='undefined' || !IE_METAS_CASILLA.meta_estatal) return;
+  var M = IE_METAS_CASILLA.meta_estatal;
+  function fmtMeta(n){ return Math.round(n).toLocaleString('es-MX'); }
+  function aplicarMeta(){
+    var mtxt = fmtMeta(M);
+    // Todos los spans data-theme="sistema-meta" (lateral, KPI, barra)
+    document.querySelectorAll('[data-theme="sistema-meta"]').forEach(function(el){ el.textContent = mtxt; });
+    // Barra de progreso "10,000 / <meta>"
+    var pb = document.getElementById('hub-pb-nums');
+    if(pb){
+      var span = pb.querySelector('[data-theme="sistema-meta"]');
+      if(span){ span.textContent = mtxt; }
+      else { pb.innerHTML = '10,000 / ' + mtxt; }
+    }
+  }
+  // Corre ahora y otra vez tras el arranque, por si theme.js escribe async.
+  aplicarMeta();
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', aplicarMeta);
+  setTimeout(aplicarMeta, 300);
+  setTimeout(aplicarMeta, 1000);
+})();
+</script>
 <!-- Credito de propiedad - VOTERA / MEFT Consulting -->
 <div aria-hidden="true" style="position:fixed;right:10px;bottom:8px;z-index:9999;pointer-events:none;font-family:'IBM Plex Mono',monospace;font-size:10px;color:rgba(138,154,181,0.45);letter-spacing:.02em;user-select:none;">
   VOTERA™ · © 2026 MEFT Consulting · Todos los derechos reservados
