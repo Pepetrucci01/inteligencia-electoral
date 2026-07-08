@@ -212,12 +212,12 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
   <div class="kpi-row">
     <div class="kpi bl"><div class="kpi-lbl">Meta estatal 2027</div><div class="kpi-val" id="rep-meta-kpi">197,297</div><div class="kpi-trend">votos proyectados</div></div>
     <div class="kpi gr"><div class="kpi-lbl">Total capturados</div><div class="kpi-val">10,000</div><div class="kpi-trend up">↑ +574 esta semana</div></div>
-    <div class="kpi bl"><div class="kpi-lbl">Avance estatal</div><div class="kpi-val">5.1%</div><div class="kpi-trend up">↑ +0.3% vs semana ant.</div></div>
+    <div class="kpi bl"><div class="kpi-lbl">Avance estatal</div><div class="kpi-val">4.8%</div><div class="kpi-trend up">↑ +0.3% vs semana ant.</div></div>
     <div class="kpi gr"><div class="kpi-lbl">Voto seguro</div><div class="kpi-val">4,601</div><div class="kpi-trend">46% de capturados</div></div>
     <div class="kpi am"><div class="kpi-lbl">En riesgo</div><div class="kpi-val">2,203</div><div class="kpi-trend dn">↑ +12 esta semana</div></div>
     <div class="kpi re"><div class="kpi-lbl">Secciones críticas</div><div class="kpi-val">219</div><div class="kpi-trend dn">sin captura + &lt;5%</div></div>
     <div class="kpi pu"><div class="kpi-lbl">Duplicados</div><div class="kpi-val">408</div><div class="kpi-trend dn">depurar urgente</div></div>
-    <div class="kpi cy"><div class="kpi-lbl">Días a la elección</div><div class="kpi-val">521</div><div class="kpi-trend">1 jun 2027</div></div>
+    <div class="kpi cy"><div class="kpi-lbl">Días a la elección</div><div class="kpi-val">334</div><div class="kpi-trend">6 jun 2027</div></div>
   </div>
 
   <div class="section-title">Progreso general vs meta</div>
@@ -225,19 +225,19 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
     <div class="card-body">
       <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
         <span style="font-size:13px;font-weight:500">Avance estatal acumulado</span>
-        <span style="font-size:22px;font-weight:600;font-family:var(--mono);color:var(--accent)" id="rep-pct-display">5.1%</span>
+        <span style="font-size:22px;font-weight:600;font-family:var(--mono);color:var(--accent)" id="rep-pct-display">4.8%</span>
       </div>
-      <div class="prog-total"><div class="prog-fill" id="rep-prog-fill" style="width:5.1%"></div></div>
+      <div class="prog-total"><div class="prog-fill" id="rep-prog-fill" style="width:4.8%"></div></div>
       <div style="display:flex;justify-content:space-between;font-size:11px;font-family:var(--mono);color:var(--text3)">
         <span>0</span><span style="color:var(--accent)" id="rep-cap-label">10,000 capturados</span><span id="rep-meta-bar">197,297 meta</span>
       </div>
       <div class="proy-box">
         <div class="proy-row"><span class="proy-label">Ritmo actual (promedio semanal)</span><span class="proy-val" style="color:var(--green)">574 capturas/semana</span></div>
-        <div class="proy-row"><span class="proy-label">Semanas restantes a la elección</span><span class="proy-val">74 semanas</span></div>
-        <div class="proy-row"><span class="proy-label">Capturas necesarias al ritmo actual</span><span class="proy-val">187,297 pendientes</span></div>
-        <div class="proy-row"><span class="proy-label">Ritmo requerido para cumplir meta</span><span class="proy-val" style="color:var(--amber)">2,531 capturas/semana</span></div>
-        <div class="proy-row"><span class="proy-label">Brecha de ritmo</span><span class="proy-val" style="color:var(--red)">×4.4 más rápido</span></div>
-        <div class="proy-row"><span class="proy-label">Proyección al 1 jun 2027 (ritmo actual)</span><span class="proy-val" style="color:var(--red)">~52,476 (26.6% de meta)</span></div>
+        <div class="proy-row"><span class="proy-label">Semanas restantes a la elección</span><span class="proy-val">48 semanas</span></div>
+        <div class="proy-row"><span class="proy-label">Capturas necesarias al ritmo actual</span><span class="proy-val">198,717 pendientes</span></div>
+        <div class="proy-row"><span class="proy-label">Ritmo requerido para cumplir meta</span><span class="proy-val" style="color:var(--amber)">4,140 capturas/semana</span></div>
+        <div class="proy-row"><span class="proy-label">Brecha de ritmo</span><span class="proy-val" style="color:var(--red)">×7.2 más rápido</span></div>
+        <div class="proy-row"><span class="proy-label">Proyección al 6 jun 2027 (ritmo actual)</span><span class="proy-val" style="color:var(--red)">~37,552 (18.0% de meta)</span></div>
       </div>
     </div>
   </div>
@@ -944,7 +944,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
 
 <script>
 // [SWAP LUIS] Sincroniza las 2 tarjetas de META ESTATAL visibles con IE_METAS_CASILLA (demo sin sesión).
-// El escenario 'Meta completa' y el VEREDICTO de texto son narrativa de demo autoconsistente (197,297/5.1%/52,476/4.4x) y NO se tocan.
+// Narrativa de proyección recalculada y coherente: meta 208,717 / 4.8% / 48 sem / req 4,140 / brecha x7.2 / proy 37,552 (18.0%).
 (function(){var M=(typeof IE_METAS_CASILLA!=='undefined'&&IE_METAS_CASILLA.meta_estatal)?IE_METAS_CASILLA.meta_estatal:197297;
   function apply(){var f=M.toLocaleString('es-MX');
     var a=document.getElementById('rep-meta-kpi'); if(a)a.textContent=f;
@@ -1434,7 +1434,7 @@ function exportarExcel(){
       ['Meta estatal 2027',(typeof IE_METAS_CASILLA!=='undefined'&&IE_METAS_CASILLA.meta_estatal)?IE_METAS_CASILLA.meta_estatal:197297],['Total capturados',10000],['% Avance','5.1%'],
       ['Voto seguro',4601],['En riesgo',2203],['Duplicados',408],['Operadores',60],
       ['Secciones',392],['Secciones críticas',219],['Promedio diario',84],
-      ['Ritmo semanal actual',574],['Ritmo requerido',2531],
+      ['Ritmo semanal actual',574],['Ritmo requerido',4140],
     ];
     XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(resumen),'Resumen Ejecutivo');
     XLSX.writeFile(wb,'Reporte_Inteligencia_Electoral.xlsx');
@@ -1926,10 +1926,10 @@ function toggleAutoDescarga() {
 // TABLA PROYECCIÓN — ORDENABLE
 // ══════════════════════════════════════════════════════
 const PROYECCION_DATA = [
-  {escenario:'Ritmo actual',    sub:'sin cambios en estructura',  ritmo:574,  capturas:52476,  pct:26.6, semaforo:'Crítico',   sem_ord:0, col:'var(--red)',   cls:'b-red'},
-  {escenario:'Duplicar ritmo',  sub:'refuerzo de campo ×2',       ritmo:1148, capturas:94952,  pct:48.1, semaforo:'Bajo',      sem_ord:1, col:'var(--amber)', cls:'b-amber'},
-  {escenario:'Escenario realista',sub:'ritmo ×2.5 con estructura nueva',ritmo:1435,capturas:116190,pct:58.9,semaforo:'Alcanzable',sem_ord:2,col:'var(--amber)',cls:'b-amber'},
-  {escenario:'Meta completa',   sub:'requiere ×4.4 más ritmo',    ritmo:2531, capturas:197297, pct:100,  semaforo:'Óptimo',    sem_ord:3, col:'var(--green)', cls:'b-green'},
+  {escenario:'Ritmo actual',    sub:'sin cambios en estructura',  ritmo:574,  capturas:37552,  pct:18.0, semaforo:'Crítico',   sem_ord:0, col:'var(--red)',   cls:'b-red'},
+  {escenario:'Duplicar ritmo',  sub:'refuerzo de campo ×2',       ritmo:1148, capturas:65104,  pct:31.2, semaforo:'Bajo',      sem_ord:1, col:'var(--amber)', cls:'b-amber'},
+  {escenario:'Escenario realista',sub:'ritmo ×2.5 con estructura nueva',ritmo:1435,capturas:78880,pct:37.8,semaforo:'Alcanzable',sem_ord:2,col:'var(--amber)',cls:'b-amber'},
+  {escenario:'Meta completa',   sub:'requiere ×7.2 más ritmo',    ritmo:4140, capturas:208717, pct:100,  semaforo:'Óptimo',    sem_ord:3, col:'var(--green)', cls:'b-green'},
 ];
 let PROY_SORT = {col: null, asc: true};
 
@@ -2351,7 +2351,7 @@ function diagnosticoHorneado(){
   return [
     '<div class="diag-verdict">',
       '<div class="dv-dot"></div>',
-      '<div class="dv-text"><b>VEREDICTO: ROJO — meta en riesgo.</b> Al corte de hoy la candidatura tiene <b>10,000</b> ciudadanos capturados, el <b>5.1%</b> de la meta estatal de <b>197,297</b>. El dato decisivo no es ese porcentaje, sino el <b>ritmo</b>: con 574 capturas por semana y 74 semanas restantes, la proyección al 1 de junio de 2027 es de <b>~52,476 (26.6% de la meta)</b>. Cerrar la brecha exige multiplicar el ritmo por <b>4.4×</b>.</div>',
+      '<div class="dv-text"><b>VEREDICTO: ROJO — meta en riesgo.</b> Al corte de hoy la candidatura tiene <b>10,000</b> ciudadanos capturados, el <b>4.8%</b> de la meta estatal de <b>208,717</b>. El dato decisivo no es ese porcentaje, sino el <b>ritmo</b>: con 574 capturas por semana y 48 semanas restantes, la proyección al 6 de junio de 2027 es de <b>~37,552 (18.0% de la meta)</b>. Cerrar la brecha exige multiplicar el ritmo por <b>7.2×</b>.</div>',
     '</div>',
 
     '<div class="diag-sec">',
@@ -2379,7 +2379,7 @@ function diagnosticoHorneado(){
       '<h3>⑤ Recomendaciones priorizadas</h3>',
       '<ol class="diag-rec">',
         '<li>Volcar estructura adicional sobre <b>Manzanillo</b>: es la mayor palanca estatal por volumen de meta.</li>',
-        '<li>Fijar meta operativa de <b>2,531 capturas/semana</b> (4.4× el ritmo actual). Sin esto, la meta de 2027 es inalcanzable matemáticamente.</li>',
+        '<li>Fijar meta operativa de <b>4,140 capturas/semana</b> (7.2× el ritmo actual). Sin esto, la meta de 2027 es inalcanzable matemáticamente.</li>',
         '<li>Depuración inmediata de los <b>408 duplicados</b> para reportar avance real a dirigencia.</li>',
         '<li>Plan de choque para las <b>219 secciones críticas</b>: asignar responsable y primera captura en 30 días.</li>',
         '<li>Replicar el modelo de <b>Minatitlán, Comala e Ixtlahuacán</b> (los de mejor % de avance) en los municipios rezagados.</li>',
