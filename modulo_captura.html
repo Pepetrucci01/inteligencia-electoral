@@ -249,7 +249,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
   <div class="logo-mark">C4</div>
   <div class="topbar-info">
     <div class="topbar-title">Módulo de Captura</div>
-    <div class="topbar-sub">COLIMA 2027 À CAMPO</div>
+    <div class="topbar-sub">COLIMA 2027 · CAMPO</div>
   </div>
   <div class="btn-icon" onclick="toggleCapturista()"></div>
   <button onclick="cerrarSesion()" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;font-family:monospace;margin-left:6px;" title="Cerrar sesión">⏻</button>
@@ -258,7 +258,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 <!-- TABS -->
 <div class="tabs">
   <div class="tab active" id="tab-captura" onclick="showTab('captura')">
-    <span class="tab-icon">✏´©</span>Capturar
+    <span class="tab-icon">✏</span>Capturar
   </div>
   <div class="tab" id="tab-buscar" onclick="showTab('buscar')">
     <span class="tab-icon"></span>Buscar
@@ -276,7 +276,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
     <div class="cap-avatar">C17</div>
     <div>
       <div class="cap-name">Capturista 17</div>
-      <div class="cap-id">CAP-017 À Sección base: 138</div>
+      <div class="cap-id">CAP-017 · Sección base: 138</div>
       <div class="cap-mun">Villa de Álvarez</div>
     </div>
   </div>
@@ -347,7 +347,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
       <div class="form-section-title">CURP <span style="color:var(--green);font-size:9px;font-family:var(--mono)">● VALIDACIÓN AUTOMÁTICA</span></div>
       <div class="form-group">
         <div class="form-label">CURP <span class="req">*</span>
-          <span style="font-size:10px;color:var(--text3);font-family:var(--mono)">— evita duplicados À autocompleta datos</span>
+          <span style="font-size:10px;color:var(--text3);font-family:var(--mono)">— evita duplicados · autocompleta datos</span>
         </div>
         <div class="curp-wrap">
           <input class="form-input" id="f-curp"
@@ -456,7 +456,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
         <label style="display:flex;gap:8px;margin-bottom:6px;cursor:pointer;font-size:13px;align-items:center;"><input type="checkbox" id="vp-dip-local" style="accent-color:var(--accent,#3b82f6);"> Diputado Local</label>
         <label style="display:flex;gap:8px;cursor:pointer;font-size:13px;align-items:center;"><input type="checkbox" id="vp-ayuntamiento" style="accent-color:var(--accent,#3b82f6);"> Ayuntamiento</label>
       </div>
-      <div id="vp-error" style="color:#ef4444;font-size:12px;margin-top:6px;display:none;">⚠´© Selecciona una opción</div>
+      <div id="vp-error" style="color:#ef4444;font-size:12px;margin-top:6px;display:none;">⚠ Selecciona una opción</div>
     </div>
 
     <div class="form-section">
@@ -489,7 +489,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
       <div class="form-section-title">Indicadores de campo</div>
       <div class="toggle-row">
         <div class="toggle-info">
-          <div class="toggle-label">⚠´© Riesgo alto</div>
+          <div class="toggle-label">⚠ Riesgo alto</div>
           <div class="toggle-sub">Puede cambiar su voto o es conflictivo</div>
         </div>
         <div class="toggle" id="tog-riesgo" onclick="toggleSwitch('riesgo')"></div>
@@ -549,7 +549,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
       <div class="sf-chip" id="sf-alto" onclick="setFiltro('alto')"> Seg. vota</div>
       <div class="sf-chip" id="sf-riesgo" onclick="setFiltro('riesgo')"> Riesgo</div>
       <div class="sf-chip" id="sf-apoyo" onclick="setFiltro('apoyo')"> Apoyo</div>
-      <div class="sf-chip" id="sf-dup" onclick="setFiltro('dup')">⚠´© Duplicado</div>
+      <div class="sf-chip" id="sf-dup" onclick="setFiltro('dup')">⚠ Duplicado</div>
     </div>
     <div id="search-results"></div>
   </div>
@@ -668,7 +668,7 @@ function toggleCapturista(){
   const seccion = s.seccion   || CAPTURISTA.seccion_base;
   const mun     = s.municipio || CAPTURISTA.municipio;
   const propios = CIUDADANOS.filter(c => c.cap_por === id).length;
-  alert(`${id} À ${nombre}\nSección base: ${seccion || '—'}\nMunicipio: ${mun || '—'}\nRegistros capturados: ${propios}`);
+  alert(`${id} · ${nombre}\nSección base: ${seccion || '—'}\nMunicipio: ${mun || '—'}\nRegistros capturados: ${propios}`);
 }
 
 // ─── ASIGNACIÓN ────────────────────────────────────────────────────────────
@@ -709,7 +709,7 @@ function irPaso2() {
     // Verificar duplicado una vez más antes de continuar
     const dup = CIUDADANOS.find(c => c.curp && c.curp.toUpperCase() === curpVal);
     if (dup) {
-      document.getElementById('curp-status').textContent = '⚠´©';
+      document.getElementById('curp-status').textContent = '⚠';
       // Offline: NO bloqueamos. No podemos confiar en el server ni en
       // que el array local esté completo; el conflicto (si lo hay) se
       // resolverá al sincronizar con la regla "gana el primero".
@@ -724,7 +724,7 @@ function irPaso2() {
   if(!document.getElementById('f-sexo').value) errs.push('Sexo requerido');
   if(!document.getElementById('f-municipio').value) errs.push('Municipio requerido');
   if(!document.getElementById('f-seccion').value) errs.push('Sección requerida');
-  document.getElementById('paso1-errors').textContent = errs.join(' À ');
+  document.getElementById('paso1-errors').textContent = errs.join(' · ');
   if(errs.length) return;
   document.getElementById('paso1').style.display='none';
   document.getElementById('paso2').style.display='block';
@@ -768,7 +768,7 @@ function toggleSwitch(k) {
 async function guardarRegistro() {
   if(!votoParejo) {
     var ve=document.getElementById('vp-error');
-    if(ve) { ve.textContent='⚠´© Indica si vota parejo o no'; ve.style.display='block'; ve.scrollIntoView({block:'center',behavior:'smooth'}); }
+    if(ve) { ve.textContent='⚠ Indica si vota parejo o no'; ve.style.display='block'; ve.scrollIntoView({block:'center',behavior:'smooth'}); }
     if(typeof paso2Errors !== 'undefined') paso2Errors.textContent='Indica si vota parejo o no';
     return;
   }
@@ -811,7 +811,7 @@ async function guardarRegistro() {
   document.getElementById('success-sub').textContent = nuevo.nombre;
   document.getElementById('success-card').innerHTML=`
     <div class="success-row"><span class="success-label">ID</span><span class="success-val">${nuevo.id}</span></div>
-    <div class="success-row"><span class="success-label">Sección</span><span class="success-val">${nuevo.sec} À ${nuevo.mun}</span></div>
+    <div class="success-row"><span class="success-label">Sección</span><span class="success-val">${nuevo.sec} · ${nuevo.mun}</span></div>
     <div class="success-row"><span class="success-label">Compromiso</span><span class="success-val">${nuevo.comp} — ${compLabels[nuevo.comp]}</span></div>
     <div class="success-row"><span class="success-label">Origen</span><span class="success-val">${nuevo.origen}</span></div>
     <div class="success-row"><span class="success-label">Capturado por</span><span class="success-val">${CAPTURISTA.id}</span></div>
@@ -898,7 +898,7 @@ function buscar(){
         <div class="cc-avatar" style="background:${cc}22;color:${cc};border:1px solid ${cc}44">${initials(c.nombre)}</div>
         <div>
           <div class="cc-name">${c.nombre}</div>
-          <div class="cc-id">${c.id} À ${c.sexo} À ${c.edad} años</div>
+          <div class="cc-id">${c.id} · ${c.sexo} · ${c.edad} años</div>
         </div>
       </div>
       <div class="cc-badges">
@@ -911,7 +911,7 @@ function buscar(){
         ${esOtraAsign?'<span class="badge badge-blue">↗ Reasignado</span>':''}
       </div>
       <div class="cc-footer">
-        <span class="cc-sec">Secc. ${c.sec} À ${c.mun}</span>
+        <span class="cc-sec">Secc. ${c.sec} · ${c.mun}</span>
         <span class="cc-resp">→ ${c.resp}</span>
       </div>
     </div>`;
@@ -931,7 +931,7 @@ function abrirFicha(id){
     <div class="ficha-header">
       <div class="ficha-avatar" style="background:${cc}22;color:${cc};border:1px solid ${cc}44">${initials(c.nombre)}</div>
       <div class="ficha-name">${c.nombre}</div>
-      <div class="ficha-sub">${c.id} À ${c.sexo} À ${c.edad} años</div>
+      <div class="ficha-sub">${c.id} · ${c.sexo} · ${c.edad} años</div>
       <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
         <span class="badge" style="background:${cc}15;color:${cc};border:1px solid ${cc}30">${c.comp} ${compLabel(c.comp)}</span>
         ${c.validado?'<span class="badge badge-green">✓ Validado</span>':'<span class="badge badge-amber">⏳ Pendiente</span>'}
@@ -946,7 +946,7 @@ function abrirFicha(id){
         <div class="ficha-score"><div class="ficha-score-val" style="color:${c.validado?'var(--green)':'var(--amber)'}">${c.validado?'✓':'⏳'}</div><div class="ficha-score-lbl">Validado</div></div>
       </div>
     </div>
-    ${esReasign?`<div class="asign-alert-ficha"><span style="color:var(--cyan);font-weight:600"> Asignación territorial</span><br>Capturado por <b>${c.cap_por}</b> À Asignado a <b>${c.resp}</b> (responsable de sección ${c.sec})</div>`:''}
+    ${esReasign?`<div class="asign-alert-ficha"><span style="color:var(--cyan);font-weight:600"> Asignación territorial</span><br>Capturado por <b>${c.cap_por}</b> · Asignado a <b>${c.resp}</b> (responsable de sección ${c.sec})</div>`:''}
     <div class="ficha-section">
       <div class="ficha-section-title">Datos de contacto</div>
       <div class="ficha-row"><span class="ficha-row-label">Teléfono</span><span class="ficha-row-val">${c.tel||'—'}</span></div>
@@ -966,7 +966,7 @@ function abrirFicha(id){
       <div class="ficha-row"><span class="ficha-row-label">Sección</span><span class="ficha-row-val">${c.sec}</span></div>
     </div>
     <div style="margin-top:14px;display:flex;gap:8px;">
-      <button class="btn-primary" style="margin:0" onclick="editarCiudadano('${c.id}')">✏´© Editar</button>
+      <button class="btn-primary" style="margin:0" onclick="editarCiudadano('${c.id}')">✏ Editar</button>
       <button class="btn-danger" onclick="marcarDuplicado('${c.id}')">⚠ Duplicado</button>
     </div>`;
 }
@@ -1004,10 +1004,10 @@ function renderLista(){
 
   document.getElementById('lista-header').innerHTML=`
     <div class="sec-header-card">
-      <div style="font-size:13px;font-weight:600;">Sección ${sec} À ${capMun||'—'}</div>
+      <div style="font-size:13px;font-weight:600;">Sección ${sec} · ${capMun||'—'}</div>
       <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px;">Responsable: ${capId}</div>
       <div class="progress-bar" style="margin-top:10px"><div class="progress-fill" style="width:${pct}%;background:var(--accent)"></div></div>
-      <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:4px;">${enSec.length} / 50 meta À ${pct}%</div>
+      <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:4px;">${enSec.length} / 50 meta · ${pct}%</div>
       <div class="sec-stats">
         <div class="sec-stat"><div class="sec-stat-val" style="color:var(--green)">${seguros}</div><div class="sec-stat-lbl">Seg. votan</div></div>
         <div class="sec-stat"><div class="sec-stat-val" style="color:var(--red)">${enSec.filter(c=>c.riesgo).length}</div><div class="sec-stat-lbl">En riesgo</div></div>
@@ -1032,7 +1032,7 @@ function renderLista(){
         <div class="cc-avatar" style="background:${cc2(c)}22;color:${cc2(c)};border:1px solid ${cc2(c)}44">${initials(c.nombre)}</div>
         <div>
           <div class="cc-name">${c.nombre}</div>
-          <div class="cc-id">${c.sexo} À ${c.edad} años À ${c.origen}</div>
+          <div class="cc-id">${c.sexo} · ${c.edad} años · ${c.origen}</div>
         </div>
       </div>
       <div class="cc-badges">
@@ -1079,7 +1079,7 @@ function onCurpInput(val) {
   if (val.length < 18) {
     // Formato incompleto — solo mostrar progreso
     if (val.length > 0) {
-      status.textContent = '✏´©';
+      status.textContent = '✏';
       box.className = 'curp-box';
       box.style.display = 'none';
     } else {
@@ -1101,11 +1101,11 @@ function onCurpInput(val) {
   const dup = CIUDADANOS.find(c => c.curp && c.curp.toUpperCase() === val);
   if (dup) {
     if (navigator.onLine) {
-      status.textContent = '⚠´©';
-      mostrarCurpBox('duplicado', '⚠´© CURP ya registrada',
+      status.textContent = '⚠';
+      mostrarCurpBox('duplicado', '⚠ CURP ya registrada',
         `Esta CURP ya existe en el sistema.<br>
          <span style="color:var(--text)">Nombre: <b>${dup.nombre}</b></span><br>
-         <span style="color:var(--text3)">ID: ${dup.id} À Capturado por: ${dup.cap_por} À Sección: ${dup.sec}</span><br>
+         <span style="color:var(--text3)">ID: ${dup.id} · Capturado por: ${dup.cap_por} · Sección: ${dup.sec}</span><br>
          <span style="color:var(--red);font-weight:600">No se puede registrar dos veces al mismo ciudadano.</span>`
       );
       return;
@@ -1150,7 +1150,7 @@ function validarCurpLocal(curp) {
 
     mostrarCurpBox('ok', '✅ CURP con formato válido',
       `<span style="color:var(--text2)">Datos inferidos de la CURP:</span><br>
-       <span style="font-family:var(--mono);color:var(--text)">Sexo: <b>${sexo}</b> À Edad aprox: <b>${edad} años</b> À Nac: <b>${dia}/${mes}/${anioCompleto}</b></span><br>
+       <span style="font-family:var(--mono);color:var(--text)">Sexo: <b>${sexo}</b> · Edad aprox: <b>${edad} años</b> · Nac: <b>${dia}/${mes}/${anioCompleto}</b></span><br>
        <span style="color:var(--text3)">Completa nombre y apellidos manualmente.</span>`
     );
   } catch(e2) {
@@ -1257,7 +1257,7 @@ function mostrarEstadoCURP(curp) {
   if(!curp || curp.length===0) { el.innerHTML=''; return; }
   var v = validarCURP(curp);
   if(!v.ok) {
-    el.innerHTML = '<span style="color:#ef4444;font-size:11px;">⚠´© CURP '+v.msg+'</span>';
+    el.innerHTML = '<span style="color:#ef4444;font-size:11px;">⚠ CURP '+v.msg+'</span>';
     return;
   }
   var yr = parseInt(curp.substring(4,6));
@@ -1268,7 +1268,7 @@ function mostrarEstadoCURP(curp) {
   if(dup) {
     el.innerHTML = '<span style="color:#ef4444;font-size:11px;">ø DUPLICADO: ya existe como '+dup.nombre+'</span>';
   } else {
-    el.innerHTML = '<span style="color:#22c55e;font-size:11px;">✅ CURP válida À '+sexo+' À Nac. '+yearFull+'</span>';
+    el.innerHTML = '<span style="color:#22c55e;font-size:11px;">✅ CURP válida · '+sexo+' · Nac. '+yearFull+'</span>';
   }
 }
 
@@ -1356,7 +1356,7 @@ function construirDatosCaptura(nuevo) {
 // Marca el ciudadano como 'pending' y lo encola para sincronizar.
 async function guardarOffline(nuevo, btnGuardar) {
   if (typeof OfflineDB === 'undefined') {
-    alert('⚠´© Sin conexión y el módulo offline no está cargado. No se pudo guardar.');
+    alert('⚠ Sin conexión y el módulo offline no está cargado. No se pudo guardar.');
     if(btnGuardar) { btnGuardar.textContent = '✅ Guardar registro'; btnGuardar.disabled = false; }
     return false;
   }
@@ -1365,7 +1365,7 @@ async function guardarOffline(nuevo, btnGuardar) {
   try {
     datos = construirDatosCaptura(nuevo);
   } catch(err) {
-    alert('⚠´© ' + err.message);
+    alert('⚠ ' + err.message);
     if(btnGuardar) { btnGuardar.textContent = '✅ Guardar registro'; btnGuardar.disabled = false; }
     return false;
   }
@@ -1446,7 +1446,7 @@ async function guardarEnSupabase(nuevo) {
     if(nuevo.tel && nuevo.tel.length >= 10) {
       const { data: dupTel } = await SDB.buscarPorTel(nuevo.tel);
       if(dupTel) {
-        const confirmar = confirm('⚠´© TELÉFONO DUPLICADO: ' + dupTel.nombre + ' ya tiene este número. ¿Deseas continuar de todas formas?');
+        const confirmar = confirm('⚠ TELÉFONO DUPLICADO: ' + dupTel.nombre + ' ya tiene este número. ¿Deseas continuar de todas formas?');
         if(!confirmar) {
           if(btnGuardar) { btnGuardar.textContent = '✅ Guardar registro'; btnGuardar.disabled = false; }
           return false;
@@ -1511,7 +1511,7 @@ async function guardarEnSupabase(nuevo) {
     }
 
     // Error real (validación, datos, permisos): NO se guardó nada.
-    alert('⚠´© No se pudo guardar: ' + err.message);
+    alert('⚠ No se pudo guardar: ' + err.message);
     if(btnGuardar) { btnGuardar.textContent = '✅ Guardar registro'; btnGuardar.disabled = false; }
     return false;
   }

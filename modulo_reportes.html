@@ -184,7 +184,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
     <div class="logo-mark">R</div>
     <div>
       <div class="topbar-title">REPORTES Y ANÁLISIS</div>
-      <div class="topbar-sub">COLIMA 2027 À DATOS REALES AL 14/MAY/2026</div>
+      <div class="topbar-sub">COLIMA 2027 · DATOS REALES AL 14/MAY/2026</div>
     </div>
   </div>
   <div class="topbar-right" style="display:flex;align-items:center;gap:10px;">
@@ -614,7 +614,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
       <div class="card-title">Ranking de capturistas</div>
       <div style="display:flex;gap:6px;margin-left:auto;">
         <button id="btn-top10" onclick="toggleRankingCap('top')" style="font-family:var(--mono);font-size:10px;padding:4px 12px;border-radius:5px;border:1px solid var(--border2);background:var(--green);color:#fff;cursor:pointer;"> Top 10</button>
-        <button id="btn-bot10" onclick="toggleRankingCap('bottom')" style="font-family:var(--mono);font-size:10px;padding:4px 12px;border-radius:5px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;">⚠´© Bottom 10</button>
+        <button id="btn-bot10" onclick="toggleRankingCap('bottom')" style="font-family:var(--mono);font-size:10px;padding:4px 12px;border-radius:5px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;">⚠ Bottom 10</button>
         <button id="btn-all" onclick="toggleRankingCap('all')" style="font-family:var(--mono);font-size:10px;padding:4px 12px;border-radius:5px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;">Ver todos</button>
         <button onclick="exportarRankingCap()" style="font-family:var(--mono);font-size:10px;padding:4px 12px;border-radius:5px;border:1px solid rgba(34,197,94,0.3);background:rgba(34,197,94,0.1);color:var(--green);cursor:pointer;">⬇ Excel</button>
       </div>
@@ -707,7 +707,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
           <div class="dc-titulo">Base completa de simpatizantes</div>
           <div class="dc-desc">Todos los registros capturados en el estado, todos los municipios y secciones.</div>
           <div class="dc-alcance" style="background:rgba(59,130,246,0.1);color:var(--accent);border:1px solid rgba(59,130,246,0.2)"> Todo el estado</div>
-          <div class="dc-campos"><b>Campos incluidos:</b><br>ID À Nombre completo À CURP À Edad À Sexo À Municipio À Sección À Teléfono À Domicilio À Email À Compromiso À Origen À Capturista À Responsable territorial À Validado À Riesgo À Apoyo À Influencia À Duplicado À Observaciones À Fecha captura</div>
+          <div class="dc-campos"><b>Campos incluidos:</b><br>ID · Nombre completo · CURP · Edad · Sexo · Municipio · Sección · Teléfono · Domicilio · Email · Compromiso · Origen · Capturista · Responsable territorial · Validado · Riesgo · Apoyo · Influencia · Duplicado · Observaciones · Fecha captura</div>
           <button class="btn-dl azul" onclick="descargar('simpatizantes','coordinador')">
             <span>⬇</span> <span>Descargar base completa</span>
             <div class="dl-spin" id="spin-sc"></div>
@@ -719,7 +719,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
           <div class="dc-titulo">Estructura de capturistas</div>
           <div class="dc-desc">Todos los capturistas del estado con sus métricas de avance, sección asignada y coordinador.</div>
           <div class="dc-alcance" style="background:rgba(59,130,246,0.1);color:var(--accent);border:1px solid rgba(59,130,246,0.2)"> Todo el estado</div>
-          <div class="dc-campos"><b>Campos incluidos:</b><br>ID À Nombre À Municipio À Sección base À Meta individual À Capturas realizadas À % Avance À Coordinador À Email À Teléfono À Último acceso À Estatus</div>
+          <div class="dc-campos"><b>Campos incluidos:</b><br>ID · Nombre · Municipio · Sección base · Meta individual · Capturas realizadas · % Avance · Coordinador · Email · Teléfono · Último acceso · Estatus</div>
           <button class="btn-dl azul" onclick="descargar('capturistas','coordinador')">
             <span>⬇</span> <span>Descargar estructura de campo</span>
             <div class="dl-spin" id="spin-cc"></div>
@@ -731,7 +731,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
           <div class="dc-titulo">Reporte ejecutivo consolidado</div>
           <div class="dc-desc">Resumen por municipio, avance vs meta, ritmo semanal y proyecciones.</div>
           <div class="dc-alcance" style="background:rgba(59,130,246,0.1);color:var(--accent);border:1px solid rgba(59,130,246,0.2)"> Todo el estado</div>
-          <div class="dc-campos"><b>Pestañas incluidas:</b><br>Resumen ejecutivo À Por municipio À Ritmo semanal À Estructura À Proyección a elección</div>
+          <div class="dc-campos"><b>Pestañas incluidas:</b><br>Resumen ejecutivo · Por municipio · Ritmo semanal · Estructura · Proyección a elección</div>
           <button class="btn-dl verde" onclick="descargar('reporte','coordinador')">
             <span>⬇</span> <span>Descargar reporte ejecutivo</span>
             <div class="dl-spin" id="spin-rc"></div>
@@ -757,7 +757,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
           <div class="dc-titulo">Simpatizantes de mi municipio</div>
           <div class="dc-desc">Todos los registros de simpatizantes capturados en las secciones de su municipio.</div>
           <div class="dc-alcance" style="background:rgba(6,182,212,0.1);color:var(--cyan);border:1px solid rgba(6,182,212,0.2)" id="lider-alcance-simp"> Su municipio</div>
-          <div class="dc-campos"><b>Campos incluidos:</b><br>ID À Nombre completo À CURP À Edad À Sexo À Municipio À Sección À Teléfono À Domicilio À Email À Compromiso À Origen À Capturista À Responsable territorial À Validado À Riesgo À Apoyo À Influencia À Duplicado À Observaciones À Fecha captura</div>
+          <div class="dc-campos"><b>Campos incluidos:</b><br>ID · Nombre completo · CURP · Edad · Sexo · Municipio · Sección · Teléfono · Domicilio · Email · Compromiso · Origen · Capturista · Responsable territorial · Validado · Riesgo · Apoyo · Influencia · Duplicado · Observaciones · Fecha captura</div>
           <button class="btn-dl azul" onclick="descargar('simpatizantes','lider')">
             <span>⬇</span> <span>Descargar mis simpatizantes</span>
             <div class="dl-spin" id="spin-sl"></div>
@@ -769,7 +769,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
           <div class="dc-titulo">Mis capturistas</div>
           <div class="dc-desc">Los capturistas bajo su coordinación con su avance individual vs meta.</div>
           <div class="dc-alcance" style="background:rgba(6,182,212,0.1);color:var(--cyan);border:1px solid rgba(6,182,212,0.2)" id="lider-alcance-caps"> Su municipio</div>
-          <div class="dc-campos"><b>Campos incluidos:</b><br>ID À Nombre À Municipio À Sección base À Meta individual À Capturas realizadas À % Avance À Email À Teléfono À Último acceso À Estatus</div>
+          <div class="dc-campos"><b>Campos incluidos:</b><br>ID · Nombre · Municipio · Sección base · Meta individual · Capturas realizadas · % Avance · Email · Teléfono · Último acceso · Estatus</div>
           <button class="btn-dl azul" onclick="descargar('capturistas','lider')">
             <span>⬇</span> <span>Descargar mis capturistas</span>
             <div class="dl-spin" id="spin-cl"></div>
@@ -781,7 +781,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
           <div class="dc-titulo">Reporte de mi municipio</div>
           <div class="dc-desc">Avance por sección, ritmo de captura y estadísticas del municipio.</div>
           <div class="dc-alcance" style="background:rgba(6,182,212,0.1);color:var(--cyan);border:1px solid rgba(6,182,212,0.2)"> Su municipio</div>
-          <div class="dc-campos"><b>Pestañas incluidas:</b><br>Avance por sección À Capturistas À Ritmo semanal À Proyección municipal</div>
+          <div class="dc-campos"><b>Pestañas incluidas:</b><br>Avance por sección · Capturistas · Ritmo semanal · Proyección municipal</div>
           <button class="btn-dl verde" onclick="descargar('reporte','lider')">
             <span>⬇</span> <span>Descargar reporte municipal</span>
             <div class="dl-spin" id="spin-rl"></div>
@@ -807,7 +807,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
           <div class="dc-titulo">Mis simpatizantes capturados</div>
           <div class="dc-desc">Solo los registros que tú has capturado. No incluye registros de otros capturistas.</div>
           <div class="dc-alcance" style="background:rgba(34,197,94,0.1);color:var(--green);border:1px solid rgba(34,197,94,0.2)" id="cap-alcance"> Sección —</div>
-          <div class="dc-campos"><b>Campos incluidos:</b><br>ID À Nombre completo À CURP À Edad À Sexo À Municipio À Sección À Teléfono À Domicilio À Email À Compromiso À Origen À Validado À Riesgo À Apoyo À Influencia À Observaciones À Fecha captura</div>
+          <div class="dc-campos"><b>Campos incluidos:</b><br>ID · Nombre completo · CURP · Edad · Sexo · Municipio · Sección · Teléfono · Domicilio · Email · Compromiso · Origen · Validado · Riesgo · Apoyo · Influencia · Observaciones · Fecha captura</div>
           <button class="btn-dl verde" onclick="descargar('simpatizantes','capturista')">
             <span>⬇</span> <span>Descargar mis registros</span>
             <div class="dl-spin" id="spin-sca"></div>
@@ -828,7 +828,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
           <div class="dc-titulo">Mi reporte personal</div>
           <div class="dc-desc">Tu avance vs tu meta individual, tus secciones y estadísticas de campo.</div>
           <div class="dc-alcance" style="background:rgba(34,197,94,0.1);color:var(--green);border:1px solid rgba(34,197,94,0.2)"> Mis registros</div>
-          <div class="dc-campos"><b>Pestañas incluidas:</b><br>Mi avance À Mis simpatizantes À Mi sección À Estadísticas personales</div>
+          <div class="dc-campos"><b>Pestañas incluidas:</b><br>Mi avance · Mis simpatizantes · Mi sección · Estadísticas personales</div>
           <button class="btn-dl verde" onclick="descargar('reporte','capturista')">
             <span>⬇</span> <span>Descargar mi reporte</span>
             <div class="dl-spin" id="spin-rca"></div>
@@ -1047,11 +1047,11 @@ function actualizarKPIsMunicipio() {
     badge.innerHTML = `
       <span style="color:var(--accent)"> Filtrando:</span>
       <span style="font-weight:700;color:var(--text)">${MUN_SELECTED}</span>
-      <span style="color:var(--text3)">À</span>
+      <span style="color:var(--text3)">·</span>
       <span style="color:var(--green)">${totalCap.toLocaleString()} capturados</span>
-      <span style="color:var(--text3)">À</span>
+      <span style="color:var(--text3)">·</span>
       <span style="color:var(--accent)">${pct}% avance</span>
-      <span style="color:var(--text3)">À</span>
+      <span style="color:var(--text3)">·</span>
       <span style="color:var(--green)">${totalVal.toLocaleString()} validados</span>
       <span style="color:var(--red)">${totalRie} en riesgo</span>
       <button onclick="seleccionarMunicipio('${MUN_SELECTED}')" style="margin-left:auto;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);border-radius:5px;color:var(--red);padding:3px 10px;cursor:pointer;font-size:10px;font-family:var(--mono);">✕ Quitar filtro</button>
@@ -1198,8 +1198,8 @@ function aplicarFiltroSecciones() {
   // Título dinámico
   let titulo = 'Avance por sección';
   if(mun) titulo += ` — ${mun}`;
-  if(df)  titulo += ` À ${df}`;
-  if(dl)  titulo += ` À ${dl}`;
+  if(df)  titulo += ` · ${df}`;
+  if(dl)  titulo += ` · ${dl}`;
   document.getElementById('sec-vista-titulo').textContent = titulo;
 
   // KPI resumen
@@ -1208,7 +1208,7 @@ function aplicarFiltroSecciones() {
   const pctTotal  = totalMeta > 0 ? (totalCap/totalMeta*100).toFixed(1) : 0;
   const criticas  = data.filter(s => s.meta > 0 && s.cap/s.meta*100 < 5).length;
   document.getElementById('sec-kpi-resumen').textContent =
-    `${data.length} secciones À ${totalCap.toLocaleString()} cap. / ${totalMeta.toLocaleString()} meta À ${pctTotal}% À ${criticas} críticas`;
+    `${data.length} secciones · ${totalCap.toLocaleString()} cap. / ${totalMeta.toLocaleString()} meta · ${pctTotal}% · ${criticas} críticas`;
   document.getElementById('fil-contador').textContent = `${data.length} secciones`;
 
   buildSecTable(data);
@@ -1534,7 +1534,7 @@ function initDescargas() {
     super_admin:  {bg:'rgba(239,68,68,0.12)',color:'#ef4444',label:'🔒 Super Admin'},
     admin:       {bg:'rgba(59,130,246,0.12)',color:'#3b82f6',label:'ø Admin Estatal'},
     coordinador: {bg:'rgba(6,182,212,0.12)',color:'#06b6d4',label:' Coordinador'},
-    capturista:  {bg:'rgba(34,197,94,0.12)',color:'#22c55e',label:'✏´© Capturista'},
+    capturista:  {bg:'rgba(34,197,94,0.12)',color:'#22c55e',label:'✏ Capturista'},
   };
   const rc = colores[rol] || colores.coordinador;
   const ind = document.getElementById('rol-indicator');
@@ -1558,7 +1558,7 @@ function initDescargas() {
   } else if (rol === 'capturista') {
     document.getElementById('bloque-capturista').style.display = 'block';
     document.getElementById('cap-seccion-badge').textContent = ` Sección ${seccion}`;
-    document.getElementById('cap-alcance').textContent = ` Sección ${seccion} À ${municipio}`;
+    document.getElementById('cap-alcance').textContent = ` Sección ${seccion} · ${municipio}`;
   }
 
   // Guardar en window para uso en descargar()
@@ -1640,7 +1640,7 @@ async function descargar(tipo, nivelRol) {
         : `Simpatizantes_${estado}_${fechaHoy.replace(/\//g,'-')}.xlsx`;
 
       XLSX.writeFile(wb, fname);
-      setLog(nivelRol, `✓ Descargado: ${fname} À ${datos.length} registros À ${fechaHoy}`);
+      setLog(nivelRol, `✓ Descargado: ${fname} · ${datos.length} registros · ${fechaHoy}`);
 
     } else if (tipo === 'capturistas') {
       let datos = [...CAPTURISTAS_DATA];
@@ -1664,7 +1664,7 @@ async function descargar(tipo, nivelRol) {
         : `Capturistas_${estado}_${fechaHoy.replace(/\//g,'-')}.xlsx`;
 
       XLSX.writeFile(wb, fname);
-      setLog(nivelRol, `✓ Descargado: ${fname} À ${datos.length} capturistas À ${fechaHoy}`);
+      setLog(nivelRol, `✓ Descargado: ${fname} · ${datos.length} capturistas · ${fechaHoy}`);
 
     } else if (tipo === 'reporte') {
       // Reporte ejecutivo
@@ -1713,7 +1713,7 @@ async function descargar(tipo, nivelRol) {
         : `ReporteEjecutivo_${estado}_${fechaHoy.replace(/\//g,'-')}.xlsx`;
 
       XLSX.writeFile(wb, fname);
-      setLog(nivelRol, `✓ Descargado: ${fname} À ${fechaHoy}`);
+      setLog(nivelRol, `✓ Descargado: ${fname} · ${fechaHoy}`);
     }
 
   } catch(err) {
@@ -1774,7 +1774,7 @@ function initDiaE() {
   setInterval(() => {
     document.getElementById('diae-hora-actual').textContent =
       'Hora actual: ' + new Date().toLocaleTimeString('es-MX') +
-      ' À Datos actualizados cada 30 segundos';
+      ' · Datos actualizados cada 30 segundos';
     document.getElementById('diae-corte').textContent = calcProxCorte();
   }, 1000);
 }
@@ -1919,7 +1919,7 @@ function descargarPendientesCoordi(tipo) {
   XLSX.writeFile(wb, fname);
 
   // Log
-  const logMsg = `${tipo==='auto'?'⏰ Auto':'⬇ Manual'} À ${alcance} À ${datos.length} pendientes À ${hora}hrs`;
+  const logMsg = `${tipo==='auto'?'⏰ Auto':'⬇ Manual'} · ${alcance} · ${datos.length} pendientes · ${hora}hrs`;
   diaeLog.unshift(logMsg);
   if(diaeLog.length > 20) diaeLog.pop();
   const logEl = document.getElementById('diae-log');
@@ -2356,7 +2356,7 @@ renderProyeccion(PROYECCION_DATA);
 // DIAGNÓSTICO EJECUTIVO CON IA
 // ══════════════════════════════════════════════════════
 //
-//  ⚠´©  ESTA ES LA VERSIÓN main / PROTOTIPO  ⚠´©
+//  ⚠  ESTA ES LA VERSIÓN main / PROTOTIPO  ⚠
 //  Usa un reporte HORNEADO (simulado) con calidad de IA real, construido a
 //  partir de los datos simulados del módulo. NO hace llamadas de red ni usa
 //  ninguna API key. Es 100% demo-safe: es síncrono, no puede fallar ni dejar
@@ -2364,9 +2364,9 @@ renderProyeccion(PROYECCION_DATA);
 //
 //  En DESARROLLO, generarDiagnosticoIA() se reemplaza por una llamada al
 //  PROXY BACKEND (nunca desde el frontend). El proxy:
-//    À usa la API key del lado del SERVIDOR (jamás expuesta al navegador)
-//    À filtra el contexto por licencia_id (la IA solo ve ESA candidatura)
-//    À aplica cuota de reportes por licencia_id según el tier
+//    · usa la API key del lado del SERVIDOR (jamás expuesta al navegador)
+//    · filtra el contexto por licencia_id (la IA solo ve ESA candidatura)
+//    · aplica cuota de reportes por licencia_id según el tier
 //  El UI/UX queda idéntico: solo cambia DE DÓNDE sale el texto. El punto exacto
 //  de reemplazo está marcado abajo como  ◄── PUNTO DE REEMPLAZO (desarrollo).
 //  NOTA: el prompt al proxy recibe SOLO outputs (metas, capturados, %, semáforos).
@@ -2427,7 +2427,7 @@ function diagnosticoHorneado(){
       '</ol>',
     '</div>',
 
-    '<div class="diag-foot">Diagnóstico generado por IA sobre los agregados de la candidatura À Colima 2027 À VOTERA™<br>Las cifras provienen del tablero de Reportes. Este reporte es orientativo y no sustituye el criterio del equipo de campaña.</div>',
+    '<div class="diag-foot">Diagnóstico generado por IA sobre los agregados de la candidatura · Colima 2027 · VOTERA™<br>Las cifras provienen del tablero de Reportes. Este reporte es orientativo y no sustituye el criterio del equipo de campaña.</div>',
   ].join("");
 }
 
