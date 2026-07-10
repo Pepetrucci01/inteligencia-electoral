@@ -384,7 +384,7 @@ iframe{width:100%;height:100%;border:none;display:block;}
       </div>
 
       <div class="mc cap" onclick="load('cap','panel_capturistas.html','Activistas','Gestión de estructura de campo')">
-        <div class="mc-head"><div class="mc-icon" style="background:rgba(168,85,247,.15)"></div><div><div class="mc-name">Activistas</div><div class="mc-sub">Gestión de estructura</div></div></div>
+        <div class="mc-head"><div class="mc-icon" style="background:rgba(168,85,247,.15)">👥</div><div><div class="mc-name">Activistas</div><div class="mc-sub">Gestión de estructura</div></div></div>
         <div class="mc-desc">60 operadores con score de calidad, avance individual vs meta y ficha detallada con nivel de compromiso.</div>
         <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(168,85,247,.1);color:var(--purple)">60 operadores</span><span class="tag" style="background:rgba(168,85,247,.1);color:var(--purple)">Score</span></div><span class="arr">→</span></div>
       </div>
@@ -402,7 +402,7 @@ iframe{width:100%;height:100%;border:none;display:block;}
       </div>
 
       <div class="mc c2" onclick="load('micap','panel_capturista_personal.html','Mi Panel · Activista','Mis simpatizantes · Fase 1 y 2')">
-        <div class="mc-head"><div class="mc-icon" style="background:rgba(34,197,94,.15)"></div><div><div class="mc-name">Mi Panel · Activista</div><div class="mc-sub">Vista personal · Fase 1 y 2</div></div></div>
+        <div class="mc-head"><div class="mc-icon" style="background:rgba(34,197,94,.15)">📊</div><div><div class="mc-name">Mi Panel · Activista</div><div class="mc-sub">Vista personal · Fase 1 y 2</div></div></div>
         <div class="mc-desc">Avance personal vs meta, lista completa de simpatizantes con ficha detallada, edición de registros y modo día de elección para marcar votos en casilla.</div>
         <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(34,197,94,.1);color:var(--green)">Fase 1 captura</span><span class="tag" style="background:rgba(34,197,94,.1);color:var(--green)">Fase 2 elección</span></div><span class="arr">→</span></div>
       </div>
@@ -414,7 +414,7 @@ iframe{width:100%;height:100%;border:none;display:block;}
       </div>
 
       <div class="mc rep" onclick="load('rep','modulo_reportes.html','Reportes y análisis','Datos reales · PDF y Excel')">
-        <div class="mc-head"><div class="mc-icon" style="background:rgba(168,85,247,.15)"></div><div><div class="mc-name">Reportes y análisis</div><div class="mc-sub">6 reportes con datos reales</div></div></div>
+        <div class="mc-head"><div class="mc-icon" style="background:rgba(168,85,247,.15)">📈</div><div><div class="mc-name">Reportes y análisis</div><div class="mc-sub">6 reportes con datos reales</div></div></div>
         <div class="mc-desc">Resumen ejecutivo, avance y ritmo, calidad del padrón, por municipio, estructura de campo y perfil del votante.</div>
         <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(168,85,247,.1);color:var(--purple)">6 secciones</span><span class="tag" style="background:rgba(168,85,247,.1);color:var(--purple)">PDF + Excel</span></div><span class="arr">→</span></div>
       </div>
@@ -425,7 +425,7 @@ iframe{width:100%;height:100%;border:none;display:block;}
       </div>
 
       <div class="mc adm" data-rol="admin,super_admin" onclick="load('adm','modulo_admin.html','Administración','Usuarios · licencias · auditoría · seguridad')">
-        <div class="mc-head"><div class="mc-icon" style="background:rgba(239,68,68,.15)"></div><div><div class="mc-name">Administración</div><div class="mc-sub">Solo super admin</div></div></div>
+        <div class="mc-head"><div class="mc-icon" style="background:rgba(239,68,68,.15)">🔒</div><div><div class="mc-name">Administración</div><div class="mc-sub">Solo super admin</div></div></div>
         <div class="mc-desc">Usuarios y roles, licencias multi-estado, matriz de permisos, auditoría de actividad y configuración del sistema.</div>
         <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(239,68,68,.1);color:var(--red)">Restringido</span><span class="tag" style="background:rgba(239,68,68,.1);color:var(--red)">6 licencias</span></div><span class="arr">→</span></div>
       </div>
@@ -478,7 +478,7 @@ iframe{width:100%;height:100%;border:none;display:block;}
 <script>
 // APP_BUILD: versin de build para cache-busting de los mdulos en iframe.
 // ⚠️ SUBE este nmero en cada deploy con cambios en los mdulos.
-const APP_BUILD = '20260708';
+const APP_BUILD = '20260710';
 
 let collapsed = false;
 
@@ -638,7 +638,12 @@ function cerrarSesion(){
       ['ix-meta-side','ix-meta-kpi'].forEach(id=>{const el=document.getElementById(id); if(el) el.textContent=mtxt;});
       const pb=document.getElementById('hub-pb-nums'); if(pb) pb.innerHTML='10,000 / '+mtxt;
     })();
-    const h = { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}`, 'Prefer': 'count=exact', 'Range': '0-0' };
+    // Regla de oro Fase 4: leer con el access_token de la sesión (no la anon key).
+    // Con el token real, auth.uid() resuelve el usuario y el RLS de ciudadanos
+    // hace match limpio con UNA política (rápido). Con la anon key, las 6 políticas
+    // SELECT se evalúan contra toda la tabla → statement timeout (57014).
+    const _tok = window._sesion?.access_token || SUPA_KEY;
+    const h = { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${_tok}`, 'Prefer': 'count=exact', 'Range': '0-0' };
 
     const [rTotal, rSeg, rRiesgo] = await Promise.all([
       fetch(`${SUPA_URL}/rest/v1/ciudadanos?select=id&licencia_id=eq.${LICENCIA}`, { headers: h }),
