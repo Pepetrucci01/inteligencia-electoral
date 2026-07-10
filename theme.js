@@ -115,10 +115,20 @@ function applyTheme(theme) {
   });
 
   // Meta estatal (formateada con comas)
-  // [SWAP LUIS] Fuente única: si el JSON horneado está cargado, su meta_estatal
-  // manda sobre el default del tema. En Fase 4 esto vendrá de configuracion_sistema.
-  const metaVal = (typeof IE_METAS_CASILLA !== 'undefined' && IE_METAS_CASILLA.meta_estatal)
-                    ? IE_METAS_CASILLA.meta_estatal : theme.sistemaMeta;
+  // [SWAP LUIS ✓ Fase 4] Prioridad de fuentes para la meta estatal:
+  //   1. _META_SUPABASE  → valor vivo de configuracion_sistema.sistema_meta (si ya se cargó)
+  //   2. IE_METAS_CASILLA.meta_estatal → JSON horneado (208,717)
+  //   3. theme.sistemaMeta → default del tema (fallback final)
+  // La carga desde Supabase es asíncrona (cargarMetaEstatalSupabase); mientras
+  // llega, se pinta el horneado para que no haya parpadeo ni cero.
+  let metaVal;
+  if (typeof _META_SUPABASE === 'number' && _META_SUPABASE > 0) {
+    metaVal = _META_SUPABASE;
+  } else if (typeof IE_METAS_CASILLA !== 'undefined' && IE_METAS_CASILLA.meta_estatal) {
+    metaVal = IE_METAS_CASILLA.meta_estatal;
+  } else {
+    metaVal = theme.sistemaMeta;
+  }
   const metaFmt = Number(metaVal).toLocaleString('es-MX');
   document.querySelectorAll('[data-theme="sistema-meta"]').forEach(el => {
     el.textContent = metaFmt;
@@ -152,6 +162,48 @@ function applyTheme(theme) {
   const titleEl = document.querySelector('title[data-theme]');
   if (titleEl) {
     titleEl.textContent = `${theme.partidoNombre} — ${theme.sistemaEstado} ${theme.sistemaAnio}`;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  META ESTATAL DINÁMICA — Fase 4 (T20)
+//  Lee configuracion_sistema.sistema_meta con el access_token de la sesión.
+//  Fallback obligatorio: si el fetch/RLS falla, NO toca nada y se conserva
+//  el valor horneado (208,717) que applyTheme ya pintó. Nunca deja la meta
+//  en blanco ni en cero por un error de red o de sesión.
+// ══════════════════════════════════════════════════════════════════
+let _META_SUPABASE = null; // se llena solo si Supabase responde con un número válido
+
+async function cargarMetaEstatalSupabase() {
+  try {
+    const sesion = _leerSesionAlcance();
+    // Sin sesión o sin licencia_id (uuid como string): no consultar, quedarse con horneado.
+    const licenciaId = sesion && sesion.licencia_id ? String(sesion.licencia_id) : null;
+    if (!licenciaId) return;
+    if (typeof supaFetch !== 'function') return; // supaFetch aún no disponible
+
+    const url = _SUPA_URL_THEME
+      + '/rest/v1/configuracion_sistema'
+      + '?select=sistema_meta'
+      + '&licencia_id=eq.' + encodeURIComponent(licenciaId)
+      + '&limit=1';
+
+    const res = await supaFetch(url, { method: 'GET' });
+    // RLS o red fallando: NO actualizar UI (fallback = horneado).
+    if (!res || !res.ok) return;
+
+    const data = await res.json();
+    if (!Array.isArray(data) || data.length === 0) return;
+
+    const val = Number(data[0].sistema_meta);
+    if (!Number.isFinite(val) || val <= 0) return; // dato inválido: conservar horneado
+
+    // Éxito: cachear y repintar solo las tarjetas de meta.
+    _META_SUPABASE = val;
+    applyTheme(loadTheme());
+  } catch (e) {
+    // Cualquier error: silencioso, se conserva el valor horneado ya pintado.
+    console.warn('Meta estatal: usando valor horneado (Supabase no disponible)', e);
   }
 }
 
@@ -407,3 +459,18 @@ setInterval(() => {
     if (s?.access_token) refrescarTokenSupabase();
   } catch (e) {}
 }, 45 * 60 * 1000);
+
+// ══════════════════════════════════════════════════════════════════
+//  T20 — Cargar meta estatal viva desde Supabase al arrancar.
+//  Se ejecuta aquí (final del archivo) porque supaFetch ya está definido.
+//  applyTheme ya pintó el valor horneado; esto lo actualiza si Supabase
+//  responde. Si falla, no pasa nada (fallback = horneado).
+// ══════════════════════════════════════════════════════════════════
+(function() {
+  const lanzar = () => { cargarMetaEstatalSupabase(); };
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', lanzar);
+  } else {
+    lanzar();
+  }
+})();
