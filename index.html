@@ -278,6 +278,13 @@ iframe{width:100%;height:100%;border:none;display:block;}
       <div class="nav-tip">Encuestas</div>
     </div>
 
+    <div class="nav-item" id="nav-call" onclick="load('call','modulo_callcenter.html','Centro de Llamadas','Cola de llamadas y auditoría de operadores')">
+      <div class="nav-icon" style="background:rgba(249,115,22,.12);color:#fb923c">📞</div>
+      <span class="nav-label">Centro de Llamadas</span>
+      <span style="margin-left:auto;font-size:8px;font-weight:700;color:#fb923c;background:rgba(249,115,22,.15);padding:1px 5px;border-radius:6px;letter-spacing:.5px;">NUEVO</span>
+      <div class="nav-tip">Centro de Llamadas</div>
+    </div>
+
     <div class="nav-section">Sistema</div>
     <div class="nav-item admin-item" id="nav-adm" onclick="load('adm','modulo_admin.html','Administración','Usuarios · licencias · auditoría')">
       <div class="nav-icon" style="background:rgba(239,68,68,.12);color:var(--red)">🔒</div>
@@ -351,7 +358,7 @@ iframe{width:100%;height:100%;border:none;display:block;}
     <div class="hub-head">
       <div>
         <div class="hub-title">Bienvenido al sistema</div>
-        <div class="hub-sub"><span data-theme="sistema-titulo">Colima 2027</span> · <strong>9 módulos</strong> operativos</div>
+        <div class="hub-sub"><span data-theme="sistema-titulo">Colima 2027</span> · <strong>10 módulos</strong> operativos</div>
       </div>
       <div class="hub-date" id="hub-date">--</div>
     </div>
@@ -374,7 +381,7 @@ iframe{width:100%;height:100%;border:none;display:block;}
       <div class="kpi re"><div class="kv">219</div><div class="kl">Sec. críticas</div></div>
     </div>
 
-    <div class="mod-title">9 módulos del sistema — clic para abrir</div>
+    <div class="mod-title">10 módulos del sistema — clic para abrir</div>
     <div class="modules-grid">
 
       <div class="mc war" onclick="load('war','war_room_electoral_colima.html','War Room','Control de avance estatal')">
@@ -422,6 +429,12 @@ iframe{width:100%;height:100%;border:none;display:block;}
         <div class="mc-head"><div class="mc-icon" style="background:rgba(20,184,166,.15)">📋</div><div><div class="mc-name">Encuestas <span style="font-size:9px;font-weight:700;color:#2dd4bf;background:rgba(20,184,166,.15);padding:1px 6px;border-radius:6px;vertical-align:middle;">NUEVO</span></div><div class="mc-sub">Estudios de opinión</div></div></div>
         <div class="mc-desc">Fábrica de encuestas: crea estudios con su propio cuestionario, levanta entrevistas en campo y cruza intención de voto contra tu estructura territorial.</div>
         <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(20,184,166,.1);color:#2dd4bf">Anónimas</span><span class="tag" style="background:rgba(20,184,166,.1);color:#2dd4bf">Territorio vs Opinión</span></div><span class="arr">→</span></div>
+      </div>
+
+      <div class="mc call" onclick="load('call','modulo_callcenter.html','Centro de Llamadas','Cola de llamadas y auditoría de operadores')">
+        <div class="mc-head"><div class="mc-icon" style="background:rgba(249,115,22,.15)">📞</div><div><div class="mc-name">Centro de Llamadas <span style="font-size:9px;font-weight:700;color:#fb923c;background:rgba(249,115,22,.15);padding:1px 6px;border-radius:6px;vertical-align:middle;">NUEVO</span></div><div class="mc-sub">CATI · identificación · movilización</div></div></div>
+        <div class="mc-desc">Pantalla de operador con guion, cola de llamadas y disposiciones. Supervisión anti-fraude: cronómetro por llamada, semáforo por operador y verificación aleatoria de contactos.</div>
+        <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(249,115,22,.1);color:#fb923c">Auditoría</span><span class="tag" style="background:rgba(249,115,22,.1);color:#fb923c">3 tipos de campaña</span></div><span class="arr">→</span></div>
       </div>
 
       <div class="mc adm" onclick="load('adm','modulo_admin.html','Administración','Usuarios · licencias · auditoría · seguridad')">
