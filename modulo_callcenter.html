@@ -92,6 +92,32 @@
   td.num{font-variant-numeric:tabular-nums;font-weight:600;}
 
   .demo-tag{position:fixed;bottom:12px;right:14px;background:rgba(240,181,67,.12);border:1px solid rgba(240,181,67,.4);color:var(--warn);font-size:.64rem;font-weight:700;letter-spacing:1px;padding:5px 10px;border-radius:20px;pointer-events:none;}
+
+  /* ── Auditoría / Supervisión ────────────── */
+  .timer{font-size:.85rem;font-weight:700;color:var(--warn);font-variant-numeric:tabular-nums;margin-bottom:8px;}
+  .timer::before{content:'⏱ ';}
+  .sup-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:14px;}
+  .sem-card{position:relative;}
+  .sem-dot{position:absolute;top:16px;right:16px;width:14px;height:14px;border-radius:50%;}
+  .sem-verde{background:var(--ok);box-shadow:0 0 8px var(--ok);}
+  .sem-amarillo{background:var(--warn);box-shadow:0 0 8px var(--warn);}
+  .sem-rojo{background:var(--bad);box-shadow:0 0 8px var(--bad);animation:pulse 1.2s infinite;}
+  .sem-card .op-nom{font-size:.98rem;font-weight:700;margin-bottom:2px;}
+  .sem-card .op-est{font-size:.72rem;color:var(--mut);margin-bottom:10px;}
+  .sem-card .op-stats{display:flex;gap:14px;font-size:.75rem;color:var(--mut);margin-bottom:10px;}
+  .sem-card .op-stats b{color:var(--txt);display:block;font-size:.95rem;}
+  .flag{display:block;font-size:.72rem;font-weight:600;padding:5px 9px;border-radius:7px;margin-top:5px;}
+  .flag.roja{background:rgba(240,86,107,.13);color:var(--bad);border:1px solid rgba(240,86,107,.35);}
+  .flag.ambar{background:rgba(240,181,67,.11);color:var(--warn);border:1px solid rgba(240,181,67,.3);}
+  .flag.limpia{background:rgba(46,204,143,.1);color:var(--ok);border:1px solid rgba(46,204,143,.25);}
+  .dur-corta{color:var(--bad);font-weight:700;}
+  .verif-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);font-size:.82rem;flex-wrap:wrap;}
+  .verif-row .info b{display:block;}
+  .verif-row .info span{color:var(--mut);font-size:.74rem;}
+  .verif-btns{display:flex;gap:6px;}
+  .vbtn{border:none;border-radius:8px;padding:7px 12px;font-size:.74rem;font-weight:700;cursor:pointer;color:#fff;}
+  .vbtn.ok{background:#1f9e6e;} .vbtn.bad{background:#c04a5c;}
+  .verif-res{font-size:.76rem;font-weight:700;}
 </style>
 </head>
 <body>
@@ -113,6 +139,7 @@
   <button class="tab active" onclick="verTab('operador',this)">📞 Pantalla de Operador</button>
   <button class="tab" onclick="verTab('campanas',this)">📋 Campañas</button>
   <button class="tab" onclick="verTab('productividad',this)">📊 Productividad</button>
+  <button class="tab" onclick="verTab('supervision',this)">🛡️ Supervisión</button>
 </div>
 
 <!-- ══════════ VISTA OPERADOR ══════════ -->
@@ -125,6 +152,7 @@
       <div class="nombre" id="c-nombre">—</div>
       <span class="chip acc" id="c-chip">—</span>
       <div class="tel" id="c-tel">—</div>
+      <div class="timer" id="c-timer">00:00</div>
       <div class="meta-row"><span class="k">Sección</span><span class="v" id="c-seccion">—</span></div>
       <div class="meta-row"><span class="k">Municipio</span><span class="v" id="c-municipio">—</span></div>
       <div class="meta-row"><span class="k">Intentos previos</span><span class="v" id="c-intentos">—</span></div>
@@ -181,6 +209,25 @@
       <thead><tr><th>Operador</th><th>Llamadas</th><th>Contactados</th><th>Comprometidos</th><th>Sin respuesta</th><th>Tasa de contacto</th></tr></thead>
       <tbody id="tabla-operadores"></tbody>
     </table>
+  </div>
+</div>
+
+<!-- ══════════ VISTA SUPERVISIÓN (coordinador/admin) ══════════ -->
+<div class="view" id="view-supervision">
+  <div class="sup-grid" id="sup-grid"></div>
+  <div class="prod-grid">
+    <div class="card">
+      <h3>Bitácora de llamadas recientes</h3>
+      <table>
+        <thead><tr><th>Hora</th><th>Operador</th><th>Contacto</th><th>Duración</th><th>Disposición</th></tr></thead>
+        <tbody id="tabla-bitacora"></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h3>Verificación aleatoria de contactos</h3>
+      <p style="font-size:.76rem;color:var(--mut);margin-bottom:8px;">Llamadas marcadas "contactado/comprometido" seleccionadas al azar para re-verificación por un segundo operador.</p>
+      <div id="verif-lista"></div>
+    </div>
   </div>
 </div>
 
@@ -249,6 +296,42 @@ const PRODUCTIVIDAD = [
 ];
 const DISPOSICIONES_GLOBAL = { contactado:131, comprometido:40, no_contesta:98, buzon:35, volver_llamar:22, numero_equivocado:11, rechazo:19, no_molestar:6 };
 
+/* ── Datos de auditoría (horneados) ──────────────────────────
+   [SWAP LUIS] SELECT * FROM v_auditoria_callcenter WHERE licencia_id=...
+   Umbrales de detección:
+   · DUR_MIN_CONTACTO: contactado con <10s = imposible aplicar guion
+   · RACHA_NC: 5+ "no contesta" consecutivas = tronando la cola
+   · RITMO_MAX: llamadas/hora > 2x promedio del equipo
+   · INACTIVO_MIN: 30+ min sin registrar llamada en turno       */
+const UMBRAL = { DUR_MIN_CONTACTO:10, RACHA_NC:5, RITMO_FACTOR:2, INACTIVO_MIN:30 };
+
+const AUDITORIA = [
+  { operador:'María Torres',   durProm:118, llamadasHora:14, rachaNC:1, cortasContactado:0, inactivoMin:2  },
+  { operador:'Carlos Mendoza', durProm:96,  llamadasHora:16, rachaNC:2, cortasContactado:0, inactivoMin:38 },
+  { operador:'Ana Sofía Ruiz', durProm:134, llamadasHora:12, rachaNC:0, cortasContactado:0, inactivoMin:5  },
+  { operador:'Roberto Chávez', durProm:22,  llamadasHora:34, rachaNC:8, cortasContactado:6, inactivoMin:1  }
+];
+
+// [SWAP LUIS] SELECT ... FROM cola_llamadas WHERE estado='completada' ORDER BY fecha_llamada DESC LIMIT 20
+const BITACORA_BASE = [
+  { hora:'12:41', operador:'Roberto Chávez', contacto:'J. Sánchez',   dur:6,   disp:'contactado' },
+  { hora:'12:40', operador:'Roberto Chávez', contacto:'M. Preciado',  dur:4,   disp:'contactado' },
+  { hora:'12:39', operador:'Ana Sofía Ruiz', contacto:'R. Cárdenas',  dur:187, disp:'comprometido' },
+  { hora:'12:38', operador:'Roberto Chávez', contacto:'L. Ventura',   dur:3,   disp:'no_contesta' },
+  { hora:'12:37', operador:'Roberto Chávez', contacto:'S. Michel',    dur:2,   disp:'no_contesta' },
+  { hora:'12:35', operador:'María Torres',   contacto:'F. Anguiano',  dur:142, disp:'contactado' },
+  { hora:'12:33', operador:'Ana Sofía Ruiz', contacto:'C. Larios',    dur:95,  disp:'volver_llamar' },
+  { hora:'12:31', operador:'María Torres',   contacto:'E. Brizuela',  dur:78,  disp:'buzon' }
+];
+
+// [SWAP LUIS] SELECT * FROM cola_llamadas WHERE verificado=false AND disposicion IN ('contactado','comprometido')
+//             ORDER BY random() LIMIT n  → asignar a segundo operador
+let VERIFICACION = [
+  { id:'v-01', contacto:'J. Sánchez',  tel:'312 401 XXXX', operador:'Roberto Chávez', disp:'contactado',   dur:6,   resultado:null },
+  { id:'v-02', contacto:'M. Preciado', tel:'313 220 XXXX', operador:'Roberto Chávez', disp:'contactado',   dur:4,   resultado:null },
+  { id:'v-03', contacto:'R. Cárdenas', tel:'312 887 XXXX', operador:'Ana Sofía Ruiz', disp:'comprometido', dur:187, resultado:null }
+];
+
 /* ── Estado de sesión demo (persiste en localStorage) ────── */
 const LS_KEY = 'votera_callcenter_demo_' + LICENCIA_ID;
 let demoState;
@@ -258,6 +341,30 @@ if (!demoState || !Array.isArray(demoState.cola) || demoState.cola.length === 0)
 }
 let dispSel = null;
 let respuestas = {};
+
+/* ── Cronómetro de llamada (auditoría) ───── */
+let llamadaInicio = null;
+let timerInt = null;
+function fmtDur(s){
+  var m = Math.floor(s / 60), r = s % 60;
+  return (m < 10 ? '0' : '') + m + ':' + (r < 10 ? '0' : '') + r;
+}
+function arrancarTimer(){
+  llamadaInicio = Date.now();
+  var el = document.getElementById('c-timer');
+  if (timerInt) clearInterval(timerInt);
+  el.textContent = '00:00';
+  timerInt = setInterval(function(){
+    el.textContent = fmtDur(Math.floor((Date.now() - llamadaInicio) / 1000));
+  }, 1000);
+}
+function detenerTimer(){
+  if (timerInt) { clearInterval(timerInt); timerInt = null; }
+  if (!llamadaInicio) return 0;
+  var dur = Math.floor((Date.now() - llamadaInicio) / 1000);
+  llamadaInicio = null;
+  return dur;
+}
 
 function campActiva(){ return CAMPANAS.find(function(c){ return c.id === demoState.campanaId; }) || CAMPANAS[0]; }
 
@@ -282,6 +389,8 @@ function pintarContacto(){
   var c = demoState.cola[0];
   var btn = document.getElementById('btn-next');
   if (!c) {
+    detenerTimer();
+    document.getElementById('c-timer').textContent = '00:00';
     document.getElementById('c-nombre').textContent = 'Cola completada 🎉';
     document.getElementById('c-tel').textContent = '—';
     document.getElementById('c-chip').textContent = 'SIN PENDIENTES';
@@ -297,6 +406,7 @@ function pintarContacto(){
   }
   document.getElementById('c-nombre').textContent = c.nombre;
   document.getElementById('c-tel').textContent = c.tel;
+  arrancarTimer();
   var chip = document.getElementById('c-chip');
   chip.textContent = camp.tipo === 'encuesta' ? 'ANÓNIMO · CATI' : ('SECCIÓN ' + c.seccion);
   chip.className = 'chip ' + (camp.tipo === 'encuesta' ? 'acc' : 'ok');
@@ -343,11 +453,20 @@ function setDisp(d, btn){
 function guardarYSiguiente(){
   var c = demoState.cola[0];
   if (!c || !dispSel) return;
+  var dur = detenerTimer();
   // [SWAP LUIS] UPDATE cola_llamadas SET estado='completada', disposicion=$1,
   //             notas=$2, reintento_programado=$3, intentos=intentos+1,
-  //             fecha_llamada=now() WHERE id=$4 AND licencia_id=LICENCIA_ID
+  //             hora_inicio=$4, hora_fin=now(), duracion_segundos=$5,
+  //             fecha_llamada=now() WHERE id=$6 AND licencia_id=LICENCIA_ID
   // [SWAP LUIS] si campaña tipo='encuesta': INSERT respuestas ANÓNIMAS en tablas
   //             del módulo de Encuestas (sin ciudadano_id, sin cola_id)
+  var ahora = new Date();
+  demoState.bitacora = demoState.bitacora || [];
+  demoState.bitacora.unshift({
+    hora: ('0'+ahora.getHours()).slice(-2) + ':' + ('0'+ahora.getMinutes()).slice(-2),
+    operador:'María Torres', contacto: c.nombre, dur: dur, disp: dispSel
+  });
+  if (demoState.bitacora.length > 10) demoState.bitacora.pop();
   if (dispSel === 'contactado' || dispSel === 'comprometido') demoState.contactadasHoy++;
   if (dispSel === 'volver_llamar') demoState.reintentos++;
   demoState.cola.shift();
@@ -426,6 +545,104 @@ function pintarProductividad(){
   });
 }
 
+/* ── Vista Supervisión (coordinador/admin) ─
+   [SWAP LUIS] esta vista solo se muestra a roles coordinador,
+   admin y superadmin — ocultar tab según rol de sesión         */
+function flagsOperador(a){
+  var ritmoProm = AUDITORIA.reduce(function(s,o){ return s + o.llamadasHora; }, 0) / AUDITORIA.length;
+  var flags = [];
+  if (a.cortasContactado > 0)
+    flags.push({ t:'roja', txt:'⚠ ' + a.cortasContactado + ' llamadas <' + UMBRAL.DUR_MIN_CONTACTO + 's marcadas "contactado"' });
+  if (a.rachaNC >= UMBRAL.RACHA_NC)
+    flags.push({ t:'roja', txt:'⚠ Racha de ' + a.rachaNC + ' "no contesta" consecutivas' });
+  if (a.llamadasHora > ritmoProm * UMBRAL.RITMO_FACTOR)
+    flags.push({ t:'roja', txt:'⚠ Ritmo anormal: ' + a.llamadasHora + ' llamadas/hr (equipo: ' + Math.round(ritmoProm) + ')' });
+  if (a.inactivoMin >= UMBRAL.INACTIVO_MIN)
+    flags.push({ t:'ambar', txt:'⏸ Inactivo desde hace ' + a.inactivoMin + ' min' });
+  return flags;
+}
+var DISP_LABEL = { contactado:'Contactado', comprometido:'Comprometido', no_contesta:'No contesta',
+  buzon:'Buzón', volver_llamar:'Volver a llamar', numero_equivocado:'Núm. equivocado',
+  rechazo:'Rechazo', no_molestar:'No molestar' };
+
+function pintarSupervision(){
+  var grid = document.getElementById('sup-grid');
+  grid.innerHTML = '';
+  AUDITORIA.forEach(function(a){
+    var flags = flagsOperador(a);
+    var rojas = flags.filter(function(f){ return f.t === 'roja'; }).length;
+    var sem = rojas >= 2 ? 'rojo' : (flags.length > 0 ? 'amarillo' : 'verde');
+    var estado = a.inactivoMin >= UMBRAL.INACTIVO_MIN
+      ? 'Inactivo · ' + a.inactivoMin + ' min sin actividad'
+      : 'Activo · última llamada hace ' + a.inactivoMin + ' min';
+    var html =
+      '<span class="sem-dot sem-' + sem + '"></span>' +
+      '<div class="op-nom">' + a.operador + '</div>' +
+      '<div class="op-est">' + estado + '</div>' +
+      '<div class="op-stats">' +
+        '<span><b>' + fmtDur(a.durProm) + '</b>dur. promedio</span>' +
+        '<span><b>' + a.llamadasHora + '</b>llamadas/hr</span>' +
+      '</div>';
+    if (flags.length === 0) {
+      html += '<span class="flag limpia">✓ Sin señales de alerta</span>';
+    } else {
+      flags.forEach(function(f){ html += '<span class="flag ' + f.t + '">' + f.txt + '</span>'; });
+    }
+    var el = document.createElement('div');
+    el.className = 'card sem-card';
+    el.innerHTML = html;
+    grid.appendChild(el);
+  });
+
+  // Bitácora: llamadas de la sesión demo (vivas) + horneadas
+  var vivas = (demoState.bitacora || []);
+  var todas = vivas.concat(BITACORA_BASE).slice(0, 12);
+  var tb = document.getElementById('tabla-bitacora');
+  tb.innerHTML = '';
+  todas.forEach(function(b){
+    var sospechosa = b.dur < UMBRAL.DUR_MIN_CONTACTO && (b.disp === 'contactado' || b.disp === 'comprometido');
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td class="num">' + b.hora + '</td><td>' + b.operador + '</td><td>' + b.contacto + '</td>' +
+      '<td class="num' + (sospechosa ? ' dur-corta' : '') + '">' + fmtDur(b.dur) + (sospechosa ? ' ⚠' : '') + '</td>' +
+      '<td>' + (DISP_LABEL[b.disp] || b.disp) + '</td>';
+    tb.appendChild(tr);
+  });
+
+  pintarVerificacion();
+}
+
+function pintarVerificacion(){
+  var wrap = document.getElementById('verif-lista');
+  wrap.innerHTML = '';
+  VERIFICACION.forEach(function(v){
+    var row = document.createElement('div');
+    row.className = 'verif-row';
+    var acciones;
+    if (v.resultado === 'confirmada') {
+      acciones = '<span class="verif-res" style="color:var(--ok)">✓ Confirmada</span>';
+    } else if (v.resultado === 'no_coincide') {
+      acciones = '<span class="verif-res" style="color:var(--bad)">✗ No coincide — reportado al coordinador</span>';
+    } else {
+      acciones = '<div class="verif-btns">' +
+        '<button class="vbtn ok" onclick="resolverVerif(\'' + v.id + '\',\'confirmada\')">Confirmada</button>' +
+        '<button class="vbtn bad" onclick="resolverVerif(\'' + v.id + '\',\'no_coincide\')">No coincide</button></div>';
+    }
+    row.innerHTML =
+      '<div class="info"><b>' + v.contacto + ' · ' + v.tel + '</b>' +
+      '<span>Marcada "' + (DISP_LABEL[v.disp] || v.disp) + '" por ' + v.operador + ' · duración ' + fmtDur(v.dur) + '</span></div>' +
+      acciones;
+    wrap.appendChild(row);
+  });
+}
+
+function resolverVerif(id, resultado){
+  // [SWAP LUIS] UPDATE cola_llamadas SET verificado=true, verificado_por=auth.uid(),
+  //             resultado_verificacion=$1 WHERE id=$2 AND licencia_id=LICENCIA_ID
+  var v = VERIFICACION.find(function(x){ return x.id === id; });
+  if (v) v.resultado = resultado;
+  pintarVerificacion();
+}
+
 /* ── Navegación ──────────────────────────── */
 function verTab(id, btn){
   document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
@@ -434,6 +651,7 @@ function verTab(id, btn){
   document.getElementById('view-' + id).classList.add('active');
   if (id === 'productividad') pintarProductividad();
   if (id === 'campanas') pintarCampanas();
+  if (id === 'supervision') pintarSupervision();
 }
 
 /* ── Init ────────────────────────────────── */
