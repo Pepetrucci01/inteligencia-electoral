@@ -151,6 +151,8 @@ select{background:#0f3460;color:#eee;border:1px solid #444;border-radius:4px;pad
 </style>
 <script src="theme.js"></script>
 <script src="ie_metas_casilla_horneado.js"></script>
+<script src="t18_metas_casilla_supabase.js"></script>
+<script src="t19_dia_e_supabase.js"></script>
 
 <!-- GUARD DE SESIÓN + CONTROL ROL LIDER -->
 <script>
@@ -616,7 +618,7 @@ function setLayer(layer,el){
   document.getElementById('badge').textContent=names[layer]||layer;
   document.getElementById('sLayer').textContent=names[layer]||layer;
   document.getElementById('dia-e-ctrl').style.display = layer==='dia_e' ? 'block' : 'none';
-  if(layer==='dia_e') actualizarResumenDiaE();
+  if(layer==='dia_e') actualizarResumenDiaE(); if(typeof window.refrescarDiaE==='function') window.refrescarDiaE();
   renderSecciones(layer);
 }
 
@@ -678,6 +680,7 @@ renderSecciones('gobernador');
 renderCasillas(CASILLAS);
 // Cargar avance real desde Supabase
 cargarAvanceSupabase();
+cargarMetasCasillaSupabase();   // T18: metas por casilla (fallback = horneado)
 
 // ── MODO LÍDER: zoom y filtro automático ──────────────────────────
 (function initLider(){

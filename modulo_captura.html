@@ -251,7 +251,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
     <div class="topbar-title">Módulo de Captura</div>
     <div class="topbar-sub">COLIMA 2027 · CAMPO</div>
   </div>
-  <div class="btn-icon" onclick="toggleCapturista()"></div>
+  <div class="btn-icon" onclick="toggleCapturista()">👤</div>
   <button onclick="cerrarSesion()" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;font-family:monospace;margin-left:6px;" title="Cerrar sesión">⏻</button>
 </div>
 
@@ -261,10 +261,10 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
     <span class="tab-icon">✏</span>Capturar
   </div>
   <div class="tab" id="tab-buscar" onclick="showTab('buscar')">
-    <span class="tab-icon"></span>Buscar
+    <span class="tab-icon">🔍</span>Buscar
   </div>
   <div class="tab" id="tab-lista" onclick="showTab('lista')">
-    <span class="tab-icon"></span>Mi Sección
+    <span class="tab-icon">📋</span>Mi Sección
   </div>
 </div>
 
@@ -382,7 +382,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 
     <!-- ALERTA DE ASIGNACIÓN AUTOMÁTICA -->
     <div class="asign-alert" id="asign-alert">
-      <div class="asign-icon"></div>
+      <div class="asign-icon">📍</div>
       <div>
         <div class="asign-title">Asignación automática activada</div>
         <div class="asign-desc" id="asign-desc">Este ciudadano será asignado al responsable de su sección electoral, no a ti.</div>
@@ -541,7 +541,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 <div class="screen" id="screen-buscar">
   <div id="vista-lista-busqueda">
     <div class="search-bar">
-      <div class="search-icon"></div>
+      <div class="search-icon">🔍</div>
       <input class="search-input" id="search-q" type="search" placeholder="Nombre, sección, municipio..." oninput="buscar()">
     </div>
     <div class="search-filters">

@@ -500,15 +500,17 @@ function renderLista(){
   document.getElementById('k-activas').textContent = ENCUESTAS.filter(e => e.estado === 'activa').length;
   document.getElementById('k-entrev').textContent = fmt(ENCUESTAS.reduce((s,e) => s + e.entrevistas, 0));
 }
-function activarEncuesta(id){
-  // [SWAP LUIS] UPDATE encuestas SET estado='activa' WHERE id=... AND licencia_id=...
+async function activarEncuesta(id){
+  // [SWAP LUIS ✓ T21] UPDATE encuestas SET estado='activa' (con fallback demo).
+  if(window.T21){ const ok = await window.T21.actualizarEstado(id, 'activa'); if(ok===false){ mostrarToast('No se pudo activar (sin conexión)'); return; } }
   const e = ENCUESTAS.find(x => x.id === id);
   if(e){ e.estado = 'activa'; renderLista(); poblarSelectorEncuestas(); }
 }
-function cerrarEncuesta(id){
-  // [SWAP LUIS] UPDATE encuestas SET estado='cerrada' WHERE id=... AND licencia_id=...
+async function cerrarEncuesta(id){
+  // [SWAP LUIS ✓ T21] UPDATE encuestas SET estado='cerrada' (con fallback demo).
   const e = ENCUESTAS.find(x => x.id === id);
   if(e && confirm('¿Cerrar "' + e.nombre + '"? Ya no se podrán levantar entrevistas.')){
+    if(window.T21){ const ok = await window.T21.actualizarEstado(id, 'cerrada'); if(ok===false){ mostrarToast('No se pudo cerrar (sin conexión)'); return; } }
     e.estado = 'cerrada'; renderLista(); poblarSelectorEncuestas();
   }
 }
@@ -548,7 +550,7 @@ function renderCustom(){
     </div>`).join('') || '<div style="font-size:11px;color:var(--text3)">Sin preguntas personalizadas todavía.</div>';
 }
 function quitarCustom(i){ CUSTOM_TEMP.splice(i,1); renderCustom(); }
-function crearEncuesta(){
+async function crearEncuesta(){
   const nombre = document.getElementById('n-nombre').value.trim();
   if(!nombre){ alert('Ponle nombre al estudio.'); return; }
   const clavesStd = PREGUNTAS_STD.filter((p,i) => document.getElementById('std-'+i).checked).map(p => p.clave);
@@ -559,8 +561,8 @@ function crearEncuesta(){
   //   — preguntas y metodologia como jsonb (metodologia requiere agregar
   //   la columna: ver esquema_modulo_encuestas.sql actualizado).
   const nMuestra = parseInt(document.getElementById('n-muestra').value.replace(/\D/g,'')) || 0;
-  ENCUESTAS.unshift({
-    id:'nueva-' + Date.now(),
+  // [SWAP LUIS ✓ T21] INSERT INTO encuestas (con fallback demo).
+  const _nueva = {
     nombre,
     desc: document.getElementById('n-desc').value.trim(),
     metodologia:{
@@ -569,11 +571,22 @@ function crearEncuesta(){
       n:      nMuestra,
       dist:   document.getElementById('n-dist').value
     },
-    estado:'borrador',
     ini: document.getElementById('n-ini').value,
     fin: document.getElementById('n-fin').value,
-    entrevistas: 0,
     preguntas: armarCuestionario(clavesStd, opcionesInt, CUSTOM_TEMP)
+  };
+  let _nuevoId = 'nueva-' + Date.now();
+  if(window.T21){ const rid = await window.T21.insertarEncuesta(_nueva); if(rid) _nuevoId = rid; }
+  ENCUESTAS.unshift({
+    id:_nuevoId,
+    nombre: _nueva.nombre,
+    desc: _nueva.desc,
+    metodologia: _nueva.metodologia,
+    estado:'borrador',
+    ini: _nueva.ini,
+    fin: _nueva.fin,
+    entrevistas: 0,
+    preguntas: _nueva.preguntas
   });
   CUSTOM_TEMP = [];
   renderCustom(); renderLista(); poblarSelectorEncuestas();
@@ -608,14 +621,23 @@ function marcar(el, clave, valor){
   el.classList.add('sel');
   RESP_TEMP[clave] = valor;
 }
-function guardarEntrevista(){
+async function guardarEntrevista(){
   const e = ENCUESTAS.find(x => x.id === document.getElementById('e-encuesta').value);
   if(!e){ alert('No hay encuesta activa seleccionada.'); return; }
   if(Object.keys(RESP_TEMP).length === 0){ alert('Marca al menos una respuesta (la entrevista es voluntaria, pero no puede ir vacía).'); return; }
-  // [SWAP LUIS] INSERT INTO respuestas_encuesta (encuesta_id, licencia_id,
-  //   municipio_id, seccion_id, usuario_id, rango_edad, genero, respuestas)
-  //   VALUES (...) — respuestas como jsonb. ANÓNIMA: jamás vincular a
-  //   la tabla ciudadanos ni capturar nombre/teléfono.
+  // [SWAP LUIS ✓ T21] INSERT anónimo en respuestas_encuesta (con fallback demo).
+  //   ANoNIMA: sin nombre/teléfono ni FK a ciudadanos.
+  if(window.T21){
+    const ok = await window.T21.insertarRespuesta({
+      encuesta_id: e.id,
+      municipio: document.getElementById('e-mun').value,
+      seccion: document.getElementById('e-sec').value,
+      rango_edad: document.getElementById('e-edad').value || null,
+      genero: document.getElementById('e-gen').value || null,
+      respuestas: Object.assign({}, RESP_TEMP)
+    });
+    if(ok===false){ mostrarToast('No se pudo guardar (sin conexión)'); return; }
+  }
   e.entrevistas += 1;
   RESP_TEMP = {};
   document.querySelectorAll('#e-preguntas .ph-opt').forEach(o => o.classList.remove('sel'));
@@ -908,5 +930,6 @@ function resetVivo(){
 }
 
 </script>
+<script src="t21_encuestas_supabase.js"></script>
 </body>
 </html>

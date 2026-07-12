@@ -559,11 +559,34 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 const SUPA_URL = 'https://dyirhwwmykskpuvzcafx.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5aXJod3dteWtza3B1dnpjYWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NTk3ODgsImV4cCI6MjA5NTEzNTc4OH0.2xe4cHqORGng1hnYPJ9ZiyT0r87fMijbUEJqBy3-xoI';
 const LICENCIA_ID = window._sesion?.licencia_id || 'a1b2c3d4-0001-0000-0000-000000000001';
-const CAP_ID      = window._sesion?.usuario_id  || null;
-const SECCION_CAP = window._sesion?.seccion      || null;
+// [FIX 10 jul] Antes eran const congeladas al cargar. Ahora son getters:
+//   1) respetan el MODO SUPERVISIÓN (window._SUP_*) cuando un admin elige
+//      qué capturista inspeccionar (ver supervision_capturista.js);
+//   2) el capturista real no nota diferencia: si no hay override, leen la sesión.
+// Nota: un super_admin/admin NO tiene usuarios.seccion (es null, y con razón:
+// no es rol de campo). Por eso el panel necesita el selector de supervisión.
+Object.defineProperty(window, 'CAP_ID', {
+  get: function(){
+    if (window._SUP_CAP_ID) return window._SUP_CAP_ID;      // supervisión
+    return window._sesion?.usuario_id || window._sesion?.id || null;
+  }, configurable: true
+});
+Object.defineProperty(window, 'SECCION_CAP', {
+  get: function(){
+    if (window._SUP_CAP_ID) return window._SUP_SECCION || null;  // supervisión
+    return window._sesion?.seccion || null;
+  }, configurable: true
+});
 const META_CAP    = 50; // meta por capturista
 
-async function supaFetch(path) {
+// [FIX 10 jul] RENOMBRADO de supaFetch → supaGet.
+// COLISIÓN DE NOMBRES: theme.js hace `window.supaFetch = supaFetch` con una
+// firma INCOMPATIBLE — el suyo recibe una URL COMPLETA y devuelve un Response;
+// este recibe un PATH y devuelve JSON ya parseado. Como theme.js carga después,
+// pisaba a este, y cargarMisRegistros() terminaba mandando el path como ruta
+// relativa → http://127.0.0.1:5500/ciudadanos?... → 404 → (data||[]).map crash.
+// Con un nombre propio, nadie lo secuestra.
+async function supaGet(path) {
   const url = `${SUPA_URL}/rest/v1/${path}`;
   const armar = () => ({
     'apikey': SUPA_KEY,
@@ -625,12 +648,33 @@ let SIMPATIZANTES = [];
 
 async function cargarMisRegistros() {
   try {
+    // [FIX 10 jul] MODO SUPERVISIÓN sin capturista elegido: no cargar nada.
+    // Sin este corte, al no haber CAP_ID la query traía hasta 500 registros de
+    // TODA la licencia y los pintaba como si fueran "mis capturas" — mezclando
+    // el trabajo de otros capturistas en el panel personal de nadie.
+    if (window._SUP_ACTIVO && !window._SUP_CAP_ID) {
+      SIMPATIZANTES = [];
+      actualizarKPIs();
+      renderLista();
+      return;
+    }
+
     // Filtrar por capturista_id si está disponible, sino por licencia
     let query = `ciudadanos?select=id,nombre,apellido_paterno,apellido_materno,edad,sexo,seccion_electoral,municipio,telefono,domicilio,curp,clave_elector,compromiso,origen,es_riesgo,es_apoyo,es_influencia,validado,duplicado,notas,created_at,licencia_id,capturista_id&licencia_id=eq.${LICENCIA_ID}&order=created_at.desc&limit=500`;
     if (CAP_ID) query += `&capturista_id=eq.${CAP_ID}`;
 
-    const data = await supaFetch(query);
-    SIMPATIZANTES = (data || []).map(mapCiudadano);
+    const data = await supaGet(query);
+    // [FIX 10 jul] Validar que sea arreglo ANTES de mapear. Si la consulta
+    // falla (RLS, 404, HTML de error), data no es un array y `.map` reventaba
+    // con "(data || []).map is not a function". Ahora degrada limpio.
+    if (!Array.isArray(data)) {
+      console.warn('Registros: respuesta inesperada (no es arreglo) — lista vacía.', data);
+      SIMPATIZANTES = [];
+      actualizarKPIs();
+      renderLista();
+      return;
+    }
+    SIMPATIZANTES = data.map(mapCiudadano);
 
     actualizarKPIs();
     renderLista();
@@ -1200,37 +1244,73 @@ marcarVoto = function(id, desdeficha){
 };
 
 // ── SISTEMA DE ALERTAS DEL COORDINADOR ──────────────────────────────────────
-function verificarAlertasCoordinador(){
+async function verificarAlertasCoordinador(){
   try{
-    const alertas=JSON.parse(localStorage.getItem('IE_alertas_capturistas')||'[]');
-    const noLeidas=alertas.filter(a=>!a.leida);
-    if(!noLeidas.length) return;
-    const ultima=noLeidas[0];
+    // ── T17 FASE 4: lectura real desde Supabase, filtrada por la sección del capturista ──
+    // SECCION_CAP viene de la sesión (window._sesion?.seccion). Si el login todavía
+    // no guarda la sección, será null: en ese caso NO consultamos (evitamos traer
+    // alertas de todas las secciones) y dejamos aviso en consola para depurar.
+    if (SECCION_CAP === null || SECCION_CAP === undefined || SECCION_CAP === '') {
+      // [FIX 10 jul] Distinguir dos casos que antes se confundían:
+      //  (a) rol de MANDO sin sección → NORMAL. Un admin no es de campo; usa
+      //      el selector de supervisión para elegir a quién inspeccionar.
+      //  (b) CAPTURISTA sin sección → BUG REAL: el login no guardó su sección.
+      var _rol = window._sesion?.rol;
+      var _mando = ['super_admin','admin','coordinador'].indexOf(_rol) !== -1;
+      if (!_mando) {
+        console.warn('Alertas: el capturista no tiene sección en la sesión; no se consultan alertas. Revisar que el login guarde usuarios.seccion.');
+      }
+      return;  // en ambos casos: no consultar (evita traer alertas de TODAS las secciones)
+    }
+    const url = `${SUPA_URL}/rest/v1/alertas`
+      + `?select=id,mensaje,created_at`
+      + `&seccion=eq.${encodeURIComponent(SECCION_CAP)}`
+      + `&leida=eq.false`
+      + `&order=created_at.desc`
+      + `&limit=1`;
+    const res = await fetch(url, {
+      headers: {
+        'apikey': SUPA_KEY,
+        'Authorization': `Bearer ${window._sesion?.access_token || SUPA_KEY}`
+      }
+    });
+    // CRÍTICO: si RLS o la red fallan, NO tocamos la UI: conservamos el estado y salimos.
+    if(!res.ok){ console.warn('Alertas: consulta bloqueada o sin red', res.status); return; }
+    const data = await res.json();
+    if(!Array.isArray(data) || !data.length) return;
+    const ultima=data[0];
     const banner=document.getElementById('banner-alerta-coord');
     const msg=document.getElementById('alerta-coord-msg');
     const fecha=document.getElementById('alerta-coord-fecha');
     if(banner&&msg&&fecha){
       msg.textContent=ultima.mensaje;
-      fecha.textContent='Enviada: '+ultima.fecha+' · Toca "Entendido" para confirmar';
+      fecha.textContent='Enviada: '+new Date(ultima.created_at).toLocaleString('es-MX')+' · Toca "Entendido" para confirmar';
       banner.style.display='block';
-      // Guardar ID de alerta actual
-      banner.dataset.alertaId=ultima.id;
+      banner.dataset.alertaId=ultima.id; // ahora es uuid (string)
     }
   }catch(e){}
 }
 
-function marcarAlertaLeida(){
+async function marcarAlertaLeida(){
   try{
     const banner=document.getElementById('banner-alerta-coord');
-    const id=parseInt(banner.dataset.alertaId);
-    const alertas=JSON.parse(localStorage.getItem('IE_alertas_capturistas')||'[]');
-    const idx=alertas.findIndex(a=>a.id===id);
-    if(idx>=0) alertas[idx].leida=true;
-    localStorage.setItem('IE_alertas_capturistas',JSON.stringify(alertas));
+    const id=banner.dataset.alertaId; // uuid (string) — NO usar parseInt
+    if(!id) return;
+    // ── T17 FASE 4: marcar leída en Supabase (PATCH) ──
+    const res = await fetch(`${SUPA_URL}/rest/v1/alertas?id=eq.${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPA_KEY,
+        'Authorization': `Bearer ${window._sesion?.access_token || SUPA_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ leida: true, leida_at: new Date().toISOString() })
+    });
+    if(!res.ok){ console.warn('Alertas: no se pudo marcar leída', res.status); }
     banner.style.display='none';
-    // Ver si hay más alertas no leídas
-    const pendientes=alertas.filter(a=>!a.leida);
-    if(pendientes.length) verificarAlertasCoordinador();
+    // Ver si quedan más alertas pendientes (vuelve a consultar Supabase)
+    verificarAlertasCoordinador();
   }catch(e){}
 }
 
@@ -1258,5 +1338,6 @@ setInterval(verificarAlertasCoordinador, 30000);
 <script>
 function cerrarSesion(){localStorage.removeItem('electoral_sesion');window.location.href='login.html';}
 </script>
+<script src="supervision_capturista.js"></script>
 </body>
 </html>

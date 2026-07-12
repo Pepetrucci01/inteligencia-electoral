@@ -15,7 +15,7 @@
  *    partido-slogan   → slogan o subtítulo
  *    logo-img         → <img> del logo
  *    logo-inicial     → div con iniciales
- *    sistema-meta     → meta estatal (ej. "197,297")
+ *    sistema-meta     → meta estatal (ej. "208,717")
  *    sistema-anio     → año de elección (ej. "2027")
  *    sistema-titulo   → "NombreSoftware · Estado AÑO"
  *    dias-eleccion    → cuenta regresiva en días
@@ -200,6 +200,10 @@ async function cargarMetaEstatalSupabase() {
 
     // Éxito: cachear y repintar solo las tarjetas de meta.
     _META_SUPABASE = val;
+    // [T20/21] Publicar como fuente única para el resto de módulos (visor T18,
+    //  War Room, Reportes). Leen window.SISTEMA_META con fallback al horneado.
+    window.SISTEMA_META = val;
+    try { window.dispatchEvent(new CustomEvent('sistema-meta-ready', { detail: val })); } catch (e) {}
     applyTheme(loadTheme());
   } catch (e) {
     // Cualquier error: silencioso, se conserva el valor horneado ya pintado.

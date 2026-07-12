@@ -218,7 +218,7 @@ iframe{width:100%;height:100%;border:none;display:block;}
     <div class="estado-card">
       <div class="estado-lbl">Estado activo</div>
       <div class="estado-nom" data-theme="sistema-titulo">Colima 2027</div>
-      <div class="estado-meta"><span data-theme="sistema-meta" id="ix-meta-side">197,297</span> meta</div>
+      <div class="estado-meta"><span data-theme="sistema-meta" id="ix-meta-side">208,717</span> meta</div>
     </div>
   </div>
 
@@ -360,11 +360,11 @@ iframe{width:100%;height:100%;border:none;display:block;}
       <div class="pb-label">Avance vs meta <span data-theme="sistema-anio">2027</span></div>
       <div class="pb-track"><div class="pb-fill" id="hub-pb-fill" style="width:5.1%"></div></div>
       <div class="pb-pct" id="hub-pb-pct">5.1%</div>
-      <div class="pb-nums" id="hub-pb-nums">10,000 / <span data-theme="sistema-meta">197,297</span></div>
+      <div class="pb-nums" id="hub-pb-nums">10,000 / <span data-theme="sistema-meta">208,717</span></div>
     </div>
 
     <div class="kpi-row">
-      <div class="kpi bl"><div class="kv" data-theme="sistema-meta" id="ix-meta-kpi">197,297</div><div class="kl">Meta estatal</div></div>
+      <div class="kpi bl"><div class="kv" data-theme="sistema-meta" id="ix-meta-kpi">208,717</div><div class="kl">Meta estatal</div></div>
       <div class="kpi gr"><div class="kv" id="hub-kpi-total">10,000</div><div class="kl">Capturados</div></div>
       <div class="kpi gr"><div class="kv" id="hub-kpi-seguro">4,601</div><div class="kl">Voto seguro</div></div>
       <div class="kpi am"><div class="kv" id="hub-kpi-riesgo">2,203</div><div class="kl">En riesgo</div></div>
@@ -478,7 +478,7 @@ iframe{width:100%;height:100%;border:none;display:block;}
 <script>
 // APP_BUILD: versin de build para cache-busting de los mdulos en iframe.
 // ⚠️ SUBE este nmero en cada deploy con cambios en los mdulos.
-const APP_BUILD = '20260710';
+const APP_BUILD = '20260712';
 
 let collapsed = false;
 
@@ -631,7 +631,8 @@ function cerrarSesion(){
     const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5aXJod3dteWtza3B1dnpjYWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NTk3ODgsImV4cCI6MjA5NTEzNTc4OH0.2xe4cHqORGng1hnYPJ9ZiyT0r87fMijbUEJqBy3-xoI';
     const LICENCIA = (window._sesion?.licencia_id) || 'a1b2c3d4-0001-0000-0000-000000000001';
     // [SWAP LUIS] meta desde IE_METAS_CASILLA (208,717); fallback demo-safe
-    const META = (typeof IE_METAS_CASILLA!=='undefined' && IE_METAS_CASILLA.meta_estatal) ? IE_METAS_CASILLA.meta_estatal : 197297;
+    const META = (typeof window.SISTEMA_META==='number' && window.SISTEMA_META>0) ? window.SISTEMA_META
+                 : ((typeof IE_METAS_CASILLA!=='undefined' && IE_METAS_CASILLA.meta_estatal) ? IE_METAS_CASILLA.meta_estatal : 208717);
     const fmt = n => Math.round(n).toLocaleString('es-MX');
     // [SWAP LUIS] Sincroniza tarjetas de META visibles con el valor horneado (demo sin sesión)
     (function(){ const mtxt=fmt(META);
@@ -685,10 +686,15 @@ function cerrarSesion(){
 // theme.js rellena desde config. En Fase 4, theme.js leerá sistema_meta de
 // Supabase y este bloque se puede retirar.
 (function(){
-  if(typeof IE_METAS_CASILLA==='undefined' || !IE_METAS_CASILLA.meta_estatal) return;
-  var M = IE_METAS_CASILLA.meta_estatal;
+  // [T20/21] Fuente única de meta: Supabase viva (window.SISTEMA_META) -> horneado -> 208717.
+  function metaActual(){
+    if(typeof window.SISTEMA_META==='number' && window.SISTEMA_META>0) return window.SISTEMA_META;
+    if(typeof IE_METAS_CASILLA!=='undefined' && IE_METAS_CASILLA.meta_estatal) return IE_METAS_CASILLA.meta_estatal;
+    return 208717;
+  }
   function fmtMeta(n){ return Math.round(n).toLocaleString('es-MX'); }
   function aplicarMeta(){
+    var M = metaActual();
     var mtxt = fmtMeta(M);
     // Todos los spans data-theme="sistema-meta" (lateral, KPI, barra)
     document.querySelectorAll('[data-theme="sistema-meta"]').forEach(function(el){ el.textContent = mtxt; });
@@ -703,6 +709,8 @@ function cerrarSesion(){
   // Corre ahora y otra vez tras el arranque, por si theme.js escribe async.
   aplicarMeta();
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', aplicarMeta);
+  // [T20/21] Repintar cuando theme.js confirme la meta viva desde Supabase.
+  window.addEventListener('sistema-meta-ready', aplicarMeta);
   setTimeout(aplicarMeta, 300);
   setTimeout(aplicarMeta, 1000);
 })();

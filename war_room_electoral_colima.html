@@ -961,7 +961,18 @@ function sortWR(col) {
 }
 
 // [SWAP LUIS] meta base desde IE_METAS_CASILLA (208,717); fallback demo-safe
-const META_WR=(typeof IE_METAS_CASILLA!=='undefined' && IE_METAS_CASILLA.meta_estatal)?IE_METAS_CASILLA.meta_estatal:208717;
+// [FIX 10 jul] Antes era una const evaluada al cargar el script: congelaba la
+// meta ANTES de que theme.js terminara su fetch → la barra de progreso se
+// quedaba en 197,297 aunque el KPI de arriba ya mostrara 208,717.
+// Ahora es un GETTER: resuelve la meta viva en cada lectura.
+// Cadena: Supabase (window.SISTEMA_META) → horneado → 208,717.
+function metaWR(){
+  if(typeof window.SISTEMA_META==='number' && window.SISTEMA_META>0) return window.SISTEMA_META;
+  if(typeof IE_METAS_CASILLA!=='undefined' && IE_METAS_CASILLA.meta_estatal) return IE_METAS_CASILLA.meta_estatal;
+  return 208717;
+}
+// Se conserva el nombre META_WR (lo usan 5 sitios) pero ahora es dinámico.
+Object.defineProperty(window, 'META_WR', { get: metaWR, configurable: true });
 function recalc(){
   const p=parseFloat(document.getElementById('cfg-pct').value)||6;
   const meta=Math.round(META_WR*(p/6));
@@ -1750,8 +1761,40 @@ function abrirModalAlerta(destinatarios, msgPredefinido){
   document.body.appendChild(modal);
 }
 
-function confirmarEnvioAlerta(destinatarios, mensaje){
-  // Guardar alerta en localStorage para que el panel del capturista la lea
+async function confirmarEnvioAlerta(destinatarios, mensaje){
+  // ── T17 FASE 4: insertar alertas reales en Supabase (una fila por destinatario) ──
+  // Usa el access_token de la sesión (nunca la anon key a pelo). Si el insert falla
+  // (RLS, red, tabla inexistente), avisamos y NO seguimos: no queremos que el
+  // coordinador crea que la alerta salió cuando no fue así.
+  try{
+    const filas = destinatarios.map(d=>({
+      licencia_id: LICENCIA_ID,
+      seccion: d.seccion,   // text: usuarios.seccion es text en el esquema real
+      destinatario_nombre: d.nombre,
+      mensaje: mensaje,
+      enviada_por: (window._sesion && (window._sesion.usuario_id || window._sesion.id)) || null
+    }));
+    const resIns = await fetch(`${SUPA_URL}/rest/v1/alertas`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPA_KEY,
+        'Authorization': `Bearer ${window._sesion?.access_token || SUPA_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify(filas)
+    });
+    if(!resIns.ok){
+      const detalle = await resIns.text().catch(()=> '');
+      throw new Error('HTTP '+resIns.status+' '+detalle);
+    }
+  }catch(e){
+    console.error('Error al enviar alertas a Supabase:', e);
+    alert('No se pudieron enviar las alertas. Verifica tu conexión e intenta de nuevo.');
+    return;
+  }
+
+  // Respaldo local para el historial del PROPIO coordinador (se conserva; no rompe nada)
   const alertas = JSON.parse(localStorage.getItem('IE_alertas_capturistas')||'[]');
   const nuevaAlerta = {
     id: Date.now(),
@@ -2655,9 +2698,19 @@ async function cargarKPIsReales() {
   try {
     const datos = window._ciudadanosCargados;
 
+    // [FIX 10 jul] Si la carga fue por RPC, los KPIs YA se escribieron al DOM
+    // (ver cargarDesdeRPC: kpi-total-cap, kpi-seguro-vota, kpi-atencion,
+    // kpi-depurar, riesgo y barra de progreso). La RPC no baja las 14,261 filas
+    // individuales — solo los agregados — así que _ciudadanosCargados queda
+    // vacío por diseño. Sin este chequeo, se emitía un warning FALSO POSITIVO
+    // ("no hay datos cargados") aunque los KPIs en pantalla fueran reales.
+    if (window._kpisRPC && window._kpisRPC.total > 0) {
+      return;  // KPIs ya pintados por la RPC. Nada que hacer.
+    }
+
     // Si no hay datos cargados (la carga paginada falló), conservar simulados.
     if (!Array.isArray(datos) || datos.length === 0) {
-      console.warn('KPIs: no hay datos cargados, se conservan los simulados');
+      console.warn('KPIs: no hay datos cargados (ni RPC ni paginación), se conservan los simulados');
       return;
     }
 
@@ -2986,7 +3039,10 @@ document.addEventListener('DOMContentLoaded',()=>{
   renderMunF1();
   renderCuadF1();
   renderTablaCapturistas();
-  cargarKPIsReales();
+  // [FIX 10 jul] ORDEN INVERTIDO. Antes cargarKPIsReales() corría PRIMERO, cuando
+  // window._kpisRPC aún no existía (lo escribe cargarDesdeRPC) → emitía el warning
+  // falso "no hay datos cargados" aunque los KPIs se pintaran bien.
+  // La RPC va primero; cargarKPIsReales() queda como respaldo si la RPC falla.
   cargarDesdeRPC(); // ← C7: carga vía RPC (escala, sin bug de municipio NULL). Cae a paginación si falla.
   pintarBadgeAlcance(); // ← muestra el alcance del usuario (General estatal / Municipal) en la barra
   actualizarConteoAlerta();
@@ -2997,19 +3053,36 @@ document.addEventListener('DOMContentLoaded',()=>{
 </script>
 <script src="theme.js"></script>
 <script>
-// [SWAP LUIS] Correccin final de META tras theme.js: el valor horneado manda.
+// [SWAP LUIS / T20 ✓] Meta tras theme.js. Fuente única: Supabase → horneado → 208,717.
+// [FIX 10 jul] Antes esto solo repintaba los KPIs de texto (meta-calc, kpi-meta),
+// pero NO la barra de progreso — por eso la barra se quedaba en 197,297 mientras
+// el KPI de arriba ya mostraba 208,717. Ahora repinta AMBOS.
 (function(){
-  var M = (typeof IE_METAS_CASILLA!=='undefined' && IE_METAS_CASILLA.meta_estatal) ? IE_METAS_CASILLA.meta_estatal : 208717;
   function f(n){ return Number(n).toLocaleString('es-MX'); }
   function ap(){
-    var m=f(M);
+    var M = (typeof metaWR==='function') ? metaWR() : 208717;
+    var m = f(M);
+    // 1) KPIs de texto
     ['meta-calc','kpi-meta'].forEach(function(id){
       var el=document.getElementById(id); if(el) el.textContent=m;
     });
+    // 2) Barra de progreso (esto es lo que faltaba)
+    var total = (window._kpisRPC && window._kpisRPC.total)
+      || (typeof _totalCapturadosReal!=='undefined' ? _totalCapturadosReal : 0);
+    if(total > 0 && M > 0){
+      var pbNums = document.getElementById('pb-nums');
+      if(pbNums) pbNums.textContent = f(total) + ' / ' + m + ' capturados';
+      var pbFill = document.getElementById('pb-fill');
+      if(pbFill) pbFill.style.width = Math.min(100, Math.round(total/M*100)) + '%';
+      var pbPct = document.getElementById('pb-pct');
+      if(pbPct) pbPct.textContent = (total/M*100).toFixed(1) + '%';
+    }
   }
   ap();
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', ap);
-  setTimeout(ap,300); setTimeout(ap,1000);
+  // Repintar cuando theme.js confirme la meta viva desde Supabase.
+  window.addEventListener('sistema-meta-ready', ap);
+  setTimeout(ap,300); setTimeout(ap,1000); setTimeout(ap,2500);
 })();
 </script>
 <script>

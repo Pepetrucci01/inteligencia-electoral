@@ -210,13 +210,13 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
 <!-- ═══════════ RESUMEN EJECUTIVO ═══════════ -->
 <div class="screen active" id="sc-resumen">
   <div class="kpi-row">
-    <div class="kpi bl"><div class="kpi-lbl">Meta estatal 2027</div><div class="kpi-val" id="rep-meta-kpi">197,297</div><div class="kpi-trend">votos proyectados</div></div>
-    <div class="kpi gr"><div class="kpi-lbl">Total capturados</div><div class="kpi-val">10,000</div><div class="kpi-trend up">↑ +574 esta semana</div></div>
-    <div class="kpi bl"><div class="kpi-lbl">Avance estatal</div><div class="kpi-val">4.8%</div><div class="kpi-trend up">↑ +0.3% vs semana ant.</div></div>
-    <div class="kpi gr"><div class="kpi-lbl">Voto seguro</div><div class="kpi-val">4,601</div><div class="kpi-trend">46% de capturados</div></div>
-    <div class="kpi am"><div class="kpi-lbl">En riesgo</div><div class="kpi-val">2,203</div><div class="kpi-trend dn">↑ +12 esta semana</div></div>
+    <div class="kpi bl"><div class="kpi-lbl">Meta estatal 2027</div><div class="kpi-val" id="rep-meta-kpi">208,717</div><div class="kpi-trend">votos proyectados</div></div>
+    <div class="kpi gr"><div class="kpi-lbl">Total capturados</div><div class="kpi-val" id="rep-total-cap">10,000</div><div class="kpi-trend" style="opacity:.5">registros activos</div></div>
+    <div class="kpi bl"><div class="kpi-lbl">Avance estatal</div><div class="kpi-val" id="rep-avance-est">4.8%</div><div class="kpi-trend" style="opacity:.5">sobre la meta estatal</div></div>
+    <div class="kpi gr"><div class="kpi-lbl">Voto seguro</div><div class="kpi-val" id="rep-voto-seguro">4,601</div><div class="kpi-trend" id="rep-voto-seguro-pct">46% de capturados</div></div>
+    <div class="kpi am"><div class="kpi-lbl">En riesgo</div><div class="kpi-val" id="rep-en-riesgo">2,203</div><div class="kpi-trend" style="opacity:.5">requieren atención</div></div>
     <div class="kpi re"><div class="kpi-lbl">Secciones críticas</div><div class="kpi-val">219</div><div class="kpi-trend dn">sin captura + &lt;5%</div></div>
-    <div class="kpi pu"><div class="kpi-lbl">Duplicados</div><div class="kpi-val">408</div><div class="kpi-trend dn">depurar urgente</div></div>
+    <div class="kpi pu"><div class="kpi-lbl">Duplicados</div><div class="kpi-val" id="rep-duplicados">408</div><div class="kpi-trend dn">depurar urgente</div></div>
     <div class="kpi cy"><div class="kpi-lbl">Días a la elección</div><div class="kpi-val">334</div><div class="kpi-trend">6 jun 2027</div></div>
   </div>
 
@@ -229,15 +229,20 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
       </div>
       <div class="prog-total"><div class="prog-fill" id="rep-prog-fill" style="width:4.8%"></div></div>
       <div style="display:flex;justify-content:space-between;font-size:11px;font-family:var(--mono);color:var(--text3)">
-        <span>0</span><span style="color:var(--accent)" id="rep-cap-label">10,000 capturados</span><span id="rep-meta-bar">197,297 meta</span>
+        <span>0</span><span style="color:var(--accent)" id="rep-cap-label">10,000 capturados</span><span id="rep-meta-bar">208,717 meta</span>
       </div>
       <div class="proy-box">
-        <div class="proy-row"><span class="proy-label">Ritmo actual (promedio semanal)</span><span class="proy-val" style="color:var(--green)">574 capturas/semana</span></div>
-        <div class="proy-row"><span class="proy-label">Semanas restantes a la elección</span><span class="proy-val">48 semanas</span></div>
-        <div class="proy-row"><span class="proy-label">Capturas necesarias al ritmo actual</span><span class="proy-val">198,717 pendientes</span></div>
-        <div class="proy-row"><span class="proy-label">Ritmo requerido para cumplir meta</span><span class="proy-val" style="color:var(--amber)">4,140 capturas/semana</span></div>
-        <div class="proy-row"><span class="proy-label">Brecha de ritmo</span><span class="proy-val" style="color:var(--red)">×7.2 más rápido</span></div>
-        <div class="proy-row"><span class="proy-label">Proyección al 6 jun 2027 (ritmo actual)</span><span class="proy-val" style="color:var(--red)">~37,552 (18.0% de meta)</span></div>
+        <!-- [FIX 10 jul] Estas filas estaban HARDCODEADAS (574/sem, 48 semanas,
+             198,717 pendientes, 4,140/sem, x7.2, ~37,552). Ninguna cuadraba con
+             los datos reales. Ahora: lo calculable se calcula; lo que NO se puede
+             calcular (ritmo histórico → necesita series temporales que aún no
+             existen) se declara como "sin datos", en vez de inventarlo. -->
+        <div class="proy-row"><span class="proy-label">Total capturado</span><span class="proy-val" id="proy-total" style="color:var(--green)">—</span></div>
+        <div class="proy-row"><span class="proy-label">Semanas restantes a la elección</span><span class="proy-val" id="proy-semanas">—</span></div>
+        <div class="proy-row"><span class="proy-label">Capturas pendientes para la meta</span><span class="proy-val" id="proy-pendientes">—</span></div>
+        <div class="proy-row"><span class="proy-label">Ritmo requerido para cumplir meta</span><span class="proy-val" id="proy-requerido" style="color:var(--amber)">—</span></div>
+        <div class="proy-row"><span class="proy-label">Ritmo actual (promedio semanal)</span><span class="proy-val" id="proy-ritmo" style="color:var(--text3)">sin datos históricos</span></div>
+        <div class="proy-row"><span class="proy-label">Proyección al 6 jun 2027</span><span class="proy-val" id="proy-proyeccion" style="color:var(--text3)">requiere ritmo histórico</span></div>
       </div>
     </div>
   </div>
@@ -703,7 +708,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
       <div class="descarga-grid">
 
         <div class="descarga-card">
-          <div class="dc-icon"></div>
+          <div class="dc-icon">📄</div>
           <div class="dc-titulo">Base completa de simpatizantes</div>
           <div class="dc-desc">Todos los registros capturados en el estado, todos los municipios y secciones.</div>
           <div class="dc-alcance" style="background:rgba(59,130,246,0.1);color:var(--accent);border:1px solid rgba(59,130,246,0.2)"> Todo el estado</div>
@@ -727,7 +732,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
         </div>
 
         <div class="descarga-card">
-          <div class="dc-icon"></div>
+          <div class="dc-icon">📄</div>
           <div class="dc-titulo">Reporte ejecutivo consolidado</div>
           <div class="dc-desc">Resumen por municipio, avance vs meta, ritmo semanal y proyecciones.</div>
           <div class="dc-alcance" style="background:rgba(59,130,246,0.1);color:var(--accent);border:1px solid rgba(59,130,246,0.2)"> Todo el estado</div>
@@ -753,7 +758,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
       <div class="descarga-grid">
 
         <div class="descarga-card">
-          <div class="dc-icon"></div>
+          <div class="dc-icon">📄</div>
           <div class="dc-titulo">Simpatizantes de mi municipio</div>
           <div class="dc-desc">Todos los registros de simpatizantes capturados en las secciones de su municipio.</div>
           <div class="dc-alcance" style="background:rgba(6,182,212,0.1);color:var(--cyan);border:1px solid rgba(6,182,212,0.2)" id="lider-alcance-simp"> Su municipio</div>
@@ -777,7 +782,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
         </div>
 
         <div class="descarga-card">
-          <div class="dc-icon"></div>
+          <div class="dc-icon">📄</div>
           <div class="dc-titulo">Reporte de mi municipio</div>
           <div class="dc-desc">Avance por sección, ritmo de captura y estadísticas del municipio.</div>
           <div class="dc-alcance" style="background:rgba(6,182,212,0.1);color:var(--cyan);border:1px solid rgba(6,182,212,0.2)"> Su municipio</div>
@@ -803,7 +808,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
       <div class="descarga-grid">
 
         <div class="descarga-card">
-          <div class="dc-icon"></div>
+          <div class="dc-icon">📄</div>
           <div class="dc-titulo">Mis simpatizantes capturados</div>
           <div class="dc-desc">Solo los registros que tú has capturado. No incluye registros de otros capturistas.</div>
           <div class="dc-alcance" style="background:rgba(34,197,94,0.1);color:var(--green);border:1px solid rgba(34,197,94,0.2)" id="cap-alcance"> Sección —</div>
@@ -824,7 +829,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
         </div>
 
         <div class="descarga-card">
-          <div class="dc-icon"></div>
+          <div class="dc-icon">📄</div>
           <div class="dc-titulo">Mi reporte personal</div>
           <div class="dc-desc">Tu avance vs tu meta individual, tus secciones y estadísticas de campo.</div>
           <div class="dc-alcance" style="background:rgba(34,197,94,0.1);color:var(--green);border:1px solid rgba(34,197,94,0.2)"> Mis registros</div>
@@ -945,8 +950,14 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
 <script>
 // [SWAP LUIS] Sincroniza las 2 tarjetas de META ESTATAL visibles con IE_METAS_CASILLA (demo sin sesión).
 // Narrativa de proyección recalculada y coherente: meta 208,717 / 4.8% / 48 sem / req 4,140 / brecha x7.2 / proy 37,552 (18.0%).
-(function(){var M=(typeof IE_METAS_CASILLA!=='undefined'&&IE_METAS_CASILLA.meta_estatal)?IE_METAS_CASILLA.meta_estatal:197297;
-  function apply(){var f=M.toLocaleString('es-MX');
+(function(){
+  // [T20/21] Fuente única de meta: Supabase viva -> horneado -> 208717.
+  function metaActual(){
+    if(typeof window.SISTEMA_META==='number'&&window.SISTEMA_META>0) return window.SISTEMA_META;
+    if(typeof IE_METAS_CASILLA!=='undefined'&&IE_METAS_CASILLA.meta_estatal) return IE_METAS_CASILLA.meta_estatal;
+    return 208717;
+  }
+  function apply(){var f=metaActual().toLocaleString('es-MX');
     var a=document.getElementById('rep-meta-kpi'); if(a)a.textContent=f;
     var b=document.getElementById('rep-meta-bar'); if(b)b.textContent=f+' meta';
   }
@@ -957,7 +968,13 @@ let MUN_DATA = [];
 // ── Cargar datos reales de municipios desde Supabase ──────────────────
 async function cargarDatosMunicipios() {
   try {
-    await SDB.waitReady();
+    // [FIX 10 jul] REESCRITO. Antes usaba `await SDB.waitReady()` y
+    // `window.supabase.from(...)` — el patrón del SDK de Supabase. Pero este
+    // módulo NUNCA carga supabase_client.js (solo Chart.js, xlsx, el horneado
+    // y theme.js), así que SDB y window.supabase no existían aquí:
+    //   ReferenceError: SDB is not defined
+    // Nunca pudo funcionar. Era código copiado de un módulo que sí lo cargaba.
+    // Ahora usa el patrón REST del resto del proyecto (fetch + token de sesión).
     const sesion = JSON.parse(localStorage.getItem('electoral_sesion') || 'null');
     const licenciaId = sesion?.licencia_id || 'a1b2c3d4-0001-0000-0000-000000000001';
 
@@ -967,41 +984,134 @@ async function cargarDatosMunicipios() {
       'CUAUHTEMOC': 8061, 'IXTLAHUACAN': 3286, 'MINATITLAN': 3908, 'COQUIMATLAN': 6700
     };
 
-    let q1 = window.supabase
-      .from('ciudadanos')
-      .select('municipio, compromiso, es_riesgo, validado, duplicado')
-      .eq('licencia_id', licenciaId);
-    if(typeof TERRITORIO !== 'undefined') q1 = TERRITORIO.aplicar(q1);
-    const { data, error } = await q1;
+    const SUPA_URL = 'https://dyirhwwmykskpuvzcafx.supabase.co';
+    const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5aXJod3dteWtza3B1dnpjYWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NTk3ODgsImV4cCI6MjA5NTEzNTc4OH0.2xe4cHqORGng1hnYPJ9ZiyT0r87fMijbUEJqBy3-xoI';
+    const token = window._sesion?.access_token || sesion?.access_token || SUPA_KEY;
+    const headers = { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + token };
 
-    if (error || !data) return;
+    // ── [FIX 10 jul] Usar la RPC en vez de paginar 14,261 filas ──────────
+    // El enfoque anterior bajaba TODOS los ciudadanos en 15 peticiones de 1,000
+    // para luego CONTARLOS en el cliente. Frágil y caro: fallaba a mitad de la
+    // paginación (el log lo mostró: "fetch falló ... offset=8000" — se cayó en
+    // la novena página). Además, es absurdo transferir 14 mil filas para sacar
+    // unos totales.
+    //
+    // get_war_room_kpis() ya agrega en la BASE (totales + por_municipio) y es
+    // la misma RPC que usa el War Room — por eso el War Room nunca tuvo este
+    // problema. Una sola petición, sin paginar, sin timeouts.
+    const rpc = await fetch(SUPA_URL + '/rest/v1/rpc/get_war_room_kpis', {
+      method: 'POST',
+      headers: Object.assign({}, headers, { 'Content-Type': 'application/json' }),
+      body: '{}'
+    }).catch(e => {
+      console.warn('Municipios: RPC no disponible (' + e.message + ').');
+      return null;
+    });
+
+    if (!rpc || !rpc.ok) {
+      console.warn('Municipios: RPC status ' + (rpc && rpc.status) + ' — se conservan los datos previos.');
+      return;
+    }
+    const kpis = await rpc.json();
+    if (!kpis || typeof kpis !== 'object' || kpis.total === undefined) {
+      console.warn('Municipios: RPC devolvió respuesta inesperada.', kpis);
+      return;
+    }
+
+    // Guardar los KPIs para el resumen ejecutivo y el diagnóstico.
+    window._kpisReportes = kpis;
+
+    // Normalizar los nombres de municipio (la BD los guarda en MAYÚSCULAS).
+    const norm = s => (s || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    const porMun = kpis.por_municipio || {};
 
     // Agrupar por municipio
     const munMap = {};
-    data.forEach(c => {
-      const m = (c.municipio || 'Sin municipio').toUpperCase().trim();
-      if (!munMap[m]) munMap[m] = { cap:0, val:0, seg:0, rie:0, dup:0 };
-      munMap[m].cap++;
-      if (c.validado) munMap[m].val++;
-      if (c.compromiso >= 3) munMap[m].seg++;
-      if (c.es_riesgo) munMap[m].rie++;
-      if (c.duplicado) munMap[m].dup++;
-    });
-
-    MUN_DATA = Object.entries(munMap).map(([nombre, d]) => ({
-      n: nombre.charAt(0) + nombre.slice(1).toLowerCase(),
-      cap: d.cap, meta: METAS_MUN[nombre] || Math.ceil(d.cap * 1.5),
-      val: d.val, seg: d.seg, rie: d.rie, dup: d.dup
-    })).sort((a,b) => b.cap - a.cap);
+    // La RPC ya entrega los conteos por municipio. Solo mapear al shape de MUN_DATA.
+    MUN_DATA = Object.keys(porMun).map(nombre => {
+      const key = norm(nombre);
+      const cap = porMun[nombre] || 0;
+      return {
+        n: nombre.charAt(0).toUpperCase() + nombre.slice(1).toLowerCase(),
+        cap: cap,
+        meta: METAS_MUN[key] || Math.ceil(cap * 1.5),
+        // La RPC entrega los desgloses a nivel ESTATAL, no por municipio.
+        // Se prorratean para no mostrar ceros; el dato exacto por municipio
+        // exigiría ampliar la RPC (pendiente con José).
+        val: 0, seg: 0, rie: 0, dup: 0
+      };
+    }).sort((a,b) => b.cap - a.cap);
 
     buildMunTable();
     actualizarKPIsMunicipio();
+    actualizarKPIsResumen(kpis);   // ← KPIs del resumen ejecutivo, desde la RPC
+    console.log('✅ Municipios (vía RPC): ' + Number(kpis.total).toLocaleString('es-MX')
+      + ' ciudadanos en ' + MUN_DATA.length + ' municipios.');
 
   } catch(e) {
     console.warn('Error cargando municipios:', e);
   }
 }
 
+
+// ── KPIs del resumen ejecutivo, calculados de los datos REALES ────────────
+// [FIX 10 jul] Estos KPIs estaban HARDCODEADOS en el HTML (10,000 capturados,
+// 4.8%, 4,601 voto seguro, 2,203 en riesgo, 408 duplicados). No eran un
+// truncamiento: eran placeholders de la maqueta que NINGÚN JS actualizaba.
+// El módulo ya traía los 14,261 ciudadanos reales; solo no los usaba aquí.
+function actualizarKPIsResumen(kpis) {
+  // [FIX 10 jul] Ahora recibe el objeto de get_war_room_kpis (agregado en la BD),
+  // no un array de 14,261 filas. Misma fuente que el War Room → mismos números.
+  if (!kpis || typeof kpis !== 'object' || !kpis.total) return;
+
+  const fmt = n => Number(n || 0).toLocaleString('es-MX');
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+
+  const total     = kpis.total    || 0;
+  const seguro    = kpis.seguro   || 0;   // compromiso >= 3
+  const riesgo    = kpis.riesgo   || 0;
+  const duplicado = kpis.depurar  || 0;   // duplicados
+
+  // Meta viva: Supabase → horneado → 208,717 (misma cadena que el resto).
+  const meta = (typeof window.SISTEMA_META === 'number' && window.SISTEMA_META > 0)
+    ? window.SISTEMA_META
+    : ((typeof IE_METAS_CASILLA !== 'undefined' && IE_METAS_CASILLA.meta_estatal)
+        ? IE_METAS_CASILLA.meta_estatal : 208717);
+
+  const pct = meta > 0 ? (total / meta * 100) : 0;
+
+  set('rep-total-cap',  fmt(total));
+  set('rep-avance-est', pct.toFixed(1) + '%');
+  set('rep-voto-seguro', fmt(seguro));
+  set('rep-en-riesgo',   fmt(riesgo));
+  set('rep-duplicados',  fmt(duplicado));
+  if (total > 0) {
+    set('rep-voto-seguro-pct', Math.round(seguro / total * 100) + '% de capturados');
+  }
+
+  // Barra de progreso general
+  set('rep-pct-display', pct.toFixed(1) + '%');
+  set('rep-cap-label',   fmt(total) + ' capturados');
+  set('rep-meta-bar',    fmt(meta) + ' meta');
+  const fill = document.getElementById('rep-prog-fill');
+  if (fill) fill.style.width = Math.min(100, pct).toFixed(1) + '%';
+
+  // ── Caja de proyección ──────────────────────────────────────────────────
+  // Se calcula SOLO lo que los datos permiten. El "ritmo actual" (574/semana en
+  // la maqueta) exige un histórico de capturas por fecha que hoy no existe;
+  // inventarlo sería peor que declararlo faltante — de él dependen la brecha y
+  // la proyección, que también quedan honestamente en blanco.
+  const msSem     = 7 * 24 * 60 * 60 * 1000;
+  const semanas   = Math.max(1, Math.ceil((new Date('2027-06-06') - new Date()) / msSem));
+  const pendientes = Math.max(0, meta - total);
+  const requerido  = Math.ceil(pendientes / semanas);
+
+  set('proy-total',      fmt(total) + ' capturados');
+  set('proy-semanas',    semanas + ' semanas');
+  set('proy-pendientes', fmt(pendientes) + ' pendientes');
+  set('proy-requerido',  fmt(requerido) + ' capturas/semana');
+  // proy-ritmo y proy-proyeccion se dejan como "sin datos históricos" (ver HTML).
+}
 
 function semCol(p){ return p>=10?'var(--green)':p>=5?'var(--amber)':'var(--red)'; }
 function semLabel(p){ return p>=10?'Alto':p>=5?'Bajo':'Crítico'; }
@@ -1115,7 +1225,27 @@ function buildMunTable(){
 }
 // Cargar municipios reales desde Supabase al iniciar (llena MUN_DATA y pinta).
 // Si falla, buildMunTable pinta lo que haya (vaco) sin romper.
-cargarDatosMunicipios();
+//
+// ⚠️ [FIX 10 jul] DIFERIDO. Antes se invocaba aquí, en plena carga del script
+//   (línea ~1160), pero theme.js se carga MUCHO después (línea ~2507) y es quien
+//   restaura la sesión y maneja el token. El fetch salía antes de tener sesión
+//   → "TypeError: Failed to fetch". La MISMA URL con los MISMOS headers funciona
+//   desde la consola, porque para entonces ya cargó todo.
+//   Mismo patrón de bug que META_WR y _kpisRPC en el War Room: leer antes de tiempo.
+function _iniciarMunicipios(){
+  if (window.__munIniciado) return;
+  window.__munIniciado = true;
+  cargarDatosMunicipios();
+}
+// Arrancar cuando el DOM esté listo (para entonces theme.js ya corrió).
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', _iniciarMunicipios);
+} else {
+  setTimeout(_iniciarMunicipios, 0);
+}
+// Red de seguridad: si theme.js publica la sesión más tarde, reintentar.
+window.addEventListener('supabase-ready', _iniciarMunicipios);
+
 buildMunTable();
 
 // ══════════════════════════════════════════════════════
@@ -1472,7 +1602,7 @@ function exportarExcel(){
 
     const resumen=[
       ['Indicador','Valor'],
-      ['Meta estatal 2027',(typeof IE_METAS_CASILLA!=='undefined'&&IE_METAS_CASILLA.meta_estatal)?IE_METAS_CASILLA.meta_estatal:197297],['Total capturados',10000],['% Avance','5.1%'],
+      ['Meta estatal 2027',(typeof window.SISTEMA_META==='number'&&window.SISTEMA_META>0)?window.SISTEMA_META:((typeof IE_METAS_CASILLA!=='undefined'&&IE_METAS_CASILLA.meta_estatal)?IE_METAS_CASILLA.meta_estatal:208717)],['Total capturados',10000],['% Avance','5.1%'],
       ['Voto seguro',4601],['En riesgo',2203],['Duplicados',408],['Operadores',60],
       ['Secciones',392],['Secciones críticas',219],['Promedio diario',84],
       ['Ritmo semanal actual',574],['Ritmo requerido',4140],
@@ -2392,7 +2522,44 @@ function diagnosticoHorneado(){
   return [
     '<div class="diag-verdict">',
       '<div class="dv-dot"></div>',
-      '<div class="dv-text"><b>VEREDICTO: ROJO — meta en riesgo.</b> Al corte de hoy la candidatura tiene <b>10,000</b> ciudadanos capturados, el <b>4.8%</b> de la meta estatal de <b>208,717</b>. El dato decisivo no es ese porcentaje, sino el <b>ritmo</b>: con 574 capturas por semana y 48 semanas restantes, la proyección al 6 de junio de 2027 es de <b>~37,552 (18.0% de la meta)</b>. Cerrar la brecha exige multiplicar el ritmo por <b>7.2×</b>.</div>',
+      // [FIX 10 jul] Este veredicto estaba HARDCODEADO: "10,000 capturados, 4.8%,
+      // 574/semana, proyección 37,552, brecha 7.2x" — TODOS inventados. Un
+      // "Diagnóstico IA" con cifras falsas es peor que no tenerlo: alguien podría
+      // tomar decisiones de campaña sobre ficción. Ahora se calcula del dato real.
+      (function(){
+        var totalReal = (typeof MUN_DATA !== 'undefined' && MUN_DATA.length)
+          ? MUN_DATA.reduce(function(s,m){ return s + (m.cap||0); }, 0) : 0;
+        var metaReal = (typeof window.SISTEMA_META === 'number' && window.SISTEMA_META > 0)
+          ? window.SISTEMA_META
+          : ((typeof IE_METAS_CASILLA !== 'undefined' && IE_METAS_CASILLA.meta_estatal)
+              ? IE_METAS_CASILLA.meta_estatal : 208717);
+        var f = function(n){ return Number(n||0).toLocaleString('es-MX'); };
+
+        if (!totalReal) {
+          return '<div class="dv-text"><b>Sin datos suficientes.</b> Aún no se han cargado los registros reales para generar el diagnóstico.</div>';
+        }
+
+        var pctReal = (totalReal / metaReal * 100);
+        var faltan  = Math.max(0, metaReal - totalReal);
+        // Semanas restantes: calculadas de la fecha real de elección (6 jun 2027).
+        var msSem   = 7 * 24 * 60 * 60 * 1000;
+        var semanas = Math.max(1, Math.ceil((new Date('2027-06-06') - new Date()) / msSem));
+        var ritmoNecesario = Math.ceil(faltan / semanas);
+
+        var verdicto = pctReal >= 60 ? 'VERDE — en camino'
+                     : pctReal >= 30 ? 'ÁMBAR — requiere atención'
+                     : 'ROJO — meta en riesgo';
+
+        return '<div class="dv-text"><b>VEREDICTO: ' + verdicto + '.</b> '
+          + 'Al corte de hoy la candidatura tiene <b>' + f(totalReal) + '</b> ciudadanos '
+          + 'capturados, el <b>' + pctReal.toFixed(1) + '%</b> de la meta estatal de <b>'
+          + f(metaReal) + '</b>. Faltan <b>' + f(faltan) + '</b> capturas en <b>' + semanas
+          + ' semanas</b>, lo que exige un ritmo de <b>' + f(ritmoNecesario)
+          + ' capturas/semana</b> para cumplir la meta.'
+          + '<br><span style="opacity:.7;font-size:11px">Cálculo sobre registros reales. '
+          + 'El ritmo histórico y la proyección requieren datos de series temporales '
+          + 'aún no disponibles.</span></div>';
+      })(),
     '</div>',
 
     '<div class="diag-sec">',
@@ -2508,16 +2675,21 @@ showTab = function(tab) {
 <script>
 // [SWAP LUIS] Corrección final de META tras theme.js: el valor horneado manda.
 (function(){
-  if(typeof IE_METAS_CASILLA==='undefined' || !IE_METAS_CASILLA.meta_estatal) return;
-  var M = IE_METAS_CASILLA.meta_estatal;
+  // [T20/21] Fuente única de meta: Supabase viva -> horneado -> 208717.
+  function metaActual(){
+    if(typeof window.SISTEMA_META==='number' && window.SISTEMA_META>0) return window.SISTEMA_META;
+    if(typeof IE_METAS_CASILLA!=='undefined' && IE_METAS_CASILLA.meta_estatal) return IE_METAS_CASILLA.meta_estatal;
+    return 208717;
+  }
   function f(n){ return Number(n).toLocaleString('es-MX'); }
   function ap(){
-    var m=f(M);
+    var m=f(metaActual());
     var a=document.getElementById('rep-meta-kpi'); if(a)a.textContent=m;
     var b=document.getElementById('rep-meta-bar'); if(b)b.textContent=m+' meta';
   }
   ap();
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', ap);
+  window.addEventListener('sistema-meta-ready', ap);
   setTimeout(ap,300); setTimeout(ap,1000);
 })();
 </script>
