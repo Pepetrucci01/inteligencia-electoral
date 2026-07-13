@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Centro de Llamadas · VOTERA</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{
     --bg:#0d1321; --panel:#151d2e; --panel2:#1b2438; --border:#26314a;
@@ -119,6 +120,27 @@
   .vbtn{border:none;border-radius:8px;padding:7px 12px;font-size:.74rem;font-weight:700;cursor:pointer;color:#fff;}
   .vbtn.ok{background:#1f9e6e;} .vbtn.bad{background:#c04a5c;}
   .verif-res{font-size:.76rem;font-weight:700;}
+
+  /* ── Gestión / Carga de cola ────────────── */
+  .gest-grid{display:grid;grid-template-columns:340px 1fr;gap:14px;align-items:start;}
+  @media(max-width:900px){.gest-grid{grid-template-columns:1fr;}}
+  .drop{border:2px dashed var(--border);border-radius:12px;padding:26px 16px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;}
+  .drop:hover,.drop.over{border-color:var(--acc);background:rgba(63,167,255,.06);}
+  .drop .ico{font-size:2rem;}
+  .drop .big{font-weight:700;margin:8px 0 4px;}
+  .drop .small{font-size:.74rem;color:var(--mut);line-height:1.5;}
+  .file-name{font-size:.8rem;color:var(--acc);font-weight:600;margin-top:10px;word-break:break-all;}
+  .sel-camp{width:100%;background:var(--panel2);border:1px solid var(--border);color:var(--txt);border-radius:8px;padding:9px;font-size:.82rem;margin-top:6px;}
+  .sum-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:14px;}
+  .sum{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:12px;}
+  .sum .n{font-size:1.5rem;font-weight:800;font-variant-numeric:tabular-nums;}
+  .sum .t{font-size:.66rem;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;margin-top:2px;}
+  .sum.ok .n{color:var(--ok);} .sum.bad .n{color:var(--bad);} .sum.acc .n{color:var(--acc);}
+  .desglose{font-size:.8rem;color:var(--mut);line-height:1.8;margin-bottom:12px;}
+  .desglose b{color:var(--txt);}
+  .empty-gest{color:var(--dim);font-size:.85rem;text-align:center;padding:44px 10px;line-height:1.6;}
+  .btn-cargar{width:100%;background:var(--ok);border:none;border-radius:10px;color:#fff;font-size:.9rem;font-weight:700;padding:12px;cursor:pointer;margin-top:6px;}
+  .btn-cargar:disabled{background:var(--border);color:var(--dim);cursor:not-allowed;}
 </style>
 </head>
 <body>
@@ -141,6 +163,7 @@
   <button class="tab" onclick="verTab('campanas',this)">📋 Campañas</button>
   <button class="tab" onclick="verTab('productividad',this)">📊 Productividad</button>
   <button class="tab" onclick="verTab('supervision',this)">🛡️ Supervisión</button>
+  <button class="tab" onclick="verTab('gestion',this)">📥 Gestión</button>
 </div>
 
 <!-- ══════════ VISTA OPERADOR ══════════ -->
@@ -229,6 +252,49 @@
       <p style="font-size:.76rem;color:var(--mut);margin-bottom:8px;">Llamadas marcadas "contactado/comprometido" seleccionadas al azar para re-verificación por un segundo operador.</p>
       <div id="verif-lista"></div>
     </div>
+  </div>
+</div>
+
+<!-- ══════════ VISTA GESTIÓN (coordinador/admin) ══════════ -->
+<div class="view" id="view-gestion">
+  <div class="gest-grid">
+
+    <div class="card">
+      <h3>Cargar cola desde Excel externo</h3>
+      <div class="drop" id="drop-zone" onclick="document.getElementById('file-excel').click()">
+        <div class="ico">📥</div>
+        <div class="big">Arrastra o elige tu Excel</div>
+        <div class="small">Plantilla VOTERA (.xlsx). Solo entran filas con teléfono válido y consentimiento = SI. Los duplicados por teléfono se descartan solos.</div>
+        <div class="file-name" id="file-name"></div>
+      </div>
+      <input type="file" id="file-excel" accept=".xlsx,.xls" style="display:none" onchange="leerExcel(this.files[0])">
+      <span class="lbl">Campaña destino</span>
+      <select class="sel-camp" id="sel-camp-destino"></select>
+      <button class="btn-cargar" id="btn-cargar" disabled onclick="confirmarCarga()">Cargar a la cola →</button>
+      <p style="font-size:.72rem;color:var(--mut);margin-top:12px;line-height:1.65;">
+        La base externa entra <b>solo a la cola de llamadas</b> — nunca se mezcla con tu base de simpatizantes.
+        En duplicados se conserva el registro que ya estaba en la cola.
+      </p>
+    </div>
+
+    <div class="card">
+      <h3>Resultado del análisis</h3>
+      <div id="gest-empty" class="empty-gest">Sube un archivo para ver el desglose de deduplicación.</div>
+      <div id="gest-result" style="display:none;">
+        <div class="sum-grid">
+          <div class="sum"><div class="n" id="s-leidos">0</div><div class="t">Filas leídas</div></div>
+          <div class="sum ok"><div class="n" id="s-listos">0</div><div class="t">Listos para cargar</div></div>
+          <div class="sum bad"><div class="n" id="s-desc">0</div><div class="t">Descartados</div></div>
+        </div>
+        <div class="desglose" id="s-desglose"></div>
+        <table>
+          <thead><tr><th>Nombre</th><th>Teléfono</th><th>Sección</th><th>Municipio</th><th>Consent.</th></tr></thead>
+          <tbody id="tabla-preview"></tbody>
+        </table>
+        <p style="font-size:.72rem;color:var(--dim);margin-top:8px;" id="preview-nota"></p>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -644,6 +710,190 @@ function resolverVerif(id, resultado){
   pintarVerificacion();
 }
 
+/* ── Gestión: carga de cola desde Excel externo (coordinador/admin) ─
+   [SWAP LUIS] este tab solo se muestra a roles coordinador/admin/superadmin.
+
+   PRINCIPIO ANTI-DUPLICADOS (2 capas):
+   1) La base externa NUNCA se inserta en `ciudadanos` — va directo a
+      `cola_llamadas`. Así no contamina tu base madre ni rompe el
+      anonimato de encuestas CATI.
+   2) Deduplicación por TELÉFONO normalizado (10 dígitos):
+        a) se quitan repetidos dentro del propio archivo
+        b) se descartan los que ya existen en la cola de la campaña
+      En Fase 4 el chequeo fuerte contra la base es por CURP y luego teléfono:
+      [SWAP LUIS] antes de insertar cada fila válida:
+        SELECT id FROM ciudadanos    WHERE curp=$1;                       -- llave 1
+        SELECT id FROM cola_llamadas WHERE campana_id=$2                  -- llave 2
+               AND regexp_replace(telefono,'\D','','g')=$3
+               AND licencia_id=LICENCIA_ID;
+      Si existe → NO insertar (se conserva el registro previo).            */
+
+let cargaPendiente = null;  // resultado analizado, aún sin confirmar
+
+function normTel(v){
+  var d = String(v == null ? '' : v).replace(/\D/g, '');
+  if (d.length > 10 && d.slice(0, 2) === '52') d = d.slice(-10);
+  return d.length === 10 ? d : '';
+}
+function fmtTel(d){ return d.slice(0, 3) + ' ' + d.slice(3, 6) + ' ' + d.slice(6); }
+function normTxt(s){
+  return String(s == null ? '' : s).toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().replace(/\s+/g, ' ');
+}
+function esConsent(v){
+  var t = normTxt(v);
+  return t === 'si' || t === 's' || t === '1' || t === 'true' || t === 'x' || t === 'verdadero';
+}
+
+// Mapea un encabezado libre del Excel al campo canónico
+function mapearCampo(h){
+  var t = normTxt(h);
+  if (t.indexOf('telefono') >= 0 && t.indexOf('alt') >= 0) return 'telefono_alt';
+  if (t.indexOf('telefono') >= 0 || t.indexOf('celular') >= 0 || t === 'tel') return 'telefono';
+  if (t.indexOf('apellido') >= 0 && t.indexOf('paterno') >= 0) return 'apellido_paterno';
+  if (t.indexOf('apellido') >= 0 && t.indexOf('materno') >= 0) return 'apellido_materno';
+  if (t.indexOf('nombre') >= 0) return 'nombre';
+  if (t.indexOf('seccion') >= 0) return 'seccion';
+  if (t.indexOf('municipio') >= 0) return 'municipio';
+  if (t.indexOf('consent') >= 0) return 'consentimiento';
+  if (t.indexOf('folio') >= 0 || t.indexOf('id externo') >= 0) return 'id_externo';
+  if (t.indexOf('nota') >= 0 || t.indexOf('observ') >= 0) return 'notas';
+  return null;
+}
+
+function leerExcel(file){
+  if (!file) return;
+  document.getElementById('file-name').textContent = file.name;
+  document.getElementById('drop-zone').classList.remove('over');
+  var reader = new FileReader();
+  reader.onload = function(e){
+    try {
+      var wb = XLSX.read(new Uint8Array(e.target.result), { type:'array' });
+      // Prefiere la hoja PLANTILLA_CARGA; si no, la primera del libro
+      var hoja = wb.SheetNames.indexOf('PLANTILLA_CARGA') >= 0 ? 'PLANTILLA_CARGA' : wb.SheetNames[0];
+      var filas = XLSX.utils.sheet_to_json(wb.Sheets[hoja], { header:1, defval:'', raw:false });
+      analizarFilas(filas);
+    } catch(err){
+      alert('No se pudo leer el archivo. Verifica que sea un Excel con la estructura de la plantilla VOTERA.');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function analizarFilas(filas){
+  // Localiza la fila de encabezados: la primera (de las 8 primeras) que mapee 'telefono'
+  var hIdx = -1, mapa = null;
+  for (var i = 0; i < Math.min(filas.length, 8); i++){
+    var m = {};
+    (filas[i] || []).forEach(function(cell, col){ var f = mapearCampo(cell); if (f && m[f] == null) m[f] = col; });
+    if (m.telefono != null){ hIdx = i; mapa = m; break; }
+  }
+  if (hIdx < 0){
+    cargaPendiente = null;
+    document.getElementById('gest-result').style.display = 'none';
+    var em = document.getElementById('gest-empty');
+    em.style.display = 'block';
+    em.textContent = 'No se encontró la columna "Teléfono Principal". Usa la plantilla VOTERA sin cambiar los encabezados.';
+    document.getElementById('btn-cargar').disabled = true;
+    return;
+  }
+
+  // Teléfonos que ya están en la cola (llave de deduplicación contra la cola)
+  var enCola = {};
+  demoState.cola.forEach(function(c){ var d = normTel(c.tel); if (d) enCola[d] = true; });
+
+  var res = { leidos:0, listos:[], sinTel:0, sinConsent:0, dupArchivo:0, dupCola:0 };
+  var vistos = {};
+  for (var r = hIdx + 1; r < filas.length; r++){
+    var fila = filas[r] || [];
+    var val = function(f){ return mapa[f] != null ? fila[mapa[f]] : ''; };
+    var telRaw = val('telefono');
+    // Fila totalmente vacía → se ignora (no cuenta como leída)
+    if (String(telRaw).trim() === '' && String(val('nombre')).trim() === '') continue;
+    res.leidos++;
+    var tel = normTel(telRaw);
+    if (!tel){ res.sinTel++; continue; }
+    if (!esConsent(val('consentimiento'))){ res.sinConsent++; continue; }
+    if (vistos[tel]){ res.dupArchivo++; continue; }
+    vistos[tel] = true;
+    if (enCola[tel]){ res.dupCola++; continue; }
+    var nombre = [val('nombre'), val('apellido_paterno'), val('apellido_materno')]
+      .map(function(x){ return String(x).trim(); }).filter(Boolean).join(' ') || 'Sin nombre';
+    res.listos.push({
+      id:'ext-' + tel, nombre:nombre, tel:fmtTel(tel),
+      seccion:String(val('seccion')).trim() || '—',
+      municipio:String(val('municipio')).trim() || '—',
+      intentos:0, consent:true, origen:'externo'
+    });
+  }
+  cargaPendiente = res;
+  pintarResultado(res);
+}
+
+function pintarResultado(res){
+  document.getElementById('gest-empty').style.display = 'none';
+  document.getElementById('gest-result').style.display = 'block';
+  var desc = res.sinTel + res.sinConsent + res.dupArchivo + res.dupCola;
+  document.getElementById('s-leidos').textContent = res.leidos;
+  document.getElementById('s-listos').textContent = res.listos.length;
+  document.getElementById('s-desc').textContent = desc;
+  document.getElementById('s-desglose').innerHTML =
+    'Descartados por: <b>' + res.sinTel + '</b> sin teléfono válido · ' +
+    '<b>' + res.sinConsent + '</b> sin consentimiento · ' +
+    '<b>' + res.dupArchivo + '</b> repetidos en el archivo · ' +
+    '<b>' + res.dupCola + '</b> ya estaban en la cola.';
+  var tb = document.getElementById('tabla-preview');
+  tb.innerHTML = '';
+  res.listos.slice(0, 8).forEach(function(c){
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + c.nombre + '</td><td class="num">' + c.tel + '</td>' +
+      '<td>' + c.seccion + '</td><td>' + c.municipio + '</td>' +
+      '<td><span class="chip ok">SI</span></td>';
+    tb.appendChild(tr);
+  });
+  document.getElementById('preview-nota').textContent = res.listos.length > 8
+    ? 'Mostrando 8 de ' + res.listos.length + ' contactos listos.'
+    : (res.listos.length + ' contacto(s) listo(s) para cargar.');
+  document.getElementById('btn-cargar').disabled = res.listos.length === 0;
+}
+
+function confirmarCarga(){
+  if (!cargaPendiente || cargaPendiente.listos.length === 0) return;
+  var campId = document.getElementById('sel-camp-destino').value;
+  var camp = CAMPANAS.find(function(x){ return x.id === campId; });
+  // [SWAP LUIS] INSERT INTO cola_llamadas (campana_id, licencia_id, nombre, telefono,
+  //             seccion, municipio, consent, origen, estado)
+  //             VALUES (campId, LICENCIA_ID, ..., 'externo', 'pendiente')
+  //             — una fila por contacto listo. NADA se escribe en `ciudadanos`.
+  var n = cargaPendiente.listos.length;
+  // Demo: se agregan a la cola visible del operador
+  cargaPendiente.listos.forEach(function(c){ demoState.cola.push(Object.assign({}, c)); });
+  try { localStorage.setItem(LS_KEY, JSON.stringify(demoState)); } catch(e){}
+  alert(n + ' contacto(s) cargado(s) a la cola' + (camp ? ' de "' + camp.nombre + '"' : '') +
+        '.\nDuplicados y filas sin consentimiento fueron descartados automáticamente.');
+  // Reset del panel
+  cargaPendiente = null;
+  document.getElementById('file-excel').value = '';
+  document.getElementById('file-name').textContent = '';
+  document.getElementById('gest-result').style.display = 'none';
+  var em = document.getElementById('gest-empty');
+  em.style.display = 'block';
+  em.textContent = 'Sube un archivo para ver el desglose de deduplicación.';
+  document.getElementById('btn-cargar').disabled = true;
+  pintarHeader();
+  pintarContacto();
+}
+
+function llenarCampDestino(){
+  var sel = document.getElementById('sel-camp-destino');
+  if (!sel || sel.options.length) return;
+  CAMPANAS.forEach(function(c){
+    var o = document.createElement('option');
+    o.value = c.id; o.textContent = c.nombre;
+    sel.appendChild(o);
+  });
+}
+
 /* ── Navegación ──────────────────────────── */
 function verTab(id, btn){
   document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
@@ -653,11 +903,28 @@ function verTab(id, btn){
   if (id === 'productividad') pintarProductividad();
   if (id === 'campanas') pintarCampanas();
   if (id === 'supervision') pintarSupervision();
+  if (id === 'gestion') llenarCampDestino();
 }
 
 /* ── Init ────────────────────────────────── */
 pintarHeader();
 pintarContacto();
+
+// Drag & drop para la carga de Excel (Gestión)
+(function(){
+  var dz = document.getElementById('drop-zone');
+  if (!dz) return;
+  ['dragenter','dragover'].forEach(function(ev){
+    dz.addEventListener(ev, function(e){ e.preventDefault(); dz.classList.add('over'); });
+  });
+  ['dragleave','drop'].forEach(function(ev){
+    dz.addEventListener(ev, function(e){ e.preventDefault(); dz.classList.remove('over'); });
+  });
+  dz.addEventListener('drop', function(e){
+    var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (f) leerExcel(f);
+  });
+})();
 </script>
 </body>
 </html>
