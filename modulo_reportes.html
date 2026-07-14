@@ -215,9 +215,13 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
     <div class="kpi bl"><div class="kpi-lbl">Avance estatal</div><div class="kpi-val" id="rep-avance-est">4.8%</div><div class="kpi-trend" style="opacity:.5">sobre la meta estatal</div></div>
     <div class="kpi gr"><div class="kpi-lbl">Voto seguro</div><div class="kpi-val" id="rep-voto-seguro">4,601</div><div class="kpi-trend" id="rep-voto-seguro-pct">46% de capturados</div></div>
     <div class="kpi am"><div class="kpi-lbl">En riesgo</div><div class="kpi-val" id="rep-en-riesgo">2,203</div><div class="kpi-trend" style="opacity:.5">requieren atención</div></div>
-    <div class="kpi re"><div class="kpi-lbl">Secciones críticas</div><div class="kpi-val">219</div><div class="kpi-trend dn">sin captura + &lt;5%</div></div>
+    <!-- [FIX 14 jul] "219 secciones criticas" estaba horneado. Ahora se calcula:
+         secciones con avance < 5% respecto a su meta. -->
+    <div class="kpi re"><div class="kpi-lbl">Secciones críticas</div><div class="kpi-val" id="rep-sec-criticas">—</div><div class="kpi-trend dn">avance &lt; 5%</div></div>
     <div class="kpi pu"><div class="kpi-lbl">Duplicados</div><div class="kpi-val" id="rep-duplicados">408</div><div class="kpi-trend dn">depurar urgente</div></div>
-    <div class="kpi cy"><div class="kpi-lbl">Días a la elección</div><div class="kpi-val">334</div><div class="kpi-trend">6 jun 2027</div></div>
+    <!-- [FIX 14 jul] "334 dias" estaba horneado: se desactualizaba solo. Ahora
+         se calcula de la fecha real de eleccion. -->
+    <div class="kpi cy"><div class="kpi-lbl">Días a la elección</div><div class="kpi-val" id="rep-dias">—</div><div class="kpi-trend">6 jun 2027</div></div>
   </div>
 
   <div class="section-title">Progreso general vs meta</div>
@@ -338,11 +342,16 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
 
 <!-- ═══════════ AVANCE & RITMO ═══════════ -->
 <div class="screen" id="sc-avance">
+  <div id="ritmo-aviso"></div>
   <div class="kpi-row">
-    <div class="kpi gr"><div class="kpi-lbl">Promedio diario</div><div class="kpi-val">84</div><div class="kpi-trend">capturas/día</div></div>
-    <div class="kpi bl"><div class="kpi-lbl">Mejor semana</div><div class="kpi-val">614</div><div class="kpi-trend">sem. 23 feb / 16 mar</div></div>
-    <div class="kpi am"><div class="kpi-lbl">Peor semana</div><div class="kpi-val">421</div><div class="kpi-trend dn">sem. 27 abr (incompleta)</div></div>
-    <div class="kpi cy"><div class="kpi-lbl">Mes más productivo</div><div class="kpi-val">Marzo</div><div class="kpi-trend">2,622 capturas</div></div>
+    <!-- [FIX 14 jul] "84/dia", "mejor semana 614", "peor 421": INVENTADOS.
+         El dato SI existe (ciudadanos.created_at) — solo no se calculaba.
+         Ahora sale de la RPC get_ritmo_capturas(), que agrupa por semana EN LA
+         BASE (unas 50 filas) en vez de bajar 14,261 registros al navegador. -->
+    <div class="kpi gr"><div class="kpi-lbl">Promedio diario</div><div class="kpi-val" id="ritmo-diario">—</div><div class="kpi-trend">capturas/día</div></div>
+    <div class="kpi bl"><div class="kpi-lbl">Mejor semana</div><div class="kpi-val" id="ritmo-mejor">—</div><div class="kpi-trend" id="ritmo-mejor-fecha">—</div></div>
+    <div class="kpi am"><div class="kpi-lbl">Peor semana</div><div class="kpi-val" id="ritmo-peor">—</div><div class="kpi-trend dn" id="ritmo-peor-fecha">—</div></div>
+    <div class="kpi cy"><div class="kpi-lbl">Semana en curso</div><div class="kpi-val" id="ritmo-actual">—</div><div class="kpi-trend">capturas esta semana</div></div>
   </div>
 
   <div class="card" style="margin-bottom:14px">
@@ -644,10 +653,13 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
 <!-- ═══════════ PERFIL DEL VOTANTE ═══════════ -->
 <div class="screen" id="sc-perfil">
   <div class="kpi-row">
-    <div class="kpi bl"><div class="kpi-lbl">Hombres</div><div class="kpi-val">5,007</div><div class="kpi-trend">50.1%</div></div>
-    <div class="kpi pu"><div class="kpi-lbl">Mujeres</div><div class="kpi-val">4,993</div><div class="kpi-trend">49.9%</div></div>
-    <div class="kpi cy"><div class="kpi-lbl">Edad promedio</div><div class="kpi-val">47</div><div class="kpi-trend">años</div></div>
-    <div class="kpi am"><div class="kpi-lbl">Grupo más grande</div><div class="kpi-val">70+</div><div class="kpi-trend">2,047 personas</div></div>
+    <!-- [FIX 14 jul] Estos KPIs no tenian id: nadie los actualizaba. Los valores
+         (5,007 hombres / 4,993 mujeres) sumaban 10,000 — el numero falso. Ahora
+         se calculan de ciudadanos.sexo y .edad via RPC. -->
+    <div class="kpi bl"><div class="kpi-lbl">Hombres</div><div class="kpi-val" id="perf-hombres">—</div><div class="kpi-trend" id="perf-hombres-pct">—</div></div>
+    <div class="kpi pu"><div class="kpi-lbl">Mujeres</div><div class="kpi-val" id="perf-mujeres">—</div><div class="kpi-trend" id="perf-mujeres-pct">—</div></div>
+    <div class="kpi cy"><div class="kpi-lbl">Edad promedio</div><div class="kpi-val" id="perf-edad">—</div><div class="kpi-trend">años</div></div>
+    <div class="kpi am"><div class="kpi-lbl">Grupo más grande</div><div class="kpi-val" id="perf-grupo">—</div><div class="kpi-trend" id="perf-grupo-n">—</div></div>
   </div>
 
   <div class="grid2">
@@ -1082,6 +1094,21 @@ function actualizarKPIsResumen(kpis) {
 
   set('rep-total-cap',  fmt(total));
   set('rep-avance-est', pct.toFixed(1) + '%');
+
+  // [FIX 14 jul] Dias a la eleccion: se calcula, no se hornea (antes decia "334"
+  // fijo y se desactualizaba solo cada dia que pasaba).
+  const diasEleccion = Math.max(0, Math.ceil((new Date('2027-06-06') - new Date()) / 86400000));
+  set('rep-dias', diasEleccion.toLocaleString('es-MX'));
+
+  // Secciones criticas: avance < 5% de su meta. Antes decia "219" horneado.
+  // Se calcula de MUN_DATA si esta cargado; si no, se deja en blanco.
+  if (typeof SEC_DATA !== 'undefined' && Array.isArray(SEC_DATA) && SEC_DATA.length) {
+    const criticas = SEC_DATA.filter(s => {
+      const m = s.meta || 0, c = s.cap || 0;
+      return m > 0 && (c / m * 100) < 5;
+    }).length;
+    set('rep-sec-criticas', criticas);
+  }
   set('rep-voto-seguro', fmt(seguro));
   set('rep-en-riesgo',   fmt(riesgo));
   set('rep-duplicados',  fmt(duplicado));
@@ -1110,7 +1137,32 @@ function actualizarKPIsResumen(kpis) {
   set('proy-semanas',    semanas + ' semanas');
   set('proy-pendientes', fmt(pendientes) + ' pendientes');
   set('proy-requerido',  fmt(requerido) + ' capturas/semana');
-  // proy-ritmo y proy-proyeccion se dejan como "sin datos históricos" (ver HTML).
+
+  // [FIX 14 jul] El ritmo actual y la proyeccion YA se pueden calcular: la RPC
+  // get_ritmo_capturas() agrega el historico desde ciudadanos.created_at.
+  // Antes decian "sin datos historicos" porque nadie lo estaba calculando.
+  const rit = window._ritmo;
+  if (rit && rit.promedio_semanal > 0) {
+    const ritmoSem = Number(rit.promedio_semanal);
+    set('proy-ritmo', fmt(ritmoSem) + ' capturas/semana');
+
+    // Proyeccion: al ritmo actual, ¿cuanto se habra capturado el dia de la eleccion?
+    const proyectado = Math.round(total + ritmoSem * semanas);
+    const pctProy = meta > 0 ? (proyectado / meta * 100) : 0;
+    set('proy-proyeccion', '~' + fmt(proyectado) + ' (' + pctProy.toFixed(1) + '% de meta)');
+
+    // Si el ritmo actual no alcanza, decirlo con el numero exacto.
+    const el = document.getElementById('proy-proyeccion');
+    if (el) el.style.color = pctProy >= 90 ? 'var(--green)' : (pctProy >= 50 ? 'var(--amber)' : 'var(--red)');
+
+    // ⚠️ Si el grueso entro de golpe (importacion), el "ritmo" no significa nada.
+    if (rit.es_carga_masiva) {
+      set('proy-ritmo', 'sin captura en campo aún');
+      set('proy-proyeccion', 'se calculará cuando inicie la captura');
+      const el2 = document.getElementById('proy-proyeccion');
+      if (el2) el2.style.color = 'var(--text3)';
+    }
+  }
 }
 
 function semCol(p){ return p>=10?'var(--green)':p>=5?'var(--amber)':'var(--red)'; }
@@ -1235,7 +1287,14 @@ function buildMunTable(){
 function _iniciarMunicipios(){
   if (window.__munIniciado) return;
   window.__munIniciado = true;
-  cargarDatosMunicipios();
+  // [FIX 14 jul] El ritmo va PRIMERO: el Resumen Ejecutivo lo necesita para
+  // calcular la proyeccion (window._ritmo). Si corriera despues, la proyeccion
+  // se pintaria sin ritmo — el mismo bug de "leer antes de tiempo" que ya
+  // cazamos en META_WR y _kpisRPC.
+  cargarRitmo().then(() => cargarDatosMunicipios());
+  cargarPerfil();
+  cargarSecciones();
+  cargarCapturistas();
 }
 // Arrancar cuando el DOM esté listo (para entonces theme.js ya corrió).
 if (document.readyState === 'loading') {
@@ -1251,40 +1310,50 @@ buildMunTable();
 // ══════════════════════════════════════════════════════
 // DATOS DE SECCIONES (muestra representativa Colima)
 // ══════════════════════════════════════════════════════
-const SEC_DATA = [
-  {sec:1,  municipio:'Colima',       df:'1', dl:'1',  cap:12, meta:180, dificultad:'FACIL'},
-  {sec:2,  municipio:'Colima',       df:'1', dl:'1',  cap:8,  meta:210, dificultad:'MEDIO'},
-  {sec:3,  municipio:'Colima',       df:'1', dl:'2',  cap:15, meta:195, dificultad:'FACIL'},
-  {sec:4,  municipio:'Colima',       df:'1', dl:'2',  cap:3,  meta:175, dificultad:'DIFICIL'},
-  {sec:5,  municipio:'Colima',       df:'1', dl:'2',  cap:22, meta:220, dificultad:'FACIL'},
-  {sec:24, municipio:'Villa de Álv.',df:'1', dl:'3',  cap:18, meta:240, dificultad:'FACIL'},
-  {sec:25, municipio:'Villa de Álv.',df:'1', dl:'3',  cap:5,  meta:190, dificultad:'MEDIO'},
-  {sec:26, municipio:'Villa de Álv.',df:'1', dl:'3',  cap:0,  meta:165, dificultad:'DIFICIL'},
-  {sec:27, municipio:'Villa de Álv.',df:'1', dl:'4',  cap:9,  meta:200, dificultad:'MEDIO'},
-  {sec:45, municipio:'Comala',       df:'1', dl:'4',  cap:14, meta:130, dificultad:'FACIL'},
-  {sec:46, municipio:'Comala',       df:'1', dl:'4',  cap:2,  meta:120, dificultad:'DIFICIL'},
-  {sec:60, municipio:'Cuauhtémoc',   df:'1', dl:'6',  cap:11, meta:155, dificultad:'FACIL'},
-  {sec:61, municipio:'Cuauhtémoc',   df:'1', dl:'6',  cap:4,  meta:140, dificultad:'MEDIO'},
-  {sec:80, municipio:'Minatitlán',   df:'1', dl:'7',  cap:7,  meta:95,  dificultad:'MEDIO'},
-  {sec:81, municipio:'Minatitlán',   df:'1', dl:'7',  cap:0,  meta:88,  dificultad:'DIFICIL'},
-  {sec:100,municipio:'Ixtlahuacán',  df:'1', dl:'8',  cap:6,  meta:110, dificultad:'MEDIO'},
-  {sec:101,municipio:'Ixtlahuacán',  df:'1', dl:'8',  cap:3,  meta:105, dificultad:'DIFICIL'},
-  {sec:120,municipio:'Armería',      df:'2', dl:'9',  cap:16, meta:185, dificultad:'FACIL'},
-  {sec:121,municipio:'Armería',      df:'2', dl:'9',  cap:9,  meta:175, dificultad:'FACIL'},
-  {sec:122,municipio:'Armería',      df:'2', dl:'9',  cap:1,  meta:160, dificultad:'DIFICIL'},
-  {sec:138,municipio:'Villa de Álv.',df:'1', dl:'4',  cap:7,  meta:511, dificultad:'MEDIO'},
-  {sec:150,municipio:'Coquimatlán',  df:'1', dl:'5',  cap:8,  meta:145, dificultad:'MEDIO'},
-  {sec:151,municipio:'Coquimatlán',  df:'1', dl:'5',  cap:2,  meta:130, dificultad:'DIFICIL'},
-  {sec:200,municipio:'Tecomán',      df:'2', dl:'10', cap:25, meta:310, dificultad:'FACIL'},
-  {sec:201,municipio:'Tecomán',      df:'2', dl:'10', cap:19, meta:290, dificultad:'FACIL'},
-  {sec:202,municipio:'Tecomán',      df:'2', dl:'10', cap:4,  meta:275, dificultad:'MEDIO'},
-  {sec:203,municipio:'Tecomán',      df:'2', dl:'11', cap:0,  meta:260, dificultad:'DIFICIL'},
-  {sec:250,municipio:'Manzanillo',   df:'2', dl:'12', cap:30, meta:380, dificultad:'FACIL'},
-  {sec:251,municipio:'Manzanillo',   df:'2', dl:'12', cap:22, meta:360, dificultad:'FACIL'},
-  {sec:252,municipio:'Manzanillo',   df:'2', dl:'13', cap:8,  meta:340, dificultad:'MEDIO'},
-  {sec:253,municipio:'Manzanillo',   df:'2', dl:'13', cap:1,  meta:320, dificultad:'DIFICIL'},
-  {sec:254,municipio:'Manzanillo',   df:'2', dl:'14', cap:0,  meta:300, dificultad:'DIFICIL'},
-];
+// [FIX 14 jul] Aqui habia un SEC_DATA horneado: secciones inventadas con metas
+// y "dificultad" fabricadas. El KPI "219 secciones criticas" del Resumen dependia
+// de este arreglo falso.
+// Ahora se cruza en la BD (RPC get_avance_secciones): capturas reales por seccion
+// contra las metas de secciones_electorales_colima. La "dificultad" ya no se
+// inventa: se deriva de estatus_afluencia (dato real del INE).
+let SEC_DATA = [];
+
+async function cargarSecciones() {
+  try {
+    if (!window.supabase) {
+      await new Promise(r => document.addEventListener('supabase-ready', r, {once:true}));
+    }
+    const { data, error } = await window.supabase.rpc('get_avance_secciones');
+    if (error || !Array.isArray(data) || !data.length) {
+      console.warn('Secciones: sin datos (¿falta correr 11_secciones_calidad.sql?).', error);
+      SEC_DATA = [];
+      if (typeof renderSecciones === 'function') renderSecciones();
+      return;
+    }
+    SEC_DATA = data.map(s => ({
+      sec:        s.seccion,
+      municipio:  s.municipio || '—',
+      df:         String(s.distrito_federal || '—'),
+      dl:         String(s.distrito_local || '—'),
+      cap:        Number(s.capturados || 0),
+      meta:       Number(s.meta || 0),
+      pct:        Number(s.avance_pct || 0),
+      dificultad: s.dificultad || 'SIN DATO',
+    }));
+
+    // El KPI "secciones criticas" del Resumen: ahora con el dato real.
+    const criticas = SEC_DATA.filter(s => s.meta > 0 && s.pct < 5).length;
+    const el = document.getElementById('rep-sec-criticas');
+    if (el) el.textContent = criticas;
+
+    if (typeof renderSecciones === 'function') renderSecciones();
+    if (typeof aplicarFiltroSecciones === 'function') aplicarFiltroSecciones();
+    console.log('✅ Secciones: ' + SEC_DATA.length + ' (' + criticas + ' críticas, avance <5%).');
+  } catch (e) {
+    console.warn('Secciones: excepción.', e);
+    SEC_DATA = [];
+  }
+}
 
 let secSortField = 'pct';
 let secSortAsc = true;
@@ -1618,28 +1687,109 @@ function exportarExcel(){
 // ══════════════════════════════════════════════════════════════════
 
 // Datos simulados de simpatizantes (en producción vienen de Supabase)
-const SIMPATIZANTES = [
-  {id:'REG-001',nombre:'María García López',curp:'GALM901230MCLRPR01',edad:34,sexo:'MUJER',municipio:'VILLA DE ALVAREZ',seccion:138,tel:'312-111-0001',domicilio:'Av. Principal 123',email:'',compromiso:3,origen:'Casa por casa',capturista:'CAP-017',responsable:'LDR-138',validado:true,riesgo:false,apoyo:false,influencia:true,duplicado:false,obs:'',fecha:'2027-03-15'},
-  {id:'REG-002',nombre:'José Martínez Ruiz',curp:'MARJ720415HCLRRZ09',edad:52,sexo:'HOMBRE',municipio:'VILLA DE ALVAREZ',seccion:138,tel:'312-111-0002',domicilio:'Calle 2 #456',email:'jose@gmail.com',compromiso:4,origen:'Referido',capturista:'CAP-017',responsable:'LDR-138',validado:true,riesgo:false,apoyo:true,influencia:true,duplicado:false,obs:'Líder de colonia',fecha:'2027-03-16'},
-  {id:'REG-003',nombre:'Ana Torres Mendoza',curp:'TOMA980612MCLRNN06',edad:28,sexo:'MUJER',municipio:'VILLA DE ALVAREZ',seccion:139,tel:'312-111-0003',domicilio:'',email:'',compromiso:2,origen:'Digital',capturista:'CAP-017',responsable:'LDR-139',validado:false,riesgo:false,apoyo:false,influencia:false,duplicado:false,obs:'',fecha:'2027-03-17'},
-  {id:'REG-004',nombre:'Carlos Pérez Silva',curp:'PESC791103HCLRLR03',edad:45,sexo:'HOMBRE',municipio:'VILLA DE ALVAREZ',seccion:138,tel:'312-111-0004',domicilio:'Privada Los Pinos 7',email:'',compromiso:3,origen:'Evento',capturista:'CAP-017',responsable:'LDR-138',validado:true,riesgo:true,apoyo:false,influencia:false,duplicado:false,obs:'Indeciso, requiere seguimiento',fecha:'2027-03-18'},
-  {id:'REG-005',nombre:'Laura Hernández Cruz',curp:'HECL950222MCLRRR08',edad:31,sexo:'MUJER',municipio:'VILLA DE ALVAREZ',seccion:140,tel:'312-111-0005',domicilio:'',email:'',compromiso:1,origen:'Casa por casa',capturista:'CAP-017',responsable:'LDR-140',validado:false,riesgo:false,apoyo:true,influencia:false,duplicado:false,obs:'',fecha:'2027-03-19'},
-  {id:'REG-006',nombre:'Roberto Díaz Morales',curp:'DIMR640815HCLRZB02',edad:60,sexo:'HOMBRE',municipio:'MANZANILLO',seccion:236,tel:'314-111-0001',domicilio:'Col. Centro 45',email:'',compromiso:4,origen:'Referido',capturista:'CAP-032',responsable:'LDR-236',validado:true,riesgo:false,apoyo:false,influencia:true,duplicado:false,obs:'',fecha:'2027-03-20'},
-  {id:'REG-007',nombre:'Sofía Ramírez Vega',curp:'RAVS020318MCLRMF05',edad:22,sexo:'MUJER',municipio:'MANZANILLO',seccion:236,tel:'314-111-0002',domicilio:'',email:'sofia@gmail.com',compromiso:2,origen:'Digital',capturista:'CAP-032',responsable:'LDR-236',validado:false,riesgo:false,apoyo:false,influencia:false,duplicado:true,obs:'Posible duplicado',fecha:'2027-03-21'},
-  {id:'REG-008',nombre:'Miguel Flores Jiménez',curp:'FOJM760930HCLRLG07',edad:48,sexo:'HOMBRE',municipio:'COLIMA',seccion:291,tel:'312-222-0001',domicilio:'Blvd. Camino Real 88',email:'',compromiso:3,origen:'Casa por casa',capturista:'CAP-041',responsable:'LDR-291',validado:true,riesgo:true,apoyo:true,influencia:false,duplicado:false,obs:'',fecha:'2027-03-22'},
-  {id:'REG-009',nombre:'Patricia Gómez Luna',curp:'GOLP851115MCLRMN01',edad:39,sexo:'MUJER',municipio:'TECOMAN',seccion:74,tel:'313-111-0001',domicilio:'',email:'',compromiso:3,origen:'Evento',capturista:'CAP-020',responsable:'CAP-020',validado:true,riesgo:false,apoyo:false,influencia:true,duplicado:false,obs:'',fecha:'2027-03-23'},
-  {id:'REG-010',nombre:'Fernando Castro Reyes',curp:'CARF690728HCLLRN04',edad:55,sexo:'HOMBRE',municipio:'COLIMA',seccion:308,tel:'312-222-0002',domicilio:'Jardines del Sol 12',email:'fcastro@mail.com',compromiso:4,origen:'Referido',capturista:'CAP-041',responsable:'LDR-291',validado:true,riesgo:false,apoyo:false,influencia:true,duplicado:false,obs:'Promotor del voto',fecha:'2027-03-24'},
-];
+// [FIX 14 jul] Aqui habia SIMPATIZANTES INVENTADOS. Y lo grave: alimentaban el
+// boton "Descargar datos" — el Excel que se exporta. Un cliente podia bajarse un
+// archivo con ciudadanos ficticios creyendo que era su padron real.
+// Ahora se descargan de la BD en el momento de exportar (ver cargarParaExportar).
+let SIMPATIZANTES = [];
 
-const CAPTURISTAS_DATA = [
-  {id:'CAP-017',nombre:'Capturista 017',municipio:'VILLA DE ALVAREZ',seccion:138,meta:50,capturas:10,email:'cap017@colima.mx',tel:'312-111-0017',coordinador:'CORD-VDA',ultimo:'Hoy 09:38',status:'activo'},
-  {id:'CAP-005',nombre:'Capturista 005',municipio:'VILLA DE ALVAREZ',seccion:139,meta:45,capturas:8,email:'cap005@colima.mx',tel:'312-111-0005',coordinador:'CORD-VDA',ultimo:'Ayer 18:00',status:'activo'},
-  {id:'CAP-033',nombre:'Capturista 033',municipio:'VILLA DE ALVAREZ',seccion:140,meta:40,capturas:5,email:'cap033@colima.mx',tel:'312-111-0033',coordinador:'CORD-VDA',ultimo:'Hoy 07:20',status:'activo'},
-  {id:'CAP-032',nombre:'Capturista 032',municipio:'MANZANILLO',seccion:236,meta:60,capturas:52,email:'cap032@colima.mx',tel:'314-111-0032',coordinador:'CORD-MZL',ultimo:'Hoy 09:38',status:'activo'},
-  {id:'CAP-038',nombre:'Capturista 038',municipio:'MANZANILLO',seccion:248,meta:55,capturas:50,email:'cap038@colima.mx',tel:'314-111-0038',coordinador:'CORD-MZL',ultimo:'Hoy 08:12',status:'activo'},
-  {id:'CAP-041',nombre:'Capturista 041',municipio:'COLIMA',seccion:291,meta:48,capturas:45,email:'cap041@colima.mx',tel:'312-222-0041',coordinador:'CORD-COL',ultimo:'Hoy 10:00',status:'activo'},
-  {id:'CAP-020',nombre:'Capturista 020',municipio:'TECOMAN',seccion:74,meta:50,capturas:38,email:'cap020@colima.mx',tel:'313-111-0020',coordinador:'CORD-TCM',ultimo:'Ayer 20:00',status:'activo'},
-];
+// Se cargan SOLO al exportar (no al abrir el modulo): son 14,261 registros y no
+// tiene sentido tenerlos en memoria si el usuario no va a descargarlos.
+async function cargarParaExportar() {
+  const sesion = JSON.parse(localStorage.getItem('electoral_sesion') || 'null');
+  const lic = sesion?.licencia_id;
+  if (!lic) return [];
+  const SUPA = (typeof SUPA_URL !== 'undefined') ? SUPA_URL : 'https://dyirhwwmykskpuvzcafx.supabase.co';
+  const KEY  = (typeof SUPA_KEY !== 'undefined') ? SUPA_KEY : null;
+  const token = window._sesion?.access_token || sesion?.access_token || KEY;
+  const headers = { apikey: KEY, Authorization: 'Bearer ' + token };
+
+  // Paginar con limit/offset (los headers Range disparan preflight CORS).
+  const base = SUPA + '/rest/v1/ciudadanos'
+    + '?select=nombre,apellido_paterno,apellido_materno,edad,sexo,seccion_electoral,municipio,telefono,compromiso,origen,es_riesgo,es_apoyo,validado,duplicado,capturista_id,created_at'
+    + '&licencia_id=eq.' + encodeURIComponent(lic) + '&order=id';
+  let out = [];
+  for (let p = 0; p < 30; p++) {
+    const r = await fetch(base + '&limit=1000&offset=' + (p*1000), { headers });
+    if (!r.ok) { console.warn('Exportar: status ' + r.status); break; }
+    const pag = await r.json();
+    if (!Array.isArray(pag)) break;
+    out = out.concat(pag);
+    if (pag.length < 1000) break;
+  }
+  SIMPATIZANTES = out.map(c => ({
+    nombre: [c.nombre, c.apellido_paterno, c.apellido_materno].filter(Boolean).join(' '),
+    edad: c.edad, sexo: c.sexo,
+    seccion: c.seccion_electoral, municipio: c.municipio || '',
+    telefono: c.telefono || '', compromiso: c.compromiso,
+    origen: c.origen || '', riesgo: c.es_riesgo ? 'SI' : 'NO',
+    apoyo: c.es_apoyo ? 'SI' : 'NO', validado: c.validado ? 'SI' : 'NO',
+    duplicado: c.duplicado ? 'SI' : 'NO',
+    capturista: c.capturista_id || '', fecha: (c.created_at||'').slice(0,10),
+  }));
+  console.log('✅ Exportar: ' + SIMPATIZANTES.length.toLocaleString('es-MX') + ' registros reales.');
+  return SIMPATIZANTES;
+}
+
+// [FIX 14 jul] Aqui habia CAPTURISTAS INVENTADOS, con nombres, correos y
+// TELEFONOS ficticios ("312-111-0017"). Datos personales falsos en un panel que
+// dice "Datos reales".
+// Ahora salen de usuarios + la RPC get_capturistas_stats (la misma que usa Admin).
+let CAPTURISTAS_DATA = [];
+
+async function cargarCapturistas() {
+  try {
+    if (!window.supabase) {
+      await new Promise(r => document.addEventListener('supabase-ready', r, {once:true}));
+    }
+    const sesion = JSON.parse(localStorage.getItem('electoral_sesion') || 'null');
+    const lic = sesion?.licencia_id;
+    if (!lic) return;
+
+    const [{ data: users }, { data: stats }] = await Promise.all([
+      window.supabase.from('usuarios')
+        .select('id, nombre, email, municipio, seccion, activo, rol')
+        .eq('licencia_id', lic)
+        .eq('rol', 'capturista'),
+      window.supabase.rpc('get_capturistas_stats').then(r => r).catch(() => ({data: null})),
+    ]);
+
+    if (!Array.isArray(users) || !users.length) {
+      console.warn('Estructura: sin capturistas cargados.');
+      CAPTURISTAS_DATA = [];
+      if (typeof renderEstructura === 'function') renderEstructura();
+      return;
+    }
+
+    const capCount = {};
+    (stats || []).forEach(s => {
+      const k = s.capturista_id || s.id;
+      if (k) capCount[k] = s.total || s.capturas || s.capturados || 0;
+    });
+
+    CAPTURISTAS_DATA = users.map(u => ({
+      id:        u.id,
+      nombre:    u.nombre || u.email,
+      email:     u.email || '—',
+      municipio: u.municipio || '—',
+      seccion:   u.seccion || '—',
+      // La meta por capturista viene de la configuracion del sistema (meta x
+      // capturista). Si no esta, 50 por defecto (el valor del configurador).
+      meta:      (typeof window.META_CAPTURISTA === 'number' ? window.META_CAPTURISTA : 50),
+      capturas:  capCount[u.id] || 0,
+      // tel: la tabla usuarios NO guarda telefono. Antes se inventaban
+      // ("312-111-0017"). Se omite en vez de fabricarlo.
+      status:    u.activo ? 'activo' : 'inactivo',
+    }));
+
+    if (typeof renderEstructura === 'function') renderEstructura();
+    if (typeof aplicarFiltroEstructura === 'function') aplicarFiltroEstructura();
+    console.log('✅ Estructura: ' + CAPTURISTAS_DATA.length + ' capturistas.');
+  } catch (e) {
+    console.warn('Estructura: excepción.', e);
+    CAPTURISTAS_DATA = [];
+  }
+}
 
 // Leer sesión activa
 function getSesion() {
@@ -1716,6 +1866,15 @@ async function descargar(tipo, nivelRol) {
     const estado = typeof getTheme === 'function' ? getTheme().sistemaEstado : 'Colima';
 
     if (tipo === 'simpatizantes') {
+      // [FIX 14 jul] Traer los datos REALES antes de exportar. Antes se exportaba
+      // el arreglo horneado: un Excel con ciudadanos ficticios.
+      if (!SIMPATIZANTES.length) {
+        await cargarParaExportar();
+      }
+      if (!SIMPATIZANTES.length) {
+        alert('No se pudieron cargar los registros para exportar. Revisa la conexión.');
+        return;
+      }
       // Filtrar según nivel
       let datos = [...SIMPATIZANTES];
       let alcance = '';
@@ -1869,29 +2028,17 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 // Datos simulados de votación en tiempo real
 // En producción: polling a Supabase cada 60s o realtime subscription
-const VOTOS_REALTIME = [
-  {seccion:138, municipio:'VILLA DE ALVAREZ', total:10, votaron:6, sorpresas:2, ts:'10:15'},
-  {seccion:139, municipio:'VILLA DE ALVAREZ', total:8,  votaron:3, sorpresas:1, ts:'10:10'},
-  {seccion:140, municipio:'VILLA DE ALVAREZ', total:5,  votaron:2, sorpresas:0, ts:'09:55'},
-  {seccion:236, municipio:'MANZANILLO',       total:12, votaron:8, sorpresas:3, ts:'10:20'},
-  {seccion:248, municipio:'MANZANILLO',       total:9,  votaron:5, sorpresas:1, ts:'10:05'},
-  {seccion:291, municipio:'COLIMA',           total:11, votaron:4, sorpresas:2, ts:'09:50'},
-  {seccion:308, municipio:'COLIMA',           total:7,  votaron:6, sorpresas:0, ts:'10:18'},
-  {seccion:74,  municipio:'TECOMAN',          total:8,  votaron:3, sorpresas:1, ts:'09:45'},
-];
+// [FIX 14 jul] Era votos en tiempo real INVENTADOS. Estos datos vienen de
+// reportes_casilla_eleccion, que hoy tiene 0 FILAS: la jornada electoral aun no
+// ocurre (es el 6 jun 2027). Mostrar votos falsos en un panel de Dia E es de lo
+// mas peligroso que puede haber. Se deja vacio hasta que existan reportes reales.
+let VOTOS_REALTIME = [];
 
-const PENDIENTES_REALTIME = [
-  {nombre:'María García López',   tel:'312-111-0001',seccion:138,coordinador:'CORD-VDA',municipio:'VILLA DE ALVAREZ',compromiso:3},
-  {nombre:'José Martínez Ruiz',   tel:'312-111-0002',seccion:138,coordinador:'CORD-VDA',municipio:'VILLA DE ALVAREZ',compromiso:4},
-  {nombre:'Ana Torres Mendoza',   tel:'312-111-0003',seccion:139,coordinador:'CORD-VDA',municipio:'VILLA DE ALVAREZ',compromiso:2},
-  {nombre:'Carlos Pérez Silva',   tel:'312-111-0004',seccion:138,coordinador:'CORD-VDA',municipio:'VILLA DE ALVAREZ',compromiso:3},
-  {nombre:'Laura Hernández Cruz', tel:'312-111-0005',seccion:140,coordinador:'CORD-VDA',municipio:'VILLA DE ALVAREZ',compromiso:1},
-  {nombre:'Sofía Ramírez Vega',   tel:'312-111-0007',seccion:138,coordinador:'CORD-VDA',municipio:'VILLA DE ALVAREZ',compromiso:2},
-  {nombre:'Miguel Flores Jiménez',tel:'314-111-0001',seccion:236,coordinador:'CORD-MZL',municipio:'MANZANILLO',     compromiso:3},
-  {nombre:'Patricia Gómez Luna',  tel:'313-111-0001',seccion:74, coordinador:'CORD-TCM',municipio:'TECOMAN',        compromiso:3},
-  {nombre:'Roberto Díaz Morales', tel:'314-111-0002',seccion:248,coordinador:'CORD-MZL',municipio:'MANZANILLO',     compromiso:4},
-  {nombre:'Fernando Castro Reyes',tel:'312-222-0002',seccion:291,coordinador:'CORD-COL',municipio:'COLIMA',         compromiso:4},
-];
+// [FIX 14 jul] Era casillas pendientes INVENTADOS. Estos datos vienen de
+// reportes_casilla_eleccion, que hoy tiene 0 FILAS: la jornada electoral aun no
+// ocurre (es el 6 jun 2027). Mostrar votos falsos en un panel de Dia E es de lo
+// mas peligroso que puede haber. Se deja vacio hasta que existan reportes reales.
+let PENDIENTES_REALTIME = [];
 
 let autoDescargaActiva = false;
 let autoDescargaTimer  = null;
@@ -2096,12 +2243,12 @@ function toggleAutoDescarga() {
 // ══════════════════════════════════════════════════════
 // TABLA PROYECCIÓN — ORDENABLE
 // ══════════════════════════════════════════════════════
-const PROYECCION_DATA = [
-  {escenario:'Ritmo actual',    sub:'sin cambios en estructura',  ritmo:574,  capturas:37552,  pct:18.0, semaforo:'Crítico',   sem_ord:0, col:'var(--red)',   cls:'b-red'},
-  {escenario:'Duplicar ritmo',  sub:'refuerzo de campo ×2',       ritmo:1148, capturas:65104,  pct:31.2, semaforo:'Bajo',      sem_ord:1, col:'var(--amber)', cls:'b-amber'},
-  {escenario:'Escenario realista',sub:'ritmo ×2.5 con estructura nueva',ritmo:1435,capturas:78880,pct:37.8,semaforo:'Alcanzable',sem_ord:2,col:'var(--amber)',cls:'b-amber'},
-  {escenario:'Meta completa',   sub:'requiere ×7.2 más ritmo',    ritmo:4140, capturas:208717, pct:100,  semaforo:'Óptimo',    sem_ord:3, col:'var(--green)', cls:'b-green'},
-];
+// [FIX 14 jul] Era una proyeccion por municipio INVENTADA. Depende del ritmo de
+// captura, y el ritmo NO EXISTE: los 14,261 registros entraron de golpe el 25-may
+// (importacion por Excel, 99.96% en una semana). No hay captura en campo todavia.
+// Proyectar sobre un ritmo inexistente seria inventar el futuro con datos falsos.
+// Se deja vacio: la tabla dira "sin datos" hasta que empiece la captura real.
+let PROYECCION_DATA = [];
 let PROY_SORT = {col: null, asc: true};
 
 function sortProyeccion(col) {
@@ -2182,7 +2329,7 @@ function limpiarFiltroEstructura() {
 }
 
 function filtrarCapturistas() {
-  let data = [...CAPTURISTAS_RANKING];
+  let data = getCapturistasRanking();
   if(EC_FILTRO_MUN)    data = data.filter(c => c.municipio === EC_FILTRO_MUN);
   if(EC_FILTRO_STATUS) data = data.filter(c => c.status === EC_FILTRO_STATUS);
   if(EC_FILTRO_REND) {
@@ -2269,28 +2416,18 @@ function exportarRankingCap() {
   XLSX.writeFile(wb, `ranking_capturistas${EC_FILTRO_MUN?'_'+EC_FILTRO_MUN:''}.xlsx`);
 }
 
-const CAPTURISTAS_RANKING = [
-  {id:'CAP-032',municipio:'Manzanillo',  capturas:52, meta:50, score:62.5, status:'activo'},
-  {id:'CAP-038',municipio:'Manzanillo',  capturas:50, meta:50, score:52.0, status:'activo'},
-  {id:'CAP-004',municipio:'Manzanillo',  capturas:48, meta:50, score:67.7, status:'activo'},
-  {id:'CAP-042',municipio:'Manzanillo',  capturas:48, meta:50, score:67.7, status:'activo'},
-  {id:'CAP-006',municipio:'Manzanillo',  capturas:46, meta:50, score:54.3, status:'activo'},
-  {id:'CAP-018',municipio:'Manzanillo',  capturas:46, meta:50, score:53.3, status:'activo'},
-  {id:'CAP-021',municipio:'Manzanillo',  capturas:46, meta:50, score:59.8, status:'activo'},
-  {id:'CAP-057',municipio:'Manzanillo',  capturas:45, meta:50, score:65.6, status:'activo'},
-  {id:'CAP-027',municipio:'Colima',      capturas:44, meta:50, score:47.7, status:'activo'},
-  {id:'CAP-053',municipio:'Manzanillo',  capturas:44, meta:50, score:64.8, status:'activo'},
-  {id:'CAP-017',municipio:'V. Álvarez',  capturas:41, meta:50, score:58.2, status:'activo'},
-  {id:'CAP-009',municipio:'Tecomán',     capturas:38, meta:50, score:51.4, status:'activo'},
-  {id:'CAP-031',municipio:'Colima',      capturas:35, meta:50, score:44.1, status:'activo'},
-  {id:'CAP-045',municipio:'Tecomán',     capturas:32, meta:50, score:42.8, status:'activo'},
-  {id:'CAP-011',municipio:'V. Álvarez',  capturas:28, meta:50, score:38.5, status:'activo'},
-  {id:'CAP-039',municipio:'Armería',     capturas:22, meta:50, score:31.2, status:'activo'},
-  {id:'CAP-055',municipio:'Comala',      capturas:18, meta:50, score:27.4, status:'inactivo'},
-  {id:'CAP-014',municipio:'Cuauhtémoc',  capturas:14, meta:50, score:22.1, status:'inactivo'},
-  {id:'CAP-048',municipio:'Minatitlán',  capturas:10, meta:50, score:18.6, status:'inactivo'},
-  {id:'CAP-023',municipio:'Ixtlahuacán', capturas:6,  meta:50, score:12.3, status:'inactivo'},
-];
+// [FIX 14 jul] Era un ranking de capturistas INVENTADOS. Ahora se deriva de
+// CAPTURISTAS_DATA, que ya sale de la BD (usuarios + get_capturistas_stats).
+// Si no hay capturistas cargados, queda vacio en vez de inventar un top 10.
+function getCapturistasRanking() {
+  if (!Array.isArray(CAPTURISTAS_DATA) || !CAPTURISTAS_DATA.length) return [];
+  return [...CAPTURISTAS_DATA]
+    .map(c => ({
+      ...c,
+      pct: c.meta > 0 ? +(c.capturas / c.meta * 100).toFixed(1) : 0,
+    }))
+    .sort((a,b) => b.capturas - a.capturas);
+}
 
 let CAP_SORT   = {col:'capturas', asc:false};
 let CAP_VISTA  = 'top';
@@ -2364,14 +2501,168 @@ renderCap();
 // ══════════════════════════════════════════════════════
 // PERFIL DEL VOTANTE — TABLA ORDENABLE
 // ══════════════════════════════════════════════════════
-const PERFIL_DATA = [
-  {grupo:'18–29 años', total:1887, pct:18.9, seg:680,  rie:320, apo:280, prioridad:'Media',              pri_ord:1, rie_col:'var(--amber)', cls:'b-amber'},
-  {grupo:'30–39 años', total:1448, pct:14.5, seg:620,  rie:290, apo:180, prioridad:'Alta',               pri_ord:2, rie_col:'var(--amber)', cls:'b-blue'},
-  {grupo:'40–49 años', total:1530, pct:15.3, seg:740,  rie:380, apo:210, prioridad:'Muy alta',           pri_ord:3, rie_col:'var(--red)',   cls:'b-green'},
-  {grupo:'50–59 años', total:1547, pct:15.5, seg:790,  rie:310, apo:340, prioridad:'Muy alta',           pri_ord:3, rie_col:'var(--amber)', cls:'b-green'},
-  {grupo:'60–69 años', total:1541, pct:15.4, seg:820,  rie:290, apo:490, prioridad:'Muy alta',           pri_ord:3, rie_col:'var(--amber)', cls:'b-green'},
-  {grupo:'70+ años',   total:2047, pct:20.5, seg:951,  rie:613, apo:845, prioridad:'Media — apoyo logístico', pri_ord:1, rie_col:'var(--amber)', cls:'b-amber'},
-];
+// [FIX 14 jul] Aqui habia un PERFIL INVENTADO: los totales por grupo de edad
+// sumaban exactamente 10,000 (el mismo numero falso de los KPIs), con columnas
+// de "prioridad" fabricadas. Los datos SI existen (ciudadanos.sexo y .edad):
+// solo no se estaban usando.
+// Se calcula con RPC (get_perfil_demografico) para agregar EN LA BASE, en vez
+// de bajar 14,261 filas al navegador — el patron que ya nos costo un
+// "Failed to fetch" en offset=8000.
+let PERFIL_DATA = [];
+
+// ══════════════════════════════════════════════════════════════════
+//  RITMO DE CAPTURA — histórico real (14 jul)
+//  Requiere 10_historico_capturas.sql.
+//  Antes: "84/día", "mejor semana 614", "peor 421", "ritmo actual 574/semana"
+//  — todos INVENTADOS. De ellos dependian la proyeccion y la "brecha x7.2".
+//  El dato SI existe: ciudadanos.created_at. Solo faltaba agregarlo.
+// ══════════════════════════════════════════════════════════════════
+async function cargarRitmo() {
+  const set = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
+  const fmt = n => Number(n||0).toLocaleString('es-MX');
+  const fechaCorta = (s) => {
+    if (!s) return '—';
+    const d = new Date(s + 'T00:00:00');
+    return 'sem. ' + d.getDate() + ' ' + ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][d.getMonth()];
+  };
+  try {
+    if (!window.supabase) {
+      await new Promise(r => document.addEventListener('supabase-ready', r, {once:true}));
+    }
+    const { data, error } = await window.supabase.rpc('get_ritmo_capturas');
+    if (error || !data) {
+      console.warn('Ritmo: no disponible (¿falta correr 10_historico_capturas.sql?).', error);
+      ['ritmo-diario','ritmo-mejor','ritmo-peor','ritmo-actual'].forEach(i => set(i,'—'));
+      set('ritmo-mejor-fecha','sin datos'); set('ritmo-peor-fecha','sin datos');
+      return null;
+    }
+    const r = Array.isArray(data) ? data[0] : data;
+    if (!r || !r.total) {
+      ['ritmo-diario','ritmo-mejor','ritmo-peor','ritmo-actual'].forEach(i => set(i,'0'));
+      return null;
+    }
+
+    window._ritmo = r;
+
+    // ══════════════════════════════════════════════════════════════════
+    //  ⚠️ CARGA MASIVA — el caso real de Colima (verificado 14 jul)
+    //  Distribucion real: 25-may = 14,256 · 01-jun = 1 · 08-jun = 3 · 22-jun = 1
+    //  El 99.96% entro de GOLPE (importacion por Excel). Las otras 3 son pruebas.
+    //  NO HAY RITMO DE CAPTURA EN CAMPO: todavia no empieza.
+    //
+    //  Si promediaramos, saldria "3,565 capturas/semana" — un numero tecnicamente
+    //  correcto y COMPLETAMENTE ENGAÑOSO. Alguien veria ese ritmo y creeria que la
+    //  campaña va volando, cuando nadie ha capturado nada en campo.
+    //  Preferimos decir la verdad.
+    // ══════════════════════════════════════════════════════════════════
+    if (r.es_carga_masiva) {
+      set('ritmo-diario', '—');
+      set('ritmo-mejor',  fmt(r.mejor_semana));
+      set('ritmo-mejor-fecha', 'carga inicial (' + fechaCorta(r.mejor_semana_fecha) + ')');
+      set('ritmo-peor',   '—');
+      set('ritmo-peor-fecha',  'sin captura en campo');
+      set('ritmo-actual', fmt(r.ultima_semana));
+
+      const aviso = document.getElementById('ritmo-aviso');
+      if (aviso) {
+        aviso.innerHTML = '<div class="alert warning" style="margin-bottom:14px">' +
+          '<span>⚠</span><span>El ' + Math.round(r.pct_semana_pico) + '% de los registros ' +
+          'entró en una sola semana (' + fechaCorta(r.mejor_semana_fecha) + '): fue una ' +
+          '<strong>importación inicial</strong>, no captura en campo. ' +
+          'Aún no hay ritmo real que medir — empezará a calcularse cuando los capturistas ' +
+          'trabajen en territorio.</span></div>';
+      }
+      console.warn('⚠️ Ritmo: CARGA MASIVA (' + r.pct_semana_pico + '% en una semana). '
+        + 'No es ritmo de campo. El promedio seria engañoso.');
+      return r;
+    }
+
+    // Ritmo real (captura distribuida en el tiempo)
+    set('ritmo-diario', fmt(r.promedio_diario));
+    set('ritmo-mejor',  fmt(r.mejor_semana));
+    set('ritmo-mejor-fecha', fechaCorta(r.mejor_semana_fecha));
+    set('ritmo-peor',   fmt(r.peor_semana));
+    set('ritmo-peor-fecha',  fechaCorta(r.peor_semana_fecha));
+    set('ritmo-actual', fmt(r.ultima_semana));
+
+    console.log('✅ Ritmo: ' + fmt(r.promedio_semanal) + '/semana en '
+      + r.semanas_activas + ' semanas activas.');
+    return r;
+  } catch (e) {
+    console.warn('Ritmo: excepción.', e);
+    return null;
+  }
+}
+
+async function cargarPerfil() {
+  try {
+    if (!window.supabase) {
+      await new Promise(r => document.addEventListener('supabase-ready', r, {once:true}));
+    }
+
+    const [{ data: grupos }, { data: resumen }] = await Promise.all([
+      window.supabase.rpc('get_perfil_demografico'),
+      window.supabase.rpc('get_perfil_resumen'),
+    ]);
+
+    if (!Array.isArray(grupos) || !grupos.length) {
+      console.warn('Perfil: sin datos (¿falta correr 10_historico_capturas.sql?).');
+      PERFIL_DATA = [];
+            return;
+    }
+
+    const totalGeneral = grupos.reduce((s,g) => s + Number(g.total||0), 0);
+
+    PERFIL_DATA = grupos.map(g => {
+      const total = Number(g.total||0);
+      return {
+        grupo: g.grupo,
+        total: total,
+        pct:   totalGeneral > 0 ? +(total/totalGeneral*100).toFixed(1) : 0,
+        seg:   Number(g.seguro||0),
+        rie:   Number(g.riesgo||0),
+        apo:   Number(g.apoyo||0),
+        // La "prioridad" del array viejo estaba inventada. Ahora se DERIVA del
+        // dato real: mas riesgo relativo = mas prioridad.
+        prioridad: (() => {
+          const pctRie = total > 0 ? (Number(g.riesgo||0)/total*100) : 0;
+          if (pctRie >= 25) return 'Muy alta';
+          if (pctRie >= 15) return 'Alta';
+          if (pctRie >= 5)  return 'Media';
+          return 'Baja';
+        })(),
+        pri_ord: (() => {
+          const pctRie = total > 0 ? (Number(g.riesgo||0)/total*100) : 0;
+          return pctRie >= 25 ? 3 : pctRie >= 15 ? 2 : pctRie >= 5 ? 1 : 0;
+        })(),
+        rie_col: 'var(--amber)',
+        cls: 'b-blue',
+      };
+    });
+
+    // KPIs del encabezado (hombres/mujeres/edad/grupo mayor)
+    const r = Array.isArray(resumen) ? resumen[0] : resumen;
+    if (r) {
+      const set = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
+      const fmt = n => Number(n||0).toLocaleString('es-MX');
+      const t = Number(r.total||0);
+      set('perf-hombres',     fmt(r.hombres));
+      set('perf-hombres-pct', t ? (Number(r.hombres)/t*100).toFixed(1)+'%' : '—');
+      set('perf-mujeres',     fmt(r.mujeres));
+      set('perf-mujeres-pct', t ? (Number(r.mujeres)/t*100).toFixed(1)+'%' : '—');
+      set('perf-edad',        r.edad_promedio != null ? Math.round(r.edad_promedio) : '—');
+      set('perf-grupo',       r.grupo_mayor || '—');
+      set('perf-grupo-n',     fmt(r.grupo_mayor_n) + ' personas');
+    }
+
+    renderPerfil(PERFIL_DATA);
+    console.log('✅ Perfil: ' + totalGeneral.toLocaleString('es-MX') + ' ciudadanos en ' + grupos.length + ' grupos.');
+  } catch (e) {
+    console.warn('Perfil: excepción.', e);
+    PERFIL_DATA = [];
+    renderPerfil(PERFIL_DATA);
+  }
+}
 let PERFIL_SORT = {col: null, asc: true};
 
 function sortPerfil(col) {

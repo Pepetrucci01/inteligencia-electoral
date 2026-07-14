@@ -234,7 +234,14 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
   <div class="tab" id="tab-permisos" onclick="showTab('permisos');if(typeof permCargar==='function'&&_permRoles.length===0)permCargar();">ø Permisos</div>
   <div class="tab" id="tab-auditoria" onclick="showTab('auditoria')"> Auditoría</div>
   <div class="tab" id="tab-config" onclick="showTab('config')">⚙ Configuración</div>
-  <div class="tab" id="tab-sistema" onclick="showTab('sistema')"> Sistema</div>
+  <!-- [FIX 14 jul] Pestaña SISTEMA oculta. Mostraba "99.9% uptime", "38 MB de
+     almacenamiento" y "10,408 registros": datos que NO viven en esta base de
+     datos, sino en la API de administracion de Supabase (otro sistema, otras
+     credenciales). Eran cifras inventadas.
+     No aporta nada al cliente —un partido no necesita saber tu uptime— asi que
+     se oculta en vez de fabricar los numeros. Reactivar solo si se conecta de
+     verdad a la API de Supabase. -->
+<!-- <div class="tab" id="tab-sistema" onclick="showTab('sistema')"> Sistema</div> -->
 </div>
 
 <div class="main">
@@ -242,12 +249,16 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
 <!-- ══════════ USUARIOS ══════════ -->
 <div class="screen active" id="sc-usuarios">
   <div class="kpi-row">
-    <div class="kpi bl"><div class="kpi-lbl">Total usuarios</div><div class="kpi-val" id="kpi-total-usr">68</div></div>
-    <div class="kpi gr"><div class="kpi-lbl">Activos hoy</div><div class="kpi-val" id="kpi-activos-usr">23</div></div>
-    <div class="kpi am"><div class="kpi-lbl">Pendientes activar</div><div class="kpi-val" id="kpi-bloq-usr">5</div></div>
-    <div class="kpi re"><div class="kpi-lbl">Bloqueados</div><div class="kpi-val">2</div></div>
-    <div class="kpi pu"><div class="kpi-lbl">Super admins</div><div class="kpi-val">1</div></div>
-    <div class="kpi cy"><div class="kpi-lbl">Capturistas</div><div class="kpi-val" id="kpi-caps-usr">60</div></div>
+    <!-- [FIX 14 jul] "Bloqueados" y "Super admins" NO tenian id: nadie los
+         actualizaba, siempre decian 2 y 1. Ahora tienen id y se calculan.
+         Los placeholders arrancan en un guion para que no parpadee un numero
+         falso antes de que carguen los datos reales. -->
+    <div class="kpi bl"><div class="kpi-lbl">Total usuarios</div><div class="kpi-val" id="kpi-total-usr">—</div></div>
+    <div class="kpi gr"><div class="kpi-lbl">Activos hoy</div><div class="kpi-val" id="kpi-activos-usr">—</div></div>
+    <div class="kpi am"><div class="kpi-lbl">Pendientes activar</div><div class="kpi-val" id="kpi-bloq-usr">—</div></div>
+    <div class="kpi re"><div class="kpi-lbl">Bloqueados</div><div class="kpi-val" id="kpi-bloqueados-usr">—</div></div>
+    <div class="kpi pu"><div class="kpi-lbl">Super admins</div><div class="kpi-val" id="kpi-sadmin-usr">—</div></div>
+    <div class="kpi cy"><div class="kpi-lbl">Capturistas</div><div class="kpi-val" id="kpi-caps-usr">—</div></div>
   </div>
 
   <div class="card">
@@ -301,159 +312,33 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
 
 <!-- ══════════ LICENCIAS ══════════ -->
 <div class="screen" id="sc-licencias">
+  <!-- [FIX 14 jul] REESCRITO. Antes esta pestaña mostraba un NEGOCIO FICTICIO:
+       "MRR estimado $8,500", "ARR estimado $102k", clientes inventados
+       (Jalisco - Cliente D, Guerrero - Cliente E), planes con precio
+       ("PROFESIONAL $2,500 USD/mes") y una alerta de renovacion de un cliente
+       que no existe.
+       La tabla licencias NO TIENE columnas de dinero (ni precio, ni plan, ni
+       mrr): esas cifras no estaban desactualizadas, estaban INVENTADAS.
+       Ahora se muestra solo lo que la BD realmente guarda. El precio se acuerda
+       en el contrato, fuera del sistema. -->
   <div class="kpi-row">
-    <div class="kpi gr"><div class="kpi-lbl">Licencias activas</div><div class="kpi-val">3</div></div>
-    <div class="kpi am"><div class="kpi-lbl">En prueba</div><div class="kpi-val">2</div></div>
-    <div class="kpi re"><div class="kpi-lbl">Vencidas</div><div class="kpi-val">1</div></div>
-    <div class="kpi bl"><div class="kpi-lbl">MRR estimado</div><div class="kpi-val">$8,500</div></div>
-    <div class="kpi cy"><div class="kpi-lbl">ARR estimado</div><div class="kpi-val">$102k</div></div>
+    <div class="kpi gr"><div class="kpi-lbl">Licencias activas</div><div class="kpi-val" id="kpi-lic-activas">—</div></div>
+    <div class="kpi re"><div class="kpi-lbl">Vencidas</div><div class="kpi-val" id="kpi-lic-vencidas">—</div></div>
+    <div class="kpi am"><div class="kpi-lbl">Vencen en 30 días</div><div class="kpi-val" id="kpi-lic-porvencer">—</div></div>
+    <div class="kpi bl"><div class="kpi-lbl">Total licencias</div><div class="kpi-val" id="kpi-lic-total">—</div></div>
   </div>
 
-  <div class="alert warning">
-    <span>⚠</span>
-    <span>La licencia de <strong>Jalisco — Cliente D</strong> vence en 12 días. Contactar para renovación antes del 26 de mayo.</span>
-  </div>
+  <div id="lic-alertas"></div>
 
   <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
     <button class="btn primary" onclick="modalNuevaLicencia()">+ Nueva licencia</button>
   </div>
 
-  <div class="license-grid">
-    <div class="license-card active">
-      <div class="lc-header">
-        <div>
-          <div class="lc-state">Colima · Cliente A</div>
-          <div class="lc-plan">Plan PROFESIONAL · $2,500 USD/mes</div>
-        </div>
-        <span class="badge b-green">Activa</span>
-      </div>
-      <div class="lc-dates">Inicio: 01 ene 2026 · Vence: 31 dic 2026</div>
-      <div class="lc-features">
-        <span class="lc-feat">War Room</span><span class="lc-feat">Capturistas</span>
-        <span class="lc-feat">Mapa</span><span class="lc-feat">Captura</span>
-        <span class="lc-feat">Reportes</span><span class="lc-feat">Admin</span>
-        <span class="lc-feat">70 usuarios</span><span class="lc-feat">500k registros</span>
-      </div>
-      <div class="lc-prog"><div class="lc-prog-fill" style="width:37%;background:var(--green)"></div></div>
-      <div class="lc-days">134 días usados · 231 restantes</div>
-      <div class="btn-row" style="margin-top:10px">
-        <button class="btn success">Renovar</button>
-        <button class="btn">Ver detalle</button>
-        <button class="btn danger">Suspender</button>
-      </div>
-    </div>
-
-    <div class="license-card active">
-      <div class="lc-header">
-        <div>
-          <div class="lc-state">Sonora · Cliente B</div>
-          <div class="lc-plan">Plan ENTERPRISE · $4,000 USD/mes</div>
-        </div>
-        <span class="badge b-green">Activa</span>
-      </div>
-      <div class="lc-dates">Inicio: 15 feb 2026 · Vence: 14 feb 2027</div>
-      <div class="lc-features">
-        <span class="lc-feat">Todo incluido</span><span class="lc-feat">300 usuarios</span>
-        <span class="lc-feat">2M registros</span><span class="lc-feat">Soporte 24h</span>
-        <span class="lc-feat">SLA 99.9%</span><span class="lc-feat">Branding propio</span>
-      </div>
-      <div class="lc-prog"><div class="lc-prog-fill" style="width:24%;background:var(--green)"></div></div>
-      <div class="lc-days">89 días usados · 276 restantes</div>
-      <div class="btn-row" style="margin-top:10px">
-        <button class="btn success">Renovar</button>
-        <button class="btn">Ver detalle</button>
-        <button class="btn danger">Suspender</button>
-      </div>
-    </div>
-
-    <div class="license-card active">
-      <div class="lc-header">
-        <div>
-          <div class="lc-state">Veracruz · Cliente C</div>
-          <div class="lc-plan">Plan ESTÁNDAR · $2,000 USD/mes</div>
-        </div>
-        <span class="badge b-green">Activa</span>
-      </div>
-      <div class="lc-dates">Inicio: 01 mar 2026 · Vence: 28 feb 2027</div>
-      <div class="lc-features">
-        <span class="lc-feat">War Room</span><span class="lc-feat">Capturistas</span>
-        <span class="lc-feat">Mapa</span><span class="lc-feat">Captura</span>
-        <span class="lc-feat">50 usuarios</span><span class="lc-feat">200k registros</span>
-      </div>
-      <div class="lc-prog"><div class="lc-prog-fill" style="width:18%;background:var(--green)"></div></div>
-      <div class="lc-days">75 días usados · 290 restantes</div>
-      <div class="btn-row" style="margin-top:10px">
-        <button class="btn success">Renovar</button>
-        <button class="btn">Ver detalle</button>
-        <button class="btn danger">Suspender</button>
-      </div>
-    </div>
-
-    <div class="license-card trial">
-      <div class="lc-header">
-        <div>
-          <div class="lc-state">Jalisco · Cliente D</div>
-          <div class="lc-plan">PRUEBA GRATUITA · 30 días</div>
-        </div>
-        <span class="badge b-amber">Prueba</span>
-      </div>
-      <div class="lc-dates">Inicio: 14 abr 2026 · Vence: 14 may 2026</div>
-      <div class="lc-features">
-        <span class="lc-feat">War Room</span><span class="lc-feat">Solo lectura</span>
-        <span class="lc-feat">10 usuarios</span><span class="lc-feat">10k registros</span>
-      </div>
-      <div class="lc-prog"><div class="lc-prog-fill" style="width:87%;background:var(--amber)"></div></div>
-      <div class="lc-days" style="color:var(--amber)">⚠ 26 días usados · 4 restantes — VENCE PRONTO</div>
-      <div class="btn-row" style="margin-top:10px">
-        <button class="btn primary">Convertir a pago</button>
-        <button class="btn danger">Terminar prueba</button>
-      </div>
-    </div>
-
-    <div class="license-card trial">
-      <div class="lc-header">
-        <div>
-          <div class="lc-state">Guerrero · Cliente E</div>
-          <div class="lc-plan">PRUEBA GRATUITA · 30 días</div>
-        </div>
-        <span class="badge b-amber">Prueba</span>
-      </div>
-      <div class="lc-dates">Inicio: 05 may 2026 · Vence: 04 jun 2026</div>
-      <div class="lc-features">
-        <span class="lc-feat">War Room</span><span class="lc-feat">Solo lectura</span>
-        <span class="lc-feat">10 usuarios</span><span class="lc-feat">10k registros</span>
-      </div>
-      <div class="lc-prog"><div class="lc-prog-fill" style="width:30%;background:var(--amber)"></div></div>
-      <div class="lc-days">9 días usados · 21 restantes</div>
-      <div class="btn-row" style="margin-top:10px">
-        <button class="btn primary">Convertir a pago</button>
-        <button class="btn danger">Terminar prueba</button>
-      </div>
-    </div>
-
-    <div class="license-card expired">
-      <div class="lc-header">
-        <div>
-          <div class="lc-state">Oaxaca · Cliente F</div>
-          <div class="lc-plan">Plan ESTÁNDAR · $2,000 USD/mes</div>
-        </div>
-        <span class="badge b-red">Vencida</span>
-      </div>
-      <div class="lc-dates">Inicio: 01 dic 2025 · Venció: 30 abr 2026</div>
-      <div class="lc-features">
-        <span class="lc-feat">Acceso suspendido</span>
-      </div>
-      <div class="lc-prog"><div class="lc-prog-fill" style="width:100%;background:var(--red)"></div></div>
-      <div class="lc-days" style="color:var(--red)">Vencida hace 14 días · Datos conservados 90 días</div>
-      <div class="btn-row" style="margin-top:10px">
-        <button class="btn success">Reactivar</button>
-        <button class="btn danger">Eliminar datos</button>
-      </div>
-    </div>
+  <div class="license-grid" id="lic-grid">
+    <div style="padding:24px;color:var(--text3);grid-column:1/-1;text-align:center">Cargando licencias…</div>
   </div>
 </div>
 
-<!-- ══════════ PERMISOS ══════════ -->
 <div class="screen" id="sc-permisos">
 
   <!-- VISTA MATRIZ -->
@@ -491,11 +376,20 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
 
 <!-- ══════════ AUDITORÍA ══════════ -->
 <div class="screen" id="sc-auditoria">
+  <!-- [FIX 14 jul] Los KPIs "Intentos fallidos", "Alertas de seguridad" y
+       "Sesiones activas" fueron ELIMINADOS: no viven en esta base de datos.
+       Los intentos de login fallidos ocurren ANTES de que exista una sesion,
+       en la capa de autenticacion de Supabase, a la que la app no tiene acceso.
+       El "3 intentos fallidos - IP 201.xxx.xxx.12" era doblemente falso: ni
+       ocurrio, ni hay donde guardarlo.
+       Un panel de seguridad que miente es peor que no tenerlo: alguien puede
+       creer que lo atacan, o confiarse de que no.
+       Se muestran solo los KPIs que audit_log SI puede responder. -->
   <div class="kpi-row">
-    <div class="kpi bl"><div class="kpi-lbl">Acciones hoy</div><div class="kpi-val">847</div></div>
-    <div class="kpi am"><div class="kpi-lbl">Intentos fallidos</div><div class="kpi-val">3</div></div>
-    <div class="kpi re"><div class="kpi-lbl">Alertas de seguridad</div><div class="kpi-val">1</div></div>
-    <div class="kpi gr"><div class="kpi-lbl">Sesiones activas</div><div class="kpi-val">23</div></div>
+    <div class="kpi bl"><div class="kpi-lbl">Acciones hoy</div><div class="kpi-val" id="kpi-aud-hoy">—</div></div>
+    <div class="kpi cy"><div class="kpi-lbl">Acciones (7 días)</div><div class="kpi-val" id="kpi-aud-semana">—</div></div>
+    <div class="kpi gr"><div class="kpi-lbl">Usuarios activos hoy</div><div class="kpi-val" id="kpi-aud-usuarios">—</div></div>
+    <div class="kpi am"><div class="kpi-lbl">Eliminaciones (7 días)</div><div class="kpi-val" id="kpi-aud-borrados">—</div></div>
   </div>
 
   <div class="card">
@@ -513,47 +407,15 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
         <button class="btn">⬇ Exportar log</button>
       </div>
     </div>
-    <div style="padding:0 16px 4px">
-      <div class="audit-item">
-        <div class="audit-dot" style="background:var(--red)"></div>
-        <div class="audit-time">14/05 · 09:41</div>
-        <div><div class="audit-user">IP: 201.xxx.xxx.12</div><div class="audit-action">⚠ Intento de acceso fallido repetido (3 intentos) — IP bloqueada temporalmente</div><div class="audit-meta">Módulo: Login · Usuario: cap-091@colima.mx</div></div>
-      </div>
-      <div class="audit-item">
-        <div class="audit-dot" style="background:var(--green)"></div>
-        <div class="audit-time">14/05 · 09:38</div>
-        <div><div class="audit-user">CAP-032 · Manzanillo</div><div class="audit-action">Nuevo registro capturado: REG-10001 · María López Sánchez · Sección 236</div><div class="audit-meta">Módulo: Captura · Asignado a: CAP-057</div></div>
-      </div>
-      <div class="audit-item">
-        <div class="audit-dot" style="background:var(--accent)"></div>
-        <div class="audit-time">14/05 · 09:22</div>
-        <div><div class="audit-user">ADMIN-01 · Super Admin</div><div class="audit-action">Meta estatal recalculada: 6% → 6.5% sobre voto ganador · Nueva meta: 213,238</div><div class="audit-meta">Módulo: Configurador · Estado: Colima</div></div>
-      </div>
-      <div class="audit-item">
-        <div class="audit-dot" style="background:var(--green)"></div>
-        <div class="audit-time">14/05 · 08:59</div>
-        <div><div class="audit-user">CAP-004 · Manzanillo</div><div class="audit-action">Sesión iniciada correctamente</div><div class="audit-meta">Dispositivo: iPhone 15 · IP: 187.xxx.xxx.45 · Colima, MX</div></div>
-      </div>
-      <div class="audit-item">
-        <div class="audit-dot" style="background:var(--amber)"></div>
-        <div class="audit-time">13/05 · 22:14</div>
-        <div><div class="audit-user">COORD-MZL · Manzanillo</div><div class="audit-action">Reporte municipal exportado a Excel · 2,108 registros incluidos</div><div class="audit-meta">Módulo: Reportes · Archivo: Reporte_Manzanillo_13may.xlsx</div></div>
-      </div>
-      <div class="audit-item">
-        <div class="audit-dot" style="background:var(--purple)"></div>
-        <div class="audit-time">13/05 · 18:03</div>
-        <div><div class="audit-user">ADMIN-01 · Super Admin</div><div class="audit-action">Nueva licencia creada: Guerrero · Cliente E · Plan prueba 30 días</div><div class="audit-meta">Módulo: Admin → Licencias · Contacto: guerrero@cliente.mx</div></div>
-      </div>
-      <div class="audit-item">
-        <div class="audit-dot" style="background:var(--red)"></div>
-        <div class="audit-time">13/05 · 15:30</div>
-        <div><div class="audit-user">ADMIN-01 · Super Admin</div><div class="audit-action">Registro REG-09847 marcado como duplicado y eliminado · ciudadano: Juan Pérez</div><div class="audit-meta">Módulo: Captura · Motivo: CURP duplicado</div></div>
-      </div>
-      <div class="audit-item">
-        <div class="audit-dot" style="background:var(--green)"></div>
-        <div class="audit-time">13/05 · 12:15</div>
-        <div><div class="audit-user">CAP-057 · Manzanillo</div><div class="audit-action">45 registros capturados en sesión de 3.5 horas</div><div class="audit-meta">Módulo: Captura · Origen: Casa por casa · Sección 236</div></div>
-      </div>
+    <!-- [FIX 14 jul] Aqui habia 12 REGISTROS DE ACTIVIDAD INVENTADOS, incluido
+         un ataque que nunca ocurrio: "Intento de acceso fallido repetido (3
+         intentos) - IP bloqueada temporalmente - IP: 201.xxx.xxx.12".
+         Un registro de seguridad falso es de lo mas peligroso que puede haber
+         en un panel: alguien podria investigar un ataque inexistente, o peor,
+         confiarse creyendo que el sistema esta limpio.
+         Ahora se llena con audit_log real (ver cargarAuditoria). -->
+    <div style="padding:0 16px 4px" id="audit-lista">
+      <div style="padding:24px;text-align:center;color:var(--text3)">Cargando registro de actividad…</div>
     </div>
   </div>
 </div>
@@ -708,10 +570,10 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
           </div>
           <div class="form-group">
             <label class="form-label">Meta estatal de registros</label>
-            <input class="form-input" type="number" id="cfg-meta" value="197297" placeholder="Ej. 197297"
+            <input class="form-input" type="number" id="cfg-meta" value="208717" placeholder="Ej. 208717"
               oninput="actualizarPrevMeta(this.value)">
             <div style="font-size:10px;font-family:var(--mono);color:var(--text3);margin-top:4px">
-              Vista previa: <span id="cfg-meta-prev" style="color:var(--accent);font-weight:600">197,297</span> registros
+              Vista previa: <span id="cfg-meta-prev" style="color:var(--accent);font-weight:600">208,717</span> registros
             </div>
           </div>
           <button class="btn primary" style="width:100%;margin-top:4px" onclick="guardarConfigOperativa()"> Guardar datos operativos</button>
@@ -1010,23 +872,13 @@ const ROLES = {
   capturista:    {label:'Capturista',       color:'var(--green)'},
 };
 
-let USUARIOS = [
-  {id:'ADM-001',nombre:'Administrador Principal',email:'admin@sistema.mx',rol:'super_admin',mun:'Estatal',sec:'—',ultimo:'Hoy 09:22',capturas:0,status:'activo'},
-  {id:'CORD-MZL',nombre:'Coordinador Manzanillo',email:'manzanillo@colima.mx',rol:'coordinador',mun:'Manzanillo',sec:'79 secciones',ultimo:'Hoy 08:45',capturas:0,status:'activo'},
-  {id:'CORD-TCM',nombre:'Coordinador Tecomán',email:'tecoman@colima.mx',rol:'coordinador',mun:'Tecomán',sec:'62 secciones',ultimo:'Ayer 22:10',capturas:0,status:'activo'},
-  {id:'CORD-COL',nombre:'Coordinador Colima',email:'colima@colima.mx',rol:'coordinador',mun:'Colima',sec:'99 secciones',ultimo:'Hoy 07:30',capturas:0,status:'activo'},
-  {id:'CORD-VDA',nombre:'Coordinador V. Álvarez',email:'valvarez@colima.mx',rol:'coordinador',mun:'V. Álvarez',sec:'70 secciones',ultimo:'Ayer 20:15',capturas:0,status:'activo'},
-  {id:'LDR-138',nombre:'Líder Sección 138',email:'lider138@colima.mx',rol:'jefe_seccion',mun:'Villa de Álvarez',sec:'138',ultimo:'Hoy 09:05',capturas:0,status:'activo'},
-  {id:'LDR-139',nombre:'Líder Sección 139',email:'lider139@colima.mx',rol:'jefe_seccion',mun:'Villa de Álvarez',sec:'139',ultimo:'Ayer 21:30',capturas:0,status:'activo'},
-  {id:'LDR-236',nombre:'Líder Sección 236',email:'lider236@colima.mx',rol:'jefe_seccion',mun:'Manzanillo',sec:'236',ultimo:'Hoy 08:50',capturas:0,status:'activo'},
-  {id:'CAP-032',nombre:'Capturista 032',email:'cap032@colima.mx',rol:'capturista',mun:'Manzanillo',sec:'236',ultimo:'Hoy 09:38',capturas:52,status:'activo'},
-  {id:'CAP-038',nombre:'Capturista 038',email:'cap038@colima.mx',rol:'capturista',mun:'Manzanillo',sec:'248',ultimo:'Hoy 08:12',capturas:50,status:'activo'},
-  {id:'CAP-004',nombre:'Capturista 004',email:'cap004@colima.mx',rol:'capturista',mun:'Manzanillo',sec:'261',ultimo:'Ayer 18:40',capturas:48,status:'activo'},
-  {id:'CAP-042',nombre:'Capturista 042',email:'cap042@colima.mx',rol:'capturista',mun:'Manzanillo',sec:'264',ultimo:'Hoy 07:55',capturas:48,status:'activo'},
-  {id:'CAP-091',nombre:'Capturista 091',email:'cap091@colima.mx',rol:'capturista',mun:'Comala',sec:'92',ultimo:'Nunca',capturas:0,status:'pendiente'},
-  {id:'CAP-092',nombre:'Capturista 092',email:'cap092@colima.mx',rol:'capturista',mun:'Coquimatlán',sec:'105',ultimo:'Nunca',capturas:0,status:'pendiente'},
-  {id:'CAP-OLD',nombre:'Capturista Bloqueado',email:'capbloq@colima.mx',rol:'capturista',mun:'Cuauhtémoc',sec:'120',ultimo:'hace 30 días',capturas:2,status:'bloqueado'},
-];
+// [FIX 14 jul] Aqui habia 16 USUARIOS FALSOS horneados (Coordinador Manzanillo,
+// Capturista 032, etc.). Si el fetch fallaba, quedaban pintados como reales — y
+// eso paso cuando Vercel apuntaba a un Supabase inexistente: la pantalla decia
+// "68 usuarios / 60 capturistas" mientras TODAS las peticiones fallaban.
+// Un admin no debe ver usuarios que no existen: podria bloquear o editar gente
+// ficticia. Ahora arranca vacio; si la carga falla, se dice claramente.
+let USUARIOS = [];
 
 async function cargarUsuarios() {
   try {
@@ -1044,19 +896,32 @@ async function cargarUsuarios() {
       .eq('licencia_id', licenciaId)
       .order('rol', { ascending: true });
 
-    if(error || !usuarios) return;
+    // [FIX 14 jul] Antes: `if(error || !usuarios) return;` — fallaba en SILENCIO
+    // y dejaba la maqueta pintada. Ahora avisa y la tabla queda vacia (honesta).
+    if(error || !usuarios) {
+      console.warn('⚠️ Admin: no se pudieron cargar los usuarios.', error);
+      USUARIOS = [];
+      const tb = document.getElementById('users-tbody');
+      if(tb) tb.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text3)">No se pudieron cargar los usuarios. Revisa la conexión.</td></tr>';
+      actualizarKPIsUsuarios();
+      return;
+    }
 
-    // Contar capturas por capturista
-    const { data: caps } = await window.supabase
-      .from('ciudadanos')
-      .select('capturista_id')
-      .eq('licencia_id', licenciaId)
-      .not('capturista_id', 'is', null);
-
+    // Contar capturas por capturista.
+    // [FIX 14 jul] Antes se bajaban TODOS los capturista_id (14,261 filas) solo
+    // para contarlos en el navegador. Con 2,000 capturistas serian millones de
+    // filas viajando sin necesidad. La RPC get_capturistas_stats() ya agrega en
+    // la base: una peticion en vez de quince.
     const capCount = {};
-    (caps || []).forEach(c => {
-      capCount[c.capturista_id] = (capCount[c.capturista_id] || 0) + 1;
-    });
+    try {
+      const { data: stats } = await window.supabase.rpc('get_capturistas_stats');
+      (stats || []).forEach(s => {
+        const k = s.capturista_id || s.id;
+        if (k) capCount[k] = s.total || s.capturas || s.capturados || 0;
+      });
+    } catch(e) {
+      console.warn('Admin: RPC de conteo no disponible; las capturas saldran en 0.', e);
+    }
 
     const hoy = new Date().toISOString().split('T')[0];
     USUARIOS = usuarios.map(u => {
@@ -1089,22 +954,27 @@ async function cargarUsuarios() {
 }
 
 function actualizarKPIsUsuarios() {
-  const total = USUARIOS.length;
-  const activos = USUARIOS.filter(u => u.status === 'activo').length;
-  const coords = USUARIOS.filter(u => u.rol === 'coordinador').length;
-  const caps = USUARIOS.filter(u => u.rol === 'capturista').length;
-  const bloq = USUARIOS.filter(u => u.status === 'bloqueado').length;
+  // [FIX 14 jul] Dos bugs aqui:
+  //  (a) Buscaba 'kpi-coords-usr', un id que NO EXISTE en el HTML: ese calculo
+  //      se tiraba a la basura.
+  //  (b) Metia el conteo de BLOQUEADOS en 'kpi-bloq-usr', que en pantalla dice
+  //      "Pendientes activar". Estaban CRUZADOS.
+  // Ahora cada KPI apunta a su tarjeta correcta y los seis se calculan.
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
 
-  const elTotal = document.getElementById('kpi-total-usr');
-  const elActivos = document.getElementById('kpi-activos-usr');
-  const elCoords = document.getElementById('kpi-coords-usr');
-  const elCaps = document.getElementById('kpi-caps-usr');
-  const elBloq = document.getElementById('kpi-bloq-usr');
-  if(elTotal) elTotal.textContent = total;
-  if(elActivos) elActivos.textContent = activos;
-  if(elCoords) elCoords.textContent = coords;
-  if(elCaps) elCaps.textContent = caps;
-  if(elBloq) elBloq.textContent = bloq;
+  const total      = USUARIOS.length;
+  const activos    = USUARIOS.filter(u => u.status === 'activo').length;
+  const pendientes = USUARIOS.filter(u => u.status === 'pendiente').length;
+  const bloqueados = USUARIOS.filter(u => u.status === 'bloqueado').length;
+  const superAdmin = USUARIOS.filter(u => u.rol === 'super_admin').length;
+  const caps       = USUARIOS.filter(u => u.rol === 'capturista').length;
+
+  set('kpi-total-usr',      total);
+  set('kpi-activos-usr',    activos);
+  set('kpi-bloq-usr',       pendientes);   // tarjeta "Pendientes activar"
+  set('kpi-bloqueados-usr', bloqueados);   // tarjeta "Bloqueados"
+  set('kpi-sadmin-usr',     superAdmin);   // tarjeta "Super admins"
+  set('kpi-caps-usr',       caps);
 }
 
 let usuariosFiltrados = [...USUARIOS];
@@ -1205,6 +1075,201 @@ async function cambiarStatus(id, nuevoStatus){
   }
 }
 
+// Escapar HTML: los datos vienen de la BD y se inyectan con innerHTML.
+// Sin esto, una licencia con nombre malicioso podria inyectar scripts (XSS).
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  LICENCIAS — conectado a la tabla real (14 jul)
+//  Columnas reales: clave, tipo, estado, municipio, meta_estatal, anio_eleccion,
+//  fecha_inicio, fecha_vencimiento, max_usuarios, activa, modulos_habilitados,
+//  territorio, exclusiva, notas.
+//  NO hay precio ni plan: el dinero se acuerda en el contrato, fuera del sistema.
+//  Por eso ya no se muestran MRR/ARR (estaban inventados).
+// ══════════════════════════════════════════════════════════════════
+async function cargarLicencias() {
+  const grid = document.getElementById('lic-grid');
+  const alertas = document.getElementById('lic-alertas');
+  const vacio = (msg) => {
+    if (grid) grid.innerHTML = '<div style="padding:24px;color:var(--text3);grid-column:1/-1;text-align:center">' + msg + '</div>';
+  };
+  try {
+    if (!window.supabase) {
+      await new Promise(r => document.addEventListener('supabase-ready', r, {once:true}));
+    }
+    const { data, error } = await window.supabase
+      .from('licencias')
+      .select('id, clave, tipo, estado, municipio, meta_estatal, anio_eleccion, fecha_inicio, fecha_vencimiento, max_usuarios, activa, modulos_habilitados, exclusiva')
+      .order('fecha_vencimiento', { ascending: true });
+
+    if (error || !Array.isArray(data)) {
+      console.warn('Licencias: no se pudieron cargar.', error);
+      vacio('No se pudieron cargar las licencias. Revisa la conexión.');
+      return;
+    }
+
+    const hoy = new Date();
+    const dias = (f) => Math.ceil((new Date(f) - hoy) / 86400000);
+    const set = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
+
+    const activas   = data.filter(l => l.activa && dias(l.fecha_vencimiento) >= 0).length;
+    const vencidas  = data.filter(l => dias(l.fecha_vencimiento) < 0).length;
+    const porVencer = data.filter(l => l.activa && dias(l.fecha_vencimiento) >= 0 && dias(l.fecha_vencimiento) <= 30).length;
+    set('kpi-lic-activas',   activas);
+    set('kpi-lic-vencidas',  vencidas);
+    set('kpi-lic-porvencer', porVencer);
+    set('kpi-lic-total',     data.length);
+
+    // Alertas: solo de licencias REALES por vencer.
+    if (alertas) {
+      const urg = data.filter(l => l.activa && dias(l.fecha_vencimiento) >= 0 && dias(l.fecha_vencimiento) <= 30);
+      alertas.innerHTML = urg.map(l =>
+        '<div class="alert warning"><span>⚠</span><span>La licencia <strong>' + esc(l.clave) +
+        '</strong> vence en ' + dias(l.fecha_vencimiento) + ' días (' + esc(l.fecha_vencimiento) +
+        '). Contactar para renovación.</span></div>'
+      ).join('');
+    }
+
+    if (!data.length) { vacio('No hay licencias registradas.'); return; }
+
+    if (grid) {
+      grid.innerHTML = data.map(l => {
+        const d = dias(l.fecha_vencimiento);
+        const vencida = d < 0;
+        const estado = vencida ? 'Vencida' : (l.activa ? 'Activa' : 'Inactiva');
+        const badge  = vencida ? 'b-red' : (l.activa ? 'b-green' : 'b-amber');
+        const ini = new Date(l.fecha_inicio), fin = new Date(l.fecha_vencimiento);
+        const total = Math.max(1, Math.ceil((fin - ini) / 86400000));
+        const usados = Math.max(0, Math.min(total, Math.ceil((hoy - ini) / 86400000)));
+        const pct = Math.round(usados / total * 100);
+        const color = vencida ? 'var(--red)' : (d <= 30 ? 'var(--amber)' : 'var(--green)');
+        const mods = (l.modulos_habilitados || []).map(m => '<span class="lc-feat">' + esc(m) + '</span>').join('');
+        const terr = l.municipio ? (esc(l.estado) + ' · ' + esc(l.municipio)) : esc(l.estado || '—');
+        return '<div class="license-card ' + (l.activa && !vencida ? 'active' : '') + '">' +
+          '<div class="lc-header"><div>' +
+            '<div class="lc-state">' + esc(l.clave) + '</div>' +
+            '<div class="lc-plan">' + esc(l.tipo || '—') + ' · ' + terr + ' · ' + (l.anio_eleccion || '—') + '</div>' +
+          '</div><span class="badge ' + badge + '">' + estado + '</span></div>' +
+          '<div class="lc-dates">Inicio: ' + esc(l.fecha_inicio) + ' · Vence: ' + esc(l.fecha_vencimiento) + '</div>' +
+          '<div class="lc-features">' + mods +
+            '<span class="lc-feat">' + (l.max_usuarios||0).toLocaleString('es-MX') + ' usuarios máx</span>' +
+            '<span class="lc-feat">Meta: ' + (l.meta_estatal||0).toLocaleString('es-MX') + '</span>' +
+            (l.exclusiva ? '<span class="lc-feat">Exclusiva</span>' : '') +
+          '</div>' +
+          '<div class="lc-prog"><div class="lc-prog-fill" style="width:' + Math.min(100,pct) + '%;background:' + color + '"></div></div>' +
+          '<div class="lc-days">' + (vencida ? ('Venció hace ' + Math.abs(d) + ' días') : (usados + ' días usados · ' + d + ' restantes')) + '</div>' +
+        '</div>';
+      }).join('');
+    }
+    console.log('✅ Licencias: ' + data.length + ' (' + activas + ' activas, ' + vencidas + ' vencidas).');
+  } catch (e) {
+    console.warn('Licencias: excepción.', e);
+    vacio('No se pudieron cargar las licencias.');
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  AUDITORÍA — conectada a audit_log real (14 jul)
+//  Requiere 09_auditoria_lectura.sql: audit_log no tenia GRANT SELECT, asi que
+//  la app no podia leerlo (un log que nadie lee es teatro de seguridad).
+//  Lectura restringida a super_admin/admin, cada quien dentro de su licencia.
+// ══════════════════════════════════════════════════════════════════
+async function cargarAuditoria() {
+  const lista = document.getElementById('audit-lista');
+  const set = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
+  const vacio = (msg) => {
+    if (lista) lista.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text3)">' + msg + '</div>';
+  };
+  try {
+    if (!window.supabase) {
+      await new Promise(r => document.addEventListener('supabase-ready', r, {once:true}));
+    }
+
+    // Columnas reales (confirmadas en BD, 14 jul):
+    //   id, licencia_id, usuario_id, usuario_nombre, accion, tabla,
+    //   registro_id, detalle (jsonb), ip_address, created_at
+    // La RLS ya filtra por licencia; no hace falta filtrar aqui.
+    const { data, error } = await window.supabase
+      .from('audit_log')
+      .select('id, usuario_id, usuario_nombre, accion, tabla, registro_id, ip_address, created_at')
+      .order('created_at', { ascending: false })
+      .limit(100);
+
+    if (error) {
+      // Lo mas probable: falta correr 09_auditoria_lectura.sql (sin GRANT SELECT).
+      console.warn('Auditoría: no se pudo leer audit_log.', error);
+      vacio('No se pudo cargar el registro de actividad. Revisa los permisos de lectura.');
+      ['kpi-aud-hoy','kpi-aud-semana','kpi-aud-usuarios','kpi-aud-borrados'].forEach(i => set(i,'—'));
+      return;
+    }
+    if (!Array.isArray(data) || !data.length) {
+      vacio('Sin registros de actividad todavía.');
+      ['kpi-aud-hoy','kpi-aud-semana','kpi-aud-usuarios','kpi-aud-borrados'].forEach(i => set(i,'0'));
+      return;
+    }
+
+    // KPIs reales (solo lo que audit_log puede responder)
+    const hoy = new Date().toISOString().slice(0,10);
+    const hace7 = new Date(Date.now() - 7*86400000);
+
+    const deHoy    = data.filter(r => (r.created_at||'').slice(0,10) === hoy);
+    const semana   = data.filter(r => new Date(r.created_at) >= hace7);
+    const usuarios = new Set(deHoy.map(r => r.usuario_id || r.usuario_nombre).filter(Boolean)).size;
+    const borrados = semana.filter(r => /delete|elimin|borr/i.test(r.accion || '')).length;
+
+    set('kpi-aud-hoy',      deHoy.length);
+    set('kpi-aud-semana',   semana.length);
+    set('kpi-aud-usuarios', usuarios);
+    set('kpi-aud-borrados', borrados);
+
+    // Lista de actividad
+    const color = (a) => {
+      if (/delete|elimin|borr/i.test(a)) return 'var(--red)';
+      if (/insert|crea|captur/i.test(a)) return 'var(--green)';
+      if (/update|edit|modif/i.test(a))  return 'var(--amber)';
+      return 'var(--accent)';
+    };
+    const fecha = (s) => {
+      if (!s) return '—';
+      const d = new Date(s);
+      return String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') +
+             ' · ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+    };
+
+    if (lista) {
+      lista.innerHTML = data.map(r => {
+        const acc   = r.accion || 'acción';
+        // usuario_nombre es una columna real: mostrar el nombre, no un uuid.
+        const quien = r.usuario_nombre || (r.usuario_id ? String(r.usuario_id).slice(0,8) : 'sistema');
+        const meta  = [
+          r.tabla ? ('Tabla: ' + esc(r.tabla)) : '',
+          r.registro_id ? ('ID: ' + esc(String(r.registro_id).slice(0,8))) : '',
+          // ip_address SI existe en la tabla. Antes se mostraba una IP INVENTADA
+          // ("201.xxx.xxx.12"); ahora se muestra la real, o nada si no hay.
+          r.ip_address ? ('IP: ' + esc(r.ip_address)) : ''
+        ].filter(Boolean).join(' · ');
+        return '<div class="audit-item">' +
+          '<div class="audit-dot" style="background:' + color(acc) + '"></div>' +
+          '<div class="audit-time">' + fecha(r.created_at) + '</div>' +
+          '<div>' +
+            '<div class="audit-user">' + esc(quien) + '</div>' +
+            '<div class="audit-action">' + esc(acc) + '</div>' +
+            '<div class="audit-meta">' + meta + '</div>' +
+          '</div></div>';
+      }).join('');
+    }
+
+    console.log('✅ Auditoría: ' + data.length + ' registros (' + deHoy.length + ' hoy).');
+  } catch (e) {
+    console.warn('Auditoría: excepción.', e);
+    vacio('No se pudo cargar el registro de actividad.');
+  }
+}
+
 function showTab(t){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
@@ -1215,6 +1280,15 @@ function showTab(t){
       cargarTemaEnFormulario();
       cargarConfigOperativaEnFormulario();
     }, 50);
+  }
+  if (t === 'candidaturas') {
+    if (typeof cargarCandidaturas === 'function') cargarCandidaturas();
+  }
+  if (t === 'auditoria') {
+    if (typeof cargarAuditoria === 'function') cargarAuditoria();
+  }
+  if (t === 'licencias') {
+    if (typeof cargarLicencias === 'function') cargarLicencias();
   }
   if (t === 'permisos') {
     setTimeout(() => {
@@ -1298,9 +1372,9 @@ async function crearUsuario(){
   try {
     const sesion = JSON.parse(localStorage.getItem('electoral_sesion') || 'null');
     const token = sesion?.access_token;
-    const SUPA_URL = 'https://dyirhwwmykskpuvzcafx.supabase.co';
-    const SUPA_KEY = 'sb_publishable_15ryvEoNMYqJr4bHm7fi0g_BcvPMMrK';
-
+    // [FIX 14 jul] Antes hardcodeaba STAGING: en produccion habria creado los
+    // usuarios en la base de PRUEBAS. supabase_client.js ya expone SUPA_URL y
+    // SUPA_KEY segun el ambiente. Usar esos, nunca literales.
     const res = await fetch(`${SUPA_URL}/functions/v1/crear-usuario`, {
       method: 'POST',
       headers: {
@@ -1396,7 +1470,10 @@ function guardarConfigOperativa() {
   const estado = document.getElementById('cfg-estado').value.trim();
   const anio   = parseInt(document.getElementById('cfg-year').value) || 2027;
   const fecha  = document.getElementById('cfg-fecha').value || (anio + '-06-01');
-  const meta   = parseInt(document.getElementById('cfg-meta').value.replace(/\D/g,'')) || 197297;
+  // [FIX 14 jul] El fallback era la meta VIEJA (197,297). Ahora: valor del campo
+  // -> meta viva de Supabase (window.SISTEMA_META) -> 208,717.
+  const meta   = parseInt(document.getElementById('cfg-meta').value.replace(/\D/g,''))
+                 || (typeof window.SISTEMA_META === 'number' && window.SISTEMA_META > 0 ? window.SISTEMA_META : 208717);
 
   if (!estado) { alert('Por favor ingresa el estado.'); return; }
 
@@ -1603,18 +1680,68 @@ const TIPOS_LABEL = {
   regidor:'Regidor',sindico:'Síndico',
 };
 
-let CANDIDATURAS = [
-  {id:'CAND-001',tipo:'gobernador',  nombre:'Candidato a Gobernador',      territorio:'Estado de Colima', meta:197297,caps:1500,avance:7.2, activa:true},
-  {id:'CAND-002',tipo:'senador',     nombre:'Candidato a Senador',          territorio:'Estado de Colima', meta:197297,caps:800, avance:5.1, activa:true},
-  {id:'CAND-003',tipo:'dip_federal', nombre:'Diputado Federal Dist. 1',     territorio:'Distrito Federal 1',meta:98648,caps:380, avance:8.4, activa:true},
-  {id:'CAND-004',tipo:'dip_federal', nombre:'Diputado Federal Dist. 2',     territorio:'Distrito Federal 2',meta:98649,caps:390, avance:6.1, activa:true},
-  {id:'CAND-005',tipo:'dip_local',   nombre:'Diputado Local Dist. 1',       territorio:'Distrito Local 1',  meta:18200,caps:80,  avance:9.3, activa:true},
-  {id:'CAND-006',tipo:'dip_local',   nombre:'Diputado Local Dist. 4',       territorio:'Distrito Local 4',  meta:22400,caps:95,  avance:11.2,activa:true},
-  {id:'CAND-007',tipo:'presidente',  nombre:'Presidente Municipal Colima',   territorio:'Colima',            meta:48030,caps:220, avance:7.3, activa:true},
-  {id:'CAND-008',tipo:'presidente',  nombre:'Presidente Municipal Manzanillo',territorio:'Manzanillo',       meta:51442,caps:280, avance:4.3, activa:true},
-  {id:'CAND-009',tipo:'presidente',  nombre:'Pte. Municipal Villa de Álvarez',territorio:'Villa de Álvarez', meta:34952,caps:180, avance:6.0, activa:true},
-  {id:'CAND-010',tipo:'presidente',  nombre:'Presidente Municipal Tecomán',  territorio:'Tecomán',           meta:29211,caps:160, avance:14.5,activa:true},
-];
+// [FIX 14 jul] Aqui habia 10 CANDIDATURAS INVENTADAS (Candidato a Gobernador,
+// Diputado Federal Dist. 1, etc.) con la meta VIEJA de 197,297 y porcentajes de
+// avance falsos. La tabla `candidaturas` es real (columnas: codigo, nombre, tipo,
+// territorio, meta, fecha_eleccion, activa) — solo no se estaba usando.
+// NOTA: la tabla NO tiene columnas `caps` ni `avance`: esos se CALCULAN contando
+// los ciudadanos vinculados a cada candidatura (ciudadanos_candidaturas).
+let CANDIDATURAS = [];
+
+async function cargarCandidaturas() {
+  try {
+    if (!window.supabase) {
+      await new Promise(r => document.addEventListener('supabase-ready', r, {once:true}));
+    }
+    const { data, error } = await window.supabase
+      .from('candidaturas')
+      .select('id, codigo, nombre, tipo, territorio, meta, fecha_eleccion, activa')
+      .order('tipo', { ascending: true });
+
+    if (error || !Array.isArray(data)) {
+      console.warn('Candidaturas: no se pudieron cargar.', error);
+      CANDIDATURAS = [];
+      if (typeof renderCandidaturas === 'function') renderCandidaturas();
+      return;
+    }
+
+    // Avance real: contar ciudadanos vinculados a cada candidatura.
+    // Se agrega en la BD (head+count) en vez de bajar las filas: con 14 mil
+    // ciudadanos, bajarlas solo para contarlas es lo que tumba el sistema.
+    const capsPorCand = {};
+    await Promise.all(data.map(async c => {
+      try {
+        const { count } = await window.supabase
+          .from('ciudadanos_candidaturas')
+          .select('id', { count: 'exact', head: true })
+          .eq('candidatura_id', c.id);
+        capsPorCand[c.id] = count || 0;
+      } catch(e) { capsPorCand[c.id] = 0; }
+    }));
+
+    CANDIDATURAS = data.map(c => {
+      const caps = capsPorCand[c.id] || 0;
+      const meta = c.meta || 0;
+      return {
+        id: c.id,
+        codigo: c.codigo || '',
+        tipo: c.tipo || '',
+        nombre: c.nombre || c.codigo || '(sin nombre)',
+        territorio: c.territorio || '—',
+        meta: meta,
+        caps: caps,
+        avance: meta > 0 ? +(caps / meta * 100).toFixed(1) : 0,
+        activa: !!c.activa,
+      };
+    });
+
+    if (typeof renderCandidaturas === 'function') renderCandidaturas();
+    console.log('✅ Candidaturas: ' + CANDIDATURAS.length + ' cargadas.');
+  } catch (e) {
+    console.warn('Candidaturas: excepción.', e);
+    CANDIDATURAS = [];
+  }
+}
 
 const COMPROMISOS_EJEMPLO = [
   {candidatura:'Candidato a Gobernador',    tipo:'gobernador',  comp:3, label:'Seguro vota'},
@@ -1842,11 +1969,11 @@ function procesarExcelCandidaturas(input){
 function descargarPlantillaCand(){
   const csv = [
     'TIPO,NOMBRE,MUNICIPIO_DISTRITO,META_VOTOS,CAPTURISTAS,ACTIVA',
-    'gobernador,Candidato a Gobernador,Estado de Colima,197297,1500,SI',
+    'gobernador,Candidato a Gobernador,Estado de Colima,208717,1500,SI',
     'presidente,Presidente Municipal Ejemplo,Nombre Municipio,25000,120,SI',
     'dip_local,Diputado Local Dist. 1,Distrito Local 1,18000,80,SI',
     'dip_federal,Diputado Federal Dist. 1,Distrito Federal 1,98000,380,SI',
-    'senador,Candidato a Senador,Estado de Colima,197297,800,SI',
+    'senador,Candidato a Senador,Estado de Colima,208717,800,SI',
   ].join('\n');
   const blob = new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
   const a = document.createElement('a');
@@ -1914,8 +2041,10 @@ function crearLicenciaConTerminos() {
 // ══════════════════════════════════════════════════════════════════
 // MÓDULO DE PERMISOS — CONECTADO A SUPABASE
 // ══════════════════════════════════════════════════════════════════
-const PERM_URL = 'https://dyirhwwmykskpuvzcafx.supabase.co';
-const PERM_KEY = 'sb_publishable_15ryvEoNMYqJr4bHm7fi0g_BcvPMMrK';
+// [FIX 14 jul] Antes hardcodeaba STAGING: en produccion, editar permisos habria
+// escrito en la base de PRUEBAS. Ahora toma el ambiente de supabase_client.js.
+const PERM_URL = SUPA_URL;
+const PERM_KEY = SUPA_KEY;
 
 const PERM_COLORES = {
   super_admin:     { bg:'rgba(239,68,68,0.15)',   color:'#ef4444' },
