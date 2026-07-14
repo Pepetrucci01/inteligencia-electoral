@@ -603,12 +603,28 @@ async function cargarCiudadanosCapturista() {
       buscar(); renderLista(); return;
     }
 
-    const { data, error } = await window.supabase
+    // [FIX 12 jul] MODO SUPERVISION (mismo criterio que panel_capturista_personal).
+    // Antes se filtraba SIEMPRE por .eq('capturista_id', sesion.id), asi que un
+    // super_admin/admin solo veia los registros que EL habia capturado (o sea,
+    // casi ninguno) — no los 14,261 del equipo. Un rol de mando debe poder ver
+    // todo el trabajo de su licencia; un capturista, solo el suyo.
+    const ROLES_MANDO = ['super_admin', 'admin', 'coordinador'];
+    const esMando = ROLES_MANDO.includes(sesion.rol);
+
+    let q = window.supabase
       .from('ciudadanos')
       .select('id, nombre, apellido_paterno, apellido_materno, edad, sexo, seccion_electoral, municipio, telefono, compromiso, origen, es_riesgo, es_apoyo, es_influencia, curp, validado, duplicado, capturista_id, responsable_id, domicilio, notas, created_at')
-      .eq('licencia_id', sesion.licencia_id)
-      .eq('capturista_id', sesion.id)
-      .order('created_at', { ascending: false });
+      .eq('licencia_id', sesion.licencia_id);
+
+    // Solo los capturistas quedan acotados a SUS propios registros.
+    // (La RLS ya impide ver otra licencia; esto es el filtro de alcance por rol.)
+    if (!esMando) q = q.eq('capturista_id', sesion.id);
+
+    // Tope de seguridad: son ~14,261 registros y el default de PostgREST corta
+    // en 1,000. Sin esto, un admin veria solo una fraccion sin darse cuenta.
+    q = q.order('created_at', { ascending: false }).limit(20000);
+
+    const { data, error } = await q;
 
     _ciudadanosCargados = true;
 
@@ -635,7 +651,9 @@ async function cargarCiudadanosCapturista() {
         colonia:    '',
         notas:      r.notas || '',
       }));
-      console.log(`Registros del capturista: ${CIUDADANOS.length}`);
+      console.log(esMando
+        ? `Registros de la licencia (vista de ${sesion.rol}): ${CIUDADANOS.length}`
+        : `Registros del capturista: ${CIUDADANOS.length}`);
     }
     buscar();
     renderLista();

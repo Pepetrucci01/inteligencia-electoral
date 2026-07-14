@@ -2,10 +2,29 @@
 //  CLIENTE SUPABASE — SIE COLIMA 2027
 // ============================================================
 
-const IS_STAGING = window.location.hostname === 'localhost' 
-  || window.location.hostname === '127.0.0.1'
-  || window.location.hostname.includes('staging')
-  || window.location.hostname.includes('inteligencia-electoral.vercel.app');
+// [FIX 12 jul] La deteccion anterior solo matcheaba el dominio EXACTO de
+// produccion ('inteligencia-electoral.vercel.app'), pero Vercel genera un hash
+// unico por deploy en cada preview de la rama desarrollo. Por ejemplo:
+//   inteligencia-electoral-9ftvrknhv-votera-s-projects.vercel.app
+// Ese hostname NO contiene 'inteligencia-electoral.vercel.app', asi que
+// IS_STAGING daba false -> el preview intentaba conectarse al proyecto de
+// PRODUCCION, que AUN NO EXISTE -> net::ERR_NAME_NOT_RESOLVED en todo.
+//
+// Ahora es AL REVES: production SOLO cuando el dominio es exactamente el de
+// produccion. Cualquier otra cosa (local, previews, ramas) usa staging.
+// Es el default seguro: si la deteccion falla, se va a staging, no a un
+// proyecto inexistente ni -peor- a datos reales de clientes.
+const HOST = window.location.hostname;
+
+// Dominios de PRODUCCION. Añadir aqui el dominio final cuando exista (votera.mx).
+const DOMINIOS_PRODUCCION = [
+  'inteligencia-electoral.vercel.app',
+  // 'votera.mx',
+  // 'www.votera.mx',
+];
+
+const IS_PRODUCTION = DOMINIOS_PRODUCCION.includes(HOST);
+const IS_STAGING = !IS_PRODUCTION;
 
 const SUPABASE_CONFIG = {
   staging: {
@@ -20,6 +39,19 @@ const SUPABASE_CONFIG = {
 
 const ENV = IS_STAGING ? 'staging' : 'production';
 const { url: SUPA_URL, key: SUPA_KEY } = SUPABASE_CONFIG[ENV];
+
+// [FIX 12 jul] El proyecto de PRODUCCION aun NO EXISTE (ESTRUCTURA_MAESTRA §4.3:
+// "Proyecto Supabase de PRODUCCION separado del staging" = pendiente).
+// Si alguien despliega al dominio de produccion antes de crearlo, el resultado
+// es una cascada de net::ERR_NAME_NOT_RESOLVED dificil de diagnosticar.
+// Este aviso lo hace explicito desde el primer segundo.
+if (ENV === 'production') {
+  console.warn(
+    '⚠️ AMBIENTE: PRODUCTION (' + SUPA_URL + ').\n' +
+    'Si el proyecto Supabase de produccion aun no existe, TODAS las peticiones\n' +
+    'fallaran con ERR_NAME_NOT_RESOLVED. Verificar antes de desplegar a main.'
+  );
+}
 
 (function loadSupabase() {
   const script = document.createElement('script');
