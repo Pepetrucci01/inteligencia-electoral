@@ -915,9 +915,23 @@ async function cargarUsuarios() {
     const capCount = {};
     try {
       const { data: stats } = await window.supabase.rpc('get_capturistas_stats');
-      (stats || []).forEach(s => {
-        const k = s.capturista_id || s.id;
-        if (k) capCount[k] = s.total || s.capturas || s.capturados || 0;
+      // [FIX 14 jul] La RPC NO siempre devuelve un arreglo: puede venir como
+      // objeto (json_agg / un solo row) → "(stats||[]).forEach is not a function".
+      // Normalizamos antes de iterar, y aceptamos varios nombres de columna
+      // porque el shape exacto de la RPC lo define José.
+      let filas = [];
+      if (Array.isArray(stats)) {
+        filas = stats;
+      } else if (stats && typeof stats === 'object') {
+        // Puede ser {capturistas:[...]} o un solo registro suelto.
+        filas = Array.isArray(stats.capturistas) ? stats.capturistas
+              : Array.isArray(stats.data)        ? stats.data
+              : [stats];
+      }
+      filas.forEach(s => {
+        if (!s || typeof s !== 'object') return;
+        const k = s.capturista_id || s.usuario_id || s.id;
+        if (k) capCount[k] = Number(s.total ?? s.capturas ?? s.capturados ?? s.n ?? 0);
       });
     } catch(e) {
       console.warn('Admin: RPC de conteo no disponible; las capturas saldran en 0.', e);
