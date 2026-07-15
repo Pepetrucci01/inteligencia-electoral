@@ -1089,6 +1089,27 @@ async function cambiarStatus(id, nuevoStatus){
   }
 }
 
+// [FIX 14 jul] Esperar a supabase CON TIMEOUT. Sin el, si el evento
+// 'supabase-ready' nunca llega, la promesa no se resuelve y la funcion se cuelga
+// EN SILENCIO: sin error, sin log, con la pantalla vacia. Un bug invisible.
+async function esperarSupabase(ms) {
+  if (window.supabase) return true;
+  return await new Promise(resolve => {
+    let listo = false;
+    const ok = () => { if (!listo) { listo = true; resolve(true); } };
+    document.addEventListener('supabase-ready', ok, { once: true });
+    const iv = setInterval(() => { if (window.supabase) { clearInterval(iv); ok(); } }, 100);
+    setTimeout(() => {
+      clearInterval(iv);
+      if (!listo) {
+        listo = true;
+        console.warn('⚠️ Supabase no cargó en ' + (ms/1000) + 's. Las secciones que dependen de la BD quedarán vacías.');
+        resolve(false);
+      }
+    }, ms || 8000);
+  });
+}
+
 // Escapar HTML: los datos vienen de la BD y se inyectan con innerHTML.
 // Sin esto, una licencia con nombre malicioso podria inyectar scripts (XSS).
 function esc(s) {
@@ -1112,9 +1133,7 @@ async function cargarLicencias() {
     if (grid) grid.innerHTML = '<div style="padding:24px;color:var(--text3);grid-column:1/-1;text-align:center">' + msg + '</div>';
   };
   try {
-    if (!window.supabase) {
-      await new Promise(r => document.addEventListener('supabase-ready', r, {once:true}));
-    }
+    if (!await esperarSupabase(8000)) return;
     const { data, error } = await window.supabase
       .from('licencias')
       .select('id, clave, tipo, estado, municipio, meta_estatal, anio_eleccion, fecha_inicio, fecha_vencimiento, max_usuarios, activa, modulos_habilitados, exclusiva')
@@ -1199,9 +1218,7 @@ async function cargarAuditoria() {
     if (lista) lista.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text3)">' + msg + '</div>';
   };
   try {
-    if (!window.supabase) {
-      await new Promise(r => document.addEventListener('supabase-ready', r, {once:true}));
-    }
+    if (!await esperarSupabase(8000)) return;
 
     // Columnas reales (confirmadas en BD, 14 jul):
     //   id, licencia_id, usuario_id, usuario_nombre, accion, tabla,
@@ -1704,9 +1721,7 @@ let CANDIDATURAS = [];
 
 async function cargarCandidaturas() {
   try {
-    if (!window.supabase) {
-      await new Promise(r => document.addEventListener('supabase-ready', r, {once:true}));
-    }
+    if (!await esperarSupabase(8000)) return;
     const { data, error } = await window.supabase
       .from('candidaturas')
       .select('id, codigo, nombre, tipo, territorio, meta, fecha_eleccion, activa')

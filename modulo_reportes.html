@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>REPORTES — INTELIGENCIA ELECTORAL COLIMA 2027</title><!-- build:2.1 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
@@ -355,7 +356,10 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
   </div>
 
   <div class="card" style="margin-bottom:14px">
-    <div class="card-head"><div class="card-title">Capturas por semana (últimas 12 semanas)</div><div class="card-meta">datos reales INE</div></div>
+    <!-- [FIX 14 jul] Decia "ultimas 12 semanas" y "datos reales INE": ninguna de
+         las dos cosas era cierta. Ahora muestra el historico REAL, que puede ser
+         mas o menos semanas segun lo que haya en la BD. -->
+    <div class="card-head"><div class="card-title">Capturas por semana</div><div class="card-meta">histórico real</div></div>
     <div class="chart-wrap" style="height:220px">
       <canvas id="ch-semanas" role="img" aria-label="Gráfica de capturas por semana: promedio 574 por semana con picos en febrero y marzo 2026">Capturas semanales: 586, 524, 614, 585, 561, 614, 590, 579, 582, 573, 574, 421.</canvas>
     </div>
@@ -363,17 +367,17 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
 
   <div class="grid2">
     <div class="card">
-      <div class="card-head"><div class="card-title">Capturas por mes</div></div>
+      <div class="card-head"><div class="card-title">Acumulado</div><div class="card-meta">histórico real</div></div>
       <div class="chart-wrap" style="height:200px">
-        <canvas id="ch-meses" role="img" aria-label="Capturas por mes: enero 2549, febrero 2288, marzo 2622, abril 2462, mayo 79">Ene: 2549, Feb: 2288, Mar: 2622, Abr: 2462, May: 79.</canvas>
+        <canvas id="ch-meses" role="img" aria-label="Acumulado de capturas a lo largo del tiempo"></canvas>
       </div>
     </div>
-    <div class="card">
-      <div class="card-head"><div class="card-title">Ritmo diario — últimas 2 semanas</div></div>
-      <div class="chart-wrap" style="height:200px">
-        <canvas id="ch-diario" role="img" aria-label="Capturas diarias del 17 al 30 de abril 2026">Ritmo diario entre 72 y 99 capturas por día.</canvas>
-      </div>
-    </div>
+    <!-- [FIX 14 jul] Tarjeta "Ritmo diario - ultimas 2 semanas" OCULTA.
+         Mostraba 14 dias de abril con ~85 capturas/dia: INVENTADOS.
+         No hay ritmo diario real que graficar: los 14,261 registros entraron
+         de golpe el 25-may (importacion). Reactivar cuando haya captura en
+         campo distribuida en el tiempo. -->
+    
   </div>
 
   <div class="card">
@@ -675,8 +679,8 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
         <canvas id="ch-sexo" role="img" aria-label="Distribución por sexo: hombres 50.1%, mujeres 49.9%">Casi paridad entre hombres y mujeres.</canvas>
       </div>
       <div style="display:flex;gap:20px;padding:0 16px 14px;justify-content:center;">
-        <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text2)"><span style="width:10px;height:10px;border-radius:2px;background:#3b82f6;display:inline-block"></span>Hombres 50.1%</span>
-        <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text2)"><span style="width:10px;height:10px;border-radius:2px;background:#a855f7;display:inline-block"></span>Mujeres 49.9%</span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text2)"><span style="width:10px;height:10px;border-radius:2px;background:#3b82f6;display:inline-block"></span><span id="leg-hombres">Hombres —</span></span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text2)"><span style="width:10px;height:10px;border-radius:2px;background:#a855f7;display:inline-block"></span><span id="leg-mujeres">Mujeres —</span></span>
       </div>
     </div>
   </div>
@@ -1287,14 +1291,30 @@ function buildMunTable(){
 function _iniciarMunicipios(){
   if (window.__munIniciado) return;
   window.__munIniciado = true;
+
+  // [FIX 14 jul] buildCharts() solo se llama al CAMBIAR de pestaña (desde
+  // showTab). Si el usuario ya esta en "Avance & ritmo" cuando carga la pagina,
+  // nunca corre y las graficas quedan VACIAS — sin ningun error en consola.
+  // Se construyen las de la pestaña activa al arrancar.
+  const activa = document.querySelector('.screen.active');
+  if (activa && typeof buildCharts === 'function') {
+    const tab = activa.id.replace('sc-','');
+    setTimeout(() => buildCharts(tab), 100);
+  }
   // [FIX 14 jul] El ritmo va PRIMERO: el Resumen Ejecutivo lo necesita para
   // calcular la proyeccion (window._ritmo). Si corriera despues, la proyeccion
   // se pintaria sin ritmo — el mismo bug de "leer antes de tiempo" que ya
   // cazamos en META_WR y _kpisRPC.
-  cargarRitmo().then(() => cargarDatosMunicipios());
-  cargarPerfil();
-  cargarSecciones();
-  cargarCapturistas();
+  // [FIX 14 jul] Esperar al SDK ANTES de disparar las cargas. Los <script src>
+  // van al FINAL del archivo, asi que DOMContentLoaded puede llegar antes de que
+  // supabase_client.js termine. Sin esta espera, todo fallaba en silencio.
+  esperarSupabase(8000).then(ok => {
+    if (!ok) return;
+    cargarRitmo().then(() => cargarDatosMunicipios());
+    cargarPerfil();
+    cargarSecciones();
+    cargarCapturistas();
+  });
 }
 // Arrancar cuando el DOM esté listo (para entonces theme.js ya corrió).
 if (document.readyState === 'loading') {
@@ -1320,9 +1340,7 @@ let SEC_DATA = [];
 
 async function cargarSecciones() {
   try {
-    if (!window.supabase) {
-      await new Promise(r => document.addEventListener('supabase-ready', r, {once:true}));
-    }
+    if (!await esperarSupabase(8000)) return;
     const { data, error } = await window.supabase.rpc('get_avance_secciones');
     if (error || !Array.isArray(data) || !data.length) {
       console.warn('Secciones: sin datos (¿falta correr 11_secciones_calidad.sql?).', error);
@@ -1519,36 +1537,34 @@ function buildCharts(tab){
   const TICK = '#5a6a85';
 
   if(tab==='avance'){
-    new Chart(document.getElementById('ch-semanas'),{
-      type:'bar',
-      data:{
-        labels:['9-15 feb','16-22 feb','23 feb-1 mar','2-8 mar','9-15 mar','16-22 mar','23-29 mar','30 mar-5 abr','6-12 abr','13-19 abr','20-26 abr','27 abr-3 may'],
-        datasets:[{label:'Capturas',data:[586,524,614,585,561,614,590,579,582,573,574,421],backgroundColor:'#3b82f6bb',borderRadius:3}]
-      },
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-        scales:{x:{ticks:{color:TICK,font:FONT,maxRotation:45},grid:{color:GRID}},y:{ticks:{color:TICK,font:FONT},grid:{color:GRID}}}}
-    });
-    new Chart(document.getElementById('ch-meses'),{
-      type:'bar',
-      data:{
-        labels:['Enero','Febrero','Marzo','Abril','Mayo'],
-        datasets:[{label:'Capturas',data:[2549,2288,2622,2462,79],
-          backgroundColor:['#3b82f6bb','#3b82f6bb','#22c55ebb','#3b82f6bb','#64748bbb'],borderRadius:4}]
-      },
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-        scales:{x:{ticks:{color:TICK,font:FONT},grid:{color:GRID}},y:{ticks:{color:TICK,font:FONT},grid:{color:GRID}}}}
-    });
-    new Chart(document.getElementById('ch-diario'),{
-      type:'line',
-      data:{
-        labels:['17/04','18/04','19/04','20/04','21/04','22/04','23/04','24/04','25/04','26/04','27/04','28/04','29/04','30/04'],
-        datasets:[{label:'Capturas/día',data:[85,84,84,97,81,72,80,76,86,82,99,75,91,77],
-          borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,0.08)',tension:.4,pointRadius:4,
-          pointBackgroundColor:'#22c55e',fill:true}]
-      },
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-        scales:{x:{ticks:{color:TICK,font:FONT},grid:{color:GRID}},y:{ticks:{color:TICK,font:FONT},grid:{color:GRID},min:60}}}
-    });
+    // [FIX 14 jul] Repintar el aviso de carga masiva al ENTRAR a la pestaña.
+    // cargarRitmo() corre en el arranque y pinta el aviso, pero si el usuario
+    // no esta en esta pestaña, el DOM aun no se muestra. Al entrar, se repinta.
+    if (window._ritmo && window._ritmo.es_carga_masiva) {
+      const av = document.getElementById('ritmo-aviso');
+      if (av && !av.innerHTML.trim()) {
+        const r = window._ritmo;
+        const MM = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+        const f = r.mejor_semana_fecha ? (() => {
+          const d = new Date(r.mejor_semana_fecha + 'T00:00:00');
+          return d.getDate() + ' ' + MM[d.getMonth()];
+        })() : '—';
+        av.innerHTML = '<div class="alert warning" style="margin-bottom:14px">' +
+          '<span>⚠</span><span>El ' + Math.round(r.pct_semana_pico) + '% de los registros ' +
+          'entró en una sola semana (' + f + '): fue una <strong>importación inicial</strong>, ' +
+          'no captura en campo. Aún no hay ritmo real que medir — empezará a calcularse cuando ' +
+          'los capturistas trabajen en territorio.</span></div>';
+      }
+    }
+    // [FIX 14 jul] Las 3 graficas estaban HORNEADAS, y la tarjeta decia
+    // "datos reales INE":
+    //   - "Capturas por semana": 12 semanas de feb a may, ~580/semana
+    //   - "Capturas por mes":    ene-may con 2,549 / 2,288 / 2,622...
+    //   - "Ritmo diario":        14 dias de abril con ~85/dia
+    // Ninguna era real. El dato verdadero: los 14,261 entraron el 25-may DE
+    // GOLPE (importacion por Excel). No hay 12 semanas de captura en campo.
+    // Ahora se pintan con el historico real (get_historico_capturas).
+    dibujarGraficasRitmo();
   }
 
   if(tab==='calidad'){
@@ -1623,24 +1639,11 @@ function buildCharts(tab){
   }
 
   if(tab==='perfil'){
-    new Chart(document.getElementById('ch-edad'),{
-      type:'bar',
-      data:{
-        labels:['18–29','30–39','40–49','50–59','60–69','70+'],
-        datasets:[{label:'Ciudadanos',data:[1887,1448,1530,1547,1541,2047],
-          backgroundColor:['#3b82f6bb','#22c55ebb','#22c55ebb','#22c55ebb','#22c55ebb','#a855f7bb'],borderRadius:4}]
-      },
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-        scales:{x:{ticks:{color:TICK,font:FONT},grid:{color:GRID}},y:{ticks:{color:TICK,font:FONT},grid:{color:GRID}}}}
-    });
-    new Chart(document.getElementById('ch-sexo'),{
-      type:'doughnut',
-      data:{
-        labels:['Hombres','Mujeres'],
-        datasets:[{data:[5007,4993],backgroundColor:['#3b82f6','#a855f7'],borderWidth:0,hoverOffset:4}]
-      },
-      options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false}}}
-    });
+    // [FIX 15 jul] Las gráficas de perfil (ch-edad, ch-sexo) las crea
+    // cargarPerfil() con DATOS REALES. Antes se creaban aquí vacías y luego
+    // cargarPerfil intentaba recrearlas → "Canvas is already in use".
+    // Un solo dueño del canvas = sin conflicto. cargarPerfil se dispara solo.
+    if (typeof cargarPerfil === 'function') cargarPerfil();
   }
 }
 
@@ -1739,9 +1742,7 @@ let CAPTURISTAS_DATA = [];
 
 async function cargarCapturistas() {
   try {
-    if (!window.supabase) {
-      await new Promise(r => document.addEventListener('supabase-ready', r, {once:true}));
-    }
+    if (!await esperarSupabase(8000)) return;
     const sesion = JSON.parse(localStorage.getItem('electoral_sesion') || 'null');
     const lic = sesion?.licencia_id;
     if (!lic) return;
@@ -1762,7 +1763,12 @@ async function cargarCapturistas() {
     }
 
     const capCount = {};
-    (stats || []).forEach(s => {
+    // [FIX 15 jul] get_capturistas_stats devuelve un OBJETO
+    // {capturistas:[...], sin_asignar:{...}}, no un array. Antes se hacía
+    // (stats||[]).forEach sobre el objeto → "forEach is not a function".
+    const listaStats = Array.isArray(stats) ? stats
+                     : (stats && Array.isArray(stats.capturistas) ? stats.capturistas : []);
+    listaStats.forEach(s => {
       const k = s.capturista_id || s.id;
       if (k) capCount[k] = s.total || s.capturas || s.capturados || 0;
     });
@@ -2517,6 +2523,139 @@ let PERFIL_DATA = [];
 //  — todos INVENTADOS. De ellos dependian la proyeccion y la "brecha x7.2".
 //  El dato SI existe: ciudadanos.created_at. Solo faltaba agregarlo.
 // ══════════════════════════════════════════════════════════════════
+// [FIX 14 jul] Esperar a que supabase_client.js termine de cargar el SDK.
+// ⚠️ Antes cada funcion hacia:
+//     if (!window.supabase) await new Promise(r => document.addEventListener('supabase-ready', r));
+//   Si el evento NO llegaba (porque el modulo ni siquiera cargaba el cliente),
+//   la promesa NUNCA se resolvia: la funcion se colgaba EN SILENCIO. Sin error,
+//   sin log, con las graficas vacias. Un bug invisible.
+//   Ahora hay TIMEOUT: si en 8s no hay cliente, se avisa y se sigue.
+async function esperarSupabase(ms) {
+  // [FIX 14 jul] No basta con que exista window.supabase: hay que esperar a que
+  // la SESION este establecida. supabase_client.js hace setSession() de forma
+  // asincrona DESPUES de crear el cliente. Si disparamos las RPC antes, auth.uid()
+  // es null, get_mi_licencia() devuelve null, y las RPC filtran por una licencia
+  // inexistente → devuelven CERO filas, en silencio.
+  //
+  // [FIX 15 jul] localStorage.electoral_sesion existe desde el LOGIN, pero eso NO
+  // garantiza que el token este aplicado en el SDK (setSession es async y ocurre
+  // despues). Antes esto devolvia true por localStorage y las RPC salian sin
+  // sesion en el SDK → 401. Ahora verificamos la sesion EN EL SDK, y si falta
+  // pero si tenemos tokens guardados, la aplicamos aqui mismo antes de continuar.
+  const tokensGuardados = () => {
+    try {
+      const s = JSON.parse(localStorage.getItem('electoral_sesion') || 'null');
+      return (s && s.access_token && s.refresh_token) ? s : null;
+    } catch (e) { return null; }
+  };
+  const sdkTieneSesion = async () => {
+    try {
+      const { data } = await window.supabase.auth.getSession();
+      return !!data?.session?.access_token;
+    } catch (e) { return false; }
+  };
+  // Intenta dejar el SDK con sesion valida. Devuelve true si lo logra.
+  const asegurar = async () => {
+    if (!window.supabase) return false;
+    if (await sdkTieneSesion()) return true;
+    const s = tokensGuardados();
+    if (s && window.supabase.auth?.setSession) {
+      try {
+        await window.supabase.auth.setSession({
+          access_token: s.access_token, refresh_token: s.refresh_token,
+        });
+        return await sdkTieneSesion();
+      } catch (e) { /* sigue esperando el evento */ }
+    }
+    return false;
+  };
+
+  if (await asegurar()) return true;
+  return await new Promise(resolve => {
+    let listo = false;
+    const ok = async () => {
+      if (listo) return;
+      // aun en el evento, confirmar que el SDK quedo con sesion
+      await asegurar();
+      listo = true; resolve(true);
+    };
+    document.addEventListener('supabase-ready', ok, { once: true });
+    // Sondeo por si el evento ya se disparo antes de que llegaramos aqui.
+    const iv = setInterval(async () => {
+      if (await asegurar()) { clearInterval(iv); ok(); }
+    }, 100);
+    setTimeout(() => {
+      clearInterval(iv);
+      if (!listo) {
+        listo = true;
+        console.warn('⚠️ Supabase no cargó en ' + (ms/1000) + 's. Las secciones que dependen de la BD quedarán vacías.');
+        resolve(false);
+      }
+    }, ms || 8000);
+  });
+}
+
+// Pinta las graficas de "Avance & ritmo" con el HISTORICO REAL.
+async function dibujarGraficasRitmo() {
+  try {
+    if (!await esperarSupabase(8000)) return;
+    const { data, error } = await window.supabase.rpc('get_historico_capturas');
+    if (error || !Array.isArray(data) || !data.length) {
+      console.warn('Gráficas de ritmo: sin histórico (¿falta correr 10_historico_capturas.sql?).');
+      return;
+    }
+
+    const FONT = { family:'monospace', size:10 };
+    const GRID = 'rgba(255,255,255,0.05)';
+    const TICK = '#5a6a85';
+    const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    const etiqueta = (s) => {
+      const d = new Date(s + 'T00:00:00');
+      return d.getDate() + ' ' + MESES[d.getMonth()];
+    };
+
+    ['_chSemanas','_chMeses'].forEach(k => {
+      if (window[k] && typeof window[k].destroy === 'function') window[k].destroy();
+    });
+
+    const elSem = document.getElementById('ch-semanas');
+    if (elSem) {
+      window._chSemanas = new Chart(elSem, {
+        type: 'bar',
+        data: {
+          labels: data.map(d => etiqueta(d.semana)),
+          datasets: [{ label:'Capturas', data: data.map(d => Number(d.capturas)),
+                       backgroundColor:'#3b82f6bb', borderRadius:3 }]
+        },
+        options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+          scales:{ x:{ticks:{color:TICK,font:FONT,maxRotation:45},grid:{color:GRID}},
+                   y:{ticks:{color:TICK,font:FONT},grid:{color:GRID}} } }
+      });
+    }
+
+    // Acumulado: mas honesto que "por mes" cuando hubo una carga inicial.
+    const elMes = document.getElementById('ch-meses');
+    if (elMes) {
+      window._chMeses = new Chart(elMes, {
+        type: 'line',
+        data: {
+          labels: data.map(d => etiqueta(d.semana)),
+          datasets: [{ label:'Acumulado', data: data.map(d => Number(d.acumulado)),
+                       borderColor:'#22c55e', backgroundColor:'rgba(34,197,94,0.08)',
+                       tension:.3, pointRadius:3, fill:true }]
+        },
+        options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+          scales:{ x:{ticks:{color:TICK,font:FONT,maxRotation:45},grid:{color:GRID}},
+                   y:{ticks:{color:TICK,font:FONT},grid:{color:GRID}} } }
+      });
+    }
+
+    console.log('✅ Gráficas de ritmo: ' + data.length + ' semanas reales.');
+  } catch (e) {
+    console.warn('Gráficas de ritmo: excepción.', e);
+  }
+}
+
 async function cargarRitmo() {
   const set = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
   const fmt = n => Number(n||0).toLocaleString('es-MX');
@@ -2526,18 +2665,58 @@ async function cargarRitmo() {
     return 'sem. ' + d.getDate() + ' ' + ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][d.getMonth()];
   };
   try {
-    if (!window.supabase) {
-      await new Promise(r => document.addEventListener('supabase-ready', r, {once:true}));
-    }
-    const { data, error } = await window.supabase.rpc('get_ritmo_capturas');
+    if (!await esperarSupabase(8000)) return;
+    let { data, error } = await window.supabase.rpc('get_ritmo_capturas');
     if (error || !data) {
       console.warn('Ritmo: no disponible (¿falta correr 10_historico_capturas.sql?).', error);
       ['ritmo-diario','ritmo-mejor','ritmo-peor','ritmo-actual'].forEach(i => set(i,'—'));
       set('ritmo-mejor-fecha','sin datos'); set('ritmo-peor-fecha','sin datos');
       return null;
     }
+    // [FIX 14 jul] Si la RPC devuelve VACIO, casi siempre es que la sesion aun no
+    // estaba lista: get_ritmo_capturas() usa get_mi_licencia(), que depende de
+    // auth.uid(). Si setSession() no ha terminado, auth.uid() es null, la RPC
+    // filtra por licencia nula y devuelve CERO filas. Antes esto salia por un
+    // `return null` SIN LOGUEAR: la funcion moria en silencio en el arranque,
+    // pero funcionaba al llamarla a mano (para entonces ya habia sesion).
+    // Ahora se reintenta una vez tras un momento.
+    if (Array.isArray(data) && data.length === 0) {
+      console.warn('Ritmo: la RPC devolvió vacío (sesión aún no lista). Reintentando…');
+      await new Promise(res => setTimeout(res, 1200));
+      const retry = await window.supabase.rpc('get_ritmo_capturas');
+      if (Array.isArray(retry.data) && retry.data.length) {
+        data = retry.data;
+      } else {
+        console.warn('Ritmo: sigue vacío tras reintentar. ¿La licencia tiene datos?');
+        ['ritmo-diario','ritmo-mejor','ritmo-peor','ritmo-actual'].forEach(i => set(i,'0'));
+        return null;
+      }
+    }
+
     const r = Array.isArray(data) ? data[0] : data;
-    if (!r || !r.total) {
+
+    // [FIX 14 jul] Postgres devuelve bigint/numeric como STRING en JSON
+    // ("14261", no 14261). La guarda `!r.total` y las comparaciones numericas
+    // fallaban con strings, asi que la funcion salia por aqui con return null y
+    // NUNCA llegaba al bloque de carga masiva: los KPIs quedaban en "0" y el
+    // aviso no se pintaba. Normalizamos los tipos ANTES de usarlos.
+    if (!r) {
+      ['ritmo-diario','ritmo-mejor','ritmo-peor','ritmo-actual'].forEach(i => set(i,'0'));
+      return null;
+    }
+    r.total            = Number(r.total || 0);
+    r.semanas_activas  = Number(r.semanas_activas || 0);
+    r.promedio_semanal = Number(r.promedio_semanal || 0);
+    r.promedio_diario  = Number(r.promedio_diario || 0);
+    r.mejor_semana     = Number(r.mejor_semana || 0);
+    r.peor_semana      = Number(r.peor_semana || 0);
+    r.ultima_semana    = Number(r.ultima_semana || 0);
+    r.pct_semana_pico  = Number(r.pct_semana_pico || 0);
+    // Postgres devuelve booleanos como true/false, pero por si acaso viene "t"/"true".
+    r.es_carga_masiva  = (r.es_carga_masiva === true || r.es_carga_masiva === 't'
+                          || r.es_carga_masiva === 'true' || r.pct_semana_pico > 80);
+
+    if (!r.total) {
       ['ritmo-diario','ritmo-mejor','ritmo-peor','ritmo-actual'].forEach(i => set(i,'0'));
       return null;
     }
@@ -2596,19 +2775,37 @@ async function cargarRitmo() {
 
 async function cargarPerfil() {
   try {
-    if (!window.supabase) {
-      await new Promise(r => document.addEventListener('supabase-ready', r, {once:true}));
+    if (!await esperarSupabase(8000)) return;
+
+    // [FIX 15 jul] Antes se ignoraba el .error de cada RPC: si daba 401
+    // (sesión aún no propagada), 'grupos' quedaba undefined y la función
+    // salía con "sin datos" — mensaje engañoso. Ahora leemos el error,
+    // y si es de sesión, refrescamos token y reintentamos UNA vez.
+    async function rpcPerfil(fn) {
+      let { data, error } = await window.supabase.rpc(fn);
+      const esSesion = error && (error.code === '401'
+        || /jwt|auth|unauthorized|permission|not authenticated|sin perfil/i.test(
+             (error.message || '') + (error.hint || '')));
+      if (esSesion && typeof window.refrescarTokenSupabase === 'function') {
+        console.warn('Perfil: ' + fn + ' rechazada por sesión — refrescando y reintentando…');
+        await window.refrescarTokenSupabase();
+        ({ data, error } = await window.supabase.rpc(fn));
+      }
+      if (error) console.error('Perfil: ' + fn + ' →', error.message || error);
+      return { data, error };
     }
 
-    const [{ data: grupos }, { data: resumen }] = await Promise.all([
-      window.supabase.rpc('get_perfil_demografico'),
-      window.supabase.rpc('get_perfil_resumen'),
+    const [{ data: grupos, error: errG }, { data: resumen }] = await Promise.all([
+      rpcPerfil('get_perfil_demografico'),
+      rpcPerfil('get_perfil_resumen'),
     ]);
 
     if (!Array.isArray(grupos) || !grupos.length) {
-      console.warn('Perfil: sin datos (¿falta correr 10_historico_capturas.sql?).');
+      // Distinguir "error real" de "de verdad no hay filas"
+      if (errG) console.warn('Perfil: la RPC falló (ver error arriba). No es falta de datos.');
+      else      console.warn('Perfil: sin filas en get_perfil_demografico.');
       PERFIL_DATA = [];
-            return;
+      return;
     }
 
     const totalGeneral = grupos.reduce((s,g) => s + Number(g.total||0), 0);
@@ -2656,6 +2853,58 @@ async function cargarPerfil() {
     }
 
     renderPerfil(PERFIL_DATA);
+
+    // [FIX 15 jul] Conectar las gráficas ch-edad y ch-sexo a los datos REALES.
+    // Antes tenían data hardcodeada (1887,1448,... y 5007/4993 = 50/50 falso).
+    // Ahora se repintan con lo que devuelven las RPCs.
+    try {
+      // Colores de ejes (los globales viven dentro de otras funciones, aquí locales)
+      const TICK = '#5a6a85';
+      const GRID = 'rgba(255,255,255,0.05)';
+      const FONT = { family:"'IBM Plex Mono',monospace", size:10 };
+      // [FIX 15 jul] Destruir CUALQUIER Chart previa en el canvas (venga de
+      // buildCharts o de una carga anterior). Chart.getChart() encuentra la
+      // instancia real por canvas y evita el "Canvas is already in use".
+      const matarChart = (id) => {
+        try { const c = window.Chart?.getChart?.(id); if (c) c.destroy(); } catch(e){}
+      };
+      matarChart('ch-edad');
+      matarChart('ch-sexo');
+      // Distribución por edad: usar los grupos reales
+      const elEdad = document.getElementById('ch-edad');
+      if (elEdad && window.Chart) {
+        window._chPerfilEdad = new Chart(elEdad, {
+          type:'bar',
+          data:{
+            labels: PERFIL_DATA.map(g => g.grupo),
+            datasets:[{ label:'Ciudadanos', data: PERFIL_DATA.map(g => g.total),
+              backgroundColor:'#3b82f6bb', borderRadius:4 }]
+          },
+          options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+            scales:{x:{ticks:{color:TICK,font:FONT},grid:{color:GRID}},
+                    y:{ticks:{color:TICK,font:FONT},grid:{color:GRID}}}}
+        });
+      }
+      // Distribución por sexo: usar hombres/mujeres reales del resumen
+      const elSexo = document.getElementById('ch-sexo');
+      if (elSexo && window.Chart && r) {
+        const nh = Number(r.hombres||0), nm = Number(r.mujeres||0);
+        window._chPerfilSexo = new Chart(elSexo, {
+          type:'doughnut',
+          data:{ labels:['Hombres','Mujeres'],
+            datasets:[{ data:[nh, nm], backgroundColor:['#3b82f6','#a855f7'],
+              borderWidth:0, hoverOffset:4 }] },
+          options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false}}}
+        });
+        // Actualizar las leyendas de porcentaje (estaban hardcodeadas a 50.1/49.9)
+        const tot = nh + nm;
+        const legH = document.getElementById('leg-hombres');
+        const legM = document.getElementById('leg-mujeres');
+        if (legH && tot) legH.textContent = 'Hombres ' + (nh/tot*100).toFixed(1) + '%';
+        if (legM && tot) legM.textContent = 'Mujeres ' + (nm/tot*100).toFixed(1) + '%';
+      }
+    } catch(eg) { console.warn('Perfil: no se pudieron repintar las gráficas:', eg); }
+
     console.log('✅ Perfil: ' + totalGeneral.toLocaleString('es-MX') + ' ciudadanos en ' + grupos.length + ' grupos.');
   } catch (e) {
     console.warn('Perfil: excepción.', e);
@@ -2961,6 +3210,14 @@ showTab = function(tab) {
 })();
 </script>
 
+<!-- [FIX 14 jul] modulo_reportes NUNCA cargaba supabase_client.js: por eso
+     window.supabase era undefined y las RPC (ritmo, perfil, secciones, graficas)
+     fallaban con "Cannot read properties of undefined (reading 'rpc')".
+     Peor: mis funciones esperaban el evento 'supabase-ready' que NUNCA llegaba,
+     asi que se colgaban en SILENCIO — sin error en consola, con las graficas
+     vacias. Este es el mismo bug del "SDB is not defined" de antes.
+     Va ANTES de theme.js, que depende de la sesion. -->
+<script src="supabase_client.js"></script>
 <script src="ie_metas_casilla_horneado.js"></script>
 <script src="theme.js"></script>
 <script>
