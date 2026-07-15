@@ -76,12 +76,38 @@ BEGIN
         FILTER (WHERE capturista_id IS NOT NULL)      AS capturistas
     FROM base
   ),
+  -- [v2 15 jul] Desglose COMPLETO por municipio: cada municipio -> objeto con
+  -- sus metricas, no solo el conteo. Antes Reportes mostraba val/seg/rie/dup en
+  -- CERO porque la RPC solo daba el total estatal desglosado (PENDIENTE #3).
+  mun_agg AS (
+    SELECT
+      COALESCE(municipio,'(sin municipio)')          AS municipio,
+      COUNT(*)                                        AS total,
+      COUNT(*) FILTER (WHERE compromiso >= 3)         AS seguro,
+      COUNT(*) FILTER (WHERE es_apoyo)                AS apoyos,
+      COUNT(*) FILTER (WHERE es_influencia)           AS influencia,
+      COUNT(*) FILTER (WHERE es_riesgo)               AS riesgo,
+      COUNT(*) FILTER (WHERE validado)                AS validados,
+      COUNT(*) FILTER (WHERE compromiso = 2)          AS atencion,
+      COUNT(*) FILTER (WHERE duplicado)               AS depurar
+    FROM base
+    GROUP BY COALESCE(municipio,'(sin municipio)')
+  ),
   por_municipio AS (
-    SELECT jsonb_object_agg(municipio, n) AS data
-    FROM (
-      SELECT COALESCE(municipio,'(sin municipio)') AS municipio, COUNT(*) AS n
-      FROM base GROUP BY municipio
-    ) m
+    SELECT jsonb_object_agg(
+             municipio,
+             jsonb_build_object(
+               'total',     total,
+               'seguro',    seguro,
+               'apoyos',    apoyos,
+               'influencia',influencia,
+               'riesgo',    riesgo,
+               'validados', validados,
+               'atencion',  atencion,
+               'depurar',   depurar
+             )
+           ) AS data
+    FROM mun_agg
   ),
   por_seccion AS (
     SELECT jsonb_object_agg(seccion::text, n) AS data
