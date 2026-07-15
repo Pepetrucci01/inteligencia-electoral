@@ -127,13 +127,62 @@ const SDB = {
     return { data, error };
   },
 
+  // [FIX 15 jul] Garantiza que el SDK tenga la sesion aplicada ANTES de escribir.
+  // Causa raiz del 403 intermitente en ciudadanos: el INSERT salia antes de que
+  // setSession() terminara (o con token vencido), auth.uid() llegaba null a la BD,
+  // get_mi_licencia() devolvia null y el WITH CHECK (licencia_id = get_mi_licencia())
+  // rechazaba la fila. La tabla usuarios esta bien; el problema era de propagacion
+  // de sesion, no de datos ni de la politica.
+  async asegurarSesion() {
+    await this.waitReady();
+    try {
+      const { data: { session } } = await window.supabase.auth.getSession();
+      if (session?.access_token) return true;   // ya hay sesion viva en el SDK
+    } catch (e) { /* seguimos al refresh */ }
+    // No hay sesion en el SDK: intentar refrescar via theme.js (fuente unica de token)
+    if (typeof window.refrescarTokenSupabase === 'function') {
+      return await window.refrescarTokenSupabase();
+    }
+    // Ultimo recurso: reaplicar desde localStorage
+    try {
+      const s = JSON.parse(localStorage.getItem('electoral_sesion') || 'null');
+      if (s?.access_token && s?.refresh_token && window.supabase?.auth?.setSession) {
+        await window.supabase.auth.setSession({
+          access_token: s.access_token, refresh_token: s.refresh_token,
+        });
+        return true;
+      }
+    } catch (e) { /* cae a false */ }
+    return false;
+  },
+
   async guardarCiudadano(datos) {
     await this.waitReady();
-    const { data, error } = await window.supabase
+    await this.asegurarSesion();
+
+    let { data, error } = await window.supabase
       .from('ciudadanos')
       .insert([datos])
       .select()
       .single();
+
+    // Reintento unico: un 403 por RLS aqui casi siempre es auth.uid() null
+    // (sesion no propagada). Refrescamos y reintentamos UNA vez antes de rendirnos.
+    const esRLS = error && (error.code === '42501'
+      || /row-level security|violates|permission/i.test(error.message || ''));
+    if (esRLS) {
+      console.warn('⚠ INSERT rechazado por RLS — refrescando sesion y reintentando una vez…');
+      const ok = typeof window.refrescarTokenSupabase === 'function'
+        ? await window.refrescarTokenSupabase()
+        : await this.asegurarSesion();
+      if (ok) {
+        ({ data, error } = await window.supabase
+          .from('ciudadanos')
+          .insert([datos])
+          .select()
+          .single());
+      }
+    }
     return { data, error };
   },
 

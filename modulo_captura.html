@@ -1446,6 +1446,10 @@ async function guardarEnSupabase(nuevo) {
     await new Promise(resolve => document.addEventListener('supabase-ready', resolve, {once:true}));
   }
 
+  // [FIX 15 jul] Esperar a que la SESIÓN esté aplicada, no solo a que el cliente
+  // exista. Sin esto, un INSERT rápido corría con auth.uid() null → 403 RLS.
+  if (SDB.asegurarSesion) { await SDB.asegurarSesion(); }
+
   // Mostrar loading
   if(btnGuardar) { btnGuardar.textContent = '⏳ Guardando...'; btnGuardar.disabled = true; }
 
@@ -1516,8 +1520,11 @@ async function guardarEnSupabase(nuevo) {
 
     // Si el fallo parece de red (se cayó la conexión a media operación),
     // guardamos de verdad en IndexedDB en lugar de mentir.
-    const esErrorRed = !navigator.onLine
-      || /network|fetch|failed|timeout|conexión|conexion/i.test(err.message || '');
+    // [FIX 15 jul] Un 403 / RLS / permisos NO es error de red: no debe irse a
+    // IndexedDB (esconderia el problema y encolaria una fila que el server rechaza).
+    const esPermisos = /row-level security|violates|permission|42501|403/i.test(err.message || '');
+    const esErrorRed = !esPermisos && (!navigator.onLine
+      || /network|fetch|failed|timeout|conexión|conexion/i.test(err.message || ''));
 
     if (esErrorRed) {
       try {

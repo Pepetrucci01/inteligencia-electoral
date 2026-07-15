@@ -399,7 +399,10 @@ async function refrescarTokenSupabase() {
       // recibe el token que nosotros gestionamos.
       try {
         if (window.supabase?.auth?.setSession) {
-          window.supabase.auth.setSession({
+          // [FIX 15 jul] CON await: setSession es async. Sin await, un INSERT
+          // disparado justo despues corria con auth.uid() null → get_mi_licencia()
+          // null → 403 RLS en ciudadanos. Esperamos a que el token quede asentado.
+          await window.supabase.auth.setSession({
             access_token:  sesion.access_token,
             refresh_token: sesion.refresh_token,
           });
