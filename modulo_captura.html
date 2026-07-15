@@ -592,11 +592,56 @@ const RESPONSABLES = {
 let CIUDADANOS = [];
 let _ciudadanosCargados = false;
 
+// [FIX 15 jul] esperarSupabase: no basta con que exista window.supabase ni con
+// que haya disparado 'supabase-ready'. Hay que garantizar que la SESION este
+// aplicada EN EL SDK antes de disparar cualquier consulta. Si no, auth.uid()
+// llega null a la BD → get_mi_licencia() null → RLS rechaza (401/403). Este era
+// el bug del 403 intermitente en captura. Mismo patron que en modulo_reportes.
+async function esperarSupabase(ms) {
+  const tokensGuardados = () => {
+    try {
+      const s = JSON.parse(localStorage.getItem('electoral_sesion') || 'null');
+      return (s && s.access_token && s.refresh_token) ? s : null;
+    } catch (e) { return null; }
+  };
+  const sdkTieneSesion = async () => {
+    try {
+      const { data } = await window.supabase.auth.getSession();
+      return !!data?.session?.access_token;
+    } catch (e) { return false; }
+  };
+  const asegurar = async () => {
+    if (!window.supabase) return false;
+    if (await sdkTieneSesion()) return true;
+    const s = tokensGuardados();
+    if (s && window.supabase.auth?.setSession) {
+      try {
+        await window.supabase.auth.setSession({
+          access_token: s.access_token, refresh_token: s.refresh_token,
+        });
+        return await sdkTieneSesion();
+      } catch (e) { /* sigue esperando */ }
+    }
+    return false;
+  };
+  if (await asegurar()) return true;
+  return await new Promise(resolve => {
+    let listo = false;
+    const ok = async () => { if (listo) return; await asegurar(); listo = true; resolve(true); };
+    document.addEventListener('supabase-ready', ok, { once: true });
+    const iv = setInterval(async () => { if (await asegurar()) { clearInterval(iv); ok(); } }, 100);
+    setTimeout(() => {
+      clearInterval(iv);
+      if (!listo) { listo = true;
+        console.warn('⚠ Supabase no cargó en ' + ((ms||8000)/1000) + 's.');
+        resolve(false); }
+    }, ms || 8000);
+  });
+}
+
 async function cargarCiudadanosCapturista() {
   try {
-    if(!window.supabase) {
-      await new Promise(resolve => document.addEventListener('supabase-ready', resolve, {once:true}));
-    }
+    if (!await esperarSupabase(8000)) { _ciudadanosCargados = true; buscar(); renderLista(); return; }
     const sesion = window._sesion;
     if(!sesion?.licencia_id || !sesion?.id) {
       _ciudadanosCargados = true;
@@ -1067,12 +1112,10 @@ function renderLista(){
 // ── INIT ──────────────────────────────────────────────────────────────────
 buscar();
 renderLista();
-// Cargar registros reales — si supabase ya está listo llamar directo, sino esperar evento
-if(window.supabase) {
-  cargarCiudadanosCapturista();
-} else {
-  document.addEventListener('supabase-ready', () => cargarCiudadanosCapturista(), {once:true});
-}
+// Cargar registros reales. [FIX 15 jul] cargarCiudadanosCapturista ya llama a
+// esperarSupabase internamente (garantiza sesión aplicada en el SDK), así que
+// se puede invocar directo sin el check window.supabase que no bastaba.
+cargarCiudadanosCapturista();
 
 // ══════════════════════════════════════════════════════════════════
 // SISTEMA DE VALIDACIÓN DE CURP
@@ -1441,13 +1484,10 @@ async function guardarEnSupabase(nuevo) {
     return await guardarOffline(nuevo, btnGuardar);
   }
 
-  // Esperar a que Supabase esté listo
-  if(!window.supabase) {
-    await new Promise(resolve => document.addEventListener('supabase-ready', resolve, {once:true}));
-  }
-
-  // [FIX 15 jul] Esperar a que la SESIÓN esté aplicada, no solo a que el cliente
-  // exista. Sin esto, un INSERT rápido corría con auth.uid() null → 403 RLS.
+  // [FIX 15 jul] Garantizar sesión aplicada en el SDK antes de guardar (no solo
+  // que el cliente exista). Sin esto, un INSERT rápido corría con auth.uid() null
+  // → get_mi_licencia() null → 403 RLS. esperarSupabase cubre ambos casos.
+  await esperarSupabase(8000);
   if (SDB.asegurarSesion) { await SDB.asegurarSesion(); }
 
   // Mostrar loading
