@@ -1041,20 +1041,24 @@ async function cargarDatosMunicipios() {
     const norm = s => (s || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
     const porMun = kpis.por_municipio || {};
 
-    // Agrupar por municipio
-    const munMap = {};
-    // La RPC ya entrega los conteos por municipio. Solo mapear al shape de MUN_DATA.
+    // [FIX 15 jul] La RPC v2 entrega por_municipio como OBJETO con desglose
+    // completo por municipio: { "COLIMA": {total,seguro,riesgo,validados,...} }.
+    // Antes daba solo el número (conteo) y val/seg/rie/dup salían en 0 (PEND #3).
+    // Se mantiene compatibilidad: si un municipio viniera como número suelto
+    // (RPC vieja aún en caché), se usa como total y el resto queda en 0.
     MUN_DATA = Object.keys(porMun).map(nombre => {
       const key = norm(nombre);
-      const cap = porMun[nombre] || 0;
+      const d = porMun[nombre];
+      const esObj = d && typeof d === 'object';
+      const cap = esObj ? Number(d.total || 0) : Number(d || 0);
       return {
         n: nombre.charAt(0).toUpperCase() + nombre.slice(1).toLowerCase(),
         cap: cap,
         meta: METAS_MUN[key] || Math.ceil(cap * 1.5),
-        // La RPC entrega los desgloses a nivel ESTATAL, no por municipio.
-        // Se prorratean para no mostrar ceros; el dato exacto por municipio
-        // exigiría ampliar la RPC (pendiente con José).
-        val: 0, seg: 0, rie: 0, dup: 0
+        val: esObj ? Number(d.validados || 0) : 0,
+        seg: esObj ? Number(d.seguro    || 0) : 0,
+        rie: esObj ? Number(d.riesgo    || 0) : 0,
+        dup: esObj ? Number(d.depurar   || 0) : 0
       };
     }).sort((a,b) => b.cap - a.cap);
 

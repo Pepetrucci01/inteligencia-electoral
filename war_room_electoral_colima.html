@@ -2566,7 +2566,13 @@ async function cargarDesdeRPC() {
 
     MUNS.forEach(m => {
       const k = norm(m.n);
-      if (porMunNorm[k] !== undefined) m.cap = porMunNorm[k];
+      const v = porMunNorm[k];
+      if (v !== undefined) {
+        // [FIX 15 jul] La RPC v2 entrega por_municipio como objeto
+        // {total,seguro,riesgo,...}. Antes era un número suelto. Se lee .total
+        // y se conserva compatibilidad si llegara como número (caché vieja).
+        m.cap = (v && typeof v === 'object') ? Number(v.total || 0) : Number(v || 0);
+      }
     });
 
     // ── 3. Avance por sección (tabla de secciones) ─────────────────
