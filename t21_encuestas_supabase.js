@@ -66,6 +66,24 @@
   }
   function _fetch() { return window.supaFetch || fetch; }
 
+  // [FIX 15 jul] Wrapper que reintenta UNA vez si la respuesta es 401/403 por
+  // token vencido o sesión no lista. Refresca vía theme.js si está disponible.
+  // Las funciones de abajo usan _fetchAuth() en vez de _fetch() para heredar esto.
+  async function _fetchAuth(url, opts) {
+    opts = opts || {};
+    var res = await _fetch()(url, opts);
+    if (res && (res.status === 401 || res.status === 403)
+        && typeof window.refrescarTokenSupabase === 'function') {
+      var ok = await window.refrescarTokenSupabase();
+      if (ok) {
+        // rehacer headers con el token ya refrescado
+        if (opts.headers) opts.headers['Authorization'] = 'Bearer ' + token();
+        res = await _fetch()(url, opts);
+      }
+    }
+    return res;
+  }
+
   // ── (B) Municipio nombre → id. Falta tabla de referencia real. ─────────────
   function municipioId(/* nombre */) {
     // TODO(José): mapear nombre→id contra la tabla municipios del staging.
@@ -82,7 +100,7 @@
       if (!lic) return true; // demo sin sesión: no bloquear
       var url = SUPA_URL + '/rest/v1/licencias'
         + '?select=modulos_habilitados&id=eq.' + encodeURIComponent(lic) + '&limit=1';
-      var res = await _fetch()(url, { method: 'GET', headers: headers() });
+      var res = await _fetchAuth(url, { method: 'GET', headers: headers() });
       if (!res || !res.ok) return true; // ante error, no bloquear (fallback permisivo)
       var data = await res.json();
       if (!Array.isArray(data) || !data.length) return true;
@@ -103,7 +121,7 @@
         + '?select=id,nombre,descripcion,estado,fecha_inicio,fecha_fin,preguntas,metodologia'
         + '&licencia_id=eq.' + encodeURIComponent(lic)
         + '&order=created_at.desc';
-      var res = await _fetch()(url, { method: 'GET', headers: headers() });
+      var res = await _fetchAuth(url, { method: 'GET', headers: headers() });
       if (!res || !res.ok) { console.warn('T21: encuestas status ' + (res && res.status) + ' — demo intacto.'); return false; }
       var rows = await res.json();
       if (!Array.isArray(rows)) { console.warn('T21: encuestas no-arreglo (RLS?) — demo intacto.'); return false; }
@@ -137,7 +155,7 @@
       // PostgREST: pedir encuesta_id y contar en cliente (dataset chico por licencia).
       var url = SUPA_URL + '/rest/v1/respuestas_encuesta'
         + '?select=encuesta_id&licencia_id=eq.' + encodeURIComponent(lic);
-      var res = await _fetch()(url, { method: 'GET', headers: headers() });
+      var res = await _fetchAuth(url, { method: 'GET', headers: headers() });
       if (!res || !res.ok) return out;
       var rows = await res.json();
       if (!Array.isArray(rows)) return out;
@@ -159,7 +177,7 @@
       var url = SUPA_URL + '/rest/v1/encuestas'
         + '?id=eq.' + encodeURIComponent(id)
         + '&licencia_id=eq.' + encodeURIComponent(lic);
-      var res = await _fetch()(url, {
+      var res = await _fetchAuth(url, {
         method: 'PATCH',
         headers: headers({ 'Prefer': 'return=minimal' }),
         body: JSON.stringify({ estado: nuevoEstado })
@@ -188,7 +206,7 @@
         creado_por: usuarioId()
       };
       var url = SUPA_URL + '/rest/v1/encuestas';
-      var res = await _fetch()(url, {
+      var res = await _fetchAuth(url, {
         method: 'POST',
         headers: headers({ 'Prefer': 'return=representation' }),
         body: JSON.stringify(body)
@@ -221,7 +239,7 @@
           datos.municipio ? { _municipio_nombre: datos.municipio } : {})
       };
       var url = SUPA_URL + '/rest/v1/respuestas_encuesta';
-      var res = await _fetch()(url, {
+      var res = await _fetchAuth(url, {
         method: 'POST',
         headers: headers({ 'Prefer': 'return=minimal' }),
         body: JSON.stringify(body)
@@ -241,7 +259,7 @@
       var url = SUPA_URL + '/rest/v1/v_territorio_vs_opinion'
         + '?select=seccion_id,municipio_id,entrevistas,con_preferencia,indecisos,voto_firme'
         + '&licencia_id=eq.' + encodeURIComponent(lic);
-      var res = await _fetch()(url, { method: 'GET', headers: headers() });
+      var res = await _fetchAuth(url, { method: 'GET', headers: headers() });
       if (!res || !res.ok) return null;
       var rows = await res.json();
       if (!Array.isArray(rows) || !rows.length) return null;

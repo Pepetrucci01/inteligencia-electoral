@@ -1093,17 +1093,47 @@ async function cambiarStatus(id, nuevoStatus){
 // 'supabase-ready' nunca llega, la promesa no se resuelve y la funcion se cuelga
 // EN SILENCIO: sin error, sin log, con la pantalla vacia. Un bug invisible.
 async function esperarSupabase(ms) {
-  if (window.supabase) return true;
+  // [FIX 15 jul] Antes solo checaba window.supabase (que exista el cliente).
+  // Eso NO garantiza que la sesión esté aplicada en el SDK → RPC salían con
+  // auth.uid() null → 401/403. Ahora se valida la sesión EN EL SDK y se aplica
+  // desde localStorage si falta. Misma versión que reportes y captura.
+  const tokensGuardados = () => {
+    try {
+      const s = JSON.parse(localStorage.getItem('electoral_sesion') || 'null');
+      return (s && s.access_token && s.refresh_token) ? s : null;
+    } catch (e) { return null; }
+  };
+  const sdkTieneSesion = async () => {
+    try {
+      const { data } = await window.supabase.auth.getSession();
+      return !!data?.session?.access_token;
+    } catch (e) { return false; }
+  };
+  const asegurar = async () => {
+    if (!window.supabase) return false;
+    if (await sdkTieneSesion()) return true;
+    const s = tokensGuardados();
+    if (s && window.supabase.auth?.setSession) {
+      try {
+        await window.supabase.auth.setSession({
+          access_token: s.access_token, refresh_token: s.refresh_token,
+        });
+        return await sdkTieneSesion();
+      } catch (e) { /* sigue esperando */ }
+    }
+    return false;
+  };
+  if (await asegurar()) return true;
   return await new Promise(resolve => {
     let listo = false;
-    const ok = () => { if (!listo) { listo = true; resolve(true); } };
+    const ok = async () => { if (listo) return; await asegurar(); listo = true; resolve(true); };
     document.addEventListener('supabase-ready', ok, { once: true });
-    const iv = setInterval(() => { if (window.supabase) { clearInterval(iv); ok(); } }, 100);
+    const iv = setInterval(async () => { if (await asegurar()) { clearInterval(iv); ok(); } }, 100);
     setTimeout(() => {
       clearInterval(iv);
       if (!listo) {
         listo = true;
-        console.warn('⚠️ Supabase no cargó en ' + (ms/1000) + 's. Las secciones que dependen de la BD quedarán vacías.');
+        console.warn('⚠️ Supabase no cargó en ' + ((ms||8000)/1000) + 's. Las secciones que dependen de la BD quedarán vacías.');
         resolve(false);
       }
     }, ms || 8000);

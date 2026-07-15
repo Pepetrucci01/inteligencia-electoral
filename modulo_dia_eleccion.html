@@ -540,11 +540,33 @@ const SECCION_BASE  = SESION?.seccion  || 138;
 // Simpatizantes — se cargan de Supabase al iniciar, con fallback offline
 let SIMPATIZANTES = [];
 
+// [FIX 15 jul] esperarSupabase: garantiza sesión aplicada en el SDK (no solo que
+// exista el cliente) antes de disparar consultas. Evita auth.uid() null → 401/403.
+async function esperarSupabase(ms) {
+  const tok = () => { try { const s = JSON.parse(localStorage.getItem('electoral_sesion')||'null'); return (s&&s.access_token&&s.refresh_token)?s:null; } catch(e){ return null; } };
+  const sdkOk = async () => { try { const {data} = await window.supabase.auth.getSession(); return !!data?.session?.access_token; } catch(e){ return false; } };
+  const asegurar = async () => {
+    if (!window.supabase) return false;
+    if (await sdkOk()) return true;
+    const s = tok();
+    if (s && window.supabase.auth?.setSession) { try { await window.supabase.auth.setSession({access_token:s.access_token, refresh_token:s.refresh_token}); return await sdkOk(); } catch(e){} }
+    return false;
+  };
+  if (await asegurar()) return true;
+  return await new Promise(resolve => {
+    let listo=false;
+    const ok=async()=>{ if(listo)return; await asegurar(); listo=true; resolve(true); };
+    document.addEventListener('supabase-ready', ok, {once:true});
+    const iv=setInterval(async()=>{ if(await asegurar()){ clearInterval(iv); ok(); } },100);
+    setTimeout(()=>{ clearInterval(iv); if(!listo){ listo=true; console.warn('⚠ Supabase no cargó en '+((ms||8000)/1000)+'s.'); resolve(false); } }, ms||8000);
+  });
+}
+
+let _diaECargando = false;
 async function cargarSimpatizantesDiaE() {
+  if (_diaECargando) return; _diaECargando = true;
   try {
-    if(!window.supabase) {
-      await new Promise(resolve => document.addEventListener('supabase-ready', resolve, {once:true}));
-    }
+    if (!await esperarSupabase(8000)) { _diaECargando = false; return; }
     // Leer sesión en el momento de ejecutar (ya restaurada por supabase_client.js)
     const sesionActual = window._sesion || SESION;
     const licenciaId = sesionActual?.licencia_id || 'a1b2c3d4-0001-0000-0000-000000000001';
@@ -622,12 +644,9 @@ let pendienteConfirmar = null;
 let filtroSeccion = 'todas';
 let queryBusqueda  = '';
 
-// Cargar simpatizantes desde Supabase — esperar a que sesión esté restaurada
-document.addEventListener('supabase-ready', () => cargarSimpatizantesDiaE(), {once:true});
-// Si supabase ya está listo y sesión restaurada, llamar directo
-if(window.supabase && window._sesion?.access_token) {
-  cargarSimpatizantesDiaE();
-}
+// [FIX 15 jul] Un solo punto de arranque: cargarSimpatizantesDiaE ya espera la
+// sesión internamente y tiene guard anti-doble-llamada.
+cargarSimpatizantesDiaE();
 
 // ══════════════════════════════════════════════════════
 // RELOJ Y CUENTA REGRESIVA AL CORTE

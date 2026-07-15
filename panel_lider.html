@@ -365,9 +365,22 @@ const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
 const LICENCIA_ID = window._sesion?.licencia_id || 'a1b2c3d4-0001-0000-0000-000000000001';
 
 async function supaFetch(path) {
-  const res = await fetch(`${SUPA_URL}/rest/v1/${path}`, {
-    headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${window._sesion?.access_token || SUPA_KEY}` }
+  // [FIX 15 jul] Antes usaba window._sesion?.access_token directo; si el token
+  // venció (1h) o la sesión no estaba lista, caía al anon key → RLS rechazaba
+  // (401/403) y el panel salía vacío. Ahora: si falla por auth, refresca el
+  // token (vía theme.js) y reintenta UNA vez.
+  const doFetch = () => fetch(`${SUPA_URL}/rest/v1/${path}`, {
+    headers: {
+      'apikey': SUPA_KEY,
+      'Authorization': `Bearer ${window._sesion?.access_token || SUPA_KEY}`
+    }
   });
+  let res = await doFetch();
+  if ((res.status === 401 || res.status === 403)
+      && typeof window.refrescarTokenSupabase === 'function') {
+    const ok = await window.refrescarTokenSupabase();
+    if (ok) res = await doFetch();
+  }
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
