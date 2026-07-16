@@ -154,10 +154,13 @@ const ROL_LABEL = {
 
 async function cargarUsuarios() {
   try {
-    const res = await fetch(`${SUPA_URL}/rest/v1/usuarios?select=email,nombre,rol,municipio,seccion,activo&order=rol.asc`, {
+    // [T5 16 jul] supaFetch: token + refresh proactivo/reactivo. Antes usaba
+    // window._sesion.access_token directo (sin refresh; y tronaba si _sesion null).
+    const _doFetch = (u, o) => (window.supaFetch ? window.supaFetch(u, o) : fetch(u, o));
+    const res = await _doFetch(`${SUPA_URL}/rest/v1/usuarios?select=email,nombre,rol,municipio,seccion,activo&order=rol.asc`, {
       headers: {
         'apikey': SUPA_KEY,
-        'Authorization': `Bearer ${window._sesion.access_token}`,
+        'Authorization': `Bearer ${window._sesion?.access_token || SUPA_KEY}`,
       }
     });
     const usuarios = await res.json();

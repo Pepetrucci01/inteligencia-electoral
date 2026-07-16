@@ -1015,7 +1015,12 @@ async function cargarDatosMunicipios() {
     // get_war_room_kpis() ya agrega en la BASE (totales + por_municipio) y es
     // la misma RPC que usa el War Room — por eso el War Room nunca tuvo este
     // problema. Una sola petición, sin paginar, sin timeouts.
-    const rpc = await fetch(SUPA_URL + '/rest/v1/rpc/get_war_room_kpis', {
+    // [T5 16 jul] Usar window.supaFetch (theme.js): mete el access_token del
+    // usuario, refresca proactivamente >55min y reintenta ante 401. Antes este
+    // fetch directo caía a la anon key si la sesión no estaba lista → RLS lo
+    // trataba como anónimo. Fallback al fetch directo si supaFetch no cargó.
+    const _doRPC = (u, o) => (window.supaFetch ? window.supaFetch(u, o) : fetch(u, o));
+    const rpc = await _doRPC(SUPA_URL + '/rest/v1/rpc/get_war_room_kpis', {
       method: 'POST',
       headers: Object.assign({}, headers, { 'Content-Type': 'application/json' }),
       body: '{}'
@@ -1715,9 +1720,11 @@ async function cargarParaExportar() {
   const base = SUPA + '/rest/v1/ciudadanos'
     + '?select=nombre,apellido_paterno,apellido_materno,edad,sexo,seccion_electoral,municipio,telefono,compromiso,origen,es_riesgo,es_apoyo,validado,duplicado,capturista_id,created_at'
     + '&licencia_id=eq.' + encodeURIComponent(lic) + '&order=id';
+  // [T5 16 jul] supaFetch en vez de fetch directo (token + refresh, no cae a anon).
+  const _doFetch = (u, o) => (window.supaFetch ? window.supaFetch(u, o) : fetch(u, o));
   let out = [];
   for (let p = 0; p < 30; p++) {
-    const r = await fetch(base + '&limit=1000&offset=' + (p*1000), { headers });
+    const r = await _doFetch(base + '&limit=1000&offset=' + (p*1000), { headers });
     if (!r.ok) { console.warn('Exportar: status ' + r.status); break; }
     const pag = await r.json();
     if (!Array.isArray(pag)) break;
