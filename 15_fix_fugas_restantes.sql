@@ -39,5 +39,13 @@ CREATE POLICY respuestas_select ON public.respuestas_encuesta
     AND licencia_id = get_mi_licencia()
   );
 
--- NOTA: secciones_electorales PENDIENTE decidir con Jose (catalogo
--- compartido vs por licencia). NO se toca aqui.
+-- 5. secciones_admin_select
+--    DECISIÓN (15 jul): secciones_electorales NO es catálogo compartido.
+--    Tiene meta_seccion, semaforo y responsable_id POR LICENCIA (la 138
+--    de un cliente tiene meta 2200; otro cliente tendría la suya). Es tabla
+--    operativa de campaña → se FILTRA por licencia, igual que las demás.
+--    (super_admin ya no escapa el filtro.)
+DROP POLICY IF EXISTS secciones_admin_select ON public.secciones_electorales;
+CREATE POLICY secciones_admin_select ON public.secciones_electorales
+  FOR SELECT
+  USING ( licencia_id = get_mi_licencia() );

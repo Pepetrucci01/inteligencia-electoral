@@ -84,11 +84,30 @@
     return res;
   }
 
-  // ── (B) Municipio nombre → id. Falta tabla de referencia real. ─────────────
-  function municipioId(/* nombre */) {
-    // TODO(José): mapear nombre→id contra la tabla municipios del staging.
-    // Por ahora null (columna nullable); el nombre queda en respuestas.jsonb.
-    return null;
+  // ── (B) [T8 15 jul] Municipio nombre → id (UUID) contra la tabla municipios.
+  // Se cachea el catálogo la primera vez y se resuelve por nombre normalizado
+  // (mayúsculas, sin dobles espacios). Devuelve null si no hay match (p.ej. si
+  // el catálogo aún tiene placeholders sin poblar → degrada suave, como antes).
+  var _munCache = null;
+  function _normMun(s) {
+    return (s || '').toString().trim().toUpperCase().replace(/\s+/g, ' ');
+  }
+  async function _cargarMunicipios() {
+    if (_munCache) return _munCache;
+    try {
+      var url = SUPA_URL + '/rest/v1/municipios?select=id,nombre';
+      var res = await _fetchAuth(url, { method: 'GET', headers: headers() });
+      if (!res.ok) { _munCache = {}; return _munCache; }
+      var rows = await res.json();
+      _munCache = {};
+      rows.forEach(function (m) { _munCache[_normMun(m.nombre)] = m.id; });
+    } catch (e) { _munCache = {}; }
+    return _munCache;
+  }
+  async function municipioId(nombre) {
+    if (!nombre) return null;
+    var mapa = await _cargarMunicipios();
+    return mapa[_normMun(nombre)] || null;
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -225,16 +244,20 @@
     if (!lic) return true; // demo: el front incrementa el contador local
     try {
       var secInt = parseInt(String(datos.seccion || '').replace(/\D/g, ''), 10);
+      // [T8 15 jul] Resolver el municipio_id (UUID) antes de armar el body.
+      // Si el catálogo municipios ya está poblado con nombres reales, esto
+      // devuelve el id; si sigue con placeholders, devuelve null (degrada suave).
+      var munId = await municipioId(datos.municipio);
       var body = {
         encuesta_id: datos.encuesta_id,
         licencia_id: lic,
-        municipio_id: municipioId(datos.municipio), // (B) null por ahora
+        municipio_id: munId,
         seccion_id: Number.isFinite(secInt) ? secInt : null,
         usuario_id: usuarioId(),
         rango_edad: datos.rango_edad || null,
         genero: datos.genero || null,
         // ANÓNIMA: solo respuestas jsonb + demografía no identificable.
-        // Guardamos el nombre de municipio dentro del jsonb hasta tener (B).
+        // Se conserva el nombre en el jsonb como respaldo aunque ya haya id.
         respuestas: Object.assign({}, datos.respuestas,
           datos.municipio ? { _municipio_nombre: datos.municipio } : {})
       };
