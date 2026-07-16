@@ -905,6 +905,17 @@ function nuevoRegistro() {
   });
   compSel=0; origenSel=''; toggles={riesgo:false,apoyo:false,influencia:false}; votoParejo='';
   var cc=document.getElementById('f-consent'); if(cc) cc.checked=false;
+  // [FIX 16 jul] Resetear TAMBIÉN el estado de voto parejo. Antes no se limpiaba:
+  // los checkboxes vp-* y los botones sí/no quedaban marcados del registro anterior,
+  // guardando candidaturas_vota incorrectas en silencio en el 2º registro.
+  ['gobernador','senador','dip-federal','dip-local','ayuntamiento'].forEach(function(id){
+    var el = document.getElementById('vp-'+id); if(el) el.checked=false;
+  });
+  ['vp-si','vp-parcial','vp-no'].forEach(function(id){
+    var el=document.getElementById(id); if(el){ el.style.background=''; el.style.border=''; }
+  });
+  var vpe=document.getElementById('vp-error'); if(vpe) vpe.style.display='none';
+  var vpBox=document.getElementById('vp-detalle'); if(vpBox) vpBox.style.display='none';
   [1,2,3,4].forEach(i=>document.getElementById('comp-'+i).className='comp-btn');
   ['casa','ref','evento','digital'].forEach(x=>document.getElementById('orig-'+x).classList.remove('selected'));
   ['riesgo','apoyo','influencia'].forEach(k=>document.getElementById('tog-'+k).classList.remove('on'));
