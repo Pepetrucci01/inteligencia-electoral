@@ -212,14 +212,14 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
 <div class="screen active" id="sc-resumen">
   <div class="kpi-row">
     <div class="kpi bl"><div class="kpi-lbl">Meta estatal 2027</div><div class="kpi-val" id="rep-meta-kpi">208,717</div><div class="kpi-trend">votos proyectados</div></div>
-    <div class="kpi gr"><div class="kpi-lbl">Total capturados</div><div class="kpi-val" id="rep-total-cap">10,000</div><div class="kpi-trend" style="opacity:.5">registros activos</div></div>
-    <div class="kpi bl"><div class="kpi-lbl">Avance estatal</div><div class="kpi-val" id="rep-avance-est">4.8%</div><div class="kpi-trend" style="opacity:.5">sobre la meta estatal</div></div>
-    <div class="kpi gr"><div class="kpi-lbl">Voto seguro</div><div class="kpi-val" id="rep-voto-seguro">4,601</div><div class="kpi-trend" id="rep-voto-seguro-pct">46% de capturados</div></div>
-    <div class="kpi am"><div class="kpi-lbl">En riesgo</div><div class="kpi-val" id="rep-en-riesgo">2,203</div><div class="kpi-trend" style="opacity:.5">requieren atención</div></div>
+    <div class="kpi gr"><div class="kpi-lbl">Total capturados</div><div class="kpi-val" id="rep-total-cap">—</div><div class="kpi-trend" style="opacity:.5">registros activos</div></div>
+    <div class="kpi bl"><div class="kpi-lbl">Avance estatal</div><div class="kpi-val" id="rep-avance-est">—</div><div class="kpi-trend" style="opacity:.5">sobre la meta estatal</div></div>
+    <div class="kpi gr"><div class="kpi-lbl">Voto seguro</div><div class="kpi-val" id="rep-voto-seguro">—</div><div class="kpi-trend" id="rep-voto-seguro-pct">—</div></div>
+    <div class="kpi am"><div class="kpi-lbl">En riesgo</div><div class="kpi-val" id="rep-en-riesgo">—</div><div class="kpi-trend" style="opacity:.5">requieren atención</div></div>
     <!-- [FIX 14 jul] "219 secciones criticas" estaba horneado. Ahora se calcula:
          secciones con avance < 5% respecto a su meta. -->
     <div class="kpi re"><div class="kpi-lbl">Secciones críticas</div><div class="kpi-val" id="rep-sec-criticas">—</div><div class="kpi-trend dn">avance &lt; 5%</div></div>
-    <div class="kpi pu"><div class="kpi-lbl">Duplicados</div><div class="kpi-val" id="rep-duplicados">408</div><div class="kpi-trend dn">depurar urgente</div></div>
+    <div class="kpi pu"><div class="kpi-lbl">Duplicados</div><div class="kpi-val" id="rep-duplicados">—</div><div class="kpi-trend dn">depurar urgente</div></div>
     <!-- [FIX 14 jul] "334 dias" estaba horneado: se desactualizaba solo. Ahora
          se calcula de la fecha real de eleccion. -->
     <div class="kpi cy"><div class="kpi-lbl">Días a la elección</div><div class="kpi-val" id="rep-dias">—</div><div class="kpi-trend">6 jun 2027</div></div>
@@ -230,11 +230,11 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
     <div class="card-body">
       <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
         <span style="font-size:13px;font-weight:500">Avance estatal acumulado</span>
-        <span style="font-size:22px;font-weight:600;font-family:var(--mono);color:var(--accent)" id="rep-pct-display">4.8%</span>
+        <span style="font-size:22px;font-weight:600;font-family:var(--mono);color:var(--accent)" id="rep-pct-display">—</span>
       </div>
-      <div class="prog-total"><div class="prog-fill" id="rep-prog-fill" style="width:4.8%"></div></div>
+      <div class="prog-total"><div class="prog-fill" id="rep-prog-fill" style="width:0%"></div></div>
       <div style="display:flex;justify-content:space-between;font-size:11px;font-family:var(--mono);color:var(--text3)">
-        <span>0</span><span style="color:var(--accent)" id="rep-cap-label">10,000 capturados</span><span id="rep-meta-bar">208,717 meta</span>
+        <span>0</span><span style="color:var(--accent)" id="rep-cap-label">— capturados</span><span id="rep-meta-bar">208,717 meta</span>
       </div>
       <div class="proy-box">
         <!-- [FIX 10 jul] Estas filas estaban HARDCODEADAS (574/sem, 48 semanas,
@@ -455,7 +455,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
   </div>
 
   <div class="card">
-    <div class="card-head"><div class="card-title">Origen de captura</div><div class="card-meta">10,000 registros</div></div>
+    <div class="card-head"><div class="card-title">Origen de captura</div><div class="card-meta">— registros</div></div>
     <div class="card-body">
       <div class="bar-row"><div class="bar-label">Casa por casa</div><div class="bar-track"><div class="bar-fill origen-bar-fill" style="width:100%;background:var(--accent)"></div></div><div class="bar-val origen-bar-val">4,538</div><div class="bar-pct origen-bar-pct">45.4%</div></div>
       <div class="bar-row"><div class="bar-label">Referido</div><div class="bar-track"><div class="bar-fill origen-bar-fill" style="width:55.5%;background:var(--purple)"></div></div><div class="bar-val origen-bar-val">2,519</div><div class="bar-pct origen-bar-pct">25.2%</div></div>

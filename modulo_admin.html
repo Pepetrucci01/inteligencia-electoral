@@ -882,9 +882,9 @@ let USUARIOS = [];
 
 async function cargarUsuarios() {
   try {
-    if(!window.supabase) {
-      await new Promise(resolve => document.addEventListener('supabase-ready', resolve, {once:true}));
-    }
+    // [FIX 16 jul] Usar esperarSupabase reforzado (valida sesión en el SDK),
+    // consistente con el resto de módulos. Antes solo esperaba el cliente.
+    if (!await esperarSupabase(8000)) return;
     const sesion = JSON.parse(localStorage.getItem('electoral_sesion') || 'null');
     const licenciaId = sesion?.licencia_id;
     if(!licenciaId) return;
