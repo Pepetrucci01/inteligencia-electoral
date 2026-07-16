@@ -1587,12 +1587,27 @@ async function guardarEnSupabase(nuevo) {
 
     // 4. Guardar vínculo con candidatura + voto parejo
     // (el ciudadano_id real se agrega aquí, ya que online sí lo tenemos)
+    // [FIX 16 jul] El ciudadano YA se guardó (paso arriba). Candidatura y log son
+    // secundarios: si alguno se cuelga (RLS/red), NO debe dejar el botón en
+    // "Guardando..." para siempre. Se les pone timeout y se ignora su fallo.
     candidaturaData.ciudadano_id = ciudadano.id;
-    await SDB.guardarCandidatura(candidaturaData);
+    const conTimeout = (promesa, ms, etiqueta) => Promise.race([
+      promesa,
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout ' + etiqueta)), ms))
+    ]);
+    try {
+      await conTimeout(SDB.guardarCandidatura(candidaturaData), 8000, 'candidatura');
+    } catch(e) { console.warn('Candidatura no guardada (no bloquea):', e.message); }
 
-    // 5. Registrar en auditoría
-    await SDB.log('CAPTURA_CIUDADANO', 'ciudadanos', ciudadano.id, ciudadanoData);
+    // 5. Registrar en auditoría (best-effort, no bloquea)
+    try {
+      await conTimeout(SDB.log('CAPTURA_CIUDADANO', 'ciudadanos', ciudadano.id, ciudadanoData), 5000, 'log');
+    } catch(e) { console.warn('Auditoría no registrada (no bloquea):', e.message); }
 
+    // [FIX 16 jul] Restaurar el botón SIEMPRE al terminar con éxito (antes solo
+    // se restauraba en los caminos de error; si candidatura/log colgaban, el
+    // botón quedaba en "Guardando..." aunque el ciudadano sí se guardó).
+    if(btnGuardar) { btnGuardar.textContent = '✅ Guardar registro'; btnGuardar.disabled = false; }
     return true;
 
   } catch(err) {
