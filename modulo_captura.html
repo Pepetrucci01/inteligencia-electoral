@@ -1068,7 +1068,12 @@ function editarCiudadano(id){
 function marcarDuplicado(id){
   const c=CIUDADANOS.find(x=>x.id===id);
   if(!c) return;
-  if(confirm(`¿Marcar a ${c.nombre} como duplicado?`)){
+  // [FIX 16 jul] confirm robusto. Marcar duplicado SÍ es destructivo: si el modal
+  // está bloqueado, mejor NO ejecutar (evita marcar sin querer).
+  let ok = false;
+  try { ok = confirm(`¿Marcar a ${c.nombre} como duplicado?`); }
+  catch(e) { console.warn('confirm() bloqueado; no se marca duplicado.'); ok = false; }
+  if(ok){
     c.duplicado=true;
     abrirFicha(id);
   }
@@ -1532,7 +1537,18 @@ async function guardarEnSupabase(nuevo) {
     if(nuevo.tel && nuevo.tel.length >= 10) {
       const { data: dupTel } = await SDB.buscarPorTel(nuevo.tel);
       if(dupTel) {
-        const confirmar = confirm('⚠ TELÉFONO DUPLICADO: ' + dupTel.nombre + ' ya tiene este número. ¿Deseas continuar de todas formas?');
+        // [FIX 16 jul] confirm() se bloquea si el iframe no tiene 'allow-modals'
+        // (ya se agregó al sandbox). Aun así, blindamos: si confirm truena o el
+        // modal está bloqueado, NO abortamos en silencio (eso dejaba al capturista
+        // sin poder guardar sin saber por qué). El duplicado de teléfono es una
+        // ADVERTENCIA, no un bloqueo → ante la duda, se permite continuar.
+        let confirmar = true;
+        try {
+          confirmar = confirm('⚠ TELÉFONO DUPLICADO: ' + dupTel.nombre + ' ya tiene este número. ¿Deseas continuar de todas formas?');
+        } catch (e) {
+          console.warn('confirm() bloqueado; se continúa (duplicado de tel es solo advertencia).');
+          confirmar = true;
+        }
         if(!confirmar) {
           if(btnGuardar) { btnGuardar.textContent = '✅ Guardar registro'; btnGuardar.disabled = false; }
           return false;
