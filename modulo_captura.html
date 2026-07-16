@@ -866,7 +866,10 @@ async function guardarRegistro() {
     validado: false, duplicado: false,
     cap_por: CAPTURISTA.id, resp: resp,
   };
-  CIUDADANOS.push(nuevo);
+  // [FIX 16 jul] NO agregar a CIUDADANOS antes de guardar. Si el guardado falla,
+  // quedaba un registro fantasma en la lista (con id falso REG-, sin estar en la BD)
+  // y al reintentar se duplicaba. guardarEnSupabase ya hace unshift con el id REAL
+  // de la base cuando tiene éxito, así que aquí no se toca el array.
   // Guardar en Supabase y esperar resultado antes de mostrar éxito
   const guardadoOk = await guardarEnSupabase(nuevo);
   if(!guardadoOk) return; // El error ya se mostró en guardarEnSupabase
@@ -1523,9 +1526,20 @@ async function guardarEnSupabase(nuevo) {
   if(btnGuardar) { btnGuardar.textContent = '⏳ Guardando...'; btnGuardar.disabled = true; }
 
   try {
-    // 1. Verificar duplicado por CURP
+    // [FIX 16 jul] Helper de timeout: ninguna consulta debe colgar el guardado.
+    const conTimeout = (promesa, ms, etiqueta) => Promise.race([
+      promesa,
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout ' + etiqueta)), ms))
+    ]);
+
+    // 1. Verificar duplicado por CURP (si la consulta cuelga, se omite la
+    //    verificación y se deja continuar — el índice único de la BD es el
+    //    respaldo final contra duplicados).
     if(nuevo.curp && nuevo.curp.length === 18) {
-      const { data: dup } = await SDB.buscarPorCURP(nuevo.curp);
+      let dup = null;
+      try {
+        ({ data: dup } = await conTimeout(SDB.buscarPorCURP(nuevo.curp), 6000, 'curp'));
+      } catch(e) { console.warn('Verificación CURP omitida:', e.message); }
       if(dup) {
         alert('ø DUPLICADO: Esta CURP ya está registrada como ' + dup.nombre + ' ' + (dup.apellido_paterno || ''));
         if(btnGuardar) { btnGuardar.textContent = '✅ Guardar registro'; btnGuardar.disabled = false; }
@@ -1535,7 +1549,10 @@ async function guardarEnSupabase(nuevo) {
 
     // 2. Verificar duplicado por teléfono
     if(nuevo.tel && nuevo.tel.length >= 10) {
-      const { data: dupTel } = await SDB.buscarPorTel(nuevo.tel);
+      let dupTel = null;
+      try {
+        ({ data: dupTel } = await conTimeout(SDB.buscarPorTel(nuevo.tel), 6000, 'tel'));
+      } catch(e) { console.warn('Verificación teléfono omitida:', e.message); }
       if(dupTel) {
         // [FIX 16 jul] confirm() se bloquea si el iframe no tiene 'allow-modals'
         // (ya se agregó al sandbox). Aun así, blindamos: si confirm truena o el
@@ -1559,7 +1576,11 @@ async function guardarEnSupabase(nuevo) {
     // 3. Construir los datos (misma función que usa el modo offline)
     const { ciudadanoData, candidaturaData } = construirDatosCaptura(nuevo);
 
-    const { data: ciudadano, error: errCiudadano } = await SDB.guardarCiudadano(ciudadanoData);
+    // [FIX 16 jul] Timeout en el guardado principal: si la BD no responde en 15s,
+    // se lanza error y cae al fallback offline (IndexedDB) en vez de dejar el
+    // botón colgado para siempre. 15s es holgado para una conexión de campo lenta.
+    const { data: ciudadano, error: errCiudadano } =
+      await conTimeout(SDB.guardarCiudadano(ciudadanoData), 15000, 'guardar');
     if(errCiudadano) throw new Error('Error al guardar: ' + errCiudadano.message);
 
     // Agregar al array local inmediatamente
@@ -1591,10 +1612,6 @@ async function guardarEnSupabase(nuevo) {
     // secundarios: si alguno se cuelga (RLS/red), NO debe dejar el botón en
     // "Guardando..." para siempre. Se les pone timeout y se ignora su fallo.
     candidaturaData.ciudadano_id = ciudadano.id;
-    const conTimeout = (promesa, ms, etiqueta) => Promise.race([
-      promesa,
-      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout ' + etiqueta)), ms))
-    ]);
     try {
       await conTimeout(SDB.guardarCandidatura(candidaturaData), 8000, 'candidatura');
     } catch(e) { console.warn('Candidatura no guardada (no bloquea):', e.message); }
