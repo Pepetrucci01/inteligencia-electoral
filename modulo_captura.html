@@ -1396,6 +1396,11 @@ function construirDatosCaptura(nuevo) {
     validado:           false,
     duplicado:          false,
     sync_status:        'synced',
+    // [T7 15 jul] Persistir el consentimiento D1 (antes solo se validaba en UI
+    // sin guardarse). El checkbox f-consent es obligatorio para llegar aquí, así
+    // que a este punto siempre es true; se guarda con su fecha para el registro legal.
+    consentimiento:       !!(document.getElementById('f-consent')?.checked),
+    consentimiento_fecha: (document.getElementById('f-consent')?.checked) ? new Date().toISOString() : null,
   };
 
   const candidaturaActualId = window.CANDIDATURA_ACTIVA_ID || 'a1b2c3d4-0001-0000-0000-000000000101';
