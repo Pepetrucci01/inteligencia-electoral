@@ -1774,11 +1774,10 @@ async function confirmarEnvioAlerta(destinatarios, mensaje){
       mensaje: mensaje,
       enviada_por: (window._sesion && (window._sesion.usuario_id || window._sesion.id)) || null
     }));
-    const resIns = await fetch(`${SUPA_URL}/rest/v1/alertas`, {
+    // [T5 16 jul] wrFetch añade apikey + Authorization con token del usuario.
+    const resIns = await wrFetch(`${SUPA_URL}/rest/v1/alertas`, {
       method: 'POST',
       headers: {
-        'apikey': SUPA_KEY,
-        'Authorization': `Bearer ${window._sesion?.access_token || SUPA_KEY}`,
         'Content-Type': 'application/json',
         'Prefer': 'return=minimal'
       },
@@ -2291,15 +2290,28 @@ function buildCuadCapturistasF2(caps){
 const SUPA_URL = 'https://dyirhwwmykskpuvzcafx.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5aXJod3dteWtza3B1dnpjYWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NTk3ODgsImV4cCI6MjA5NTEzNTc4OH0.2xe4cHqORGng1hnYPJ9ZiyT0r87fMijbUEJqBy3-xoI';
 
+// [T5 16 jul] Helper central de fetch autenticado del War Room.
+// Delega en window.supaFetch (theme.js): mete el access_token del usuario,
+// refresca proactivamente >55min y reintenta ante 401. Antes cada fetch armaba
+// sus headers con fallback a la anon key → si la sesión no estaba lista corría
+// como anónimo y RLS lo filtraba. supaFetch ya arma el Authorization; este helper
+// conserva headers especiales (Prefer, Range, Content-Type) y solo garantiza el
+// apikey. Fallback a fetch nativo si theme.js no cargó.
+function wrFetch(url, options = {}) {
+  const opts = Object.assign({}, options);
+  // conservar headers no-auth (Prefer, Range, Content-Type); supaFetch pone el resto
+  opts.headers = Object.assign({ 'apikey': SUPA_KEY }, options.headers || {});
+  return (window.supaFetch || fetch)(url, opts);
+}
+
 // Cache de casillas reales por sección: { secNum: [...casillas] }
 window.CAS_REAL = {};
 
 async function cargarCasillasSeccion(secNum) {
   if(window.CAS_REAL[secNum]) return window.CAS_REAL[secNum];
   try {
-    const res = await fetch(
-      `${SUPA_URL}/rest/v1/casillas?select=id,numero_seccion,numero_casilla,tipo_casilla,municipio,lista_nominal,meta_proyectada,votos_nuestro_partido,estatus_casilla,lat,lng&numero_seccion=eq.${secNum}&activo=eq.true&order=numero_casilla`,
-      { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${window._sesion?.access_token || SUPA_KEY}` } }
+    const res = await wrFetch(
+      `${SUPA_URL}/rest/v1/casillas?select=id,numero_seccion,numero_casilla,tipo_casilla,municipio,lista_nominal,meta_proyectada,votos_nuestro_partido,estatus_casilla,lat,lng&numero_seccion=eq.${secNum}&activo=eq.true&order=numero_casilla`
     );
     if(!res.ok) return null;
     const data = await res.json();
@@ -2342,9 +2354,8 @@ async function cargarSeccionesSupabase(munId = null) {
     const bdNombre = MUN_BD_NAME[munId] || '';
     if(!bdNombre) return;
 
-    const res = await fetch(
-      `${SUPA_URL}/rest/v1/secciones_electorales_colima?select=seccion,municipio,meta_proyectada&municipio=eq.${encodeURIComponent(bdNombre)}&order=seccion`,
-      { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${window._sesion?.access_token || SUPA_KEY}` } }
+    const res = await wrFetch(
+      `${SUPA_URL}/rest/v1/secciones_electorales_colima?select=seccion,municipio,meta_proyectada&municipio=eq.${encodeURIComponent(bdNombre)}&order=seccion`
     );
     if(!res.ok) return;
     const all = await res.json();
@@ -2406,18 +2417,14 @@ async function fetchCiudadanosPaginado(filtroTerr) {
   const PAGE = 1000;
   let desde = 0;
   let todos = [];
-  const headers = {
-    'apikey': SUPA_KEY,
-    'Authorization': `Bearer ${window._sesion?.access_token || SUPA_KEY}`,
-  };
-
+  // [T5 16 jul] wrFetch añade auth; aquí solo el Range de paginación.
   try {
     while (true) {
       const hasta = desde + PAGE - 1;
       console.log(` Paginado: pidiendo bloque ${desde}-${hasta}...`);
-      const r = await fetch(
+      const r = await wrFetch(
         `${SUPA_URL}/rest/v1/ciudadanos?select=municipio,seccion_electoral,compromiso,es_riesgo,duplicado&licencia_id=eq.${LICENCIA_ID}${filtroTerr}`,
-        { headers: { ...headers, 'Range-Unit': 'items', 'Range': `${desde}-${hasta}` } }
+        { headers: { 'Range-Unit': 'items', 'Range': `${desde}-${hasta}` } }
       );
 
       if (!r.ok) {
@@ -2502,15 +2509,10 @@ async function cargarDesdeRPC() {
     // Usamos el token del usuario (no la anon key sola) para que
     // auth.uid() dentro de la función identifique correctamente al
     // usuario y aplique su alcance territorial.
-    const token = window._sesion?.access_token || SUPA_KEY;
-    const _fetch = window.supaFetch || fetch;
-    const r = await _fetch(`${SUPA_URL}/rest/v1/rpc/get_war_room_kpis`, {
+    // [T5 16 jul] wrFetch unifica el patrón (ya usaba supaFetch aquí).
+    const r = await wrFetch(`${SUPA_URL}/rest/v1/rpc/get_war_room_kpis`, {
       method: 'POST',
-      headers: {
-        'apikey': SUPA_KEY,
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: '{}',
     });
 
@@ -2606,9 +2608,8 @@ async function cargarDatosReales() {
     const filtroTerr = buildFiltroTerritorial();
 
     // ── 1. Metas por municipio desde secciones_electorales_colima ──
-    const rMetas = await fetch(
-      `${SUPA_URL}/rest/v1/secciones_electorales_colima?select=municipio,meta_proyectada${filtroTerr}`,
-      { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${window._sesion?.access_token || SUPA_KEY}` } }
+    const rMetas = await wrFetch(
+      `${SUPA_URL}/rest/v1/secciones_electorales_colima?select=municipio,meta_proyectada${filtroTerr}`
     );
     const secciones = await rMetas.json();
 
@@ -2769,12 +2770,14 @@ async function cargarKPIsReales_OLD() {
   try {
     const filtroTerr = buildFiltroTerritorial();
     const licId = window._sesion?.licencia_id || LICENCIA_ID;
-    const hAuth = { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${window._sesion?.access_token || SUPA_KEY}`, 'Prefer': 'count=exact', 'Range': '0-0' };
+    // [T5 16 jul] Solo headers no-auth (Prefer/Range para el conteo exacto);
+    // wrFetch añade apikey + Authorization con token del usuario.
+    const hCount = { 'Prefer': 'count=exact', 'Range': '0-0' };
 
     // Total ciudadanos
-    const rTotal = await fetch(
+    const rTotal = await wrFetch(
       `${SUPA_URL}/rest/v1/ciudadanos?select=id&licencia_id=eq.${licId}${filtroTerr}`,
-      { headers: hAuth }
+      { headers: hCount }
     );
 
     // ø Si la lectura falló (RLS/401), NO tocar las tarjetas: conservar simulados
@@ -2786,16 +2789,16 @@ async function cargarKPIsReales_OLD() {
     const total = parseInt(rTotal.headers.get('Content-Range')?.split('/')[1] || 0);
 
     // Seguro vota (compromiso 3 o 4)
-    const rSeg = await fetch(
+    const rSeg = await wrFetch(
       `${SUPA_URL}/rest/v1/ciudadanos?select=id&licencia_id=eq.${licId}&compromiso=gte.3${filtroTerr}`,
-      { headers: hAuth }
+      { headers: hCount }
     );
     const seguro = rSeg.ok ? parseInt(rSeg.headers.get('Content-Range')?.split('/')[1] || 0) : 0;
 
     // En riesgo
-    const rRiesgo = await fetch(
+    const rRiesgo = await wrFetch(
       `${SUPA_URL}/rest/v1/ciudadanos?select=id&licencia_id=eq.${licId}&es_riesgo=eq.true${filtroTerr}`,
-      { headers: hAuth }
+      { headers: hCount }
     );
     const riesgo = rRiesgo.ok ? parseInt(rRiesgo.headers.get('Content-Range')?.split('/')[1] || 0) : 0;
 
