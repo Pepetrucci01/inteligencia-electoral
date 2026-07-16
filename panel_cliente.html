@@ -619,9 +619,17 @@ const ROLES = {
 const LICENCIA_ID = window._sesion?.licencia_id || 'a1b2c3d4-0001-0000-0000-000000000001';
 
 async function supaFetch(path) {
-  const res = await fetch(`${SUPA_URL}/rest/v1/${path}`, {
-    headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${(await window.supabase.auth.getSession()).data.session?.access_token || SUPA_KEY}` }
+  // [T5 16 jul] Lee el token del SDK (getSession) y reintenta ante 401
+  // refrescando vía theme.js. Antes no refrescaba: un token vencido = error.
+  const armar = async () => ({
+    'apikey': SUPA_KEY,
+    'Authorization': `Bearer ${(await window.supabase.auth.getSession()).data.session?.access_token || SUPA_KEY}`
   });
+  let res = await fetch(`${SUPA_URL}/rest/v1/${path}`, { headers: await armar() });
+  if ((res.status === 401 || res.status === 403) && window.refrescarTokenSupabase) {
+    const ok = await window.refrescarTokenSupabase();
+    if (ok) res = await fetch(`${SUPA_URL}/rest/v1/${path}`, { headers: await armar() });
+  }
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
