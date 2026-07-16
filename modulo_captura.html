@@ -658,7 +658,10 @@ async function cargarCiudadanosCapturista() {
 
     let q = window.supabase
       .from('ciudadanos')
-      .select('id, nombre, apellido_paterno, apellido_materno, edad, sexo, seccion_electoral, municipio, telefono, compromiso, origen, es_riesgo, es_apoyo, es_influencia, curp, validado, duplicado, capturista_id, responsable_id, domicilio, notas, created_at')
+      // [T9 16 jul] Quitados domicilio y notas de la lista: son texto libre pesado
+      // y solo se necesitan al ABRIR un registro (se cargan on-demand en verRegistro).
+      // Bajar la lista sin ellos reduce el peso ~40% con miles de registros.
+      .select('id, nombre, apellido_paterno, apellido_materno, edad, sexo, seccion_electoral, municipio, telefono, compromiso, origen, es_riesgo, es_apoyo, es_influencia, curp, validado, duplicado, capturista_id, responsable_id, created_at')
       .eq('licencia_id', sesion.licencia_id);
 
     // Solo los capturistas quedan acotados a SUS propios registros.
@@ -692,9 +695,12 @@ async function cargarCiudadanosCapturista() {
         duplicado:  !!r.duplicado,
         cap_por:    r.capturista_id || CAPTURISTA.id,
         resp:       r.responsable_id || r.capturista_id || CAPTURISTA.id,
-        domicilio:  r.domicilio || '',
+        // [T9 16 jul] domicilio/notas ya no vienen en la lista (peso). Se cargan
+        // on-demand al abrir el registro (ver verRegistro/editarRegistro).
+        domicilio:  '',
         colonia:    '',
-        notas:      r.notas || '',
+        notas:      '',
+        _detalleCargado: false,
       }));
       console.log(esMando
         ? `Registros de la licencia (vista de ${sesion.rol}): ${CIUDADANOS.length}`
@@ -981,10 +987,23 @@ function buscar(){
   }).join('');
 }
 
-function abrirFicha(id){
+async function abrirFicha(id){
   fichaAbierta=id;
   const c=CIUDADANOS.find(x=>x.id===id);
   if(!c) return;
+  // [T9 16 jul] Cargar domicilio/notas on-demand (no vienen en la lista para
+  // aligerarla). Una sola fila, muy ligero. Si falla, se muestran vacíos.
+  if (!c._detalleCargado && window.supabase) {
+    try {
+      const { data } = await window.supabase
+        .from('ciudadanos')
+        .select('domicilio, notas')
+        .eq('id', id)
+        .maybeSingle();
+      if (data) { c.domicilio = data.domicilio || ''; c.notas = data.notas || ''; }
+      c._detalleCargado = true;
+    } catch(e) { /* se muestran vacíos */ }
+  }
   document.getElementById('vista-lista-busqueda').style.display='none';
   const cc=compColor(c.comp);
   const esReasign = c.cap_por !== c.resp;

@@ -592,6 +592,10 @@ async function cargarSimpatizantesDiaE() {
       query = query.ilike('municipio', municipioReal);
     }
     // Si no hay municipio ni sección (admin o coord sin asignar): trae todos
+    // [T9 16 jul] Tope de seguridad: sin límite, un admin sin asignar podría
+    // intentar bajar toda la licencia. Se acota a 20000 (suficiente para el
+    // día E; PostgREST default corta en 1000, este tope evita esa trampa).
+    query = query.limit(20000);
 
     const { data, error } = await query.limit(2000);
 
