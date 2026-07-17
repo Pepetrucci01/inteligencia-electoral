@@ -412,6 +412,12 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
       <label class="form-label">Sección electoral <span style="color:var(--red)">*</span></label>
       <input class="form-input" id="inst-seccion" type="number" placeholder="Ej. 138" style="margin-bottom:10px;">
 
+      <!-- [DÍA E 16 jul] numero_casilla: parte de la key de identificación de casilla
+           (numero_seccion + tipo_casilla + numero_casilla). La mayoría son 1; las
+           contiguas pueden ser 2, 3... Default 1. -->
+      <label class="form-label">Número de casilla <span style="color:var(--red)">*</span></label>
+      <input class="form-input" id="inst-numero-casilla" type="number" min="1" value="1" placeholder="1" style="margin-bottom:10px;">
+
       <label class="form-label">Municipio <span style="color:var(--red)">*</span></label>
       <input class="form-input" id="inst-municipio" type="text" placeholder="Ej. VILLA DE ALVAREZ" style="margin-bottom:10px;">
 
@@ -1087,6 +1093,7 @@ document.getElementById('modal-voto').addEventListener('click', function(e) {
 // ══════════════════════════════════════════════════════
 let INSTALACION = {
   tipo: null,
+  numero_casilla: 1,
   estatus: null,
   hora_apertura: null,
   seccion: null,
@@ -1206,6 +1213,72 @@ function selEstatus(est) {
 }
 
 // ── Confirmar instalación ──
+// [DÍA E 16 jul] Persiste la instalación en la tabla casillas vía UPSERT
+// (decisión de José). Key de conflicto: numero_seccion + tipo_casilla +
+// numero_casilla + licencia_id (constraint casillas_seccion_tipo_num_lic_uk).
+// UPSERT y no UPDATE: tras el reseccionamiento de marzo 2027 puede haber casillas
+// nuevas que el representante registre en campo (no pre-cargadas).
+// Best-effort: si falla, el dato ya está en localStorage; marca flag pendiente.
+async function guardarInstalacionEnBD(inst) {
+  try {
+    if (!await esperarSupabase(8000)) {
+      console.warn('Día E: sesión no lista, instalación queda solo en local (reintentar).');
+      localStorage.setItem('dia_eleccion_instalacion_pendiente', '1');
+      return false;
+    }
+    // [DÍA E 16 jul] casillas.hora_apertura es timestamptz, pero el formulario
+    // captura solo la hora (HH:MM). Se combina con la fecha de hoy para formar un
+    // timestamp válido. Si no hay hora, va null.
+    let horaAperturaTs = null;
+    if (inst.hora_apertura && /^\d{1,2}:\d{2}/.test(inst.hora_apertura)) {
+      const hoy = new Date();
+      const [hh, mm] = inst.hora_apertura.split(':');
+      hoy.setHours(parseInt(hh), parseInt(mm), 0, 0);
+      horaAperturaTs = hoy.toISOString();
+    }
+    const sesion = window._sesion || {};
+    const fila = {
+      licencia_id:          sesion.licencia_id || 'a1b2c3d4-0001-0000-0000-000000000001',
+      numero_seccion:       inst.seccion,
+      tipo_casilla:         inst.tipo,
+      numero_casilla:       inst.numero_casilla || 1,
+      municipio:            inst.municipio || null,
+      estatus_casilla:      inst.estatus,                      // instalada / no_instalada / suspendida
+      hora_apertura:        horaAperturaTs,
+      presidente_casilla:   inst.presidente && inst.presidente !== '—' ? inst.presidente : null,
+      lista_nominal:        inst.lista_nominal,
+      incidencias_apertura: inst.incidencias && inst.incidencias !== '—' ? inst.incidencias : null,
+      direccion:            inst.direccion || null,
+      lat:                  inst.lat || null,
+      lng:                  inst.lng || null,
+      gps_precision_m:      inst.gps_precision || null,
+      registrado_por:       sesion.id || null,
+    };
+    const conTimeout = (p, ms) => Promise.race([
+      p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))
+    ]);
+    // upsert con la key de conflicto; si la casilla existe la actualiza, si no, la crea.
+    const { error } = await conTimeout(
+      window.supabase
+        .from('casillas')
+        .upsert([fila], { onConflict: 'numero_seccion,tipo_casilla,numero_casilla,licencia_id' }),
+      12000
+    );
+    if (error) {
+      console.warn('Día E: no se pudo guardar instalación en BD:', error.message);
+      localStorage.setItem('dia_eleccion_instalacion_pendiente', '1');
+      return false;
+    }
+    localStorage.removeItem('dia_eleccion_instalacion_pendiente');
+    console.log('✅ Día E: instalación guardada en casillas (upsert).');
+    return true;
+  } catch(e) {
+    console.warn('Día E: excepción al guardar instalación:', e.message);
+    localStorage.setItem('dia_eleccion_instalacion_pendiente', '1');
+    return false;
+  }
+}
+
 function confirmarInstalacion() {
   const errEl = document.getElementById('inst-error-msg');
   errEl.style.display = 'none';
@@ -1222,6 +1295,7 @@ function confirmarInstalacion() {
 
   INSTALACION.hora_apertura = hora;
   INSTALACION.seccion       = parseInt(secc);
+  INSTALACION.numero_casilla = parseInt(document.getElementById('inst-numero-casilla').value) || 1;
   INSTALACION.municipio     = mun.toUpperCase();
   INSTALACION.direccion     = document.getElementById('inst-direccion').value.trim() || '—';
   INSTALACION.presidente    = document.getElementById('inst-presidente').value.trim() || '—';
@@ -1234,8 +1308,15 @@ function confirmarInstalacion() {
     ? `${INSTALACION.lat}, ${INSTALACION.lng}  ±${INSTALACION.gps_precision}m`
     : '⚠️ Sin GPS — captura manual';
 
-  // Guardar en localStorage
+  // Guardar en localStorage (respaldo local)
   localStorage.setItem('dia_eleccion_instalacion', JSON.stringify(INSTALACION));
+
+  // [DÍA E 16 jul] Persistir TAMBIÉN en Supabase (fuente de verdad). Antes solo
+  // vivía en localStorage → el War Room central no lo veía y se perdía con el
+  // dispositivo. Escribe en reportes_casilla_eleccion. Si falla (red/sesión),
+  // queda en localStorage y se puede reintentar; NO bloquea la confirmación al
+  // operador (su registro local ya está a salvo).
+  guardarInstalacionEnBD(INSTALACION);
 
   const tipoLabels = {basica:'Básica',contigua:'Contigua',extraordinaria:'Extraordinaria',especial:'Especial'};
   const estLabels  = {instalada:'✅ Instalada',no_instalada:'❌ No instalada',suspendida:'⚠️ Suspendida'};
