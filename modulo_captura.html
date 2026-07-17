@@ -1527,11 +1527,17 @@ async function guardarEnSupabase(nuevo) {
     return await guardarOffline(nuevo, btnGuardar);
   }
 
-  // [FIX 15 jul] Garantizar sesión aplicada en el SDK antes de guardar (no solo
-  // que el cliente exista). Sin esto, un INSERT rápido corría con auth.uid() null
-  // → get_mi_licencia() null → 403 RLS. esperarSupabase cubre ambos casos.
-  await esperarSupabase(8000);
+  // [FIX 16 jul] Garantizar sesión aplicada en el SDK antes de guardar. Si NO se
+  // logra (esperarSupabase devuelve false), NO intentar el INSERT online: correría
+  // con auth.uid() null → get_mi_licencia() null → RLS lo rechaza (el error "new row
+  // violates RLS" que veía el coordinador). Mejor caer a offline y sincronizar luego.
+  const sesionLista = await esperarSupabase(8000);
   if (SDB.asegurarSesion) { await SDB.asegurarSesion(); }
+  if (!sesionLista) {
+    console.warn('Sesión no aplicada a tiempo; guardando offline para no perder el registro.');
+    if(btnGuardar) { btnGuardar.textContent = '⏳ Guardando...'; btnGuardar.disabled = true; }
+    return await guardarOffline(nuevo, btnGuardar);
+  }
 
   // Mostrar loading
   if(btnGuardar) { btnGuardar.textContent = '⏳ Guardando...'; btnGuardar.disabled = true; }
@@ -1590,8 +1596,28 @@ async function guardarEnSupabase(nuevo) {
     // [FIX 16 jul] Timeout en el guardado principal: si la BD no responde en 15s,
     // se lanza error y cae al fallback offline (IndexedDB) en vez de dejar el
     // botón colgado para siempre. 15s es holgado para una conexión de campo lenta.
-    const { data: ciudadano, error: errCiudadano } =
+    let { data: ciudadano, error: errCiudadano } =
       await conTimeout(SDB.guardarCiudadano(ciudadanoData), 15000, 'guardar');
+
+    // [FIX 16 jul] Race condition de sesión: si el INSERT falla por RLS (row-level
+    // security / violates policy), es señal de que auth.uid() llegó null porque la
+    // sesión no estaba aplicada aún. Re-aplicamos la sesión y reintentamos UNA vez.
+    // Esto mata el bug intermitente del coordinador ("a veces guarda, a veces no").
+    if (errCiudadano && /row-level|policy|violates|RLS|42501|permission/i.test(errCiudadano.message || '')) {
+      console.warn('INSERT rechazado por RLS; re-aplicando sesión y reintentando…');
+      try {
+        const ls = JSON.parse(localStorage.getItem('electoral_sesion') || 'null');
+        if (ls?.access_token && ls?.refresh_token && window.supabase?.auth?.setSession) {
+          await window.supabase.auth.setSession({
+            access_token: ls.access_token, refresh_token: ls.refresh_token
+          });
+        }
+        if (SDB.asegurarSesion) { await SDB.asegurarSesion(); }
+      } catch(e) { console.warn('No se pudo re-aplicar sesión:', e.message); }
+      ({ data: ciudadano, error: errCiudadano } =
+        await conTimeout(SDB.guardarCiudadano(ciudadanoData), 15000, 'guardar-reintento'));
+    }
+
     if(errCiudadano) throw new Error('Error al guardar: ' + errCiudadano.message);
 
     // Agregar al array local inmediatamente
