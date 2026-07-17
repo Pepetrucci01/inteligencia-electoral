@@ -870,7 +870,16 @@ const ROLES = {
   coordinador:   {label:'Coordinador Mun.', color:'var(--accent)'},
   jefe_seccion: {label:'Líder de Sección', color:'#a855f7'},
   capturista:    {label:'Capturista',       color:'var(--green)'},
+  // [FIX 16 jul] Faltaban estos 3 roles que sí existen en la tabla usuarios.
+  // Sin ellos, ROLES[u.rol] era undefined y renderUsuarios tronaba con
+  // "Cannot read properties of undefined (reading 'color')" → panel vacío.
+  repr_casilla:  {label:'Repr. de Casilla', color:'#06b6d4'},
+  operador_cc:   {label:'Operador C.C.',    color:'#f59e0b'},
+  consulta:      {label:'Consulta',         color:'var(--text3)'},
 };
+
+// Fallback para cualquier rol no mapeado (evita que un rol nuevo tumbe el panel).
+const ROL_DEFAULT = {label:'—', color:'var(--text3)'};
 
 // [FIX 14 jul] Aqui habia 16 USUARIOS FALSOS horneados (Coordinador Manzanillo,
 // Capturista 032, etc.). Si el fetch fallaba, quedaban pintados como reales — y
@@ -996,7 +1005,7 @@ let usuariosFiltrados = [...USUARIOS];
 function renderUsuarios(lista){
   const tb = document.getElementById('users-tbody');
   tb.innerHTML = lista.map(u=>{
-    const r = ROLES[u.rol];
+    const r = ROLES[u.rol] || ROL_DEFAULT;
     const sc = u.status==='activo'?'b-green':u.status==='pendiente'?'b-amber':'b-red';
     const sl = u.status==='activo'?'Activo':u.status==='pendiente'?'Pendiente':'Bloqueado';
     return `<tr>
@@ -1708,7 +1717,7 @@ function cargarTemaEnFormulario() {
 function exportarUsuarios(){
   const csv=[
     ['ID','Nombre','Email','Rol','Municipio','Sección','Capturas','Estatus','Último acceso'],
-    ...USUARIOS.map(u=>[u.id,u.nombre,u.email,ROLES[u.rol].label,u.mun,u.sec,u.capturas,u.status,u.ultimo])
+    ...USUARIOS.map(u=>[u.id,u.nombre,u.email,(ROLES[u.rol]||ROL_DEFAULT).label,u.mun,u.sec,u.capturas,u.status,u.ultimo])
   ].map(r=>r.join(',')).join('\n');
   const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a');
