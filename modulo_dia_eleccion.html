@@ -1279,6 +1279,69 @@ async function guardarInstalacionEnBD(inst) {
   }
 }
 
+// [DÍA E 16 jul] Persiste el cierre de casilla en casillas (UPDATE a la misma
+// casilla instalada, vía upsert por la key). Mapea votos y hora de cierre.
+async function guardarCierreEnBD(cierre) {
+  try {
+    if (!await esperarSupabase(8000)) {
+      console.warn('Día E: sesión no lista, cierre queda solo en local (reintentar).');
+      localStorage.setItem('dia_eleccion_cierre_pendiente', '1');
+      return false;
+    }
+    // La casilla se identifica con los MISMOS datos de la instalación (misma casilla).
+    if (!INSTALACION.seccion || !INSTALACION.tipo) {
+      console.warn('Día E: no hay datos de instalación para ligar el cierre; queda en local.');
+      localStorage.setItem('dia_eleccion_cierre_pendiente', '1');
+      return false;
+    }
+    const sesion = window._sesion || {};
+    // hora_cierre HH:MM → timestamptz (misma lógica que apertura).
+    let horaCierreTs = null;
+    if (cierre.hora && /^\d{1,2}:\d{2}/.test(cierre.hora)) {
+      const hoy = new Date();
+      const [hh, mm] = cierre.hora.split(':');
+      hoy.setHours(parseInt(hh), parseInt(mm), 0, 0);
+      horaCierreTs = hoy.toISOString();
+    }
+    const v = cierre.votos || {};
+    const fila = {
+      licencia_id:           sesion.licencia_id || 'a1b2c3d4-0001-0000-0000-000000000001',
+      numero_seccion:        INSTALACION.seccion,
+      tipo_casilla:          INSTALACION.tipo,
+      numero_casilla:        INSTALACION.numero_casilla || 1,
+      hora_cierre:           horaCierreTs,
+      votos_nuestro_partido: v['Nuestro partido'] || 0,
+      votos_partido_a:       v['Partido A'] || 0,
+      votos_partido_b:       v['Partido B'] || 0,
+      votos_partido_c:       v['Partido C'] || 0,
+      votos_nulos:           v['Nulos'] || 0,
+      incidencias_cierre:    cierre.incidencias && cierre.incidencias !== '—' ? cierre.incidencias : null,
+      registrado_por:        sesion.id || null,
+    };
+    const conTimeout = (p, ms) => Promise.race([
+      p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))
+    ]);
+    const { error } = await conTimeout(
+      window.supabase
+        .from('casillas')
+        .upsert([fila], { onConflict: 'numero_seccion,tipo_casilla,numero_casilla,licencia_id' }),
+      12000
+    );
+    if (error) {
+      console.warn('Día E: no se pudo guardar cierre en BD:', error.message);
+      localStorage.setItem('dia_eleccion_cierre_pendiente', '1');
+      return false;
+    }
+    localStorage.removeItem('dia_eleccion_cierre_pendiente');
+    console.log('✅ Día E: cierre guardado en casillas (upsert).');
+    return true;
+  } catch(e) {
+    console.warn('Día E: excepción al guardar cierre:', e.message);
+    localStorage.setItem('dia_eleccion_cierre_pendiente', '1');
+    return false;
+  }
+}
+
 function confirmarInstalacion() {
   const errEl = document.getElementById('inst-error-msg');
   errEl.style.display = 'none';
@@ -1382,6 +1445,10 @@ function confirmarCierre() {
   CIERRE.ts          = new Date().toLocaleTimeString('es-MX');
 
   localStorage.setItem('dia_eleccion_cierre', JSON.stringify(CIERRE));
+
+  // [DÍA E 16 jul] Persistir el cierre en la tabla casillas (UPDATE a la misma
+  // casilla instalada, vía upsert por la key). Antes vivía solo en localStorage.
+  guardarCierreEnBD(CIERRE);
 
   const votosHtml = Object.entries(CIERRE.votos).map(([p,v]) =>
     `<div class="inst-confirmado-row"><span class="inst-key">${p}</span><span class="inst-val">${v}</span></div>`
