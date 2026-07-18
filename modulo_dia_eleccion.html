@@ -658,6 +658,26 @@ let queryBusqueda  = '';
 // sesión internamente y tiene guard anti-doble-llamada.
 cargarSimpatizantesDiaE();
 
+// [DÍA E 16 jul] Cargar las secciones asignadas al representante (get_mis_secciones).
+// Se usan para validar que solo instale/cierre casillas de SU sección. Si el usuario
+// es de mando o no tiene asignaciones, MIS_SECCIONES queda vacío = sin restricción.
+let MIS_SECCIONES = [];
+let _seccionesCargadas = false;
+async function cargarMisSecciones() {
+  try {
+    if (!await esperarSupabase(8000)) return;
+    const { data, error } = await window.supabase.rpc('get_mis_secciones');
+    if (!error && Array.isArray(data)) {
+      MIS_SECCIONES = data.map(r => Number(r.numero_seccion)).filter(Number.isFinite);
+    }
+    _seccionesCargadas = true;
+    if (MIS_SECCIONES.length) {
+      console.log('Día E: secciones asignadas al representante →', MIS_SECCIONES.join(', '));
+    }
+  } catch(e) { console.warn('Día E: no se pudieron cargar secciones asignadas:', e.message); }
+}
+cargarMisSecciones();
+
 // ══════════════════════════════════════════════════════
 // RELOJ Y CUENTA REGRESIVA AL CORTE
 // ══════════════════════════════════════════════════════
@@ -1355,6 +1375,14 @@ function confirmarInstalacion() {
   if(!hora){ mostrarError(errEl, 'Ingresa la hora de apertura.'); return; }
   if(!secc){ mostrarError(errEl, 'Ingresa la sección electoral.'); return; }
   if(!mun) { mostrarError(errEl, 'Ingresa el municipio.'); return; }
+
+  // [DÍA E 16 jul] Si el representante tiene secciones asignadas, la sección que
+  // captura DEBE ser una de ellas (evita que instale una casilla que no le toca).
+  // Si MIS_SECCIONES está vacío (rol de mando o sin asignación), no se restringe.
+  if (MIS_SECCIONES.length && !MIS_SECCIONES.includes(parseInt(secc))) {
+    mostrarError(errEl, 'La sección ' + secc + ' no está asignada a ti. Tus secciones: ' + MIS_SECCIONES.join(', ') + '.');
+    return;
+  }
 
   INSTALACION.hora_apertura = hora;
   INSTALACION.seccion       = parseInt(secc);
