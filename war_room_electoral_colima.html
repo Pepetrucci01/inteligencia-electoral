@@ -95,6 +95,10 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--sans);}
 .kv{font-size:26px;font-weight:700;font-family:var(--mono);line-height:1;margin-bottom:4px;}
 .kl{font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.04em;}
 .ks{font-size:10px;color:var(--text3);margin-top:2px;}
+/* --- Tooltips informativos (v2.2) --- */
+[data-tip]{cursor:help;}
+#vt-tooltip{position:fixed;z-index:9999;max-width:260px;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;padding:8px 11px;font-size:11px;line-height:1.5;color:var(--text);font-family:var(--sans);pointer-events:none;opacity:0;transition:opacity .12s;box-shadow:0 6px 18px rgba(0,0,0,.5);}
+#vt-tooltip.show{opacity:1;}
 
 /* GRID */
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
@@ -335,18 +339,18 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
 
     <!-- KPIs -->
     <div class="kpi-row">
-      <div class="kpi bl"><div class="kl">Meta estatal <span data-theme="sistema-anio">2027</span></div><div class="kv" id="kpi-meta">197,297</div><div class="ks">votos proyectados</div></div>
-      <div class="kpi gr"><div class="kl">Total capturados</div><div class="kv" id="kpi-total-cap">14,300</div><div class="ks">registros activos</div></div>
-      <div class="kpi gr"><div class="kl">Seguro vota</div><div class="kv" id="kpi-seguro-vota">3,432</div><div class="ks">nivel compromiso 3+4</div></div>
-      <div class="kpi am"><div class="kl">Prioridad alta</div><div class="kv" id="kpi-atencion">2,757</div><div class="ks">requieren atención</div></div>
-      <div class="kpi re"><div class="kl">Riesgo alto</div><div class="kv">2,203</div><div class="ks">posible fuga de voto</div></div>
-      <div class="kpi pu"><div class="kl">Duplicados</div><div class="kv" id="kpi-depurar">408</div><div class="ks">registros a depurar</div></div>
+      <div class="kpi bl" data-tip="Votos que la candidatura necesita para ganar en 2027. Es el objetivo final."><div class="kl">Meta estatal <span data-theme="sistema-anio">2027</span></div><div class="kv" id="kpi-meta">197,297</div><div class="ks">votos proyectados</div></div>
+      <div class="kpi gr" data-tip="Ciudadanos registrados hasta hoy por tu estructura en campo."><div class="kl">Total capturados</div><div class="kv" id="kpi-total-cap">14,300</div><div class="ks">registros activos</div></div>
+      <div class="kpi gr" data-tip="Ciudadanos con alto compromiso de votar por ti (nivel 3 y 4)."><div class="kl">Seguro vota</div><div class="kv" id="kpi-seguro-vota">3,432</div><div class="ks">nivel compromiso 3+4</div></div>
+      <div class="kpi am" data-tip="Ciudadanos que requieren atención inmediata para asegurar su voto."><div class="kl">Prioridad alta</div><div class="kv" id="kpi-atencion">2,757</div><div class="ks">requieren atención</div></div>
+      <div class="kpi re" data-tip="Ciudadanos con posible fuga de voto. Requieren seguimiento urgente."><div class="kl">Riesgo alto</div><div class="kv">2,203</div><div class="ks">posible fuga de voto</div></div>
+      <div class="kpi pu" data-tip="Registros repetidos que inflan tus números. Hay que depurarlos."><div class="kl">Duplicados</div><div class="kv" id="kpi-depurar">408</div><div class="ks">registros a depurar</div></div>
     </div>
 
     <!-- TABLA MUNICIPIOS — ANCHO COMPLETO -->
     <div class="card" style="margin-bottom:14px">
       <div class="card-h">
-        <span class="card-title">Avance por municipio vs. meta 2027</span>
+        <span class="card-title" data-tip="Comparación del avance real contra la meta de cada municipio.">Avance por municipio vs. meta 2027</span>
         <span id="mun-table-caption" style="font-size:10px;font-family:var(--mono);color:var(--text3)">10 municipios · 393 secciones</span>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border2)">
@@ -409,7 +413,7 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
     </style>
     <div class="card" style="margin-bottom:14px">
       <div class="card-h">
-        <span class="card-title">👤 Avance por activista</span>
+        <span class="card-title" data-tip="Capturas y desempeño de cada activista en campo.">👤 Avance por activista</span>
         <span id="cap-tabla-count" style="font-size:10px;font-family:var(--mono);color:var(--text3)"></span>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border2)">
@@ -459,7 +463,7 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
       <!-- Alertas del sistema -->
       <div class="card">
         <div class="card-h">
-          <span class="card-title">Alertas del sistema</span>
+          <span class="card-title" data-tip="Avisos automáticos sobre riesgos y pendientes detectados.">Alertas del sistema</span>
           <span style="font-size:10px;font-family:var(--mono);color:var(--red)">● 3 críticas</span>
         </div>
         <div class="al-item"><div class="al-dot" style="background:var(--red)"></div><div><div class="al-title">Secciones sin captura</div><div class="al-desc">Comala (98,99), Coquimatlán (114,119),<br>Manzanillo (207) — 0% avance</div></div></div>
@@ -471,7 +475,7 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
 
       <!-- Nivel de compromiso -->
       <div class="card">
-        <div class="card-h"><span class="card-title">Nivel de compromiso</span></div>
+        <div class="card-h"><span class="card-title" data-tip="Qué tan seguro es el voto de cada ciudadano (1 = frío, 4 = seguro).">Nivel de compromiso</span></div>
         <div class="card-b">
           <div class="comp-row"><div class="comp-lbl">4 · Moviliza</div><div class="comp-track"><div class="comp-fill" style="width:11.7%;background:var(--green)"></div></div><div class="comp-num" style="color:var(--green)">1,169</div></div>
           <div class="comp-row"><div class="comp-lbl">3 · Seguro vota</div><div class="comp-track"><div class="comp-fill" style="width:34.3%;background:#16a34a"></div></div><div class="comp-num" style="color:#16a34a">3,432</div></div>
@@ -486,7 +490,7 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
 
       <!-- Origen de captura -->
       <div class="card">
-        <div class="card-h"><span class="card-title">Origen de captura</span></div>
+        <div class="card-h"><span class="card-title" data-tip="De dónde vienen tus registros: campo, call center, eventos, etc.">Origen de captura</span></div>
         <div class="card-b">
           <div class="or-row"><div class="or-ic" style="background:rgba(59,130,246,.12);color:var(--accent)">🚪</div><div class="or-nm">Casa por casa</div><div class="or-bar"><div class="or-fill" style="width:45.4%;background:var(--accent)"></div></div><div class="or-num">4,538</div></div>
           <div class="or-row"><div class="or-ic" style="background:rgba(168,85,247,.12);color:var(--purple)">👥</div><div class="or-nm">Referido</div><div class="or-bar"><div class="or-fill" style="width:25.2%;background:var(--purple)"></div></div><div class="or-num">2,519</div></div>
@@ -541,14 +545,14 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
   <!-- F2 KPIs -->
   <div style="padding:14px 24px;background:var(--bg3);border-bottom:1px solid var(--border)">
     <div class="f2kpi-row">
-      <div class="f2kpi gr"><div class="fl">Casillas abiertas</div><div class="fv" id="k-ab">0</div></div>
-      <div class="f2kpi am"><div class="fl">Sin reporte</div><div class="fv" id="k-sr">0</div></div>
-      <div class="f2kpi re"><div class="fl">Con incidencia</div><div class="fv" id="k-inc">0</div></div>
-      <div class="f2kpi cy"><div class="fl">Cerradas</div><div class="fv" id="k-ce">0</div></div>
-      <div class="f2kpi gr"><div class="fl">Votos confirmados</div><div class="fv" id="k-vt">0</div></div>
-      <div class="f2kpi bl"><div class="fl">Nuevos registros</div><div class="fv" id="k-nv">0</div></div>
-      <div class="f2kpi pu"><div class="fl">% participación lista</div><div class="fv" id="k-pt">0%</div></div>
-      <div class="f2kpi gr"><div class="fl">% casillas activas</div><div class="fv" id="k-ca">0%</div></div>
+      <div class="f2kpi gr" data-tip="Casillas que ya abrieron y están recibiendo votantes."><div class="fl">Casillas abiertas</div><div class="fv" id="k-ab">0</div></div>
+      <div class="f2kpi am" data-tip="Casillas de las que aún no llega información. Hay que contactarlas."><div class="fl">Sin reporte</div><div class="fv" id="k-sr">0</div></div>
+      <div class="f2kpi re" data-tip="Casillas con algún problema reportado (retraso, conflicto, material)."><div class="fl">Con incidencia</div><div class="fv" id="k-inc">0</div></div>
+      <div class="f2kpi cy" data-tip="Casillas que ya terminaron la votación."><div class="fl">Cerradas</div><div class="fv" id="k-ce">0</div></div>
+      <div class="f2kpi gr" data-tip="Ciudadanos de tu base confirmados que ya salieron a votar."><div class="fl">Votos confirmados</div><div class="fv" id="k-vt">0</div></div>
+      <div class="f2kpi bl" data-tip="Votantes detectados hoy que no estaban en tu base."><div class="fl">Nuevos registros</div><div class="fv" id="k-nv">0</div></div>
+      <div class="f2kpi pu" data-tip="Porcentaje de tu lista que ya salió a votar."><div class="fl">% participación lista</div><div class="fv" id="k-pt">0%</div></div>
+      <div class="f2kpi gr" data-tip="Porcentaje de casillas abiertas y reportando información."><div class="fl">% casillas activas</div><div class="fv" id="k-ca">0%</div></div>
     </div>
   </div>
 
@@ -558,7 +562,7 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
     <div class="g21">
       <div class="card">
         <div class="card-h">
-          <span class="card-title">Avance electoral por municipio — tiempo real</span>
+          <span class="card-title" data-tip="Monitoreo en vivo de la jornada electoral por municipio.">Avance electoral por municipio — tiempo real</span>
           <span style="font-size:10px;font-family:var(--mono);color:var(--text3)">clic en fila para ver cuadrantes</span>
         </div>
         <div class="tw">
@@ -588,13 +592,13 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
       <div>
         <div class="card">
           <div class="card-h">
-            <span class="card-title">Alertas jornada</span>
+            <span class="card-title" data-tip="Incidencias y avisos durante el día de la elección.">Alertas jornada</span>
             <span style="font-size:10px;font-family:var(--mono);color:var(--red)" id="f2-alert-badge">● 0</span>
           </div>
           <div id="f2-alertas-list"></div>
         </div>
         <div class="card">
-          <div class="card-h"><span class="card-title">⚡ Enviar alerta a activistas</span></div>
+          <div class="card-h"><span class="card-title" data-tip="Manda un mensaje urgente a tu estructura en campo.">⚡ Enviar alerta a activistas</span></div>
           <div class="card-b">
             <div style="font-size:11px;color:var(--text2);margin-bottom:10px">Notifica a los activistas que van en rojo o sin reporte. El mensaje llega dentro del sistema y por WhatsApp.</div>
 
@@ -637,7 +641,7 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
 
         <!-- Historial de alertas enviadas -->
         <div class="card" style="margin-top:10px">
-          <div class="card-h"><span class="card-title">Historial de alertas</span><span id="alerta-hist-count" style="font-size:10px;font-family:var(--mono);color:var(--text3)">0 enviadas</span></div>
+          <div class="card-h"><span class="card-title" data-tip="Registro de todas las alertas enviadas hoy.">Historial de alertas</span><span id="alerta-hist-count" style="font-size:10px;font-family:var(--mono);color:var(--text3)">0 enviadas</span></div>
           <div id="alerta-historial" style="max-height:160px;overflow-y:auto">
             <div style="font-size:11px;color:var(--text3);padding:10px;text-align:center">Sin alertas enviadas</div>
           </div>
@@ -2834,5 +2838,28 @@ document.addEventListener('DOMContentLoaded',()=>{
 <div aria-hidden="true" style="text-align:center;padding:18px 16px 24px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:rgba(138,154,181,0.45);letter-spacing:.02em;user-select:none;border-top:1px solid var(--border);margin-top:8px;">
   VOTERA™ · © 2026 MEFT Consulting · Todos los derechos reservados
 </div>
+<script>
+/* --- Tooltips informativos (v2.2) --- */
+(function(){
+  var tip=document.createElement('div');tip.id='vt-tooltip';document.body.appendChild(tip);
+  function move(x,y){var w=tip.offsetWidth,h=tip.offsetHeight;var px=x+14,py=y+16;
+    if(px+w>window.innerWidth-8)px=x-w-10;if(py+h>window.innerHeight-8)py=y-h-10;
+    if(px<4)px=4;if(py<4)py=4;tip.style.left=px+'px';tip.style.top=py+'px';}
+  function show(el,x,y){tip.textContent=el.getAttribute('data-tip');tip.classList.add('show');move(x,y);}
+  function hide(){tip.classList.remove('show');}
+  document.addEventListener('mouseover',function(e){
+    var el=e.target.closest?e.target.closest('[data-tip]'):null;
+    if(el)show(el,e.clientX,e.clientY);else hide();});
+  document.addEventListener('mousemove',function(e){
+    if(!tip.classList.contains('show'))return;
+    var el=e.target.closest?e.target.closest('[data-tip]'):null;
+    if(el)move(e.clientX,e.clientY);else hide();});
+  var tmo=null;
+  document.addEventListener('touchstart',function(e){
+    var el=e.target.closest?e.target.closest('[data-tip]'):null;
+    if(el){var t=e.touches[0];show(el,t.clientX,t.clientY);clearTimeout(tmo);tmo=setTimeout(hide,2500);}
+    else hide();},{passive:true});
+})();
+</script>
 </body>
 </html>
