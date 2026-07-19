@@ -655,45 +655,34 @@ let MUNICIPIOS_DATA = [];
 async function cargarDatosCliente() {
   try {
     // ── 1. Ciudadanos: conteo total y por municipio ──
-    // [FIX 18 jul · Bugs 3/6 José] El loop anterior usaba fetch crudo SIN refresh
-    // de token y con `if (!res.ok) break;`: si el token vencía a media paginación,
-    // cortaba EN SILENCIO y presentaba el parcial como total (así nació el famoso
-    // 10,092 = 10 páginas + 92 de un total de ~14,275). Ahora cada página va por
-    // supaFetch (refresh ante 401/403) y cualquier error DETIENE con excepción
-    // visible en vez de mentir con datos truncados.
-    // [PERF 18 jul] Con ~14K registros, 15 páginas secuenciales tardaban ~15s.
-    // Ahora: 1 request de conteo exacto (Content-Range) y TODAS las páginas en
-    // paralelo con Promise.all (patrón que este panel ya había usado antes).
-    // [PERF 18 jul] nombre/apellido solo servían para los 10 de "Actividad
-    // reciente"; se quitan del bulk (~35% menos payload × 15 páginas) y la
-    // actividad se pide aparte con un request de 10 filas.
-    const CAMPOS = 'municipio,compromiso,es_riesgo,created_at,seccion_electoral,capturista_id';
-    const total = await pcCount(`ciudadanos?select=id&licencia_id=eq.${LICENCIA_ID}`);
-    const numPaginas = Math.max(1, Math.ceil(Math.min(total, 20000) / 1000));
-    const paginas = await Promise.all(
-      Array.from({ length: numPaginas }, (_, i) =>
-        pcFetch(`ciudadanos?select=${CAMPOS}&licencia_id=eq.${LICENCIA_ID}&limit=1000&offset=${i * 1000}`)
-      )
-    );
-    const allCiudadanos = paginas.flat().filter(Boolean);
+// [PERF 18 jul · definitivo] Antes bajábamos el padrón (~14K filas, 15+
+    // requests, varios MB) para calcular agregados en el navegador. Ahora los
+    // agregados vienen del servidor: get_war_room_kpis (1 llamada) + queries
+    // ligeras puntuales. El "10,092" histórico nació justo de truncar esa
+    // bajada masiva; al no bajarla, la clase entera de bug desaparece.
+    const { data: kpis, error: eK } = await Promise.race([
+      window.supabase.rpc('get_war_room_kpis'),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout get_war_room_kpis')), 15000)),
+    ]);
+    if (eK || !kpis) throw new Error('get_war_room_kpis: ' + ((eK && eK.message) || 'sin datos'));
 
-    const totalCapturados = allCiudadanos.length;
-    // [FIX 18 jul · Bug 4] META horneada (197,297 ≠ 208,717 real). Ahora:
-    // window.SISTEMA_META (configuracion_sistema vía theme.js) → fallback 208,717.
-    const META_ESTATAL = (typeof window.SISTEMA_META === 'number' && window.SISTEMA_META > 0)
-      ? window.SISTEMA_META : 208717;
+    const totalCapturados = Number(kpis.total) || 0;
+    // Meta: la que reporta la RPC → SISTEMA_META (configuracion_sistema) → 208,717.
+    const META_ESTATAL = (Number(kpis.meta) > 0) ? Number(kpis.meta)
+      : ((typeof window.SISTEMA_META === 'number' && window.SISTEMA_META > 0) ? window.SISTEMA_META : 208717);
     const pctAvance = META_ESTATAL > 0 ? ((totalCapturados / META_ESTATAL) * 100).toFixed(1) : '0.0';
 
-    // Secciones únicas cubiertas
-    const seccionesCubiertas = new Set(allCiudadanos.map(c => c.seccion_electoral).filter(Boolean)).size;
+    // Secciones únicas cubiertas (llaves de por_seccion de la RPC)
+    const porSeccion = kpis.por_seccion || {};
+    const seccionesCubiertas = Object.keys(porSeccion).length;
 
-    // Capturistas activos hoy
+    // Capturistas activos hoy: query ligera (solo capturista_id de hoy)
     const hoy = new Date().toISOString().split('T')[0];
-    const activosHoy = new Set(
-      allCiudadanos
-        .filter(c => c.created_at && c.created_at.startsWith(hoy) && c.capturista_id)
-        .map(c => c.capturista_id)
-    ).size;
+    let activosHoy = 0;
+    try {
+      const deHoy = await pcFetch(`ciudadanos?select=capturista_id&licencia_id=eq.${LICENCIA_ID}&created_at=gte.${hoy}&limit=1000`);
+      activosHoy = new Set((Array.isArray(deHoy) ? deHoy : []).map(c => c.capturista_id).filter(Boolean)).size;
+    } catch (eH) { console.warn('Activos hoy no disponible:', eH); }
 
     // Actualizar KPIs resumen
     const kpisResumen = document.querySelectorAll('#sc-resumen .kpi .kpi-val');
@@ -710,9 +699,9 @@ async function cargarDatosCliente() {
     const normMun = s => (s || 'Sin municipio').toUpperCase().trim()
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     const munMap = {};
-    allCiudadanos.forEach(c => {
-      const m = normMun(c.municipio);
-      munMap[m] = (munMap[m] || 0) + 1;
+    Object.entries(kpis.por_municipio || {}).forEach(([m, v]) => {
+      const k = normMun(m);
+      munMap[k] = (munMap[k] || 0) + (Number(v && v.total) || 0);
     });
 
     // [FIX 18 jul] Metas municipales REALES: suma de meta_proyectada del
@@ -753,9 +742,10 @@ async function cargarDatosCliente() {
       renderActividadReal([]);
     }
 
-    // Alertas dinámicas
-    const riesgo = allCiudadanos.filter(c => c.es_riesgo).length;
-    const sinSeccion = allCiudadanos.filter(c => !c.seccion_electoral).length;
+    // Alertas dinámicas (agregados de la RPC; sinSeccion = total − suma por_seccion)
+    const riesgo = Number(kpis.riesgo) || 0;
+    const sinSeccion = Math.max(0, totalCapturados -
+      Object.values(porSeccion).reduce((a, n) => a + (Number(n) || 0), 0));
     renderAlertasReal(riesgo, sinSeccion, totalCapturados, META_ESTATAL);
 
     // ── 2. Usuarios desde tabla usuarios ──
@@ -773,12 +763,14 @@ async function cargarDatosCliente() {
         status: u.activo ? 'activo' : 'inactivo'
       }));
 
-      // Enriquecer con capturas por capturista
-      const capPorId = {};
-      allCiudadanos.forEach(c => {
-        if (c.capturista_id) capPorId[c.capturista_id] = (capPorId[c.capturista_id] || 0) + 1;
-      });
-      USUARIOS.forEach(u => { u.capturas = capPorId[u.id] || 0; });
+      // Enriquecer con capturas por capturista (vía RPC; ya no bajamos el padrón)
+      try {
+        const { data: cst } = await window.supabase.rpc('get_capturistas_stats');
+        const lista = (cst && Array.isArray(cst.capturistas)) ? cst.capturistas : [];
+        const capPorId = {};
+        lista.forEach(s => { const k = s.id || s.capturista_id; if (k) capPorId[k] = s.total || 0; });
+        USUARIOS.forEach(u => { u.capturas = capPorId[u.id] || 0; });
+      } catch (eC) { console.warn('Capturas por usuario no disponibles:', eC); }
 
       // Actualizar KPIs usuarios
       document.getElementById('kpi-total').textContent = USUARIOS.length;
