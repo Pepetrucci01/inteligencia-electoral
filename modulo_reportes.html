@@ -60,6 +60,10 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--sans);}
 .kpi-trend{font-size:10px;font-family:var(--mono);}
 .kpi-trend.up{color:var(--green);}
 .kpi-trend.dn{color:var(--red);}
+/* --- Tooltips informativos (v2.2) --- */
+[data-tip]{cursor:help;}
+#vt-tooltip{position:fixed;z-index:9999;max-width:260px;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;padding:8px 11px;font-size:11px;line-height:1.5;color:var(--text);font-family:var(--sans);pointer-events:none;opacity:0;transition:opacity .12s;box-shadow:0 6px 18px rgba(0,0,0,.5);}
+#vt-tooltip.show{opacity:1;}
 
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px;}
@@ -210,14 +214,14 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
 <!-- ═══════════ RESUMEN EJECUTIVO ═══════════ -->
 <div class="screen active" id="sc-resumen">
   <div class="kpi-row">
-    <div class="kpi bl"><div class="kpi-lbl">Meta estatal 2027</div><div class="kpi-val" id="rep-meta-kpi">197,297</div><div class="kpi-trend">votos proyectados</div></div>
-    <div class="kpi gr"><div class="kpi-lbl">Total capturados</div><div class="kpi-val">10,000</div><div class="kpi-trend up">↑ +574 esta semana</div></div>
-    <div class="kpi bl"><div class="kpi-lbl">Avance estatal</div><div class="kpi-val">4.8%</div><div class="kpi-trend up">↑ +0.3% vs semana ant.</div></div>
-    <div class="kpi gr"><div class="kpi-lbl">Voto seguro</div><div class="kpi-val">4,601</div><div class="kpi-trend">46% de capturados</div></div>
-    <div class="kpi am"><div class="kpi-lbl">En riesgo</div><div class="kpi-val">2,203</div><div class="kpi-trend dn">↑ +12 esta semana</div></div>
-    <div class="kpi re"><div class="kpi-lbl">Secciones críticas</div><div class="kpi-val">219</div><div class="kpi-trend dn">sin captura + &lt;5%</div></div>
-    <div class="kpi pu"><div class="kpi-lbl">Duplicados</div><div class="kpi-val">408</div><div class="kpi-trend dn">depurar urgente</div></div>
-    <div class="kpi cy"><div class="kpi-lbl">Días a la elección</div><div class="kpi-val">334</div><div class="kpi-trend">6 jun 2027</div></div>
+    <div class="kpi bl" data-tip="Votos que la candidatura necesita para ganar en 2027. Es el objetivo final."><div class="kpi-lbl">Meta estatal 2027</div><div class="kpi-val" id="rep-meta-kpi">197,297</div><div class="kpi-trend">votos proyectados</div></div>
+    <div class="kpi gr" data-tip="Ciudadanos registrados hasta hoy por tu estructura en campo."><div class="kpi-lbl">Total capturados</div><div class="kpi-val">10,000</div><div class="kpi-trend up">↑ +574 esta semana</div></div>
+    <div class="kpi bl" data-tip="Porcentaje de la meta estatal que ya llevas cubierto."><div class="kpi-lbl">Avance estatal</div><div class="kpi-val">4.8%</div><div class="kpi-trend up">↑ +0.3% vs semana ant.</div></div>
+    <div class="kpi gr" data-tip="Ciudadanos con alto compromiso de votar por ti (nivel 3 y 4)."><div class="kpi-lbl">Voto seguro</div><div class="kpi-val">4,601</div><div class="kpi-trend">46% de capturados</div></div>
+    <div class="kpi am" data-tip="Ciudadanos que podrían no votar por ti. Requieren seguimiento."><div class="kpi-lbl">En riesgo</div><div class="kpi-val">2,203</div><div class="kpi-trend dn">↑ +12 esta semana</div></div>
+    <div class="kpi re" data-tip="Secciones sin captura o con avance menor al 5%. Zonas descuidadas."><div class="kpi-lbl">Secciones críticas</div><div class="kpi-val">219</div><div class="kpi-trend dn">sin captura + &lt;5%</div></div>
+    <div class="kpi pu" data-tip="Registros repetidos que inflan tus números. Hay que depurarlos."><div class="kpi-lbl">Duplicados</div><div class="kpi-val">408</div><div class="kpi-trend dn">depurar urgente</div></div>
+    <div class="kpi cy" data-tip="Días que faltan para la jornada electoral del 6 de junio de 2027."><div class="kpi-lbl">Días a la elección</div><div class="kpi-val">334</div><div class="kpi-trend">6 jun 2027</div></div>
   </div>
 
   <div class="section-title">Progreso general vs meta</div>
@@ -244,7 +248,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
 
   <div class="grid2">
     <div class="card">
-      <div class="card-head"><div class="card-title">Top 3 municipios por avance</div></div>
+      <div class="card-head"><div class="card-title" data-tip="Los 3 municipios con mejor porcentaje de avance vs su meta.">Top 3 municipios por avance</div></div>
       <div class="card-body">
         <div class="bar-row"><div class="bar-label">Tecomán</div><div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--green)"></div></div><div class="bar-val">1,537</div><div class="bar-pct">14.5%</div></div>
         <div class="bar-row"><div class="bar-label">Armería</div><div class="bar-track"><div class="bar-fill" style="width:54%;background:var(--accent)"></div></div><div class="bar-val">688</div><div class="bar-pct">7.8%</div></div>
@@ -252,7 +256,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
       </div>
     </div>
     <div class="card">
-      <div class="card-head"><div class="card-title">Bottom 3 municipios — alerta</div></div>
+      <div class="card-head"><div class="card-title" data-tip="Los 3 municipios más rezagados. Necesitan refuerzo.">Bottom 3 municipios — alerta</div></div>
       <div class="card-body">
         <div class="bar-row"><div class="bar-label">Minatitlán</div><div class="bar-track"><div class="bar-fill" style="width:10%;background:var(--red)"></div></div><div class="bar-val">625</div><div class="bar-pct">1.5%</div></div>
         <div class="bar-row"><div class="bar-label">Coquimatlán</div><div class="bar-track"><div class="bar-fill" style="width:12%;background:var(--red)"></div></div><div class="bar-val">469</div><div class="bar-pct">1.7%</div></div>
@@ -334,14 +338,14 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
 <!-- ═══════════ AVANCE & RITMO ═══════════ -->
 <div class="screen" id="sc-avance">
   <div class="kpi-row">
-    <div class="kpi gr"><div class="kpi-lbl">Promedio diario</div><div class="kpi-val">84</div><div class="kpi-trend">capturas/día</div></div>
-    <div class="kpi bl"><div class="kpi-lbl">Mejor semana</div><div class="kpi-val">614</div><div class="kpi-trend">sem. 23 feb / 16 mar</div></div>
-    <div class="kpi am"><div class="kpi-lbl">Peor semana</div><div class="kpi-val">421</div><div class="kpi-trend dn">sem. 27 abr (incompleta)</div></div>
-    <div class="kpi cy"><div class="kpi-lbl">Mes más productivo</div><div class="kpi-val">Marzo</div><div class="kpi-trend">2,622 capturas</div></div>
+    <div class="kpi gr" data-tip="Capturas nuevas por día, en promedio."><div class="kpi-lbl">Promedio diario</div><div class="kpi-val">84</div><div class="kpi-trend">capturas/día</div></div>
+    <div class="kpi bl" data-tip="La semana con más capturas registradas. Tu mejor ritmo."><div class="kpi-lbl">Mejor semana</div><div class="kpi-val">614</div><div class="kpi-trend">sem. 23 feb / 16 mar</div></div>
+    <div class="kpi am" data-tip="La semana con menos capturas. Señal de bajón de ritmo."><div class="kpi-lbl">Peor semana</div><div class="kpi-val">421</div><div class="kpi-trend dn">sem. 27 abr (incompleta)</div></div>
+    <div class="kpi cy" data-tip="El mes con mayor número de capturas."><div class="kpi-lbl">Mes más productivo</div><div class="kpi-val">Marzo</div><div class="kpi-trend">2,622 capturas</div></div>
   </div>
 
   <div class="card" style="margin-bottom:14px">
-    <div class="card-head"><div class="card-title">Capturas por semana (últimas 12 semanas)</div><div class="card-meta">datos reales INE</div></div>
+    <div class="card-head"><div class="card-title" data-tip="Cuántos ciudadanos se registraron cada semana.">Capturas por semana (últimas 12 semanas)</div><div class="card-meta">datos reales INE</div></div>
     <div class="chart-wrap" style="height:220px">
       <canvas id="ch-semanas" role="img" aria-label="Gráfica de capturas por semana: promedio 574 por semana con picos en febrero y marzo 2026">Capturas semanales: 586, 524, 614, 585, 561, 614, 590, 579, 582, 573, 574, 421.</canvas>
     </div>
@@ -349,13 +353,13 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
 
   <div class="grid2">
     <div class="card">
-      <div class="card-head"><div class="card-title">Capturas por mes</div></div>
+      <div class="card-head"><div class="card-title" data-tip="Total de capturas agrupadas por mes.">Capturas por mes</div></div>
       <div class="chart-wrap" style="height:200px">
         <canvas id="ch-meses" role="img" aria-label="Capturas por mes: enero 2549, febrero 2288, marzo 2622, abril 2462, mayo 79">Ene: 2549, Feb: 2288, Mar: 2622, Abr: 2462, May: 79.</canvas>
       </div>
     </div>
     <div class="card">
-      <div class="card-head"><div class="card-title">Ritmo diario — últimas 2 semanas</div></div>
+      <div class="card-head"><div class="card-title" data-tip="Capturas por día en los últimos 14 días.">Ritmo diario — últimas 2 semanas</div></div>
       <div class="chart-wrap" style="height:200px">
         <canvas id="ch-diario" role="img" aria-label="Capturas diarias del 17 al 30 de abril 2026">Ritmo diario entre 72 y 99 capturas por día.</canvas>
       </div>
@@ -363,7 +367,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
   </div>
 
   <div class="card">
-    <div class="card-head"><div class="card-title">Proyección de cumplimiento</div><div class="card-meta">escenarios</div></div>
+    <div class="card-head"><div class="card-title" data-tip="Si sigues a este ritmo, ¿llegas a la meta? Tres escenarios posibles.">Proyección de cumplimiento</div><div class="card-meta">escenarios</div></div>
     <div class="card-body">
       <div class="table-wrap">
         <table class="rt" id="tbl-proyeccion">
@@ -403,15 +407,15 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
   </div>
 
   <div class="kpi-row">
-    <div class="kpi gr"><div class="kpi-lbl">Validados</div><div class="kpi-val" id="cal-kpi-val">7,193</div><div class="kpi-trend" id="cal-kpi-val-pct">71.9% de la base</div></div>
-    <div class="kpi am"><div class="kpi-lbl">Pendientes</div><div class="kpi-val" id="cal-kpi-pen">1,763</div><div class="kpi-trend dn" id="cal-kpi-pen-pct">17.6%</div></div>
-    <div class="kpi re"><div class="kpi-lbl">Incompletos</div><div class="kpi-val" id="cal-kpi-inc">636</div><div class="kpi-trend dn" id="cal-kpi-inc-pct">6.4%</div></div>
-    <div class="kpi re"><div class="kpi-lbl">Duplicados</div><div class="kpi-val" id="cal-kpi-dup">408</div><div class="kpi-trend dn">depurar ahora</div></div>
+    <div class="kpi gr" data-tip="Registros completos y verificados. Datos confiables."><div class="kpi-lbl">Validados</div><div class="kpi-val" id="cal-kpi-val">7,193</div><div class="kpi-trend" id="cal-kpi-val-pct">71.9% de la base</div></div>
+    <div class="kpi am" data-tip="Registros que aún faltan por validar."><div class="kpi-lbl">Pendientes</div><div class="kpi-val" id="cal-kpi-pen">1,763</div><div class="kpi-trend dn" id="cal-kpi-pen-pct">17.6%</div></div>
+    <div class="kpi re" data-tip="Registros con datos faltantes (teléfono, sección, etc.)."><div class="kpi-lbl">Incompletos</div><div class="kpi-val" id="cal-kpi-inc">636</div><div class="kpi-trend dn" id="cal-kpi-inc-pct">6.4%</div></div>
+    <div class="kpi re" data-tip="Registros repetidos que hay que eliminar de la base."><div class="kpi-lbl">Duplicados</div><div class="kpi-val" id="cal-kpi-dup">408</div><div class="kpi-trend dn">depurar ahora</div></div>
   </div>
 
   <div class="grid2">
     <div class="card">
-      <div class="card-head"><div class="card-title">Estado de validación</div></div>
+      <div class="card-head"><div class="card-title" data-tip="Cómo se reparte tu base: validados, pendientes, incompletos y duplicados.">Estado de validación</div></div>
       <div class="chart-wrap" style="height:220px">
         <canvas id="ch-validacion" role="img" aria-label="Estado de validación: validados 71.9%, pendientes 17.6%, incompletos 6.4%, duplicados 4.1%">Validados: 71.9%, Pendientes: 17.6%, Incompletos: 6.4%, Duplicados: 4.1%.</canvas>
       </div>
@@ -423,7 +427,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
       </div>
     </div>
     <div class="card">
-      <div class="card-head"><div class="card-title">Nivel de compromiso</div></div>
+      <div class="card-head"><div class="card-title" data-tip="Qué tan seguro es el voto de cada ciudadano (1 = frío, 4 = seguro).">Nivel de compromiso</div></div>
       <div class="chart-wrap" style="height:220px">
         <canvas id="ch-compromiso" role="img" aria-label="Nivel de compromiso: nivel 3 seguro vota 34.3%, nivel 2 simpatiza 32.2%, nivel 1 contacto 21.8%, nivel 4 moviliza 11.7%">Nivel 3: 34.3%, Nivel 2: 32.2%, Nivel 1: 21.8%, Nivel 4: 11.7%.</canvas>
       </div>
@@ -437,7 +441,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
   </div>
 
   <div class="card">
-    <div class="card-head"><div class="card-title">Origen de captura</div><div class="card-meta">10,000 registros</div></div>
+    <div class="card-head"><div class="card-title" data-tip="De dónde vienen tus registros: campo, call center, eventos, etc.">Origen de captura</div><div class="card-meta">10,000 registros</div></div>
     <div class="card-body">
       <div class="bar-row"><div class="bar-label">Casa por casa</div><div class="bar-track"><div class="bar-fill origen-bar-fill" style="width:100%;background:var(--accent)"></div></div><div class="bar-val origen-bar-val">4,538</div><div class="bar-pct origen-bar-pct">45.4%</div></div>
       <div class="bar-row"><div class="bar-label">Referido</div><div class="bar-track"><div class="bar-fill origen-bar-fill" style="width:55.5%;background:var(--purple)"></div></div><div class="bar-val origen-bar-val">2,519</div><div class="bar-pct origen-bar-pct">25.2%</div></div>
@@ -493,13 +497,13 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
   <!-- ── VISTA: MUNICIPIOS (default) ── -->
   <div id="vista-municipios">
     <div class="card" style="margin-bottom:14px">
-      <div class="card-head"><div class="card-title">Avance vs meta por municipio</div><div class="card-meta">meta calculada con 6% sobre voto ganador</div></div>
+      <div class="card-head"><div class="card-title" data-tip="Comparación del avance real contra la meta de cada municipio.">Avance vs meta por municipio</div><div class="card-meta">meta calculada con 6% sobre voto ganador</div></div>
       <div class="chart-wrap" style="height:280px">
         <canvas id="ch-municipios" role="img" aria-label="Avance por municipio">Avance municipal ordenado de mayor a menor.</canvas>
       </div>
     </div>
     <div class="card">
-      <div class="card-head"><div class="card-title">Detalle por municipio</div><div class="card-meta" style="color:var(--text3);font-size:10px">Clic en fila para ver secciones del municipio</div></div>
+      <div class="card-head"><div class="card-title" data-tip="Capturas, meta y avance de cada municipio. Clic para ver secciones.">Detalle por municipio</div><div class="card-meta" style="color:var(--text3);font-size:10px">Clic en fila para ver secciones del municipio</div></div>
       <div class="table-wrap">
         <table class="rt">
           <thead><tr>
@@ -523,7 +527,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
   <div id="vista-secciones" style="display:none">
     <div class="card">
       <div class="card-head">
-        <div class="card-title" id="sec-vista-titulo">Avance por sección</div>
+        <div class="card-title" id="sec-vista-titulo" data-tip="Avance de captura en cada sección electoral del municipio seleccionado.">Avance por sección</div>
         <div style="display:flex;align-items:center;gap:8px">
           <div id="sec-kpi-resumen" style="font-family:var(--mono);font-size:10px;color:var(--text3)"></div>
           <button onclick="exportarSecciones()" style="font-family:var(--mono);font-size:10px;padding:4px 10px;border-radius:5px;border:1px solid rgba(34,197,94,0.3);background:rgba(34,197,94,0.1);color:var(--green);cursor:pointer;">⬇ Excel</button>
@@ -553,10 +557,10 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
 <!-- ═══════════ ESTRUCTURA DE CAMPO ═══════════ -->
 <div class="screen" id="sc-estructura">
   <div class="kpi-row">
-    <div class="kpi bl"><div class="kpi-lbl">Operadores activos</div><div class="kpi-val" id="ec-total">60</div><div class="kpi-trend">en 10 municipios</div></div>
-    <div class="kpi gr"><div class="kpi-lbl">Superaron meta</div><div class="kpi-val" id="ec-meta">42</div><div class="kpi-trend">≥50 capturas</div></div>
-    <div class="kpi am"><div class="kpi-lbl">Score prom. calidad</div><div class="kpi-val" id="ec-score">61.2</div><div class="kpi-trend">de 100 posibles</div></div>
-    <div class="kpi cy"><div class="kpi-lbl">Top municipio</div><div class="kpi-val" id="ec-topmun">Manzanillo</div><div class="kpi-trend" id="ec-topmun-pct">38% de estructura</div></div>
+    <div class="kpi bl" data-tip="Capturistas trabajando actualmente en campo."><div class="kpi-lbl">Operadores activos</div><div class="kpi-val" id="ec-total">60</div><div class="kpi-trend">en 10 municipios</div></div>
+    <div class="kpi gr" data-tip="Operadores que ya lograron 50 o más capturas."><div class="kpi-lbl">Superaron meta</div><div class="kpi-val" id="ec-meta">42</div><div class="kpi-trend">≥50 capturas</div></div>
+    <div class="kpi am" data-tip="Qué tan completos y confiables son los datos de tu equipo (0 a 100)."><div class="kpi-lbl">Score prom. calidad</div><div class="kpi-val" id="ec-score">61.2</div><div class="kpi-trend">de 100 posibles</div></div>
+    <div class="kpi cy" data-tip="Municipio con más capturas de toda la estructura."><div class="kpi-lbl">Top municipio</div><div class="kpi-val" id="ec-topmun">Manzanillo</div><div class="kpi-trend" id="ec-topmun-pct">38% de estructura</div></div>
   </div>
 
   <!-- FILTROS -->
@@ -585,7 +589,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
 
   <div class="grid2">
     <div class="card">
-      <div class="card-head"><div class="card-title" id="ec-top10-titulo">Top 10 capturistas — volumen real</div></div>
+      <div class="card-head"><div class="card-title" id="ec-top10-titulo" data-tip="Los 10 operadores con más capturas registradas.">Top 10 capturistas — volumen real</div></div>
       <div class="card-body" id="ec-top10-bars">
         <div class="bar-row"><div class="bar-label" title="CAP-032 Manzanillo">CAP-032 Manz.</div><div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--accent)"></div></div><div class="bar-val">52</div><div class="bar-pct">62.5</div></div>
         <div class="bar-row"><div class="bar-label" title="CAP-038 Manzanillo">CAP-038 Manz.</div><div class="bar-track"><div class="bar-fill" style="width:96.2%;background:var(--accent)"></div></div><div class="bar-val">50</div><div class="bar-pct">52.0</div></div>
@@ -601,7 +605,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
       </div>
     </div>
     <div class="card">
-      <div class="card-head"><div class="card-title">Estructura por municipio</div></div>
+      <div class="card-head"><div class="card-title" data-tip="Cuántos operadores tienes en cada municipio.">Estructura por municipio</div></div>
       <div class="chart-wrap" style="height:300px">
         <canvas id="ch-estructura-mun" role="img" aria-label="Capturistas por municipio: Manzanillo concentra la mayoría">Distribución de capturistas por municipio.</canvas>
       </div>
@@ -611,7 +615,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
   <!-- Tabla capturistas con toggle top/bottom -->
   <div class="card" style="margin-top:14px">
     <div class="card-head" style="flex-wrap:wrap;gap:8px;">
-      <div class="card-title">Ranking de capturistas</div>
+      <div class="card-title" data-tip="Todos los operadores ordenados por desempeño.">Ranking de capturistas</div>
       <div style="display:flex;gap:6px;margin-left:auto;">
         <button id="btn-top10" onclick="toggleRankingCap('top')" style="font-family:var(--mono);font-size:10px;padding:4px 12px;border-radius:5px;border:1px solid var(--border2);background:var(--green);color:#fff;cursor:pointer;">🏆 Top 10</button>
         <button id="btn-bot10" onclick="toggleRankingCap('bottom')" style="font-family:var(--mono);font-size:10px;padding:4px 12px;border-radius:5px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;">⚠️ Bottom 10</button>
@@ -639,21 +643,21 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
 <!-- ═══════════ PERFIL DEL VOTANTE ═══════════ -->
 <div class="screen" id="sc-perfil">
   <div class="kpi-row">
-    <div class="kpi bl"><div class="kpi-lbl">Hombres</div><div class="kpi-val">5,007</div><div class="kpi-trend">50.1%</div></div>
-    <div class="kpi pu"><div class="kpi-lbl">Mujeres</div><div class="kpi-val">4,993</div><div class="kpi-trend">49.9%</div></div>
-    <div class="kpi cy"><div class="kpi-lbl">Edad promedio</div><div class="kpi-val">47</div><div class="kpi-trend">años</div></div>
-    <div class="kpi am"><div class="kpi-lbl">Grupo más grande</div><div class="kpi-val">70+</div><div class="kpi-trend">2,047 personas</div></div>
+    <div class="kpi bl" data-tip="Total de hombres registrados en tu base."><div class="kpi-lbl">Hombres</div><div class="kpi-val">5,007</div><div class="kpi-trend">50.1%</div></div>
+    <div class="kpi pu" data-tip="Total de mujeres registradas en tu base."><div class="kpi-lbl">Mujeres</div><div class="kpi-val">4,993</div><div class="kpi-trend">49.9%</div></div>
+    <div class="kpi cy" data-tip="Edad promedio de los ciudadanos capturados."><div class="kpi-lbl">Edad promedio</div><div class="kpi-val">47</div><div class="kpi-trend">años</div></div>
+    <div class="kpi am" data-tip="Rango de edad con más personas en tu base."><div class="kpi-lbl">Grupo más grande</div><div class="kpi-val">70+</div><div class="kpi-trend">2,047 personas</div></div>
   </div>
 
   <div class="grid2">
     <div class="card">
-      <div class="card-head"><div class="card-title">Distribución por edad</div></div>
+      <div class="card-head"><div class="card-title" data-tip="Cuántos ciudadanos tienes en cada rango de edad.">Distribución por edad</div></div>
       <div class="chart-wrap" style="height:220px">
         <canvas id="ch-edad" role="img" aria-label="Distribución por edad: 18-29: 1887, 30-39: 1448, 40-49: 1530, 50-59: 1547, 60-69: 1541, 70+: 2047">Grupos de edad con mayor concentración en 70+.</canvas>
       </div>
     </div>
     <div class="card">
-      <div class="card-head"><div class="card-title">Distribución por sexo</div></div>
+      <div class="card-head"><div class="card-title" data-tip="Proporción de hombres y mujeres en tu base.">Distribución por sexo</div></div>
       <div class="chart-wrap" style="height:220px">
         <canvas id="ch-sexo" role="img" aria-label="Distribución por sexo: hombres 50.1%, mujeres 49.9%">Casi paridad entre hombres y mujeres.</canvas>
       </div>
@@ -665,7 +669,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
   </div>
 
   <div class="card">
-    <div class="card-head"><div class="card-title">Análisis de influencia y riesgo por grupo de edad</div></div>
+    <div class="card-head"><div class="card-title" data-tip="Qué grupos de edad pesan más en tu voto y cuáles están en riesgo.">Análisis de influencia y riesgo por grupo de edad</div></div>
     <div class="card-body">
       <div class="table-wrap">
         <table class="rt" id="tbl-perfil">
@@ -867,18 +871,18 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
 
   <!-- KPIs en tiempo real -->
   <div class="kpi-row" id="diae-kpis">
-    <div class="kpi gr"><div class="kpi-lbl">Ya votaron</div><div class="kpi-val" id="diae-votaron">—</div></div>
-    <div class="kpi re"><div class="kpi-lbl">Pendientes</div><div class="kpi-val" id="diae-pendientes">—</div></div>
-    <div class="kpi am"><div class="kpi-lbl">% Participación</div><div class="kpi-val" id="diae-pct">—</div></div>
-    <div class="kpi pu"><div class="kpi-lbl">Votos sorpresa</div><div class="kpi-val" id="diae-sorpresas">—</div></div>
-    <div class="kpi bl"><div class="kpi-lbl">Casillas reportando</div><div class="kpi-val" id="diae-casillas">—</div></div>
-    <div class="kpi cy"><div class="kpi-lbl">Próximo corte</div><div class="kpi-val" id="diae-corte">—</div></div>
+    <div class="kpi gr" data-tip="Ciudadanos de tu base confirmados que ya salieron a votar."><div class="kpi-lbl">Ya votaron</div><div class="kpi-val" id="diae-votaron">—</div></div>
+    <div class="kpi re" data-tip="Ciudadanos de tu base que aún no votan. Hay que movilizarlos."><div class="kpi-lbl">Pendientes</div><div class="kpi-val" id="diae-pendientes">—</div></div>
+    <div class="kpi am" data-tip="Porcentaje de tu base que ya salió a votar."><div class="kpi-lbl">% Participación</div><div class="kpi-val" id="diae-pct">—</div></div>
+    <div class="kpi pu" data-tip="Personas que votaron por ti sin estar en tu base."><div class="kpi-lbl">Votos sorpresa</div><div class="kpi-val" id="diae-sorpresas">—</div></div>
+    <div class="kpi bl" data-tip="Casillas que ya enviaron información hoy."><div class="kpi-lbl">Casillas reportando</div><div class="kpi-val" id="diae-casillas">—</div></div>
+    <div class="kpi cy" data-tip="Hora del siguiente reporte de avance del Día E."><div class="kpi-lbl">Próximo corte</div><div class="kpi-val" id="diae-corte">—</div></div>
   </div>
 
   <!-- Filtros de descarga -->
   <div class="card" style="margin-bottom:14px">
     <div class="card-head">
-      <div class="card-title">⬇ Descargar lista de pendientes por ámbito</div>
+      <div class="card-title" data-tip="Descarga en Excel los ciudadanos que faltan por contactar.">⬇ Descargar lista de pendientes por ámbito</div>
       <div style="font-size:10px;font-family:var(--mono);color:var(--text3)">Nombre + Teléfono + Sección + Coordinador</div>
     </div>
     <div class="card-body">
@@ -919,7 +923,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
 
   <!-- Avance por sección -->
   <div class="card">
-    <div class="card-head"><div class="card-title">Avance por sección en tiempo real</div></div>
+    <div class="card-head"><div class="card-title" data-tip="Monitoreo en vivo de la votación por sección el día de la elección.">Avance por sección en tiempo real</div></div>
     <div class="card-body" style="padding:0">
       <div class="table-wrap">
         <table class="rt">
@@ -2478,6 +2482,29 @@ showTab = function(tab) {
   ap();
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', ap);
   setTimeout(ap,300); setTimeout(ap,1000);
+})();
+</script>
+<script>
+/* --- Tooltips informativos (v2.2) --- */
+(function(){
+  var tip=document.createElement('div');tip.id='vt-tooltip';document.body.appendChild(tip);
+  function move(x,y){var w=tip.offsetWidth,h=tip.offsetHeight;var px=x+14,py=y+16;
+    if(px+w>window.innerWidth-8)px=x-w-10;if(py+h>window.innerHeight-8)py=y-h-10;
+    if(px<4)px=4;if(py<4)py=4;tip.style.left=px+'px';tip.style.top=py+'px';}
+  function show(el,x,y){tip.textContent=el.getAttribute('data-tip');tip.classList.add('show');move(x,y);}
+  function hide(){tip.classList.remove('show');}
+  document.addEventListener('mouseover',function(e){
+    var el=e.target.closest?e.target.closest('[data-tip]'):null;
+    if(el)show(el,e.clientX,e.clientY);else hide();});
+  document.addEventListener('mousemove',function(e){
+    if(!tip.classList.contains('show'))return;
+    var el=e.target.closest?e.target.closest('[data-tip]'):null;
+    if(el)move(e.clientX,e.clientY);else hide();});
+  var tmo=null;
+  document.addEventListener('touchstart',function(e){
+    var el=e.target.closest?e.target.closest('[data-tip]'):null;
+    if(el){var t=e.touches[0];show(el,t.clientX,t.clientY);clearTimeout(tmo);tmo=setTimeout(hide,2500);}
+    else hide();},{passive:true});
 })();
 </script>
 </body>
