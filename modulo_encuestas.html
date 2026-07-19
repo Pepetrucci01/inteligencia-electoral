@@ -60,6 +60,10 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--sans);min-hei
 .kl{font-size:9px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
 .kv{font-size:19px;font-weight:600;font-family:var(--mono);color:var(--cyan);}
 .ks{font-size:10px;color:var(--text3);margin-top:2px;}
+/* --- Tooltips informativos (v2.2) --- */
+[data-tip]{cursor:help;}
+#vt-tooltip{position:fixed;z-index:9999;max-width:260px;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;padding:8px 11px;font-size:11px;line-height:1.5;color:var(--text);font-family:var(--sans);pointer-events:none;opacity:0;transition:opacity .12s;box-shadow:0 6px 18px rgba(0,0,0,.5);}
+#vt-tooltip.show{opacity:1;}
 
 /* ── CARDS / TABLA ── */
 .card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:14px;}
@@ -156,16 +160,16 @@ input:focus,select:focus,textarea:focus{border-color:var(--cyan);}
   <!-- ══════════ TAB 1: LISTA ══════════ -->
   <div class="pane active" id="pane-lista">
     <div class="kpi-row">
-      <div class="kpi"><div class="kl">Estudios creados</div><div class="kv" id="k-total">—</div><div class="ks">históricos</div></div>
-      <div class="kpi gr"><div class="kl">Activas</div><div class="kv" id="k-activas">—</div><div class="ks">en campo ahora</div></div>
-      <div class="kpi pu"><div class="kl">Entrevistas totales</div><div class="kv" id="k-entrev">—</div><div class="ks">todas las encuestas</div></div>
-      <div class="kpi am"><div class="kl">Margen de error</div><div class="kv">±1.8%</div><div class="ks">encuesta activa · 95% conf.</div></div>
+      <div class="kpi" data-tip="Encuestas que has creado en el sistema, activas e históricas."><div class="kl">Estudios creados</div><div class="kv" id="k-total">—</div><div class="ks">históricos</div></div>
+      <div class="kpi gr" data-tip="Encuestas que están levantando entrevistas en campo ahora mismo."><div class="kl">Activas</div><div class="kv" id="k-activas">—</div><div class="ks">en campo ahora</div></div>
+      <div class="kpi pu" data-tip="Suma de todas las entrevistas levantadas en todas tus encuestas."><div class="kl">Entrevistas totales</div><div class="kv" id="k-entrev">—</div><div class="ks">todas las encuestas</div></div>
+      <div class="kpi am" data-tip="Qué tanto pueden variar los resultados reales vs la encuesta. Menor es mejor."><div class="kl">Margen de error</div><div class="kv">±1.8%</div><div class="ks">encuesta activa · 95% conf.</div></div>
     </div>
 
     <div class="card">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
         <div>
-          <div class="card-title">Estudios de opinión</div>
+          <div class="card-title" data-tip="Lista de tus encuestas: cada una con su cuestionario y sus respuestas.">Estudios de opinión</div>
           <div class="card-sub" style="margin-bottom:0">Cada encuesta tiene su propio cuestionario y sus propias respuestas. Crea las que necesites.</div>
         </div>
         <button class="btn primary" onclick="verTab('nueva')">➕ Nueva encuesta</button>
@@ -182,7 +186,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--cyan);}
   <!-- ══════════ TAB 2: CONSTRUCTOR ══════════ -->
   <div class="pane" id="pane-nueva">
     <div class="card">
-      <div class="card-title">Datos del estudio</div>
+      <div class="card-title" data-tip="Nombre, ámbito y fechas de la encuesta que vas a crear.">Datos del estudio</div>
       <div class="card-sub">Define el estudio. La próxima semana puedes crear otro distinto — cada uno vive por separado.</div>
       <div class="frow">
         <div class="fitem"><label>Nombre del estudio</label><input type="text" id="n-nombre" placeholder="Ej. Intención de Voto — Candidato B · Agosto"></div>
@@ -196,7 +200,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--cyan);}
     </div>
 
     <div class="card">
-      <div class="card-title">Metodología del estudio</div>
+      <div class="card-title" data-tip="Cómo se levanta la encuesta: tipo, muestra y forma de selección.">Metodología del estudio</div>
       <div class="card-sub">Cada estudio define su propia metodología. Esto es lo que le da validez estadística a los resultados — y lo que un candidato serio te va a preguntar primero.</div>
       <div class="frow">
         <div class="fitem"><label>Modo de levantamiento</label>
@@ -234,13 +238,13 @@ input:focus,select:focus,textarea:focus{border-color:var(--cyan);}
     </div>
 
     <div class="card">
-      <div class="card-title">Preguntas estándar</div>
+      <div class="card-title" data-tip="Preguntas base recomendadas para poder comparar entre estudios.">Preguntas estándar</div>
       <div class="card-sub">Recomendadas siempre: son las que el sistema cruza automáticamente con el territorio y compara entre estudios. Las marcadas 🔗 alimentan el tab Territorio vs Opinión.</div>
       <div id="lista-std"></div>
     </div>
 
     <div class="card">
-      <div class="card-title">Preguntas personalizadas</div>
+      <div class="card-title" data-tip="Preguntas propias que agregas solo a esta encuesta.">Preguntas personalizadas</div>
       <div class="card-sub">Agrega las preguntas libres que este estudio necesite.</div>
       <div class="frow">
         <div class="fitem"><label>Texto de la pregunta</label><input type="text" id="c-texto" placeholder="Ej. ¿Ha oído hablar de la propuesta X?"></div>
@@ -289,14 +293,14 @@ input:focus,select:focus,textarea:focus{border-color:var(--cyan);}
   <!-- ══════════ TAB 4: CRUCE ══════════ -->
   <div class="pane" id="pane-cruce">
     <div class="kpi-row">
-      <div class="kpi pu"><div class="kl">Entrevistas</div><div class="kv">2,847</div><div class="ks">Estatal · Julio 2026</div></div>
-      <div class="kpi"><div class="kl">Intención de voto</div><div class="kv">37.8%</div><div class="ks">promedio estatal</div></div>
-      <div class="kpi am"><div class="kl">Indecisos</div><div class="kv">22%</div><div class="ks">bolsa por disputar</div></div>
-      <div class="kpi gr"><div class="kl">Voto firme</div><div class="kv">61%</div><div class="ks">de quienes declaran</div></div>
+      <div class="kpi pu" data-tip="Entrevistas levantadas en el estudio que se está comparando."><div class="kl">Entrevistas</div><div class="kv">2,847</div><div class="ks">Estatal · Julio 2026</div></div>
+      <div class="kpi" data-tip="Porcentaje de encuestados que declaran voto por tu candidatura."><div class="kl">Intención de voto</div><div class="kv">37.8%</div><div class="ks">promedio estatal</div></div>
+      <div class="kpi am" data-tip="Encuestados que aún no deciden su voto. Es la bolsa por disputar."><div class="kl">Indecisos</div><div class="kv">22%</div><div class="ks">bolsa por disputar</div></div>
+      <div class="kpi gr" data-tip="De quienes ya declaran voto, cuántos dicen que no cambiarán de opinión."><div class="kl">Voto firme</div><div class="kv">61%</div><div class="ks">de quienes declaran</div></div>
     </div>
 
     <div class="card">
-      <div class="card-title">🎯 Semáforo Territorio vs Opinión — por municipio</div>
+      <div class="card-title" data-tip="Compara tu estructura en campo contra lo que dice la encuesta en cada municipio.">🎯 Semáforo Territorio vs Opinión — por municipio</div>
       <div class="card-sub">Cruza el avance de tu estructura (comprometidos vs meta) contra la intención de voto medida en campo. Esto es lo que un asesor electoral cobra por decirte.</div>
       <div class="legend">
         <span><span class="dot" style="background:var(--green)"></span>Consolidar — estructura y opinión fuertes</span>
@@ -327,7 +331,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--cyan);}
   <!-- ══════════ TAB 5: RESULTADOS EN VIVO (simulación demo) ══════════ -->
   <div class="pane" id="pane-vivo">
     <div class="card" style="margin-bottom:12px;">
-      <div class="card-title">📊 Encuesta en vivo — Intención de Voto Estatal</div>
+      <div class="card-title" data-tip="Resultados de la encuesta activa conforme entran las entrevistas.">📊 Encuesta en vivo — Intención de Voto Estatal</div>
       <div class="card-sub">Simulación de levantamiento en campo sobre los 10 municipios de Colima. Mueve el control para ver cómo evolucionan los resultados conforme entran las entrevistas — igual que lo verías el día real del estudio.</div>
       <!-- Control deslizante de avance -->
       <div style="background:var(--bg4,#1a2238);border:1px solid var(--border,#2a3350);border-radius:10px;padding:12px 16px;margin-top:6px;">
@@ -345,21 +349,21 @@ input:focus,select:focus,textarea:focus{border-color:var(--cyan);}
     </div>
 
     <div class="kpi-row">
-      <div class="kpi pu"><div class="kl">Entrevistas levantadas</div><div class="kv" id="v-k-entrev">0</div><div class="ks" id="v-k-pct">0% de la muestra</div></div>
-      <div class="kpi"><div class="kl">Puntero</div><div class="kv" id="v-k-lider">—</div><div class="ks" id="v-k-lider-pct">intención de voto</div></div>
-      <div class="kpi am"><div class="kl">Indecisos</div><div class="kv" id="v-k-indec">—</div><div class="ks">bolsa por disputar</div></div>
-      <div class="kpi gr"><div class="kl">Margen de error</div><div class="kv" id="v-k-margen">±—</div><div class="ks">al 95% de confianza</div></div>
+      <div class="kpi pu" data-tip="Entrevistas capturadas hasta ahora vs el tamaño de muestra planeado."><div class="kl">Entrevistas levantadas</div><div class="kv" id="v-k-entrev">0</div><div class="ks" id="v-k-pct">0% de la muestra</div></div>
+      <div class="kpi" data-tip="Candidato que va adelante en intención de voto en este momento."><div class="kl">Puntero</div><div class="kv" id="v-k-lider">—</div><div class="ks" id="v-k-lider-pct">intención de voto</div></div>
+      <div class="kpi am" data-tip="Encuestados que aún no deciden su voto. Es la bolsa por disputar."><div class="kl">Indecisos</div><div class="kv" id="v-k-indec">—</div><div class="ks">bolsa por disputar</div></div>
+      <div class="kpi gr" data-tip="Qué tanto pueden variar los resultados. Baja conforme entran más entrevistas."><div class="kl">Margen de error</div><div class="kv" id="v-k-margen">±—</div><div class="ks">al 95% de confianza</div></div>
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
       <div class="card">
-        <div class="card-title" style="font-size:13px;">🗳 Intención de voto <button onclick="toggleInterp('int')" style="font-size:10px;padding:3px 9px;border:1px solid rgba(45,212,191,.4);background:rgba(20,184,166,.1);color:#2dd4bf;border-radius:6px;cursor:pointer;float:right;margin-top:-2px;">💡 Interpretar</button></div>
+        <div class="card-title" style="font-size:13px;" data-tip="Por quién votarían hoy los encuestados. La gráfica principal del estudio.">🗳 Intención de voto <button onclick="toggleInterp('int')" style="font-size:10px;padding:3px 9px;border:1px solid rgba(45,212,191,.4);background:rgba(20,184,166,.1);color:#2dd4bf;border-radius:6px;cursor:pointer;float:right;margin-top:-2px;">💡 Interpretar</button></div>
         <div class="card-sub" style="margin-bottom:8px;">Preferencia declarada · actualiza en vivo</div>
         <div style="height:260px;position:relative;"><canvas id="v-chart-intencion"></canvas></div>
         <div id="interp-int" style="display:none;margin-top:10px;padding:10px 12px;background:rgba(20,184,166,.06);border-left:3px solid #2dd4bf;border-radius:6px;font-size:11.5px;line-height:1.55;color:var(--text2,#c3cce6);"></div>
       </div>
       <div class="card">
-        <div class="card-title" style="font-size:13px;">📈 Evolución conforme entran entrevistas <button onclick="toggleInterp('evol')" style="font-size:10px;padding:3px 9px;border:1px solid rgba(45,212,191,.4);background:rgba(20,184,166,.1);color:#2dd4bf;border-radius:6px;cursor:pointer;float:right;margin-top:-2px;">💡 Interpretar</button></div>
+        <div class="card-title" style="font-size:13px;" data-tip="Cómo se mueven los resultados a medida que se levantan más entrevistas.">📈 Evolución conforme entran entrevistas <button onclick="toggleInterp('evol')" style="font-size:10px;padding:3px 9px;border:1px solid rgba(45,212,191,.4);background:rgba(20,184,166,.1);color:#2dd4bf;border-radius:6px;cursor:pointer;float:right;margin-top:-2px;">💡 Interpretar</button></div>
         <div class="card-sub" style="margin-bottom:8px;">Cómo se estabiliza cada candidato con la muestra</div>
         <div style="height:260px;position:relative;"><canvas id="v-chart-evol"></canvas></div>
         <div id="interp-evol" style="display:none;margin-top:10px;padding:10px 12px;background:rgba(20,184,166,.06);border-left:3px solid #2dd4bf;border-radius:6px;font-size:11.5px;line-height:1.55;color:var(--text2,#c3cce6);"></div>
@@ -367,7 +371,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--cyan);}
     </div>
 
     <div class="card">
-      <div class="card-title" style="font-size:13px;">🗺 Intención por municipio <button onclick="toggleInterp('mun')" style="font-size:10px;padding:3px 9px;border:1px solid rgba(45,212,191,.4);background:rgba(20,184,166,.1);color:#2dd4bf;border-radius:6px;cursor:pointer;float:right;margin-top:-2px;">💡 Interpretar</button></div>
+      <div class="card-title" style="font-size:13px;" data-tip="Resultados de la encuesta desglosados por municipio.">🗺 Intención por municipio <button onclick="toggleInterp('mun')" style="font-size:10px;padding:3px 9px;border:1px solid rgba(45,212,191,.4);background:rgba(20,184,166,.1);color:#2dd4bf;border-radius:6px;cursor:pointer;float:right;margin-top:-2px;">💡 Interpretar</button></div>
       <div class="card-sub" style="margin-bottom:8px;">Distribución territorial del puntero conforme se levanta la muestra</div>
       <div style="height:320px;position:relative;"><canvas id="v-chart-mun"></canvas></div>
       <div id="interp-mun" style="display:none;margin-top:10px;padding:10px 12px;background:rgba(20,184,166,.06);border-left:3px solid #2dd4bf;border-radius:6px;font-size:11.5px;line-height:1.55;color:var(--text2,#c3cce6);"></div>
@@ -907,6 +911,29 @@ function resetVivo(){
   setAvanceVivo(0);
 }
 
+</script>
+<script>
+/* --- Tooltips informativos (v2.2) --- */
+(function(){
+  var tip=document.createElement('div');tip.id='vt-tooltip';document.body.appendChild(tip);
+  function move(x,y){var w=tip.offsetWidth,h=tip.offsetHeight;var px=x+14,py=y+16;
+    if(px+w>window.innerWidth-8)px=x-w-10;if(py+h>window.innerHeight-8)py=y-h-10;
+    if(px<4)px=4;if(py<4)py=4;tip.style.left=px+'px';tip.style.top=py+'px';}
+  function show(el,x,y){tip.textContent=el.getAttribute('data-tip');tip.classList.add('show');move(x,y);}
+  function hide(){tip.classList.remove('show');}
+  document.addEventListener('mouseover',function(e){
+    var el=e.target.closest?e.target.closest('[data-tip]'):null;
+    if(el)show(el,e.clientX,e.clientY);else hide();});
+  document.addEventListener('mousemove',function(e){
+    if(!tip.classList.contains('show'))return;
+    var el=e.target.closest?e.target.closest('[data-tip]'):null;
+    if(el)move(e.clientX,e.clientY);else hide();});
+  var tmo=null;
+  document.addEventListener('touchstart',function(e){
+    var el=e.target.closest?e.target.closest('[data-tip]'):null;
+    if(el){var t=e.touches[0];show(el,t.clientX,t.clientY);clearTimeout(tmo);tmo=setTimeout(hide,2500);}
+    else hide();},{passive:true});
+})();
 </script>
 </body>
 </html>
