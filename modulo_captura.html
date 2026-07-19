@@ -656,23 +656,38 @@ async function cargarCiudadanosCapturista() {
     const ROLES_MANDO = ['super_admin', 'admin', 'coordinador'];
     const esMando = ROLES_MANDO.includes(sesion.rol);
 
-    let q = window.supabase
-      .from('ciudadanos')
-      // [T9 16 jul] Quitados domicilio y notas de la lista: son texto libre pesado
-      // y solo se necesitan al ABRIR un registro (se cargan on-demand en verRegistro).
-      // Bajar la lista sin ellos reduce el peso ~40% con miles de registros.
-      .select('id, nombre, apellido_paterno, apellido_materno, edad, sexo, seccion_electoral, municipio, telefono, compromiso, origen, es_riesgo, es_apoyo, es_influencia, curp, validado, duplicado, capturista_id, responsable_id, created_at')
-      .eq('licencia_id', sesion.licencia_id);
+    // [FIX 18 jul · raíz de la familia del bug 5 de José] El .limit(20000) NO
+    // garantizaba nada: el ajuste Max Rows del proyecto (PostgREST db-max-rows)
+    // corta en 1,000 filas POR REQUEST sin marcar error. Un admin veía 1,000 de
+    // ~14,275 registros sin enterarse (la consola lo delató: "vista de
+    // super_admin: 1000" exactos). Se pagina con .range() en bloques de 1,000
+    // hasta agotar, con tope duro de 20K (T9 moverá esto a server-side).
+    const armarQuery = () => {
+      let qq = window.supabase
+        .from('ciudadanos')
+        // [T9 16 jul] Quitados domicilio y notas de la lista: son texto libre pesado
+        // y solo se necesitan al ABRIR un registro (se cargan on-demand en verRegistro).
+        // Bajar la lista sin ellos reduce el peso ~40% con miles de registros.
+        .select('id, nombre, apellido_paterno, apellido_materno, edad, sexo, seccion_electoral, municipio, telefono, compromiso, origen, es_riesgo, es_apoyo, es_influencia, curp, validado, duplicado, capturista_id, responsable_id, created_at')
+        .eq('licencia_id', sesion.licencia_id);
+      // Solo los capturistas quedan acotados a SUS propios registros.
+      // (La RLS ya impide ver otra licencia; esto es el filtro de alcance por rol.)
+      if (!esMando) qq = qq.eq('capturista_id', sesion.id);
+      return qq.order('created_at', { ascending: false });
+    };
 
-    // Solo los capturistas quedan acotados a SUS propios registros.
-    // (La RLS ya impide ver otra licencia; esto es el filtro de alcance por rol.)
-    if (!esMando) q = q.eq('capturista_id', sesion.id);
-
-    // Tope de seguridad: son ~14,261 registros y el default de PostgREST corta
-    // en 1,000. Sin esto, un admin veria solo una fraccion sin darse cuenta.
-    q = q.order('created_at', { ascending: false }).limit(20000);
-
-    const { data, error } = await q;
+    const PAGINA = 1000, TOPE = 20000, TIMEOUT_MS = 15000;
+    let data = [], error = null;
+    for (let desde = 0; desde < TOPE; desde += PAGINA) {
+      const { data: bloque, error: err } = await Promise.race([
+        armarQuery().range(desde, desde + PAGINA - 1),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('timeout cargando ciudadanos')), TIMEOUT_MS)),
+      ]);
+      if (err) { error = err; break; }
+      if (!Array.isArray(bloque) || !bloque.length) break;
+      data = data.concat(bloque);
+      if (bloque.length < PAGINA) break;
+    }
 
     _ciudadanosCargados = true;
 

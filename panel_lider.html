@@ -364,15 +364,35 @@ const SUPA_URL = 'https://dyirhwwmykskpuvzcafx.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5aXJod3dteWtza3B1dnpjYWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NTk3ODgsImV4cCI6MjA5NTEzNTc4OH0.2xe4cHqORGng1hnYPJ9ZiyT0r87fMijbUEJqBy3-xoI';
 const LICENCIA_ID = window._sesion?.licencia_id || 'a1b2c3d4-0001-0000-0000-000000000001';
 
+// [FIX 18 jul] Dos huecos que dejaban al panel 'vacío' sin error visible:
+// 1) Sin refresh PROACTIVO: token >55 min llegaba vencido; si además el
+//    refresh_token ya fue consumido (son de un solo uso), el retry moría.
+// 2) Sin access_token caía al ANON KEY en silencio → RLS devuelve 200 con
+//    [] (sin 401 que dispare refresh) → parecía 'BD vacía'.
+// asegurarToken() refresca si está viejo y ABORTA con error claro si no hay token.
+async function asegurarToken() {
+  const viejo = () => {
+    const s = window._sesion;
+    return !s?.access_token || (s.ts && (Date.now() - s.ts) / 60000 > 55);
+  };
+  if (viejo() && typeof window.refrescarTokenSupabase === 'function') {
+    await window.refrescarTokenSupabase();
+  }
+  if (!window._sesion?.access_token) {
+    throw new Error('Sesión sin token de acceso. Cierra sesión y vuelve a entrar.');
+  }
+}
+
 async function supaFetch(path) {
   // [FIX 15 jul] Antes usaba window._sesion?.access_token directo; si el token
   // venció (1h) o la sesión no estaba lista, caía al anon key → RLS rechazaba
   // (401/403) y el panel salía vacío. Ahora: si falla por auth, refresca el
   // token (vía theme.js) y reintenta UNA vez.
+  await asegurarToken();
   const doFetch = () => fetch(`${SUPA_URL}/rest/v1/${path}`, {
     headers: {
       'apikey': SUPA_KEY,
-      'Authorization': `Bearer ${window._sesion?.access_token || SUPA_KEY}`
+      'Authorization': `Bearer ${window._sesion.access_token}`
     }
   });
   let res = await doFetch();
@@ -385,7 +405,34 @@ async function supaFetch(path) {
   return res.json();
 }
 
+// [FIX 18 jul · Bugs 9-11 José] RPC POST con el mismo refresh de token que supaFetch.
+async function supaRpc(fn, body) {
+  await asegurarToken();
+  const doFetch = () => fetch(`${SUPA_URL}/rest/v1/rpc/${fn}`, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPA_KEY,
+      'Authorization': `Bearer ${window._sesion.access_token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body || {})
+  });
+  let res = await doFetch();
+  if ((res.status === 401 || res.status === 403)
+      && typeof window.refrescarTokenSupabase === 'function') {
+    const ok = await window.refrescarTokenSupabase();
+    if (ok) res = await doFetch();
+  }
+  if (!res.ok) throw new Error(`RPC ${fn} HTTP ${res.status}`);
+  return res.json();
+}
+
 // ── Estado global ──
+// [FIX 18 jul] Los datos simulados SOLO se cargan con ?demo=1 en la URL.
+// Antes, cualquier fallo de red/RLS caia en silencio a datos inventados
+// (247 ciudadanos, CAP-017...) y el panel PARECIA funcionar. Eso fue lo que
+// vio Jose en la validacion del 16-17 jul.
+const MODO_DEMO = new URLSearchParams(location.search).has('demo');
 let SECCION_LIDER = null;
 let CIUDADANOS_SEC = [];
 let CAPTURISTAS_SEC = [];
@@ -413,7 +460,11 @@ let filtroComp = 'todos';
 // CARGA PRINCIPAL DESDE SUPABASE
 // ══════════════════════════════════════════════
 async function cargarDatos() {
-  if (!SECCION_LIDER) return;
+  if (!SECCION_LIDER) {
+    // Antes: return silencioso → el panel se quedaba con el HTML horneado.
+    mostrarSinDatos('Tu usuario no tiene una sección asignada. Pide al administrador que la configure.');
+    return;
+  }
 
   mostrarCargando(true);
 
@@ -457,8 +508,12 @@ async function cargarDatos() {
       licencia_id:     c.licencia_id
     }));
 
-    // Si BD vacía → cargar datos simulados
-    if (CIUDADANOS_SEC.length === 0) { cargarDatosSimuladosLider(); return; }
+    // Si BD vacía → demo solo con ?demo=1; en producción, decirlo de frente.
+    if (CIUDADANOS_SEC.length === 0) {
+      if (MODO_DEMO) { cargarDatosSimuladosLider(); return; }
+      mostrarSinDatos(`Sin registros para la sección ${SECCION_LIDER} en la base. Verifica la sección asignada y los permisos (RLS).`);
+      return;
+    }
 
     // ── 2. Agrupar por capturista ──
     const capMap = {};
@@ -468,6 +523,9 @@ async function cargarDatos() {
       capMap[cap].capturas++;
     });
     CAPTURISTAS_SEC = Object.values(capMap).sort((a, b) => b.capturas - a.capturas);
+
+    // ── 2b. Resolver nombres de capturistas (RPC get_nombres_usuarios) ──
+    await resolverNombresCapturistas();
 
     // ── 3. Actualizar KPIs ──
     actualizarKPIs();
@@ -482,9 +540,52 @@ async function cargarDatos() {
 
   } catch (e) {
     console.error('Error cargando datos:', e);
-    cargarDatosSimuladosLider();
+    if (MODO_DEMO) { cargarDatosSimuladosLider(); }
+    else mostrarSinDatos('No se pudieron cargar los datos reales (' + (e && e.message ? e.message : e) + '). Revisa conexión y permisos.');
   }
 
+  mostrarCargando(false);
+}
+
+// [FIX 18 jul · Bug 11] Traducir capturista_id (UUID) a nombre real via RPC.
+async function resolverNombresCapturistas() {
+  const alias = id => 'Capturista ' + String(id).substring(0, 8);
+  const ids = CAPTURISTAS_SEC.map(c => c.id).filter(id => id && id !== 'SIN_ASIGNAR');
+  let mapa = {};
+  if (ids.length) {
+    try {
+      const filas = await supaRpc('get_nombres_usuarios', { p_ids: ids });
+      (Array.isArray(filas) ? filas : []).forEach(f => { mapa[f.id] = f.nombre; });
+    } catch (e) {
+      console.warn('No se pudieron resolver nombres de capturistas:', e);
+    }
+  }
+  CAPTURISTAS_SEC.forEach(c => {
+    c.nombre = c.id === 'SIN_ASIGNAR' ? 'Sin asignar' : (mapa[c.id] || alias(c.id));
+  });
+}
+
+// [FIX 18 jul] Estado visible cuando NO hay datos reales (sustituye al
+// fallback silencioso a simulados).
+function mostrarSinDatos(msg) {
+  CIUDADANOS_SEC = [];
+  CAPTURISTAS_SEC = [];
+  ['kpi-capturas','kpi-riesgo','kpi-voto-seg','kpi-caps','kpi-activos'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.textContent = '0';
+  });
+  const km = document.getElementById('kpi-meta'); if (km) km.textContent = '—';
+  const kp = document.getElementById('kpi-pct');  if (kp) kp.textContent = '0%';
+  const bar = document.getElementById('progress-bar-fill'); if (bar) bar.style.width = '0%';
+  const pl = document.getElementById('progress-pct-label'); if (pl) pl.textContent = '0%';
+  const rk = document.getElementById('ranking-caps');
+  if (rk) rk.innerHTML = '<div style="color:var(--text3);font-size:12px;text-align:center;padding:12px;">Sin datos</div>';
+  const cont = document.getElementById('alertas-container');
+  if (cont) cont.innerHTML = `<div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:8px;padding:10px 12px;font-size:12px;">
+      <span style="color:var(--red);font-weight:600;">Sin datos reales</span>
+      <div style="color:var(--text2);margin-top:4px;font-size:11px;">${msg}</div>
+    </div>`;
+  const tb = document.getElementById('lista-capturistas');
+  if (tb) tb.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--text3);font-size:12px;">Sin datos</td></tr>';
   mostrarCargando(false);
 }
 
@@ -576,12 +677,23 @@ function getMetaSección(seccion) {
 // Cargar meta real de la sección desde Supabase
 async function cargarMetaSeccion(seccion) {
   if (!seccion) return;
+  // [FIX 18 jul · Bugs 9-10] Primero la RPC get_meta_seccion (SECURITY DEFINER,
+  // a prueba de RLS/grants del rol); si no existe aún, cae a la lectura directa.
   try {
-    const data = await supaFetch(`secciones_electorales_colima?select=meta_proyectada&seccion=eq.${seccion}&limit=1`);
-    if (Array.isArray(data) && data.length > 0) {
+    let meta = null;
+    try {
+      meta = await supaRpc('get_meta_seccion', { p_seccion: Number(seccion) });
+    } catch (e1) {
+      console.warn('RPC get_meta_seccion no disponible, leyendo tabla directa:', e1);
+      const data = await supaFetch(`secciones_electorales_colima?select=meta_proyectada&seccion=eq.${seccion}&limit=1`);
+      if (Array.isArray(data) && data.length > 0) meta = data[0].meta_proyectada;
+    }
+    if (meta !== null && meta !== undefined) {
       if (!window._META_SECCION) window._META_SECCION = {};
-      window._META_SECCION[seccion] = Math.round(data[0].meta_proyectada || 0);
+      window._META_SECCION[seccion] = Math.round(Number(meta) || 0);
       actualizarKPIs(); // refrescar con la meta real
+    } else {
+      console.warn(`Meta de sección ${seccion} no encontrada en secciones_electorales_colima.`);
     }
   } catch(e) { console.warn('Error cargando meta sección:', e); }
 }
@@ -627,7 +739,7 @@ function renderRankingCapturistas() {
     <div class="rank-item">
       <div class="rank-pos">${i + 1}</div>
       <div class="rank-info">
-        <div class="rank-name">${c.id}</div>
+        <div class="rank-name">${c.nombre || c.id}</div>
         <div class="rank-sub">${c.capturas} registro${c.capturas !== 1 ? 's' : ''}</div>
       </div>
       <div class="rank-val">${c.capturas}</div>
@@ -712,7 +824,8 @@ function renderCapturistas() {
     const semDot = c.pct >= 70 ? '#22c55e' : c.pct >= 40 ? '#f59e0b' : '#ef4444';
     const barW = Math.min(Math.round((c.capturas / maxCap) * 100), 100);
     const exp = _slExpanded.has(c.id);
-    const ini = (c.id || 'XX').substring(0, 2).toUpperCase();
+    const nomCap = c.nombre || ('Capturista ' + String(c.id).substring(0, 8));
+    const ini = nomCap.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
 
     // Casillas simuladas de la sección (2 por defecto, en producción vendrán de Supabase)
     const numCasillas = 2;
@@ -764,7 +877,7 @@ function renderCapturistas() {
         <div style="display:flex;align-items:center;gap:8px;justify-content:center">
           <div style="width:28px;height:28px;border-radius:50%;background:rgba(59,130,246,.15);color:var(--accent);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;font-family:var(--mono)">${ini}</div>
           <div>
-            <div style="font-size:12px;font-weight:600;color:var(--text1);font-family:var(--mono)">${c.id}</div>
+            <div style="font-size:12px;font-weight:600;color:var(--text1)" title="${c.id}">${nomCap}</div>
           </div>
         </div>
       </td>
@@ -791,7 +904,8 @@ function renderCapturistas() {
 }
 
 function alertarCapturista(capId) {
-  alert(`Alerta enviada a ${capId}`);
+  const cap = CAPTURISTAS_SEC.find(c => c.id === capId);
+  alert(`Alerta enviada a ${(cap && cap.nombre) || capId}`);
 }
 
 // ══════════════════════════════════════════════
