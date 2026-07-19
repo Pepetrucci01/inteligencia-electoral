@@ -664,7 +664,10 @@ async function cargarDatosCliente() {
     // [PERF 18 jul] Con ~14K registros, 15 páginas secuenciales tardaban ~15s.
     // Ahora: 1 request de conteo exacto (Content-Range) y TODAS las páginas en
     // paralelo con Promise.all (patrón que este panel ya había usado antes).
-    const CAMPOS = 'municipio,nombre,apellido_paterno,compromiso,es_riesgo,created_at,seccion_electoral,capturista_id';
+    // [PERF 18 jul] nombre/apellido solo servían para los 10 de "Actividad
+    // reciente"; se quitan del bulk (~35% menos payload × 15 páginas) y la
+    // actividad se pide aparte con un request de 10 filas.
+    const CAMPOS = 'municipio,compromiso,es_riesgo,created_at,seccion_electoral,capturista_id';
     const total = await pcCount(`ciudadanos?select=id&licencia_id=eq.${LICENCIA_ID}`);
     const numPaginas = Math.max(1, Math.ceil(Math.min(total, 20000) / 1000));
     const paginas = await Promise.all(
@@ -741,12 +744,14 @@ async function cargarDatosCliente() {
 
     renderBarras();
 
-    // Actividad reciente (últimos 10 registros)
-    const recientes = [...allCiudadanos]
-      .filter(c => c.created_at)
-      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-      .slice(0, 10);
-    renderActividadReal(recientes);
+    // Actividad reciente: request dedicado de 10 filas (el bulk ya no baja nombres)
+    try {
+      const recientes = await pcFetch(`ciudadanos?select=nombre,apellido_paterno,created_at&licencia_id=eq.${LICENCIA_ID}&order=created_at.desc.nullslast&limit=10`);
+      renderActividadReal(Array.isArray(recientes) ? recientes : []);
+    } catch (eA) {
+      console.warn('Actividad reciente no disponible:', eA);
+      renderActividadReal([]);
+    }
 
     // Alertas dinámicas
     const riesgo = allCiudadanos.filter(c => c.es_riesgo).length;
