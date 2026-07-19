@@ -588,6 +588,33 @@ const RESPONSABLES = {
   12:'CAP-012',  13:'CAP-012', 291:'CAP-011', 308:'CAP-011',
   74:'CAP-020',  45:'CAP-051', 236:'CAP-057', 248:'CAP-057',
 };
+// ⚠️ [18 jul] RESPONSABLES es un mapa HORNEADO (sección→alias demo). La
+// asignación territorial real server-side no existe aún — pendiente definir
+// con José la fuente (¿jefe_seccion por sección?). No confundir con el fix
+// de abajo, que resuelve los UUID REALES de la BD (bug 8 de su validación).
+
+// [FIX 18 jul · Bug 8 José] Cache id→nombre vía RPC get_nombres_usuarios
+// (SQL 22). Los campos resp/cap_por traen UUIDs de la BD; aquí se traducen
+// a nombre para mostrar. Ids cortos (alias demo CAP-XXX) pasan tal cual.
+const NOMBRES_USUARIOS = {};
+function nombreUsuario(id) {
+  if (!id) return '—';
+  if (NOMBRES_USUARIOS[id]) return NOMBRES_USUARIOS[id];
+  const s = String(id);
+  return s.length > 20 ? 'Usuario ' + s.substring(0, 8) : s;
+}
+async function cargarNombresUsuarios(ids) {
+  const faltantes = [...new Set((ids || []).filter(x => x && String(x).length > 20 && !NOMBRES_USUARIOS[x]))];
+  if (!faltantes.length || !window.supabase) return;
+  try {
+    const { data, error } = await Promise.race([
+      window.supabase.rpc('get_nombres_usuarios', { p_ids: faltantes }),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout nombres')), 10000)),
+    ]);
+    if (!error && Array.isArray(data)) data.forEach(f => { NOMBRES_USUARIOS[f.id] = f.nombre; });
+    else if (error) console.warn('get_nombres_usuarios:', error);
+  } catch (e) { console.warn('No se pudieron resolver nombres de usuarios:', e); }
+}
 
 let CIUDADANOS = [];
 let _ciudadanosCargados = false;
@@ -720,6 +747,9 @@ async function cargarCiudadanosCapturista() {
       console.log(esMando
         ? `Registros de la licencia (vista de ${sesion.rol}): ${CIUDADANOS.length}`
         : `Registros del capturista: ${CIUDADANOS.length}`);
+      // [FIX 18 jul · Bug 8] Resolver de un jalón los nombres de todos los
+      // capturistas/responsables presentes en la lista.
+      await cargarNombresUsuarios(CIUDADANOS.flatMap(c => [c.cap_por, c.resp]));
     }
     buscar();
     renderLista();
@@ -764,7 +794,7 @@ function verificarAsignacion() {
   if(sec !== CAPTURISTA.seccion_base && resp && resp !== CAPTURISTA.id) {
     alert.classList.add('show');
     document.getElementById('asign-desc').textContent =
-      `Sección ${sec} → responsable ${resp}. Tú (${CAPTURISTA.id}) recibirás crédito de captura, pero el ciudadano quedará en la lista de ${resp}.`;
+      `Sección ${sec} → responsable ${nombreUsuario(resp)}. Tú (${CAPTURISTA.nombre}) recibirás crédito de captura, pero el ciudadano quedará en la lista de ${nombreUsuario(resp)}.`;
   } else if(sec === CAPTURISTA.seccion_base) {
     alert.classList.remove('show');
   } else {
@@ -906,7 +936,7 @@ async function guardarRegistro() {
   if(esOtraSeccion){
     document.getElementById('asign-box').style.display='block';
     document.getElementById('asign-box-desc').textContent=
-      `Ciudadano en sección ${sec} → asignado a ${resp} (responsable territorial). Tú recibes crédito de captura.`;
+      `Ciudadano en sección ${sec} → asignado a ${nombreUsuario(resp)} (responsable territorial). Tú recibes crédito de captura.`;
   }
   window.scrollTo(0,0);
 }
@@ -1010,7 +1040,7 @@ function buscar(){
       </div>
       <div class="cc-footer">
         <span class="cc-sec">Secc. ${c.sec} · ${c.mun}</span>
-        <span class="cc-resp">→ ${c.resp}</span>
+        <span class="cc-resp" title="${c.resp}">→ ${nombreUsuario(c.resp)}</span>
       </div>
     </div>`;
   }).join('');
@@ -1072,8 +1102,8 @@ async function abrirFicha(id){
     </div>
     <div class="ficha-section">
       <div class="ficha-section-title">Asignación y responsables</div>
-      <div class="ficha-row"><span class="ficha-row-label">Capturado por</span><span class="ficha-row-val" style="color:var(--text2)">${c.cap_por}</span></div>
-      <div class="ficha-row"><span class="ficha-row-label">Responsable territorial</span><span class="ficha-row-val" style="color:var(--cyan)">${c.resp}</span></div>
+      <div class="ficha-row"><span class="ficha-row-label">Capturado por</span><span class="ficha-row-val" style="color:var(--text2)" title="${c.cap_por}">${nombreUsuario(c.cap_por)}</span></div>
+      <div class="ficha-row"><span class="ficha-row-label">Responsable territorial</span><span class="ficha-row-val" style="color:var(--cyan)" title="${c.resp}">${nombreUsuario(c.resp)}</span></div>
       <div class="ficha-row"><span class="ficha-row-label">Sección</span><span class="ficha-row-val">${c.sec}</span></div>
     </div>
     <div style="margin-top:14px;display:flex;gap:8px;">
@@ -1157,7 +1187,7 @@ function renderLista(){
         ${c.riesgo?'<span class="badge badge-red">⚠ Riesgo</span>':''}
         ${c.apoyo?'<span class="badge badge-amber"></span>':''}
         ${c.influencia?'<span class="badge badge-purple"></span>':''}
-        ${c.cap_por!==c.resp?'<span class="badge badge-blue">↗ '+c.cap_por+'</span>':''}
+        ${c.cap_por!==c.resp?'<span class="badge badge-blue">↗ '+nombreUsuario(c.cap_por)+'</span>':''}
       </div>
     </div>`).join('');
 }
