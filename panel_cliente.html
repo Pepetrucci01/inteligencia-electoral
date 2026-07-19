@@ -614,6 +614,24 @@ const LICENCIA_ID = window._sesion?.licencia_id || 'a1b2c3d4-0001-0000-0000-0000
 // relativos iban al mismo origen (404) o llegaba un Response crudo
 // (usuarios.map is not a function). Renombrada a pcFetch (patrón wrFetch del
 // War Room, que nació de esta misma colisión).
+// Conteo exacto sin bajar filas: lee el total del header Content-Range.
+async function pcCount(path) {
+  const armar = async () => ({
+    'apikey': SUPA_KEY,
+    'Authorization': `Bearer ${(await window.supabase.auth.getSession()).data.session?.access_token || SUPA_KEY}`,
+    'Prefer': 'count=exact', 'Range': '0-0'
+  });
+  let res = await fetch(`${SUPA_URL}/rest/v1/${path}`, { headers: await armar() });
+  if ((res.status === 401 || res.status === 403) && window.refrescarTokenSupabase) {
+    const ok = await window.refrescarTokenSupabase();
+    if (ok) res = await fetch(`${SUPA_URL}/rest/v1/${path}`, { headers: await armar() });
+  }
+  if (!res.ok && res.status !== 206) throw new Error(`HTTP ${res.status}`);
+  const cr = res.headers.get('content-range') || '';
+  const n = parseInt(cr.split('/')[1], 10);
+  return Number.isFinite(n) ? n : 0;
+}
+
 async function pcFetch(path) {
   // [T5 16 jul] Lee el token del SDK (getSession) y reintenta ante 401
   // refrescando vía theme.js. Antes no refrescaba: un token vencido = error.
@@ -643,17 +661,18 @@ async function cargarDatosCliente() {
     // 10,092 = 10 páginas + 92 de un total de ~14,275). Ahora cada página va por
     // supaFetch (refresh ante 401/403) y cualquier error DETIENE con excepción
     // visible en vez de mentir con datos truncados.
-    let allCiudadanos = [];
-    let from = 0;
-    while (true) {
-      const chunk = await pcFetch(
-        `ciudadanos?select=municipio,nombre,apellido_paterno,compromiso,es_riesgo,created_at,seccion_electoral,capturista_id&licencia_id=eq.${LICENCIA_ID}&limit=1000&offset=${from}`
-      );
-      if (!Array.isArray(chunk) || chunk.length === 0) break;
-      allCiudadanos = allCiudadanos.concat(chunk);
-      if (chunk.length < 1000) break;
-      from += 1000;
-    }
+    // [PERF 18 jul] Con ~14K registros, 15 páginas secuenciales tardaban ~15s.
+    // Ahora: 1 request de conteo exacto (Content-Range) y TODAS las páginas en
+    // paralelo con Promise.all (patrón que este panel ya había usado antes).
+    const CAMPOS = 'municipio,nombre,apellido_paterno,compromiso,es_riesgo,created_at,seccion_electoral,capturista_id';
+    const total = await pcCount(`ciudadanos?select=id&licencia_id=eq.${LICENCIA_ID}`);
+    const numPaginas = Math.max(1, Math.ceil(Math.min(total, 20000) / 1000));
+    const paginas = await Promise.all(
+      Array.from({ length: numPaginas }, (_, i) =>
+        pcFetch(`ciudadanos?select=${CAMPOS}&licencia_id=eq.${LICENCIA_ID}&limit=1000&offset=${i * 1000}`)
+      )
+    );
+    const allCiudadanos = paginas.flat().filter(Boolean);
 
     const totalCapturados = allCiudadanos.length;
     // [FIX 18 jul · Bug 4] META horneada (197,297 ≠ 208,717 real). Ahora:
@@ -683,11 +702,27 @@ async function cargarDatosCliente() {
     }
 
     // Agrupar por municipio para barras
+    // [FIX 18 jul] Normalizar acentos: "TECOMÁN" y "TECOMAN" se partían en dos
+    // filas y el acentuado no matcheaba su meta.
+    const normMun = s => (s || 'Sin municipio').toUpperCase().trim()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     const munMap = {};
     allCiudadanos.forEach(c => {
-      const m = (c.municipio || 'Sin municipio').toUpperCase().trim();
+      const m = normMun(c.municipio);
       munMap[m] = (munMap[m] || 0) + 1;
     });
+
+    // [FIX 18 jul] Metas municipales REALES: suma de meta_proyectada del
+    // catálogo secciones_electorales_colima por municipio (misma fuente que
+    // usará el coordinador). METAS_MUN queda solo como último fallback.
+    const METAS_CATALOGO = {};
+    try {
+      const secs = await pcFetch('secciones_electorales_colima?select=municipio,meta_proyectada');
+      (Array.isArray(secs) ? secs : []).forEach(s => {
+        const m = normMun(s.municipio);
+        METAS_CATALOGO[m] = (METAS_CATALOGO[m] || 0) + (Number(s.meta_proyectada) || 0);
+      });
+    } catch (eM) { console.warn('Metas municipales del catálogo no disponibles:', eM); }
 
     // Metas por municipio (referencia 2024 ajustada)
     const METAS_MUN = {
@@ -699,7 +734,7 @@ async function cargarDatosCliente() {
     MUNICIPIOS_DATA = Object.entries(munMap)
       .map(([nombre, capturados]) => ({
         nombre,
-        meta: METAS_MUN[nombre] || Math.ceil(capturados * 1.5),
+        meta: Math.round(METAS_CATALOGO[nombre]) || METAS_MUN[nombre] || Math.ceil(capturados * 1.5),
         capturados
       }))
       .sort((a, b) => b.capturados - a.capturados);
