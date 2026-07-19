@@ -383,7 +383,11 @@ async function asegurarToken() {
   }
 }
 
-async function supaFetch(path) {
+// [FIX 18 jul · CAUSA RAÍZ del panel demo que vio José] theme.js define un
+// supaFetch GLOBAL (URL completa, Response crudo) que se carga al final y
+// PISABA esta función: cada request salía con path relativo → 404 → catch →
+// datos simulados. Renombrada a plFetch (patrón wrFetch).
+async function plFetch(path) {
   // [FIX 15 jul] Antes usaba window._sesion?.access_token directo; si el token
   // venció (1h) o la sesión no estaba lista, caía al anon key → RLS rechazaba
   // (401/403) y el panel salía vacío. Ahora: si falla por auth, refresca el
@@ -406,7 +410,7 @@ async function supaFetch(path) {
 }
 
 // [FIX 18 jul · Bugs 9-11 José] RPC POST con el mismo refresh de token que supaFetch.
-async function supaRpc(fn, body) {
+async function plRpc(fn, body) {
   await asegurarToken();
   const doFetch = () => fetch(`${SUPA_URL}/rest/v1/rpc/${fn}`, {
     method: 'POST',
@@ -474,7 +478,7 @@ async function cargarDatos() {
     let from = 0;
     const pageSize = 1000;
     while (true) {
-      const chunk = await supaFetch(
+      const chunk = await plFetch(
         `ciudadanos?select=id,nombre,apellido_paterno,apellido_materno,compromiso,es_riesgo,capturista_id,colonia,fecha_nacimiento,licencia_id,telefono,municipio,seccion_electoral,origen,sexo,curp,validado,duplicado,es_apoyo,es_influencia&seccion_electoral=eq.${SECCION_LIDER}&licencia_id=eq.${LICENCIA_ID}&limit=${pageSize}&offset=${from}`
       );
       if (!Array.isArray(chunk) || chunk.length === 0) break;
@@ -554,7 +558,7 @@ async function resolverNombresCapturistas() {
   let mapa = {};
   if (ids.length) {
     try {
-      const filas = await supaRpc('get_nombres_usuarios', { p_ids: ids });
+      const filas = await plRpc('get_nombres_usuarios', { p_ids: ids });
       (Array.isArray(filas) ? filas : []).forEach(f => { mapa[f.id] = f.nombre; });
     } catch (e) {
       console.warn('No se pudieron resolver nombres de capturistas:', e);
@@ -682,10 +686,10 @@ async function cargarMetaSeccion(seccion) {
   try {
     let meta = null;
     try {
-      meta = await supaRpc('get_meta_seccion', { p_seccion: Number(seccion) });
+      meta = await plRpc('get_meta_seccion', { p_seccion: Number(seccion) });
     } catch (e1) {
       console.warn('RPC get_meta_seccion no disponible, leyendo tabla directa:', e1);
-      const data = await supaFetch(`secciones_electorales_colima?select=meta_proyectada&seccion=eq.${seccion}&limit=1`);
+      const data = await plFetch(`secciones_electorales_colima?select=meta_proyectada&seccion=eq.${seccion}&limit=1`);
       if (Array.isArray(data) && data.length > 0) meta = data[0].meta_proyectada;
     }
     if (meta !== null && meta !== undefined) {

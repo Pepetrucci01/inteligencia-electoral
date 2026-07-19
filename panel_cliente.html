@@ -609,7 +609,12 @@ const ROLES = {
 // SUPA_KEY viene de supabase_client.js
 const LICENCIA_ID = window._sesion?.licencia_id || 'a1b2c3d4-0001-0000-0000-000000000001';
 
-async function supaFetch(path) {
+// [FIX 18 jul · CAUSA RAÍZ] theme.js define un supaFetch GLOBAL (URL completa,
+// devuelve Response) y se carga al final → PISABA esta función local: los paths
+// relativos iban al mismo origen (404) o llegaba un Response crudo
+// (usuarios.map is not a function). Renombrada a pcFetch (patrón wrFetch del
+// War Room, que nació de esta misma colisión).
+async function pcFetch(path) {
   // [T5 16 jul] Lee el token del SDK (getSession) y reintenta ante 401
   // refrescando vía theme.js. Antes no refrescaba: un token vencido = error.
   const armar = async () => ({
@@ -641,7 +646,7 @@ async function cargarDatosCliente() {
     let allCiudadanos = [];
     let from = 0;
     while (true) {
-      const chunk = await supaFetch(
+      const chunk = await pcFetch(
         `ciudadanos?select=municipio,nombre,apellido_paterno,compromiso,es_riesgo,created_at,seccion_electoral,capturista_id&licencia_id=eq.${LICENCIA_ID}&limit=1000&offset=${from}`
       );
       if (!Array.isArray(chunk) || chunk.length === 0) break;
@@ -715,7 +720,7 @@ async function cargarDatosCliente() {
 
     // ── 2. Usuarios desde tabla usuarios ──
     try {
-      const usuarios = await supaFetch(`usuarios?select=id,nombre,email,rol,municipio,seccion,activo,licencia_id&licencia_id=eq.${LICENCIA_ID}&limit=500`);
+      const usuarios = await pcFetch(`usuarios?select=id,nombre,email,rol,municipio,seccion,activo,licencia_id&licencia_id=eq.${LICENCIA_ID}&limit=500`);
       USUARIOS = usuarios.map(u => ({
         id: u.id,
         nombre: u.nombre || u.email,
@@ -751,7 +756,7 @@ async function cargarDatosCliente() {
 
     // ── 3. Licencia real + uso (antes: Plan Estándar/68-100/fechas inventadas) ──
     try {
-      const lic = await supaFetch(`licencias?id=eq.${LICENCIA_ID}&select=*&limit=1`);
+      const lic = await pcFetch(`licencias?id=eq.${LICENCIA_ID}&select=*&limit=1`);
       const L = (Array.isArray(lic) && lic[0]) ? lic[0] : {};
       const set = (id, v) => { const el = document.getElementById(id); if (el && v !== undefined && v !== null && v !== '') el.textContent = v; };
       const fmtF = f => { const d = new Date(f); return isNaN(d) ? null : d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }); };
