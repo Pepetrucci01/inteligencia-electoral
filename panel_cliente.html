@@ -358,12 +358,10 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
         <div class="lic-nombre" data-theme="partido-nombre">Inteligencia Electoral</div>
         <div class="lic-plan">Plan Estándar · Colima 2027</div>
 
-        <div class="lic-row"><span class="lic-key">Estado</span><span class="lic-val">Colima</span></div>
-        <div class="lic-row"><span class="lic-key">Plan</span><span class="lic-val">Estándar</span></div>
-        <div class="lic-row"><span class="lic-key">Usuarios incluidos</span><span class="lic-val">100</span></div>
-        <div class="lic-row"><span class="lic-key">Usuarios activos</span><span class="lic-val">68 / 100</span></div>
-        <div class="lic-row"><span class="lic-key">Fecha de inicio</span><span class="lic-val">01 Ene 2027</span></div>
-        <div class="lic-row"><span class="lic-key">Fecha de vencimiento</span><span class="lic-val" style="color:var(--amber)">01 Jul 2027</span></div>
+        <div class="lic-row"><span class="lic-key">Estado</span><span class="lic-val" id="lic-estado">—</span></div>
+        <div class="lic-row"><span class="lic-key">Usuarios activos</span><span class="lic-val" id="lic-usuarios">—</span></div>
+        <div class="lic-row"><span class="lic-key">Fecha de inicio</span><span class="lic-val" id="lic-inicio">—</span></div>
+        <div class="lic-row"><span class="lic-key">Fecha de vencimiento</span><span class="lic-val" id="lic-vence" style="color:var(--amber)">—</span></div>
         <div class="lic-row"><span class="lic-key">Días restantes</span><span class="lic-val" id="lic-dias" style="color:var(--green);font-family:var(--mono);font-weight:600">—</span></div>
 
         <div class="lic-alerta">
@@ -387,23 +385,16 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
           <div class="prog-wrap">
             <div class="prog-label">
               <span class="prog-lbl-txt">Usuarios activos</span>
-              <span class="prog-lbl-pct">68%</span>
+              <span class="prog-lbl-pct" id="uso-usuarios-pct">—</span>
             </div>
-            <div class="prog-track"><div class="prog-fill" style="width:68%"></div></div>
+            <div class="prog-track"><div class="prog-fill" id="uso-usuarios-fill" style="width:0%"></div></div>
           </div>
           <div class="prog-wrap">
             <div class="prog-label">
               <span class="prog-lbl-txt">Registros capturados</span>
-              <span class="prog-lbl-pct">10%</span>
+              <span class="prog-lbl-pct" id="uso-registros-pct">—</span>
             </div>
-            <div class="prog-track"><div class="prog-fill" style="width:10%"></div></div>
-          </div>
-          <div class="prog-wrap">
-            <div class="prog-label">
-              <span class="prog-lbl-txt">Almacenamiento</span>
-              <span class="prog-lbl-pct">38%</span>
-            </div>
-            <div class="prog-track"><div class="prog-fill" style="width:38%"></div></div>
+            <div class="prog-track"><div class="prog-fill" id="uso-registros-fill" style="width:0%"></div></div>
           </div>
           <div class="prog-wrap">
             <div class="prog-label">
@@ -484,10 +475,10 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
         <div class="card-head"><div class="card-title">Información de tu cuenta</div></div>
         <div class="card-body">
           <div class="lic-row"><span class="lic-key">Cliente</span><span class="lic-val" data-theme="partido-nombre">Inteligencia Electoral</span></div>
-          <div class="lic-row"><span class="lic-key">Estado</span><span class="lic-val">Colima</span></div>
-          <div class="lic-row"><span class="lic-key">Admin principal</span><span class="lic-val">admin@partido.mx</span></div>
-          <div class="lic-row"><span class="lic-key">Ejecutivo asignado</span><span class="lic-val">Lic. Ramírez · +52 312 000 0001</span></div>
-          <div class="lic-row"><span class="lic-key">Versión del sistema</span><span class="lic-val">v1.0 · Mayo 2027</span></div>
+          <div class="lic-row"><span class="lic-key">Estado</span><span class="lic-val" id="cta-estado">—</span></div>
+          <div class="lic-row"><span class="lic-key">Admin principal</span><span class="lic-val" id="cta-admin">—</span></div>
+          <div class="lic-row"><span class="lic-key">Ejecutivo asignado</span><span class="lic-val">MEFT Consulting</span></div>
+          <div class="lic-row"><span class="lic-key">Versión del sistema</span><span class="lic-val" id="cta-version">—</span></div>
         </div>
       </div>
 
@@ -497,9 +488,7 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
           <table class="at">
             <thead><tr><th>#</th><th>Asunto</th><th>Estatus</th></tr></thead>
             <tbody>
-              <tr><td class="cell-mono">#042</td><td>Capturista sin acceso</td><td><span class="badge b-green">Resuelto</span></td></tr>
-              <tr><td class="cell-mono">#039</td><td>Error en reporte PDF</td><td><span class="badge b-green">Resuelto</span></td></tr>
-              <tr><td class="cell-mono">#051</td><td>Solicitud de nuevo usuario</td><td><span class="badge b-amber">En proceso</span></td></tr>
+              <tr><td colspan="3" style="text-align:center;padding:18px;color:var(--text3);font-size:12px;">Sin tickets registrados</td></tr>
             </tbody>
           </table>
         </div>
@@ -641,15 +630,18 @@ let MUNICIPIOS_DATA = [];
 async function cargarDatosCliente() {
   try {
     // ── 1. Ciudadanos: conteo total y por municipio ──
+    // [FIX 18 jul · Bugs 3/6 José] El loop anterior usaba fetch crudo SIN refresh
+    // de token y con `if (!res.ok) break;`: si el token vencía a media paginación,
+    // cortaba EN SILENCIO y presentaba el parcial como total (así nació el famoso
+    // 10,092 = 10 páginas + 92 de un total de ~14,275). Ahora cada página va por
+    // supaFetch (refresh ante 401/403) y cualquier error DETIENE con excepción
+    // visible en vez de mentir con datos truncados.
     let allCiudadanos = [];
     let from = 0;
     while (true) {
-      const res = await fetch(
-        `${SUPA_URL}/rest/v1/ciudadanos?select=municipio,nombre,apellido_paterno,compromiso,es_riesgo,created_at,seccion_electoral,capturista_id&licencia_id=eq.${LICENCIA_ID}&limit=1000&offset=${from}`,
-        { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${(await window.supabase.auth.getSession()).data.session?.access_token || SUPA_KEY}` } }
+      const chunk = await supaFetch(
+        `ciudadanos?select=municipio,nombre,apellido_paterno,compromiso,es_riesgo,created_at,seccion_electoral,capturista_id&licencia_id=eq.${LICENCIA_ID}&limit=1000&offset=${from}`
       );
-      if (!res.ok) break;
-      const chunk = await res.json();
       if (!Array.isArray(chunk) || chunk.length === 0) break;
       allCiudadanos = allCiudadanos.concat(chunk);
       if (chunk.length < 1000) break;
@@ -657,7 +649,10 @@ async function cargarDatosCliente() {
     }
 
     const totalCapturados = allCiudadanos.length;
-    const META_ESTATAL = 197297;
+    // [FIX 18 jul · Bug 4] META horneada (197,297 ≠ 208,717 real). Ahora:
+    // window.SISTEMA_META (configuracion_sistema vía theme.js) → fallback 208,717.
+    const META_ESTATAL = (typeof window.SISTEMA_META === 'number' && window.SISTEMA_META > 0)
+      ? window.SISTEMA_META : 208717;
     const pctAvance = META_ESTATAL > 0 ? ((totalCapturados / META_ESTATAL) * 100).toFixed(1) : '0.0';
 
     // Secciones únicas cubiertas
@@ -752,9 +747,49 @@ async function cargarDatosCliente() {
       console.warn('No se pudo cargar usuarios:', e2);
     }
 
+    // ── 3. Licencia real + uso (antes: Plan Estándar/68-100/fechas inventadas) ──
+    try {
+      const lic = await supaFetch(`licencias?id=eq.${LICENCIA_ID}&select=*&limit=1`);
+      const L = (Array.isArray(lic) && lic[0]) ? lic[0] : {};
+      const set = (id, v) => { const el = document.getElementById(id); if (el && v !== undefined && v !== null && v !== '') el.textContent = v; };
+      const fmtF = f => { const d = new Date(f); return isNaN(d) ? null : d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }); };
+
+      set('lic-estado', L.territorio || L.estado);
+      set('cta-estado', L.territorio || L.estado);
+      if (L.fecha_inicio) set('lic-inicio', fmtF(L.fecha_inicio));
+      const vence = L.fecha_vencimiento || L.fecha_fin || L.vence;
+      if (vence) set('lic-vence', fmtF(vence));
+
+      const activos = USUARIOS.filter(u => u.status === 'activo').length;
+      const incluidos = Number(L.max_usuarios || L.usuarios_incluidos) || null;
+      set('lic-usuarios', incluidos ? `${activos} / ${incluidos}` : String(activos));
+      if (incluidos) {
+        const pctU = Math.min(100, Math.round(activos / incluidos * 100));
+        set('uso-usuarios-pct', pctU + '%');
+        const fu = document.getElementById('uso-usuarios-fill'); if (fu) fu.style.width = pctU + '%';
+      } else {
+        set('uso-usuarios-pct', String(activos));
+      }
+
+      const pctR = META_ESTATAL > 0 ? Math.min(100, Math.round(totalCapturados / META_ESTATAL * 100)) : 0;
+      set('uso-registros-pct', pctR + '%');
+      const fr = document.getElementById('uso-registros-fill'); if (fr) fr.style.width = pctR + '%';
+
+      const adminU = USUARIOS.find(u => u.rol === 'admin');
+      if (adminU) set('cta-admin', adminU.email || adminU.nombre);
+      set('cta-version', 'v1.0');
+    } catch(e3) {
+      console.warn('No se pudo cargar la licencia:', e3);
+    }
+
     console.log(`✅ panel_cliente: ${totalCapturados} ciudadanos, ${MUNICIPIOS_DATA.length} municipios`);
   } catch(e) {
     console.error('Error panel_cliente:', e);
+    // [FIX 18 jul] Antes fallaba en silencio y el panel se quedaba con lo que
+    // hubiera (horneado o parcial). Ahora se dice de frente.
+    const cont = document.getElementById('actividad-lista');
+    if (cont) cont.innerHTML = `<div style="padding:14px;color:var(--red);font-size:12px;">
+      No se pudieron cargar los datos reales (${(e && e.message) ? e.message : e}). Revisa conexión y sesión.</div>`;
   }
 }
 
@@ -904,7 +939,14 @@ function renderAlertas(){
   ).join('');
 }
 
-document.addEventListener('supabase-ready', () => cargarDatosCliente());
+// [FIX 18 jul · Bugs 3-4] Si 'supabase-ready' disparaba ANTES de registrar el
+// listener, cargarDatosCliente NUNCA corría y el panel se quedaba con el HTML
+// estático (los 10,092 / 68 usuarios horneados que vio José). Doble vía + guard.
+let _clienteCargado = false;
+function lanzarCargaCliente() { if (_clienteCargado) return; _clienteCargado = true; cargarDatosCliente(); }
+document.addEventListener('supabase-ready', lanzarCargaCliente);
+if (window.supabase) lanzarCargaCliente();
+else setTimeout(() => { if (window.supabase && !_clienteCargado) lanzarCargaCliente(); }, 3000);
 setInterval(cargarDatosCliente, 120000);
 
 // ══════════════════════════════════════════════════
@@ -1096,8 +1138,10 @@ function enviarRenovacion(){
   alert('✓ Solicitud de renovación enviada.\nTu ejecutivo te contactará en menos de 24 horas.');
 }
 function enviarTicket(){
+  // [FIX 18 jul · Bug 4 José] Antes inventaba un folio aleatorio. El sistema de
+  // tickets no tiene backend aún; se es honesto con el usuario.
   cerrarModal('modal-ticket');
-  alert('✓ Ticket enviado correctamente.\nFolio asignado: #0' + (52 + Math.floor(Math.random()*10)));
+  alert('El sistema de tickets estará disponible próximamente.\nPor ahora contacta directamente a tu ejecutivo de MEFT Consulting.');
 }
 
 // Cerrar modales al hacer clic afuera

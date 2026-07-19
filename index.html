@@ -262,6 +262,11 @@ iframe{width:100%;height:100%;border:none;display:block;}
       <span class="nav-badge" style="background:rgba(34,197,94,.12);color:var(--green)">F1/F2</span>
       <div class="nav-tip">Mi Panel Activista</div>
     </div>
+    <div class="nav-item" id="nav-cliente" data-rol="admin,super_admin" onclick="load('cliente','panel_cliente.html','Panel Ejecutivo','Resumen para el candidato')">
+      <div class="nav-icon" style="background:rgba(168,85,247,.12);color:var(--purple)">◆</div>
+      <span class="nav-label">Panel Ejecutivo</span>
+      <div class="nav-tip">Resumen ejecutivo del candidato</div>
+    </div>
     <div class="nav-item" id="nav-meta" data-rol="admin,super_admin" onclick="load('meta','configurador_meta_estados.html','Configurador de meta','Carga Excel por estado')">
       <div class="nav-icon" style="background:rgba(245,158,11,.12);color:var(--amber)">⚙</div>
       <span class="nav-label">Meta / Config</span>
@@ -408,6 +413,12 @@ iframe{width:100%;height:100%;border:none;display:block;}
         <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(34,197,94,.1);color:var(--green)">Fase 1 captura</span><span class="tag" style="background:rgba(34,197,94,.1);color:var(--green)">Fase 2 elección</span></div><span class="arr">→</span></div>
       </div>
 
+      <div class="mc cliente" data-rol="admin,super_admin" onclick="load('cliente','panel_cliente.html','Panel Ejecutivo','Resumen para el candidato')">
+        <div class="mc-head"><div class="mc-icon" style="background:rgba(168,85,247,.15)">◆</div><div><div class="mc-name">Panel Ejecutivo</div><div class="mc-sub">Resumen del candidato</div></div></div>
+        <div class="mc-desc">Vista ejecutiva de la licencia: avance vs meta, municipios, equipo y estado de la licencia. Complemento del War Room, no sustituto.</div>
+        <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(168,85,247,.1);color:var(--purple)">KPIs licencia</span><span class="tag" style="background:rgba(168,85,247,.1);color:var(--purple)">Solo admin</span></div><span class="arr">→</span></div>
+      </div>
+
       <div class="mc meta" data-rol="admin,super_admin" onclick="load('meta','configurador_meta_estados.html','Configurador de meta','Carga Excel por estado')">
         <div class="mc-head"><div class="mc-icon" style="background:rgba(245,158,11,.15)">⚙</div><div><div class="mc-name">Configurador de meta</div><div class="mc-sub">Multi-estado · Excel</div></div></div>
         <div class="mc-desc">Carga Excel de secciones de cualquier estado, detecta columnas automáticamente, aplica factores de afluencia y exporta.</div>
@@ -479,7 +490,7 @@ iframe{width:100%;height:100%;border:none;display:block;}
 <script>
 // APP_BUILD: versin de build para cache-busting de los mdulos en iframe.
 // ⚠️ SUBE este nmero en cada deploy con cambios en los mdulos.
-const APP_BUILD = '20260718c';
+const APP_BUILD = '20260718d';
 
 let collapsed = false;
 
@@ -597,7 +608,7 @@ document.addEventListener('keydown', e=>{
   const ADMINS = ['admin','super_admin','superadmin','administrador'];
   const rol = (window._sesion?.rol || '').toLowerCase().trim();
   if(ADMINS.includes(rol)) return; // admin ve todo
-  ['meta','adm'].forEach(id => {
+  ['meta','adm','cliente'].forEach(id => {
     const nav = document.getElementById('nav-'+id);
     if(nav) nav.style.display = 'none';
     document.querySelectorAll(`[onclick*="load('${id}'"]`).forEach(el => {
@@ -613,7 +624,7 @@ const _loadGate = window.load;
 window.load = function(id){
   const ADMINS = ['admin','super_admin','superadmin','administrador'];
   const rol = (window._sesion?.rol || '').toLowerCase().trim();
-  if((id === 'meta' || id === 'adm') && !ADMINS.includes(rol)){
+  if((id === 'meta' || id === 'adm' || id === 'cliente') && !ADMINS.includes(rol)){
     alert('No tienes permisos para abrir este módulo.');
     return;
   }

@@ -495,7 +495,10 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 const DESTINOS_ROL = {
   super_admin:    'modulo_admin.html',
-  admin:         'panel_cliente.html',
+  // [FIX 18 jul · Tarea 4 José] El admin/candidato aterriza en el HUB COMPLETO
+  // (War Room + Mapa + Reportes + Admin de SU licencia — modelo de venta).
+  // panel_cliente queda accesible desde el hub como 'Panel Ejecutivo'.
+  admin:         'index.html',
   coordinador:   'index.html',
   jefe_seccion: 'panel_lider.html',
   capturista:    'modulo_captura.html',
@@ -656,7 +659,7 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
         // Sesión válida — redirigir directo
         const destinos = {
           super_admin:    'modulo_admin.html',
-          admin:         'panel_cliente.html',
+          admin:         'index.html',
           coordinador:   'index.html',
           jefe_seccion: 'panel_lider.html',
           capturista:    'modulo_captura.html',
