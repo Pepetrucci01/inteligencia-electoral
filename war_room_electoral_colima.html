@@ -530,16 +530,11 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
           <span class="card-title" data-tip="Avisos automáticos sobre riesgos y pendientes detectados.">Alertas del sistema</span>
           <span style="font-size:10px;font-family:var(--mono);color:var(--red)">● 3 críticas</span>
         </div>
-        <div class="al-item al-click" data-tip="Clic para desplegar el detalle." onclick="toggleAlertaF1('sincap')"><div class="al-dot" style="background:var(--red)"></div><div><div class="al-title">Secciones sin captura</div><div class="al-desc">Comala (98,99), Coquimatlán (114,119),<br>Manzanillo (207) — 0% avance</div><div class="al-chev" id="alch-sincap">▸</div></div></div>
-        <div class="al-detail" id="alx-sincap"></div>
-        <div class="al-item al-click" data-tip="Clic para desplegar el detalle." onclick="toggleAlertaF1('dup')"><div class="al-dot" style="background:var(--red)"></div><div><div class="al-title">408 registros duplicados</div><div class="al-desc">4.1% de la base — requieren<br>depuración urgente</div><div class="al-chev" id="alch-dup">▸</div></div></div>
-        <div class="al-detail" id="alx-dup"></div>
-        <div class="al-item al-click" data-tip="Clic para desplegar el detalle." onclick="toggleAlertaF1('oposicion')"><div class="al-dot" style="background:var(--red)"></div><div><div class="al-title">55 secciones ganadas por oposición</div><div class="al-desc">Partido B ganó 14% de secciones<br>en 2024 — zonas de mayor esfuerzo</div><div class="al-chev" id="alch-oposicion">▸</div></div></div>
-        <div class="al-detail" id="alx-oposicion"></div>
-        <div class="al-item al-click" data-tip="Clic para desplegar el detalle." onclick="toggleAlertaF1('ritmo')"><div class="al-dot" style="background:var(--amber)"></div><div><div class="al-title">Ritmo insuficiente — se requiere ×7.2</div><div class="al-desc">Actual 574/sem · Req. 4,140/sem</div><div class="al-chev" id="alch-ritmo">▸</div></div></div>
-        <div class="al-detail" id="alx-ritmo"></div>
-        <div class="al-item al-click" data-tip="Clic para desplegar el detalle." onclick="toggleAlertaF1('apoyo')"><div class="al-dot" style="background:var(--amber)"></div><div><div class="al-title">1,845 votantes sin apoyo asignado</div><div class="al-desc">Logística pendiente de asignar</div><div class="al-chev" id="alch-apoyo">▸</div></div></div>
-        <div class="al-detail" id="alx-apoyo"></div>
+        <div class="al-item al-click" data-tip="Clic para abrir el detalle completo." onclick="abrirDetalleAlertaF1('sincap')"><div class="al-dot" style="background:var(--red)"></div><div><div class="al-title">Secciones sin captura</div><div class="al-desc">Comala (98,99), Coquimatlán (114,119),<br>Manzanillo (207) — 0% avance</div><div class="al-chev">→</div></div></div>
+        <div class="al-item al-click" data-tip="Clic para abrir el detalle completo." onclick="abrirDetalleAlertaF1('dup')"><div class="al-dot" style="background:var(--red)"></div><div><div class="al-title">408 registros duplicados</div><div class="al-desc">4.1% de la base — requieren<br>depuración urgente</div><div class="al-chev">→</div></div></div>
+        <div class="al-item al-click" data-tip="Clic para abrir el detalle completo." onclick="abrirDetalleAlertaF1('oposicion')"><div class="al-dot" style="background:var(--red)"></div><div><div class="al-title">55 secciones ganadas por oposición</div><div class="al-desc">Partido B ganó 14% de secciones<br>en 2024 — zonas de mayor esfuerzo</div><div class="al-chev">→</div></div></div>
+        <div class="al-item al-click" data-tip="Clic para abrir el detalle completo." onclick="abrirDetalleAlertaF1('ritmo')"><div class="al-dot" style="background:var(--amber)"></div><div><div class="al-title">Ritmo insuficiente — se requiere ×7.2</div><div class="al-desc">Actual 574/sem · Req. 4,140/sem</div><div class="al-chev">→</div></div></div>
+        <div class="al-item al-click" data-tip="Clic para abrir el detalle completo." onclick="abrirDetalleAlertaF1('apoyo')"><div class="al-dot" style="background:var(--amber)"></div><div><div class="al-title">1,845 votantes sin apoyo asignado</div><div class="al-desc">Logística pendiente de asignar</div><div class="al-chev">→</div></div></div>
       </div>
 
       <!-- Nivel de compromiso -->
@@ -1088,54 +1083,24 @@ function irSeccionF1(secId){
   syncFiltrosDesdeDrillF1();renderCuadF1();renderMunF1();renderTablaCapturistas();updateBcF1();
   document.getElementById('cuad-f1').scrollIntoView({behavior:'smooth',block:'start'});
 }
-function toggleAlertaF1(k){
-  const el=document.getElementById('alx-'+k); if(!el) return;
-  const abierto=el.style.display==='block';
-  document.querySelectorAll('.al-detail').forEach(x=>x.style.display='none');
-  document.querySelectorAll('.al-chev').forEach(x=>x.style.transform='');
-  if(abierto) return;
-  el.style.display='block';
-  const ch=document.getElementById('alch-'+k); if(ch)ch.style.transform='rotate(90deg)';
-  if(!el.dataset.filled){el.innerHTML=detalleAlertaF1(k);el.dataset.filled='1';}
-}
-function detalleAlertaF1(k){
+function abrirDetalleAlertaF1(k){
+  _mTipo='f1-'+k; _mSortField=null; _mSortAsc=true;
   if(k==='sincap'){
-    let lista=Object.values(SECS).flat().map(s=>({s,p:pct(s.cap,s.meta)})).filter(x=>x.p<1);
-    if(!lista.length) lista=Object.values(SECS).flat().map(s=>({s,p:pct(s.cap,s.meta)})).sort((a,b)=>a.p-b.p).slice(0,10);
-    lista.sort((a,b)=>a.p-b.p);
-    return `<div class="al-d-cap">${lista.length} secciones con menor captura — clic en una para ir directo:</div>`+
-      lista.slice(0,12).map(({s,p})=>`<div class="al-d-row" onclick="irSeccionF1('${s.id}')"><span>Secc. ${s.num} · ${s.munNombre}</span><span style="color:${semC(p)}">${p}% · ${fmt(s.cap)}/${fmt(s.meta)}</span></div>`).join('')+
-      (lista.length>12?`<div class="al-d-cap">…y ${lista.length-12} más — usa el chip 🔴 Crítico en la tabla para verlas todas.</div>`:'');
-  }
-  if(k==='oposicion'){
-    const rows=[...MUNS].sort((a,b)=>(a.g24==='Partido B'?-1:1)-(b.g24==='Partido B'?-1:1)||b.p24-a.p24);
-    return `<div class="al-d-cap">Resultado 2024 por municipio — clic para enfocar el municipio:</div>`+
-      rows.map(m=>`<div class="al-d-row" onclick="drillF1('df','${m.df}');drillF1('mun','${m.id}')"><span>${m.n}</span><span style="color:${m.g24==='Partido A'?'var(--green)':'var(--red)'}">${m.g24} · ${m.p24}% · ${fmt(m.v24)} votos</span></div>`).join('');
-  }
-  if(k==='ritmo'){
-    const cap=_totalCapturadosReal, meta=Math.round(META_WR), rest=meta-cap;
-    const sem=48, req=Math.ceil(rest/sem), act=574;
-    return `<div class="al-d-cap">Matemática del ritmo (48 semanas a la elección):</div>`
-      +`<div class="al-d-row static"><span>Meta estatal</span><span>${fmt(meta)}</span></div>`
-      +`<div class="al-d-row static"><span>Capturados hoy</span><span style="color:var(--green)">${fmt(cap)}</span></div>`
-      +`<div class="al-d-row static"><span>Faltan</span><span style="color:var(--amber)">${fmt(rest)}</span></div>`
-      +`<div class="al-d-row static"><span>Ritmo actual</span><span>${fmt(act)}/semana</span></div>`
-      +`<div class="al-d-row static"><span>Ritmo requerido</span><span style="color:var(--red)">${fmt(req)}/semana (×${(req/act).toFixed(1)})</span></div>`
-      +`<div class="al-d-cap">Palancas: más activistas por sección (lente 👤), reforzar municipios en 🔴 y campañas del Centro de Llamadas.</div>`;
-  }
-  if(k==='dup'){
-    return `<div class="al-d-cap">Registros con CURP o clave de elector repetida. Inflan tus números y duplican trabajo de campo.</div>`
-      +`<div class="al-d-row static"><span>Total detectados</span><span style="color:var(--red)">408 · 4.1% de la base</span></div>`
-      +`<div class="al-d-cap">Dónde se depuran: módulo Captura ciudadana → buscador → pestaña Duplicados. Ahí se fusionan o eliminan uno por uno con confirmación.</div>`;
-  }
-  if(k==='apoyo'){
-    return `<div class="al-d-cap">Votantes que declararon necesitar apoyo el día de la elección (transporte, acompañamiento) y aún no tienen responsable asignado.</div>`
-      +`<div class="al-d-row static"><span>Sin asignar</span><span style="color:var(--amber)">1,845</span></div>`
-      +`<div class="al-d-cap">Acción sugerida: asignarlos por sección desde la lente 👤 Activistas para repartir la logística antes de la jornada.</div>`;
-  }
-  return '';
+    const todas=Object.values(SECS).flat().map(s=>({sid:s.id,num:s.num,munNombre:s.munNombre,cap:s.cap,meta:s.meta,p:pct(s.cap,s.meta)}));
+    let rows=todas.filter(r=>r.p<1);
+    if(!rows.length) rows=[...todas].sort((a,b)=>a.p-b.p).slice(0,15);
+    rows.sort((a,b)=>a.p-b.p);
+    _mData=rows;
+  } else if(k==='oposicion'){
+    _mData=[...MUNS].map(m=>({mid:m.id,df:m.df,mun:m.n,g24:m.g24,p24:m.p24,v24:m.v24,secs:m.secs}))
+      .sort((a,b)=>((a.g24==='Partido B'?0:1)-(b.g24==='Partido B'?0:1))||b.p24-a.p24);
+  } else if(k==='ritmo'){
+    const cap=_totalCapturadosReal, meta=Math.round(META_WR);
+    _mData={cap:cap,meta:meta,rest:meta-cap,sem:48,act:574,req:Math.ceil((meta-cap)/48)};
+  } else _mData=null;
+  renderDetalleAlerta();
+  document.getElementById('alerta-detalle-modal').style.display='flex';
 }
-
 function setLensF1(l){
   const t=document.getElementById('card-terr-f1'),a=document.getElementById('card-act-f1');
   const bt=document.getElementById('lens-f1-terr'),ba=document.getElementById('lens-f1-act');
@@ -2847,6 +2812,68 @@ function renderDetalleAlerta() {
         </tr>`).join('')}
       </tbody></table>
     </div>`;
+  }
+  else if (tipo === 'f1-sincap') {
+    const lista=_mSortField?sortArr(data):data;
+    tituloTxt=`${fmt(lista.length)} secciones con menor captura`;
+    html=`<div class="al-d-cap" style="margin-bottom:8px">Clic en una fila para ir directo a esa sección en el War Room.</div>
+    <table class="t" style="width:100%"><thead><tr>
+      ${thM('Sección','num','c')}${thM('Municipio','munNombre','')}${thM('Capturados','cap','r')}${thM('Meta','meta','r')}${thM('% Avance','p','r')}<th>Semáforo</th>
+    </tr></thead><tbody>
+      ${lista.map(r=>`<tr onclick="cerrarDetalleAlerta();irSeccionF1('${r.sid}')" style="cursor:pointer">
+        <td class="mono" style="text-align:center;color:var(--red);font-weight:600">Secc. ${r.num}</td>
+        <td>${r.munNombre}</td>
+        <td class="mono" style="text-align:right">${fmt(r.cap)}</td>
+        <td class="mono" style="text-align:right;color:var(--text2)">${fmt(r.meta)}</td>
+        <td class="mono" style="text-align:right;color:${semC(r.p)};font-weight:600">${r.p}%</td>
+        <td style="text-align:center">${semI(r.p)}</td>
+      </tr>`).join('')}
+    </tbody></table>`;
+  }
+  else if (tipo === 'f1-oposicion') {
+    const lista=_mSortField?sortArr(data):data;
+    tituloTxt='Resultado 2024 por municipio';
+    html=`<div class="al-d-cap" style="margin-bottom:8px">Rojo = ganó la oposición en 2024. Clic en una fila para enfocar ese municipio.</div>
+    <table class="t" style="width:100%"><thead><tr>
+      ${thM('Municipio','mun','')}${thM('Ganador 2024','g24','')}${thM('%','p24','r')}${thM('Votos 2024','v24','r')}${thM('Secciones','secs','c')}
+    </tr></thead><tbody>
+      ${lista.map(r=>`<tr onclick="cerrarDetalleAlerta();drillF1('df','${r.df}');drillF1('mun','${r.mid}')" style="cursor:pointer">
+        <td style="font-weight:600">${r.mun}</td>
+        <td style="color:${r.g24==='Partido A'?'var(--green)':'var(--red)'};font-weight:600">${r.g24}</td>
+        <td class="mono" style="text-align:right;color:${r.g24==='Partido A'?'var(--green)':'var(--red)'}">${r.p24}%</td>
+        <td class="mono" style="text-align:right">${fmt(r.v24)}</td>
+        <td class="mono" style="text-align:center;color:var(--text2)">${r.secs}</td>
+      </tr>`).join('')}
+    </tbody></table>`;
+  }
+  else if (tipo === 'f1-ritmo') {
+    tituloTxt='Ritmo insuficiente — matemática de la meta';
+    html=`<table class="t" style="width:100%"><tbody>
+      <tr><td>Meta estatal 2027</td><td class="mono" style="text-align:right;font-weight:700">${fmt(data.meta)}</td></tr>
+      <tr><td>Capturados hoy</td><td class="mono" style="text-align:right;color:var(--green);font-weight:600">${fmt(data.cap)}</td></tr>
+      <tr><td>Faltan por capturar</td><td class="mono" style="text-align:right;color:var(--amber);font-weight:600">${fmt(data.rest)}</td></tr>
+      <tr><td>Semanas a la elección</td><td class="mono" style="text-align:right">${data.sem}</td></tr>
+      <tr><td>Ritmo actual</td><td class="mono" style="text-align:right">${fmt(data.act)} capturas/semana</td></tr>
+      <tr style="border-top:2px solid var(--border);background:var(--bg3)"><td style="font-weight:700">Ritmo requerido</td><td class="mono" style="text-align:right;color:var(--red);font-weight:700">${fmt(data.req)}/semana (×${(data.req/data.act).toFixed(1)})</td></tr>
+    </tbody></table>
+    <div class="al-d-cap" style="margin-top:10px">Palancas: sumar activistas por sección (lente 👤 Activistas), reforzar municipios en 🔴 y activar campañas del Centro de Llamadas.</div>`;
+  }
+  else if (tipo === 'f1-dup') {
+    tituloTxt='408 registros duplicados';
+    html=`<table class="t" style="width:100%"><tbody>
+      <tr><td>Total detectados</td><td class="mono" style="text-align:right;color:var(--red);font-weight:700">408</td></tr>
+      <tr><td>Proporción de la base</td><td class="mono" style="text-align:right;color:var(--red)">4.1%</td></tr>
+      <tr><td>Criterio de detección</td><td style="text-align:right;color:var(--text2)">CURP o clave de elector repetida</td></tr>
+    </tbody></table>
+    <div class="al-d-cap" style="margin-top:10px">Inflan tus números y duplican trabajo de campo. Se depuran en: módulo Captura ciudadana → buscador → pestaña Duplicados (fusionar o eliminar con confirmación).</div>`;
+  }
+  else if (tipo === 'f1-apoyo') {
+    tituloTxt='1,845 votantes sin apoyo asignado';
+    html=`<table class="t" style="width:100%"><tbody>
+      <tr><td>Sin responsable asignado</td><td class="mono" style="text-align:right;color:var(--amber);font-weight:700">1,845</td></tr>
+      <tr><td>Tipo de apoyo declarado</td><td style="text-align:right;color:var(--text2)">Transporte y acompañamiento el día E</td></tr>
+    </tbody></table>
+    <div class="al-d-cap" style="margin-top:10px">Acción sugerida: asignarlos por sección desde la lente 👤 Activistas para repartir la logística antes de la jornada.</div>`;
   }
 
   titulo.textContent = tituloTxt;
