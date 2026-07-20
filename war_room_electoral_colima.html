@@ -347,116 +347,6 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
       <div class="kpi pu" data-tip="Registros repetidos que inflan tus números. Hay que depurarlos."><div class="kl">Duplicados</div><div class="kv" id="kpi-depurar">408</div><div class="ks">registros a depurar</div></div>
     </div>
 
-    <!-- TABLA MUNICIPIOS — ANCHO COMPLETO -->
-    <div class="card" style="margin-bottom:14px">
-      <div class="card-h">
-        <span class="card-title" data-tip="Comparación del avance real contra la meta de cada municipio.">Avance por municipio vs. meta 2027</span>
-        <span id="mun-table-caption" style="font-size:10px;font-family:var(--mono);color:var(--text3)">10 municipios · 393 secciones</span>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border2)">
-        <div>
-          <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Municipio</div>
-          <select id="flt-mun" onchange="aplicarFiltros()" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:5px 8px;outline:none"></select>
-        </div>
-        <div>
-          <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Sección</div>
-          <select id="flt-sec" onchange="aplicarFiltros()" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:5px 8px;outline:none">
-            <option value="">Todas</option>
-          </select>
-        </div>
-        <div>
-          <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Semáforo</div>
-          <select id="flt-sem" onchange="aplicarFiltros()" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:5px 8px;outline:none">
-            <option value="">Todos</option>
-            <option value="verde">🟢 En meta</option>
-            <option value="amarillo">🟡 En riesgo</option>
-            <option value="rojo">🔴 Bajo meta</option>
-          </select>
-        </div>
-        <button onclick="limpiarFiltros()" style="margin-top:18px;padding:5px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text3);font-size:11px;font-family:var(--mono);cursor:pointer;white-space:nowrap">✕ Limpiar</button>
-      </div>
-      <div class="tw">
-        <table class="t" id="mun-table">
-          <thead><tr>
-            <th onclick="sortWR('n')" style="cursor:pointer;user-select:none">Municipio <span id="sort-wr-n" style="color:var(--text3)">↕</span></th>
-            <th class="r" onclick="sortWR('cap')" style="cursor:pointer;user-select:none;text-align:center">Capturados <span id="sort-wr-cap" style="color:var(--text3)">↕</span></th>
-            <th class="r" onclick="sortWR('meta')" style="cursor:pointer;user-select:none;text-align:center">Meta 2027 <span id="sort-wr-meta" style="color:var(--text3)">↕</span></th>
-            <th class="r" onclick="sortWR('pct')" style="cursor:pointer;user-select:none;text-align:center">% Avance <span id="sort-wr-pct" style="color:var(--text3)">↕</span></th>
-            <th>Progreso</th>
-            <th>Semáforo</th>
-            <th class="r" onclick="sortWR('v24')" style="cursor:pointer;user-select:none;text-align:center" title="Votos obtenidos en elección 2024 — referencia histórica">2024 <span id="sort-wr-v24" style="color:var(--text3)">↕</span></th>
-          </tr></thead>
-          <tbody id="mun-tbody"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <style>
-    #mun-table th, #mun-table td { vertical-align:middle; }
-    #mun-table th:nth-child(1), #mun-table td:nth-child(1) { width:22%; }
-    #mun-table th:nth-child(2), #mun-table td:nth-child(2) { width:11%; text-align:center !important; }
-    #mun-table th:nth-child(3), #mun-table td:nth-child(3) { width:11%; text-align:center !important; }
-    #mun-table th:nth-child(4), #mun-table td:nth-child(4) { width:10%; text-align:center !important; }
-    #mun-table th:nth-child(5), #mun-table td:nth-child(5) { width:18%; text-align:center !important; }
-    #mun-table th:nth-child(6), #mun-table td:nth-child(6) { width:10%; text-align:center !important; }
-    #mun-table th:nth-child(7), #mun-table td:nth-child(7) { width:8%;  text-align:center !important; }
-    #cap-table th, #cap-table td { vertical-align:middle; }
-    #cap-table th:nth-child(2), #cap-table td:nth-child(2) { text-align:center !important; }
-    #cap-table th:nth-child(3), #cap-table td:nth-child(3) { text-align:center !important; }
-    #cap-table th:nth-child(4), #cap-table td:nth-child(4) { text-align:center !important; }
-    #cap-table th:nth-child(5), #cap-table td:nth-child(5) { text-align:center !important; }
-    #cap-table th:nth-child(6), #cap-table td:nth-child(6) { text-align:center !important; }
-    #cap-table th:nth-child(7), #cap-table td:nth-child(7) { text-align:center !important; }
-    #cap-table th:nth-child(8), #cap-table td:nth-child(8) { text-align:center !important; }
-    #cap-table th:nth-child(9), #cap-table td:nth-child(9) { text-align:center !important; }
-    #cap-table th:nth-child(10),#cap-table td:nth-child(10){ text-align:center !important; }
-    </style>
-    <div class="card" style="margin-bottom:14px">
-      <div class="card-h">
-        <span class="card-title" data-tip="Capturas y desempeño de cada activista en campo.">👤 Avance por activista</span>
-        <span id="cap-tabla-count" style="font-size:10px;font-family:var(--mono);color:var(--text3)"></span>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border2)">
-        <div>
-          <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Municipio</div>
-          <select id="cap-flt-mun" onchange="renderTablaCapturistas()" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:5px 8px;outline:none"></select>
-        </div>
-        <div>
-          <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Sección</div>
-          <select id="cap-flt-sec" onchange="renderTablaCapturistas()" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:5px 8px;outline:none">
-            <option value="">Todas</option>
-          </select>
-        </div>
-        <div>
-          <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Semáforo</div>
-          <select id="cap-flt-sem" onchange="renderTablaCapturistas()" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:5px 8px;outline:none">
-            <option value="">Todos</option>
-            <option value="verde">🟢 En meta</option>
-            <option value="amarillo">🟡 En riesgo</option>
-            <option value="rojo">🔴 Bajo meta</option>
-          </select>
-        </div>
-        <button onclick="limpiarFiltrosCap()" style="margin-top:18px;padding:5px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text3);font-size:11px;font-family:var(--mono);cursor:pointer;white-space:nowrap">✕ Limpiar</button>
-      </div>
-      <div class="tw">
-        <table class="t" id="cap-table">
-          <thead><tr>
-            <th onclick="sortCap('nombre')" style="cursor:pointer;user-select:none">Activista <span id="sort-cap-nombre" style="color:var(--text3)">↕</span></th>
-            <th onclick="sortCap('secNum')" style="cursor:pointer;user-select:none;text-align:center">Sección <span id="sort-cap-secNum" style="color:var(--text3)">↕</span></th>
-            <th onclick="sortCap('munNombre')" style="cursor:pointer;user-select:none;text-align:center">Municipio <span id="sort-cap-munNombre" style="color:var(--text3)">↕</span></th>
-            <th class="r" onclick="sortCap('cap')" style="cursor:pointer;user-select:none;text-align:center">Capturados <span id="sort-cap-cap" style="color:var(--text3)">↕</span></th>
-            <th class="r" onclick="sortCap('meta')" style="cursor:pointer;user-select:none;text-align:center">Meta <span id="sort-cap-meta" style="color:var(--text3)">↕</span></th>
-            <th class="r" onclick="sortCap('pct')" style="cursor:pointer;user-select:none;text-align:center">% Avance <span id="sort-cap-pct" style="color:var(--text3)">↕</span></th>
-            <th>Progreso</th>
-            <th class="r" onclick="sortCap('votosF2')" style="cursor:pointer;user-select:none;text-align:center">Votos F2 <span id="sort-cap-votosF2" style="color:var(--text3)">↕</span></th>
-            <th>Semáforo</th>
-            <th>Acción</th>
-          </tr></thead>
-          <tbody id="cap-tbody"></tbody>
-        </table>
-      </div>
-    </div>
-
     <!-- 3 TARJETAS EN HORIZONTAL -->
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
 
@@ -525,6 +415,125 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
 
     <div id="cuad-f1"></div>
 
+    <!-- TABLA UNIFICADA F1 — obedece al drill de los cuadrantes -->
+    <div style="display:flex;align-items:center;gap:10px;margin:16px 0 10px;flex-wrap:wrap">
+      <div style="display:flex;border:1px solid var(--border2);border-radius:8px;overflow:hidden">
+        <button id="lens-f1-terr" onclick="setLensF1('terr')" data-tip="Mirada territorial: dónde va bien o mal la captura." style="background:var(--bg4);border:none;color:var(--text);font-size:12px;font-weight:600;padding:7px 14px;cursor:pointer;font-family:var(--sans)">🗺 Territorio</button>
+        <button id="lens-f1-act" onclick="setLensF1('act')" data-tip="Mirada de estructura: qué activistas están produciendo y cuáles no." style="background:transparent;border:none;color:var(--text2);font-size:12px;font-weight:600;padding:7px 14px;cursor:pointer;font-family:var(--sans)">👤 Activistas</button>
+      </div>
+      <span style="font-size:10px;font-family:var(--mono);color:var(--text3)">la tabla obedece al nivel donde estés parado en los cuadrantes</span>
+    </div>
+    <!-- TABLA MUNICIPIOS — ANCHO COMPLETO -->
+    <div class="card" id="card-terr-f1" style="margin-bottom:14px">
+      <div class="card-h">
+        <span class="card-title" data-tip="Comparación del avance real contra la meta de cada municipio.">Avance por municipio vs. meta 2027</span>
+        <span id="mun-table-caption" style="font-size:10px;font-family:var(--mono);color:var(--text3)">10 municipios · 393 secciones</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border2)">
+        <div>
+          <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Municipio</div>
+          <select id="flt-mun" onchange="aplicarFiltros()" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:5px 8px;outline:none"></select>
+        </div>
+        <div>
+          <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Sección</div>
+          <select id="flt-sec" onchange="aplicarFiltros()" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:5px 8px;outline:none">
+            <option value="">Todas</option>
+          </select>
+        </div>
+        <div>
+          <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Semáforo</div>
+          <select id="flt-sem" onchange="aplicarFiltros()" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:5px 8px;outline:none">
+            <option value="">Todos</option>
+            <option value="verde">🟢 En meta</option>
+            <option value="amarillo">🟡 En riesgo</option>
+            <option value="rojo">🔴 Bajo meta</option>
+          </select>
+        </div>
+        <button onclick="limpiarFiltros()" style="margin-top:18px;padding:5px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text3);font-size:11px;font-family:var(--mono);cursor:pointer;white-space:nowrap">✕ Limpiar</button>
+      </div>
+      <div class="tw">
+        <table class="t" id="mun-table">
+          <thead><tr>
+            <th onclick="sortWR('n')" style="cursor:pointer;user-select:none"><span id="f1-th-nivel">Municipio</span> <span id="sort-wr-n" style="color:var(--text3)">↕</span></th>
+            <th class="r" onclick="sortWR('cap')" style="cursor:pointer;user-select:none;text-align:center">Capturados <span id="sort-wr-cap" style="color:var(--text3)">↕</span></th>
+            <th class="r" onclick="sortWR('meta')" style="cursor:pointer;user-select:none;text-align:center">Meta 2027 <span id="sort-wr-meta" style="color:var(--text3)">↕</span></th>
+            <th class="r" onclick="sortWR('pct')" style="cursor:pointer;user-select:none;text-align:center">% Avance <span id="sort-wr-pct" style="color:var(--text3)">↕</span></th>
+            <th>Progreso</th>
+            <th>Semáforo</th>
+            <th class="r" onclick="sortWR('v24')" style="cursor:pointer;user-select:none;text-align:center" title="Votos obtenidos en elección 2024 — referencia histórica">2024 <span id="sort-wr-v24" style="color:var(--text3)">↕</span></th>
+          </tr></thead>
+          <tbody id="mun-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <style>
+    #mun-table th, #mun-table td { vertical-align:middle; }
+    #mun-table th:nth-child(1), #mun-table td:nth-child(1) { width:22%; }
+    #mun-table th:nth-child(2), #mun-table td:nth-child(2) { width:11%; text-align:center !important; }
+    #mun-table th:nth-child(3), #mun-table td:nth-child(3) { width:11%; text-align:center !important; }
+    #mun-table th:nth-child(4), #mun-table td:nth-child(4) { width:10%; text-align:center !important; }
+    #mun-table th:nth-child(5), #mun-table td:nth-child(5) { width:18%; text-align:center !important; }
+    #mun-table th:nth-child(6), #mun-table td:nth-child(6) { width:10%; text-align:center !important; }
+    #mun-table th:nth-child(7), #mun-table td:nth-child(7) { width:8%;  text-align:center !important; }
+    #cap-table th, #cap-table td { vertical-align:middle; }
+    #cap-table th:nth-child(2), #cap-table td:nth-child(2) { text-align:center !important; }
+    #cap-table th:nth-child(3), #cap-table td:nth-child(3) { text-align:center !important; }
+    #cap-table th:nth-child(4), #cap-table td:nth-child(4) { text-align:center !important; }
+    #cap-table th:nth-child(5), #cap-table td:nth-child(5) { text-align:center !important; }
+    #cap-table th:nth-child(6), #cap-table td:nth-child(6) { text-align:center !important; }
+    #cap-table th:nth-child(7), #cap-table td:nth-child(7) { text-align:center !important; }
+    #cap-table th:nth-child(8), #cap-table td:nth-child(8) { text-align:center !important; }
+    #cap-table th:nth-child(9), #cap-table td:nth-child(9) { text-align:center !important; }
+    #cap-table th:nth-child(10),#cap-table td:nth-child(10){ text-align:center !important; }
+    </style>
+    <div class="card" id="card-act-f1" style="margin-bottom:14px;display:none">
+      <div class="card-h">
+        <span class="card-title" data-tip="Capturas y desempeño de cada activista en campo.">👤 Avance por activista</span>
+        <span id="cap-tabla-count" style="font-size:10px;font-family:var(--mono);color:var(--text3)"></span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border2)">
+        <div>
+          <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Municipio</div>
+          <select id="cap-flt-mun" onchange="renderTablaCapturistas()" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:5px 8px;outline:none"></select>
+        </div>
+        <div>
+          <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Sección</div>
+          <select id="cap-flt-sec" onchange="renderTablaCapturistas()" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:5px 8px;outline:none">
+            <option value="">Todas</option>
+          </select>
+        </div>
+        <div>
+          <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Semáforo</div>
+          <select id="cap-flt-sem" onchange="renderTablaCapturistas()" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:5px 8px;outline:none">
+            <option value="">Todos</option>
+            <option value="verde">🟢 En meta</option>
+            <option value="amarillo">🟡 En riesgo</option>
+            <option value="rojo">🔴 Bajo meta</option>
+          </select>
+        </div>
+        <button onclick="limpiarFiltrosCap()" style="margin-top:18px;padding:5px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text3);font-size:11px;font-family:var(--mono);cursor:pointer;white-space:nowrap">✕ Limpiar</button>
+      </div>
+      <div class="tw">
+        <table class="t" id="cap-table">
+          <thead><tr>
+            <th onclick="sortCap('nombre')" style="cursor:pointer;user-select:none">Activista <span id="sort-cap-nombre" style="color:var(--text3)">↕</span></th>
+            <th onclick="sortCap('secNum')" style="cursor:pointer;user-select:none;text-align:center">Sección <span id="sort-cap-secNum" style="color:var(--text3)">↕</span></th>
+            <th onclick="sortCap('munNombre')" style="cursor:pointer;user-select:none;text-align:center">Municipio <span id="sort-cap-munNombre" style="color:var(--text3)">↕</span></th>
+            <th class="r" onclick="sortCap('cap')" style="cursor:pointer;user-select:none;text-align:center">Capturados <span id="sort-cap-cap" style="color:var(--text3)">↕</span></th>
+            <th class="r" onclick="sortCap('meta')" style="cursor:pointer;user-select:none;text-align:center">Meta <span id="sort-cap-meta" style="color:var(--text3)">↕</span></th>
+            <th class="r" onclick="sortCap('pct')" style="cursor:pointer;user-select:none;text-align:center">% Avance <span id="sort-cap-pct" style="color:var(--text3)">↕</span></th>
+            <th>Progreso</th>
+            <th class="r" onclick="sortCap('votosF2')" style="cursor:pointer;user-select:none;text-align:center">Votos F2 <span id="sort-cap-votosF2" style="color:var(--text3)">↕</span></th>
+            <th>Semáforo</th>
+            <th>Acción</th>
+          </tr></thead>
+          <tbody id="cap-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+
   </div>
 </div><!-- /f1 -->
 
@@ -558,38 +567,15 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
 
   <div class="main">
 
-    <!-- TABLA MUNICIPIOS F2 -->
-    <div class="g21">
-      <div class="card">
-        <div class="card-h">
-          <span class="card-title" data-tip="Monitoreo en vivo de la jornada electoral por municipio.">Avance electoral por municipio — tiempo real</span>
-          <span style="font-size:10px;font-family:var(--mono);color:var(--text3)">clic en fila para ver cuadrantes</span>
-        </div>
-        <div class="tw">
-          <table class="t">
-            <thead><tr>
-              <th onclick="sortF2('n')" style="cursor:pointer;user-select:none">Municipio <span id="sf2-n" style="color:var(--text3)">↕</span></th>
-              <th class="r" onclick="sortF2('cas')" style="cursor:pointer;user-select:none;text-align:center">Casillas <span id="sf2-cas" style="color:var(--text3)">↕</span></th>
-              <th class="r" onclick="sortF2('ab')" style="cursor:pointer;user-select:none;text-align:center">Abiertas <span id="sf2-ab" style="color:var(--text3)">↕</span></th>
-              <th class="r" onclick="sortF2('inc')" style="cursor:pointer;user-select:none;text-align:center">Incid. <span id="sf2-inc" style="color:var(--text3)">↕</span></th>
-              <th class="r" onclick="sortF2('sr')" style="cursor:pointer;user-select:none;text-align:center">S/Rep. <span id="sf2-sr" style="color:var(--text3)">↕</span></th>
-              <th class="r" onclick="sortF2('votos')" style="cursor:pointer;user-select:none;text-align:center">Votos <span id="sf2-votos" style="color:var(--text3)">↕</span></th>
-              <th class="r" onclick="sortF2('nuevos')" style="cursor:pointer;user-select:none;text-align:center">Nuevos <span id="sf2-nuevos" style="color:var(--text3)">↕</span></th>
-              <th class="r" onclick="sortF2('pv')" style="cursor:pointer;user-select:none;text-align:center">% Part. <span id="sf2-pv" style="color:var(--text3)">↕</span></th>
-              <th>Progreso</th><th>Estado</th>
-            </tr></thead>
-            <tbody id="mun-f2-tbody"></tbody>
-          </table>
-        </div>
-      </div>
-
+    <!-- ALERTAS DE JORNADA (la tabla vive tras los cuadrantes) -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
       <style>
       table.t th, table.t td { vertical-align:middle; }
-      #sc-f2 .g21 > div:first-child table th:not(:first-child),
-      #sc-f2 .g21 > div:first-child table td:not(:first-child) { text-align:center !important; }
-      #sc-f2 .g21 > div:first-child table td:nth-child(9) { text-align:center !important; }
+      #card-terr-f2 table th:not(:first-child),
+      #card-terr-f2 table td:not(:first-child) { text-align:center !important; }
+      #card-act-f2 table th:not(:first-child),
+      #card-act-f2 table td:not(:first-child) { text-align:center !important; }
       </style>
-      <div>
         <div class="card">
           <div class="card-h">
             <span class="card-title" data-tip="Incidencias y avisos durante el día de la elección.">Alertas jornada</span>
@@ -640,13 +626,12 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
         </div>
 
         <!-- Historial de alertas enviadas -->
-        <div class="card" style="margin-top:10px">
+        <div class="card">
           <div class="card-h"><span class="card-title" data-tip="Registro de todas las alertas enviadas hoy.">Historial de alertas</span><span id="alerta-hist-count" style="font-size:10px;font-family:var(--mono);color:var(--text3)">0 enviadas</span></div>
           <div id="alerta-historial" style="max-height:160px;overflow-y:auto">
             <div style="font-size:11px;color:var(--text3);padding:10px;text-align:center">Sin alertas enviadas</div>
           </div>
         </div>
-      </div>
     </div>
 
     <!-- DIVIDER CUADRANTES F2 -->
@@ -699,6 +684,61 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
     </div>
 
     <div id="cuad-f2"></div>
+
+    <!-- TABLA UNIFICADA F2 — obedece al drill de los cuadrantes -->
+    <div style="display:flex;align-items:center;gap:10px;margin:16px 0 10px;flex-wrap:wrap">
+      <div style="display:flex;border:1px solid var(--border2);border-radius:8px;overflow:hidden">
+        <button id="lens-f2-terr" onclick="setLensF2('terr')" data-tip="Mirada territorial: casillas activas y votos confirmados por zona." style="background:var(--bg4);border:none;color:var(--text);font-size:12px;font-weight:600;padding:7px 14px;cursor:pointer;font-family:var(--sans)">🗺 Territorio</button>
+        <button id="lens-f2-act" onclick="setLensF2('act')" data-tip="Mirada de estructura: quién ya reportó votos y quién está en silencio." style="background:transparent;border:none;color:var(--text2);font-size:12px;font-weight:600;padding:7px 14px;cursor:pointer;font-family:var(--sans)">👤 Activistas</button>
+      </div>
+      <span style="font-size:10px;font-family:var(--mono);color:var(--text3)">la tabla obedece al nivel donde estés parado en los cuadrantes</span>
+    </div>
+      <div class="card" id="card-terr-f2">
+        <div class="card-h">
+          <span class="card-title" data-tip="Monitoreo en vivo de la jornada electoral por municipio.">Avance electoral por municipio — tiempo real</span>
+          <span id="f2-table-caption" style="font-size:10px;font-family:var(--mono);color:var(--text3)">10 municipios · clic para ver secciones</span>
+        </div>
+        <div class="tw">
+          <table class="t">
+            <thead><tr>
+              <th onclick="sortF2('n')" style="cursor:pointer;user-select:none"><span id="f2-th-nivel">Municipio</span> <span id="sf2-n" style="color:var(--text3)">↕</span></th>
+              <th class="r" onclick="sortF2('cas')" style="cursor:pointer;user-select:none;text-align:center">Casillas <span id="sf2-cas" style="color:var(--text3)">↕</span></th>
+              <th class="r" onclick="sortF2('ab')" style="cursor:pointer;user-select:none;text-align:center">Abiertas <span id="sf2-ab" style="color:var(--text3)">↕</span></th>
+              <th class="r" onclick="sortF2('inc')" style="cursor:pointer;user-select:none;text-align:center">Incid. <span id="sf2-inc" style="color:var(--text3)">↕</span></th>
+              <th class="r" onclick="sortF2('sr')" style="cursor:pointer;user-select:none;text-align:center">S/Rep. <span id="sf2-sr" style="color:var(--text3)">↕</span></th>
+              <th class="r" onclick="sortF2('votos')" style="cursor:pointer;user-select:none;text-align:center">Votos <span id="sf2-votos" style="color:var(--text3)">↕</span></th>
+              <th class="r" onclick="sortF2('nuevos')" style="cursor:pointer;user-select:none;text-align:center">Nuevos <span id="sf2-nuevos" style="color:var(--text3)">↕</span></th>
+              <th class="r" onclick="sortF2('pv')" style="cursor:pointer;user-select:none;text-align:center">% Part. <span id="sf2-pv" style="color:var(--text3)">↕</span></th>
+              <th>Progreso</th><th>Estado</th>
+            </tr></thead>
+            <tbody id="mun-f2-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+
+    <div class="card" id="card-act-f2" style="display:none">
+      <div class="card-h">
+        <span class="card-title" data-tip="Votos confirmados por cada activista hoy. Detecta quién está en silencio.">👤 Movilización por activista — tiempo real</span>
+        <span id="act-f2-count" style="font-size:10px;font-family:var(--mono);color:var(--text3)"></span>
+      </div>
+      <div class="tw">
+        <table class="t">
+          <thead><tr>
+            <th>Activista</th>
+            <th style="text-align:center">Sección</th>
+            <th style="text-align:center">Municipio</th>
+            <th style="text-align:center" data-tip="Simpatizantes que capturó en Fase 1: su lista a movilizar hoy.">Lista F1</th>
+            <th style="text-align:center">Votos F2</th>
+            <th style="text-align:center">% Moviliz.</th>
+            <th style="text-align:center">Progreso</th>
+            <th style="text-align:center">Estado</th>
+            <th style="text-align:center">Acción</th>
+          </tr></thead>
+          <tbody id="act-f2-tbody"></tbody>
+        </table>
+      </div>
+    </div>
 
   <!-- TABLA DE CASILLAS -->
   <div style="margin-top:20px;">
@@ -912,8 +952,17 @@ function renderMunF1(){
     else   { nivelTabla='mun'; rows=MUNS.slice(); }
   } else if(munFiltro){
     nivelTabla='sec'; rows=secsDeMun(munFiltro);
+    // Recorte opcional por Distrito Local (toggle en cuadrantes)
+    if(typeof f1s!=='undefined' && f1s.dl){
+      const dlRows=rows.filter(s=>s.dl===f1s.dl || ((SECS[f1s.dl]||[]).some(x=>x.id===s.id)));
+      if(dlRows.length) rows=dlRows;
+    }
   } else {
     nivelTabla='mun'; rows=MUNS.slice();
+    // Recorte por Distrito Federal cuando el drill está en un DF
+    if(typeof f1s!=='undefined' && f1s.df){
+      const df=DFS.find(d=>d.id===f1s.df); if(df) rows=rows.filter(m=>df.munIds.includes(m.id));
+    }
   }
 
   // Filtro por semáforo (aplica a ambos niveles)
@@ -942,7 +991,9 @@ function renderMunF1(){
   const capEl=document.getElementById('mun-table-caption');
   if(capEl){
     if(nivelTabla==='sec' && secFiltro) capEl.textContent=`1 sección · ${rows[0]?rows[0].munNombre:''}`;
-    else if(nivelTabla==='sec')         capEl.textContent=`${rows.length} secciones · ${MUNS.find(m=>m.id===munFiltro)?.n||''}`;
+    else if(nivelTabla==='sec' && f1s.dl){const dl=DLS.find(d=>d.id===f1s.dl);capEl.textContent=`${rows.length} secciones · ${dl?dl.n:''} · ${MUNS.find(m=>m.id===munFiltro)?.n||''}`;}
+    else if(nivelTabla==='sec')         capEl.textContent=`${rows.length} secciones · ${MUNS.find(m=>m.id===munFiltro)?.n||''} (directo; DL opcional en cuadrantes)`;
+    else if(f1s.df)                     capEl.textContent=`${rows.length} municipios · ${(DFS.find(d=>d.id===f1s.df)||{}).n||''}`;
     else                                capEl.textContent='10 municipios · 393 secciones';
   }
 
@@ -972,6 +1023,7 @@ function renderMunF1(){
       <td class="mono" style="text-align:center;color:${r.g24==='Partido A'?'var(--green)':'var(--red)'};font-size:10px" title="Votos 2024: ${fmt(r.v24)} (${r.p24}% · ganó ${r.g24})">${r.p24}%</td>
     </tr>`;
   }).join('');
+  const th1=document.getElementById('f1-th-nivel'); if(th1)th1.textContent=(nivelTabla==='sec'?'Sección':'Municipio');
 }
 let WR_SORT = {col: null, asc: true};
 
@@ -1004,17 +1056,43 @@ function recalc(){
   if(f1s.nivel!=='candidato') renderCuadF1();
 }
 
+function setLensF1(l){
+  const t=document.getElementById('card-terr-f1'),a=document.getElementById('card-act-f1');
+  const bt=document.getElementById('lens-f1-terr'),ba=document.getElementById('lens-f1-act');
+  const on='background:var(--bg4);border:none;color:var(--text);font-size:12px;font-weight:600;padding:7px 14px;cursor:pointer;font-family:var(--sans)';
+  const off='background:transparent;border:none;color:var(--text2);font-size:12px;font-weight:600;padding:7px 14px;cursor:pointer;font-family:var(--sans)';
+  if(l==='terr'){if(t)t.style.display='';if(a)a.style.display='none';if(bt)bt.style.cssText=on;if(ba)ba.style.cssText=off;renderMunF1();}
+  else{if(t)t.style.display='none';if(a)a.style.display='';if(ba)ba.style.cssText=on;if(bt)bt.style.cssText=off;renderTablaCapturistas();}
+}
+function syncFiltrosDesdeDrillF1(){
+  // Drill → dropdowns: una sola fuente de verdad, sin disparar aplicarFiltros
+  filtros.mun=f1s.mun||'';
+  filtros.sec=f1s.sec||'';
+  const mSel=document.getElementById('flt-mun'); if(mSel) mSel.value=filtros.mun;
+  const sSel=document.getElementById('flt-sec');
+  if(sSel){
+    const secs=f1s.mun?DLS.filter(dl=>dl.mun===f1s.mun).flatMap(dl=>SECS[dl.id]||[]):Object.values(SECS).flat().sort((a,b)=>a.num-b.num);
+    sSel.innerHTML='<option value="">Todas</option>'+secs.map(s=>`<option value="${s.id}">Secc. ${s.num} — ${s.munNombre}</option>`).join('');
+    sSel.value=filtros.sec;
+  }
+  const cm=document.getElementById('cap-flt-mun'); if(cm) cm.value=f1s.mun||'';
+  window._capSecPend=f1s.sec||'';
+}
 function drillF1(nivel,id){
-  if(nivel==='candidato')f1s={nivel:'candidato',df:null,mun:null,dl:null,sec:null};
-  else if(nivel==='df')f1s={...f1s,nivel:'df',df:id,mun:null,dl:null,sec:null};
-  else if(nivel==='mun'){f1s={...f1s,nivel:'mun',mun:id,dl:null,sec:null};
-    // También actualizar highlight en tabla
+  if(nivel==='candidato')f1s={nivel:'candidato',df:null,mun:null,dl:null,sec:null,cap:null};
+  else if(nivel==='df')f1s={...f1s,nivel:'df',df:id,mun:null,dl:null,sec:null,cap:null};
+  else if(nivel==='mun'){f1s={...f1s,nivel:'mun',mun:id,dl:null,sec:null,cap:null};
     document.querySelectorAll('#mun-tbody tr').forEach(tr=>{tr.classList.remove('sel');});
   }
-  else if(nivel==='dl')f1s={...f1s,nivel:'dl',dl:id,sec:null};
-  else if(nivel==='sec')f1s={...f1s,nivel:'sec',sec:id};
-  renderCuadF1();renderMunF1();updateBcF1();
-  // Scroll to cuadrantes
+  else if(nivel==='dl'){
+    // Toggle: clic en el mismo DL quita el recorte y regresa al municipio completo
+    if(f1s.dl===id){f1s={...f1s,nivel:'mun',dl:null,sec:null,cap:null};}
+    else f1s={...f1s,nivel:'dl',dl:id,sec:null,cap:null};
+  }
+  else if(nivel==='sec')f1s={...f1s,nivel:'sec',sec:id,cap:null};
+  else if(nivel==='cap')f1s={...f1s,nivel:'cap',cap:id};
+  syncFiltrosDesdeDrillF1();
+  renderCuadF1();renderMunF1();renderTablaCapturistas();updateBcF1();
   document.getElementById('cuad-f1').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
@@ -1333,8 +1411,40 @@ function sortF2(field) {
 }
 
 function renderMunF2(){
+  const capEl=document.getElementById('f2-table-caption');
+  const thN=document.getElementById('f2-th-nivel');
+  // ── Nivel SECCIONES: municipio elegido (salto directo; DL como recorte opcional) ──
+  if(f2s.mun){
+    const mun=MUNS.find(m=>m.id===f2s.mun);
+    let secs=DLS.filter(dl=>dl.mun===f2s.mun).flatMap(dl=>SECS[dl.id]||[]);
+    if(f2s.dl){const r=secs.filter(s=>s.dl===f2s.dl || ((SECS[f2s.dl]||[]).some(x=>x.id===s.id)));if(r.length)secs=r;}
+    if(thN)thN.textContent='Sección';
+    if(capEl)capEl.textContent=`${secs.length} secciones · ${mun?mun.n:''}${f2s.dl?(' · '+(((DLS.find(d=>d.id===f2s.dl)||{}).n)||'')):' (directo; DL opcional en cuadrantes)'}`;
+    document.getElementById('mun-f2-tbody').innerHTML=secs.map(s=>{
+      const st=casStats([s.id]);const act=st.ab+st.ce;
+      const pv=Math.round(st.votos/Math.max(act*32,1)*100);const c=semC(pv);
+      return`<tr onclick="drillF2(\'sec\',\'${s.id}\')" class="${f2s.sec===s.id?'sel':''}">
+        <td><div class="nm">Secc. ${s.num}</div><div class="sub">${s.munNombre||''}</div></td>
+        <td class="mono" style="text-align:center">${st.total}</td>
+        <td class="mono" style="text-align:center;color:var(--green)">${st.ab}</td>
+        <td class="mono" style="text-align:center;color:var(--red)">${st.inc}</td>
+        <td class="mono" style="text-align:center;color:var(--amber)">${st.sr}</td>
+        <td class="mono" style="text-align:center;color:var(--green);font-weight:600">${fmt(st.votos)}</td>
+        <td class="mono" style="text-align:center;color:var(--accent)">${st.nuevos}</td>
+        <td class="mono" style="text-align:center;color:${c};font-weight:600">${pv}%</td>
+        <td style="text-align:center"><div class="mbar" style="max-width:80px;margin:0 auto"><div class="mbar-f" style="width:${Math.min(pv/60*100,100)}%;background:${c}"></div></div></td>
+        <td style="text-align:center;font-size:13px">${semI(pv)}</td>
+      </tr>`;
+    }).join('');
+    return;
+  }
+  // ── Nivel MUNICIPIOS (recortado al DF si hay drill) ──
+  if(thN)thN.textContent='Municipio';
+  const baseMuns=f2s.df?MUNS.filter(m=>(DFS.find(d=>d.id===f2s.df)||{munIds:[]}).munIds.includes(m.id)):MUNS;
+  if(capEl)capEl.textContent=(f2s.df?(((DFS.find(d=>d.id===f2s.df)||{}).n||'')+' · '):'')+baseMuns.length+' municipios · clic para ver secciones';
   // Pre-compute stats for sorting
-  const munsWithStats = MUNS.map(m => {
+  const munsWithStats = baseMuns.map(m => {
+
     const secIds = munSecIds(m.id);
     const st = casStats(secIds);
     const act = st.ab + st.ce;
@@ -1400,14 +1510,53 @@ function buildAlertasF2(){
   </div>`).join('');
 }
 
+function setLensF2(l){
+  const t=document.getElementById('card-terr-f2'),a=document.getElementById('card-act-f2');
+  const bt=document.getElementById('lens-f2-terr'),ba=document.getElementById('lens-f2-act');
+  const on='background:var(--bg4);border:none;color:var(--text);font-size:12px;font-weight:600;padding:7px 14px;cursor:pointer;font-family:var(--sans)';
+  const off='background:transparent;border:none;color:var(--text2);font-size:12px;font-weight:600;padding:7px 14px;cursor:pointer;font-family:var(--sans)';
+  if(l==='terr'){if(t)t.style.display='';if(a)a.style.display='none';if(bt)bt.style.cssText=on;if(ba)ba.style.cssText=off;renderMunF2();}
+  else{if(t)t.style.display='none';if(a)a.style.display='';if(ba)ba.style.cssText=on;if(bt)bt.style.cssText=off;renderTablaActF2();}
+}
+function renderTablaActF2(){
+  const tb=document.getElementById('act-f2-tbody'); if(!tb) return;
+  let todos=Object.values(CAPS).flat();
+  if(f2s.sec) todos=todos.filter(c=>c.seccion===f2s.sec);
+  else if(f2s.dl){const ids=(SECS[f2s.dl]||[]).map(s=>s.id); if(ids.length) todos=todos.filter(c=>ids.includes(c.seccion));}
+  else if(f2s.mun) todos=todos.filter(c=>c.mun===f2s.mun);
+  else if(f2s.df){const ids=(DFS.find(d=>d.id===f2s.df)||{munIds:[]}).munIds; todos=todos.filter(c=>ids.includes(c.mun));}
+  const cnt=document.getElementById('act-f2-count'); if(cnt)cnt.textContent=todos.length+' activistas';
+  if(!todos.length){tb.innerHTML='<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text3);font-size:12px">Sin activistas en este nivel</td></tr>';return;}
+  todos=[...todos].sort((a,b)=>b.votosF2-a.votosF2);
+  tb.innerHTML=todos.map(c=>{
+    const p=pct(c.votosF2,Math.max(c.cap,1));const col=p>=40?'var(--green)':p>=15?'var(--amber)':'var(--red)';
+    const ic=p>=40?'🟢':p>=15?'🟡':'🔴';
+    return`<tr>
+      <td><div class="nm">${c.nombre}</div><div class="sub">${c.tel}</div></td>
+      <td class="mono" style="text-align:center">Secc. ${c.secNum}</td>
+      <td style="text-align:center">${c.munNombre}</td>
+      <td class="mono" style="text-align:center;color:var(--text2)">${c.cap}</td>
+      <td class="mono" style="text-align:center;color:var(--green);font-weight:600">${c.votosF2}</td>
+      <td class="mono" style="text-align:center;color:${col};font-weight:600">${p}%</td>
+      <td style="text-align:center"><div class="mbar" style="max-width:80px;margin:0 auto"><div class="mbar-f" style="width:${Math.min(p,100)}%;background:${col}"></div></div></td>
+      <td style="text-align:center;font-size:13px">${ic}</td>
+      <td style="text-align:center"><button onclick="alertarCapturista(\'${c.id}\')" style="font-size:10px;padding:3px 9px;border:1px solid rgba(239,68,68,.4);background:rgba(239,68,68,.08);color:var(--red);border-radius:5px;cursor:pointer;font-family:var(--mono)">⚡ Alertar</button></td>
+    </tr>`;
+  }).join('');
+}
 function drillF2(nivel,id){
   if(nivel==='candidato')f2s={nivel:'candidato',df:null,mun:null,dl:null,sec:null,cas:null};
   else if(nivel==='df')f2s={...f2s,nivel:'df',df:id,mun:null,dl:null,sec:null,cas:null};
   else if(nivel==='mun')f2s={...f2s,nivel:'mun',mun:id,dl:null,sec:null,cas:null};
-  else if(nivel==='dl')f2s={...f2s,nivel:'dl',dl:id,sec:null,cas:null};
+  else if(nivel==='dl'){
+    // Toggle: clic en el mismo DL quita el recorte
+    if(f2s.dl===id){f2s={...f2s,nivel:'mun',dl:null,sec:null,cas:null};}
+    else f2s={...f2s,nivel:'dl',dl:id,sec:null,cas:null};
+  }
   else if(nivel==='sec')f2s={...f2s,nivel:'sec',sec:id,cas:null};
   else if(nivel==='cas')f2s={...f2s,nivel:'cas',cas:id};
-  renderCuadF2();renderMunF2();updateBcF2();
+  const m2=document.getElementById('f2-flt-mun'); if(m2)m2.value=f2s.mun||'';
+  renderCuadF2();renderMunF2();renderTablaActF2();updateBcF2();
   document.getElementById('cuad-f2').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
@@ -1983,7 +2132,7 @@ let CAP_SORT = {col: null, asc: true};
 
 function renderTablaCapturistas(){
   const munFiltro = document.getElementById('cap-flt-mun') ? document.getElementById('cap-flt-mun').value : '';
-  const secFiltro = document.getElementById('cap-flt-sec') ? document.getElementById('cap-flt-sec').value : '';
+  let secFiltro = document.getElementById('cap-flt-sec') ? document.getElementById('cap-flt-sec').value : '';
   const semFiltro = document.getElementById('cap-flt-sem') ? document.getElementById('cap-flt-sem').value : '';
 
   // Actualizar secciones según municipio
@@ -1996,6 +2145,7 @@ function renderTablaCapturistas(){
       secsPorMun.map(s=>`<option value="${s.id}">Secc. ${s.num} — ${s.munNombre}</option>`).join('');
     secSel.dataset.lastMun = munFiltro;
   }
+  if(secSel && window._capSecPend!==undefined){ secSel.value=window._capSecPend; secFiltro=secSel.value; delete window._capSecPend; }
 
   // Obtener todos los capturistas
   let todos = Object.values(CAPS).flat();
@@ -2003,6 +2153,8 @@ function renderTablaCapturistas(){
   // Filtrar
   if(munFiltro) todos = todos.filter(c=>c.mun===munFiltro);
   if(secFiltro) todos = todos.filter(c=>c.seccion===secFiltro);
+  // Recorte opcional por Distrito Local (mismo toggle de los cuadrantes)
+  if(typeof f1s!=='undefined' && f1s.dl && !secFiltro){ const dlIds=(SECS[f1s.dl]||[]).map(s=>s.id); if(dlIds.length) todos=todos.filter(c=>dlIds.includes(c.seccion)); }
   if(semFiltro) todos = todos.filter(c=>{
     const p=pct(c.cap,c.meta);
     if(semFiltro==='verde')    return p>=10;
