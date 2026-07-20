@@ -99,6 +99,40 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--sans);}
 [data-tip]{cursor:help;}
 #vt-tooltip{position:fixed;z-index:9999;max-width:260px;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;padding:8px 11px;font-size:11px;line-height:1.5;color:var(--text);font-family:var(--sans);pointer-events:none;opacity:0;transition:opacity .12s;box-shadow:0 6px 18px rgba(0,0,0,.5);}
 #vt-tooltip.show{opacity:1;}
+/* --- Patrón unificado (maqueta aprobada) --- */
+.uq-regla{font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin:14px 0 8px;}
+.uq-regla b{color:var(--cyan);}
+.uq-regla-nota{color:var(--text3);text-transform:none;letter-spacing:0;}
+.uq-bc{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:9px 14px;font-family:var(--mono);font-size:11px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:12px;}
+.uq-bc .sep{color:var(--text3);}
+.uq-bc a{color:var(--text3);cursor:pointer;text-decoration:none;}
+.uq-bc a.act{color:var(--text);font-weight:700;}
+.uq-bc a:not(.act):hover{color:var(--accent);}
+.uq-bc .fill{margin-left:auto;}
+.uq-bc .hint{color:var(--text3);font-size:10px;}
+.uq-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:10px;margin-bottom:12px;}
+.uq-cq{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:13px;cursor:pointer;transition:border-color .12s;}
+.uq-cq:hover{border-color:var(--border2);}
+.uq-cq.sel{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent);}
+.uq-cq.fixed{cursor:default;}
+.uq-cq .lbl{font-size:9px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;}
+.uq-cq .nom{font-size:13px;font-weight:600;margin-bottom:3px;}
+.uq-cq .big{font-size:23px;font-weight:700;font-family:var(--mono);line-height:1;margin-bottom:4px;}
+.uq-cq .bar{height:4px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden;margin-bottom:5px;}
+.uq-cq .bar i{display:block;height:100%;border-radius:99px;}
+.uq-cq .sub{font-size:10px;font-family:var(--mono);color:var(--text2);}
+.uq-cq .hint{font-size:10px;color:var(--text3);margin-top:6px;}
+.uq-head{display:flex;align-items:center;gap:10px;background:var(--bg2);border:1px solid var(--border);border-bottom:none;border-radius:10px 10px 0 0;padding:12px 14px;margin-top:16px;flex-wrap:wrap;}
+#card-terr-f1,#card-act-f1,#card-terr-f2,#card-act-f2{border-radius:0 0 10px 10px;margin-top:0;}
+.uq-lens{display:flex;border:1px solid var(--border2);border-radius:8px;overflow:hidden;}
+.uq-lens button{background:transparent;border:none;color:var(--text2);font-size:12px;font-weight:600;padding:7px 14px;cursor:pointer;font-family:var(--sans);}
+.uq-lens button.on{background:var(--bg4);color:var(--text);}
+.uq-caption{font-family:var(--mono);font-size:10px;color:var(--text3);}
+.uq-chips{display:flex;gap:6px;margin-left:auto;}
+.uq-chip{border:1px solid var(--border2);background:transparent;border-radius:99px;font-size:10px;font-family:var(--mono);padding:4px 10px;cursor:pointer;color:var(--text2);}
+.uq-chip.on-verde{background:rgba(34,197,94,.15);color:var(--green);border-color:rgba(34,197,94,.4);}
+.uq-chip.on-amarillo{background:rgba(245,158,11,.15);color:var(--amber);border-color:rgba(245,158,11,.4);}
+.uq-chip.on-rojo{background:rgba(239,68,68,.15);color:var(--red);border-color:rgba(239,68,68,.4);}
 
 /* GRID */
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
@@ -393,43 +427,33 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
 
     <!-- DIVIDER CUADRANTES F1 -->
     <div class="divider"></div>
-    <div class="section-title">📍 Navegación territorial por cuadrantes — clic en las tarjetas para profundizar · usa la ruta de arriba para regresar</div>
+    <div class="uq-regla">Regla de oro: <b>los cuadrantes definen dónde</b> estás parado · <b>las pestañas definen qué lente</b> usas · la tabla siempre obedece a ambos</div>
 
     <!-- RESUMEN SEMÁFORO GLOBAL -->
-    <div id="semaforo-global" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px"></div>
+    <div id="semaforo-global" style="display:none;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px"></div>
 
     <!-- BREADCRUMB F1 -->
-    <div class="bc" id="bc-f1">
-      <span class="bc-item active" onclick="drillF1('candidato',null)">🏛 Candidato</span>
-      <span class="bc-sep">›</span>
-      <span class="bc-item" id="bc1-df" onclick="if(f1s.df)drillF1('df',f1s.df)">Dist. Federal</span>
-      <span class="bc-sep">›</span>
-      <span class="bc-item" id="bc1-mun" onclick="if(f1s.mun)drillF1('mun',f1s.mun)">Municipio</span>
-      <span class="bc-sep">›</span>
-      <span class="bc-item" id="bc1-dl" onclick="if(f1s.dl)drillF1('dl',f1s.dl)">Dist. Local</span>
-      <span class="bc-sep">›</span>
-      <span class="bc-item" id="bc1-sec" onclick="if(f1s.sec)drillF1('sec',f1s.sec)">Sección</span>
-      <span class="bc-sep">›</span>
-      <span class="bc-item" id="bc1-cap" onclick="if(f1s.cap)drillF1('cap',f1s.cap)">Activista</span>
-    </div>
+    <div class="uq-bc" id="bc-f1"></div>
 
     <div id="cuad-f1"></div>
 
-    <!-- TABLA UNIFICADA F1 — obedece al drill de los cuadrantes -->
-    <div style="display:flex;align-items:center;gap:10px;margin:16px 0 10px;flex-wrap:wrap">
-      <div style="display:flex;border:1px solid var(--border2);border-radius:8px;overflow:hidden">
-        <button id="lens-f1-terr" onclick="setLensF1('terr')" data-tip="Mirada territorial: dónde va bien o mal la captura." style="background:var(--bg4);border:none;color:var(--text);font-size:12px;font-weight:600;padding:7px 14px;cursor:pointer;font-family:var(--sans)">🗺 Territorio</button>
-        <button id="lens-f1-act" onclick="setLensF1('act')" data-tip="Mirada de estructura: qué activistas están produciendo y cuáles no." style="background:transparent;border:none;color:var(--text2);font-size:12px;font-weight:600;padding:7px 14px;cursor:pointer;font-family:var(--sans)">👤 Activistas</button>
+    <!-- PANEL UNIFICADO F1 — lentes + semáforo, obedece al drill -->
+    <div class="uq-head">
+      <div class="uq-lens">
+        <button id="lens-f1-terr" class="on" onclick="setLensF1('terr')" data-tip="Mirada territorial: dónde va bien o mal la captura.">🗺 Territorio</button>
+        <button id="lens-f1-act" onclick="setLensF1('act')" data-tip="Mirada de estructura: qué activistas están produciendo y cuáles no.">👤 Activistas</button>
       </div>
-      <span style="font-size:10px;font-family:var(--mono);color:var(--text3)">la tabla obedece al nivel donde estés parado en los cuadrantes</span>
+      <span class="uq-caption" id="mun-table-caption">10 municipios · 393 secciones</span>
+      <span class="uq-caption" id="cap-tabla-count" style="display:none"></span>
+      <div class="uq-chips">
+        <button class="uq-chip" id="ch1-verde" onclick="setSemF1('verde')" data-tip="Solo lo que va bien (arriba del 10% de su meta).">🟢 Bien</button>
+        <button class="uq-chip" id="ch1-amarillo" onclick="setSemF1('amarillo')" data-tip="En riesgo (entre 5% y 10% de su meta).">🟡 Riesgo</button>
+        <button class="uq-chip" id="ch1-rojo" onclick="setSemF1('rojo')" data-tip="Crítico (menos del 5% de su meta).">🔴 Crítico</button>
+      </div>
     </div>
     <!-- TABLA MUNICIPIOS — ANCHO COMPLETO -->
     <div class="card" id="card-terr-f1" style="margin-bottom:14px">
-      <div class="card-h">
-        <span class="card-title" data-tip="Comparación del avance real contra la meta de cada municipio.">Avance por municipio vs. meta 2027</span>
-        <span id="mun-table-caption" style="font-size:10px;font-family:var(--mono);color:var(--text3)">10 municipios · 393 secciones</span>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border2)">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border2);display:none">
         <div>
           <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Municipio</div>
           <select id="flt-mun" onchange="aplicarFiltros()" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:5px 8px;outline:none"></select>
@@ -488,11 +512,7 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
     #cap-table th:nth-child(10),#cap-table td:nth-child(10){ text-align:center !important; }
     </style>
     <div class="card" id="card-act-f1" style="margin-bottom:14px;display:none">
-      <div class="card-h">
-        <span class="card-title" data-tip="Capturas y desempeño de cada activista en campo.">👤 Avance por activista</span>
-        <span id="cap-tabla-count" style="font-size:10px;font-family:var(--mono);color:var(--text3)"></span>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border2)">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border2);display:none">
         <div>
           <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Municipio</div>
           <select id="cap-flt-mun" onchange="renderTablaCapturistas()" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:5px 8px;outline:none"></select>
@@ -636,10 +656,10 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
 
     <!-- DIVIDER CUADRANTES F2 -->
     <div class="divider"></div>
-    <div class="section-title">🗳 Navegación por cuadrantes — Candidato › DF › Municipio › DL › Sección › Casilla</div>
+    <div class="uq-regla">Regla de oro: <b>los cuadrantes definen dónde</b> estás parado · <b>las pestañas definen qué lente</b> usas · la tabla siempre obedece a ambos</div>
 
     <!-- FILTROS RÁPIDOS F2 -->
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;margin-bottom:14px;align-items:end">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;margin-bottom:14px;align-items:end;display:none">
       <div>
         <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">Municipio</div>
         <select id="f2-flt-mun" onchange="aplicarFiltrosF2()" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:12px;padding:7px 10px;outline:none">
@@ -666,38 +686,28 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
     </div>
 
     <!-- SEMÁFORO GLOBAL F2 -->
-    <div id="semaforo-global-f2" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px"></div>
+    <div id="semaforo-global-f2" style="display:none;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px"></div>
 
     <!-- BREADCRUMB F2 -->
-    <div class="bc" id="bc-f2">
-      <span class="bc-item active" onclick="drillF2('candidato',null)">🏛 Candidato</span>
-      <span class="bc-sep">›</span>
-      <span class="bc-item" id="bc2-df" onclick="if(f2s.df)drillF2('df',f2s.df)">Dist. Federal</span>
-      <span class="bc-sep">›</span>
-      <span class="bc-item" id="bc2-mun" onclick="if(f2s.mun)drillF2('mun',f2s.mun)">Municipio</span>
-      <span class="bc-sep">›</span>
-      <span class="bc-item" id="bc2-dl" onclick="if(f2s.dl)drillF2('dl',f2s.dl)">Dist. Local</span>
-      <span class="bc-sep">›</span>
-      <span class="bc-item" id="bc2-sec" onclick="if(f2s.sec)drillF2('sec',f2s.sec)">Sección</span>
-      <span class="bc-sep">›</span>
-      <span class="bc-item" id="bc2-cas">Casilla</span>
-    </div>
+    <div class="uq-bc" id="bc-f2"></div>
 
     <div id="cuad-f2"></div>
 
-    <!-- TABLA UNIFICADA F2 — obedece al drill de los cuadrantes -->
-    <div style="display:flex;align-items:center;gap:10px;margin:16px 0 10px;flex-wrap:wrap">
-      <div style="display:flex;border:1px solid var(--border2);border-radius:8px;overflow:hidden">
-        <button id="lens-f2-terr" onclick="setLensF2('terr')" data-tip="Mirada territorial: casillas activas y votos confirmados por zona." style="background:var(--bg4);border:none;color:var(--text);font-size:12px;font-weight:600;padding:7px 14px;cursor:pointer;font-family:var(--sans)">🗺 Territorio</button>
-        <button id="lens-f2-act" onclick="setLensF2('act')" data-tip="Mirada de estructura: quién ya reportó votos y quién está en silencio." style="background:transparent;border:none;color:var(--text2);font-size:12px;font-weight:600;padding:7px 14px;cursor:pointer;font-family:var(--sans)">👤 Activistas</button>
+    <!-- PANEL UNIFICADO F2 — lentes + semáforo, obedece al drill -->
+    <div class="uq-head">
+      <div class="uq-lens">
+        <button id="lens-f2-terr" class="on" onclick="setLensF2('terr')" data-tip="Mirada territorial: casillas activas y votos confirmados por zona.">🗺 Territorio</button>
+        <button id="lens-f2-act" onclick="setLensF2('act')" data-tip="Mirada de estructura: quién ya reportó votos y quién está en silencio.">👤 Activistas</button>
       </div>
-      <span style="font-size:10px;font-family:var(--mono);color:var(--text3)">la tabla obedece al nivel donde estés parado en los cuadrantes</span>
+      <span class="uq-caption" id="f2-table-caption">10 municipios · clic para ver secciones</span>
+      <span class="uq-caption" id="act-f2-count" style="display:none"></span>
+      <div class="uq-chips">
+        <button class="uq-chip" id="ch2-verde" onclick="setSemF2('verde')" data-tip="Casillas o movilización arriba del 40%.">🟢 Bien</button>
+        <button class="uq-chip" id="ch2-amarillo" onclick="setSemF2('amarillo')" data-tip="Entre 15% y 40%: hay que empujar.">🟡 Riesgo</button>
+        <button class="uq-chip" id="ch2-rojo" onclick="setSemF2('rojo')" data-tip="Debajo del 15%: atención urgente.">🔴 Crítico</button>
+      </div>
     </div>
       <div class="card" id="card-terr-f2">
-        <div class="card-h">
-          <span class="card-title" data-tip="Monitoreo en vivo de la jornada electoral por municipio.">Avance electoral por municipio — tiempo real</span>
-          <span id="f2-table-caption" style="font-size:10px;font-family:var(--mono);color:var(--text3)">10 municipios · clic para ver secciones</span>
-        </div>
         <div class="tw">
           <table class="t">
             <thead><tr>
@@ -718,10 +728,6 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
 
 
     <div class="card" id="card-act-f2" style="display:none">
-      <div class="card-h">
-        <span class="card-title" data-tip="Votos confirmados por cada activista hoy. Detecta quién está en silencio.">👤 Movilización por activista — tiempo real</span>
-        <span id="act-f2-count" style="font-size:10px;font-family:var(--mono);color:var(--text3)"></span>
-      </div>
       <div class="tw">
         <table class="t">
           <thead><tr>
@@ -1023,6 +1029,7 @@ function renderMunF1(){
       <td class="mono" style="text-align:center;color:${r.g24==='Partido A'?'var(--green)':'var(--red)'};font-size:10px" title="Votos 2024: ${fmt(r.v24)} (${r.p24}% · ganó ${r.g24})">${r.p24}%</td>
     </tr>`;
   }).join('');
+  if(!rowsSorted.length) document.getElementById('mun-tbody').innerHTML=`<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text3);font-size:12px">Nada coincide con el semáforo elegido en este nivel. Quita el filtro para ver todo.</td></tr>`;
   const th1=document.getElementById('f1-th-nivel'); if(th1)th1.textContent=(nivelTabla==='sec'?'Sección':'Municipio');
 }
 let WR_SORT = {col: null, asc: true};
@@ -1059,10 +1066,26 @@ function recalc(){
 function setLensF1(l){
   const t=document.getElementById('card-terr-f1'),a=document.getElementById('card-act-f1');
   const bt=document.getElementById('lens-f1-terr'),ba=document.getElementById('lens-f1-act');
-  const on='background:var(--bg4);border:none;color:var(--text);font-size:12px;font-weight:600;padding:7px 14px;cursor:pointer;font-family:var(--sans)';
-  const off='background:transparent;border:none;color:var(--text2);font-size:12px;font-weight:600;padding:7px 14px;cursor:pointer;font-family:var(--sans)';
-  if(l==='terr'){if(t)t.style.display='';if(a)a.style.display='none';if(bt)bt.style.cssText=on;if(ba)ba.style.cssText=off;renderMunF1();}
-  else{if(t)t.style.display='none';if(a)a.style.display='';if(ba)ba.style.cssText=on;if(bt)bt.style.cssText=off;renderTablaCapturistas();}
+  const capT=document.getElementById('mun-table-caption'),capA=document.getElementById('cap-tabla-count');
+  if(l==='terr'){if(t)t.style.display='';if(a)a.style.display='none';if(bt)bt.classList.add('on');if(ba)ba.classList.remove('on');if(capT)capT.style.display='';if(capA)capA.style.display='none';renderMunF1();}
+  else{if(t)t.style.display='none';if(a)a.style.display='';if(ba)ba.classList.add('on');if(bt)bt.classList.remove('on');if(capT)capT.style.display='none';if(capA)capA.style.display='';renderTablaCapturistas();}
+}
+function setSemF1(s){
+  filtros.sem=(filtros.sem===s)?'':s;
+  const sel=document.getElementById('flt-sem'); if(sel) sel.value=filtros.sem;
+  ['verde','amarillo','rojo'].forEach(x=>{const b=document.getElementById('ch1-'+x); if(b) b.className='uq-chip'+(filtros.sem===x?' on-'+x:'');});
+  renderCuadF1();renderMunF1();renderTablaCapturistas();renderSemaforoGlobal();
+}
+function semC2(p){return p>=40?'var(--green)':p>=15?'var(--amber)':'var(--red)';}
+function semI2(p){return p>=40?'🟢':p>=15?'🟡':'🔴';}
+function wrSemOk2(p){
+  const s=(typeof filtrosF2!=='undefined')?filtrosF2.sem:'';
+  return !s||(s==='verde'&&p>=40)||(s==='amarillo'&&p>=15&&p<40)||(s==='rojo'&&p<15);
+}
+function setSemF2(s){
+  filtrosF2.sem=(filtrosF2.sem===s)?'':s;
+  ['verde','amarillo','rojo'].forEach(x=>{const b=document.getElementById('ch2-'+x); if(b) b.className='uq-chip'+(filtrosF2.sem===x?' on-'+x:'');});
+  renderCuadF2();renderMunF2();renderTablaActF2();
 }
 function syncFiltrosDesdeDrillF1(){
   // Drill → dropdowns: una sola fuente de verdad, sin disparar aplicarFiltros
@@ -1098,81 +1121,40 @@ function drillF1(nivel,id){
 
 function renderCuadF1(){
   let html='';
-  const semFiltro = filtros ? filtros.sem : '';
-
-  function filtrarPorSem(items, getCap, getMeta){
-    if(!semFiltro) return items;
-    return items.filter(item=>{
-      const p=pct(getCap(item),getMeta(item));
-      if(semFiltro==='verde')    return p>=10;
-      if(semFiltro==='amarillo') return p>=5&&p<10;
-      if(semFiltro==='rojo')     return p<5;
-      return true;
+  const semFiltro=filtros?filtros.sem:'';
+  const okSem=p=>!semFiltro||(semFiltro==='verde'&&p>=10)||(semFiltro==='amarillo'&&p>=5&&p<10)||(semFiltro==='rojo'&&p<5);
+  const card=(o)=>{const p=pct(o.cap,o.meta);const c=semC(p);
+    return `<div class="uq-cq${o.sel?' sel':''}${o.fixed?' fixed':''}" ${o.click?('onclick="'+o.click+'"'):''} data-tip="${o.tip}">`
+      +`<div class="lbl">${o.lbl}</div><div class="nom">${o.nom}</div>`
+      +`<div class="big" style="color:${c}">${p}%</div>`
+      +`<div class="bar"><i style="width:${Math.min(p*5,100)}%;background:${c}"></i></div>`
+      +`<div class="sub">${fmt(o.cap)} / ${fmt(o.meta)}</div>`
+      +(o.hint?`<div class="hint">${o.hint}</div>`:'')+`</div>`;};
+  const capTot=MUNS.reduce((s,m)=>s+m.cap,0), metaTot=MUNS.reduce((s,m)=>s+m.meta,0);
+  html+='<div class="uq-grid">';
+  html+=card({lbl:'ESTADO COMPLETO',nom:'Colima',cap:capTot,meta:metaTot,fixed:1,tip:'Avance total del estado: ciudadanos capturados contra la meta 2027.'});
+  DFS.forEach(df=>{const p=pct(df.cap,df.meta);if(!okSem(p))return;
+    html+=card({lbl:df.id,nom:df.n.replace('Distrito Federal ','DF ')+(df.id==='DF1'?' · Norte':' · Sur'),cap:df.cap,meta:df.meta,sel:f1s.df===df.id,click:`drillF1('df','${df.id}')`,hint:`${df.secs} secc. · ${capsDF(df.id)} activistas · Ver municipios →`,tip:'Avance del distrito federal. Clic: los cuadrantes y la tabla se enfocan aquí.'});
+  });
+  html+='</div>';
+  if(f1s.df){const df=DFS.find(d=>d.id===f1s.df);
+    html+=`<div class="uq-regla">Municipios en ${df.n}</div><div class="uq-grid">`;
+    MUNS.filter(m=>df.munIds.includes(m.id)).forEach(m=>{const p=pct(m.cap,m.meta);if(!okSem(p))return;
+      html+=card({lbl:'MUNICIPIO',nom:m.n,cap:m.cap,meta:m.meta,sel:f1s.mun===m.id,click:`drillF1('mun','${m.id}')`,hint:`${m.secs} secc. · ${capsMun(m.id)} activistas · Ver secciones ↓`,tip:'Clic: la tabla de abajo salta directo a las secciones de este municipio.'});
     });
-  }
-
-  // Cuadrante candidato
-  const capTot=MUNS.reduce((s,m)=>s+m.cap,0);
-  const metaTot=MUNS.reduce((s,m)=>s+m.meta,0);
-  const pv=pct(capTot,metaTot); const c=semC(pv);
-  html+=`<div style="margin-bottom:14px">
-    <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">🏛 Cuadrante del candidato — Estado de Colima</div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:10px">
-      <div data-tip="Avance total del estado: ciudadanos capturados contra la meta 2027." style="background:var(--bg2);border:1px solid var(--border);border-left:3px solid ${c};border-radius:8px;padding:14px">
-        <div style="font-size:10px;font-family:var(--mono);color:var(--text3);margin-bottom:4px">ESTADO COMPLETO</div>
-        <div style="font-size:28px;font-weight:700;font-family:var(--mono);color:${c};line-height:1;margin-bottom:4px">${pv}%</div>
-        <div style="height:5px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden;margin-bottom:6px"><div style="width:${pv}%;height:100%;background:${c};border-radius:99px"></div></div>
-        <div style="font-size:11px;font-family:var(--mono);color:var(--text2)">${fmt(capTot)} / ${fmt(metaTot)}</div>
-        <div style="font-size:10px;color:var(--text3);margin-top:3px">388 secciones · 10 municipios</div>
-      </div>
-      ${filtrarPorSem(DFS,d=>d.cap,d=>d.meta).map(df=>{
-        const dpv=pct(df.cap,df.meta); const dc=semC(dpv);
-        return`<div style="background:var(--bg2);border:1px solid ${f1s.df===df.id?'var(--accent)':dc.replace('var(','rgba(').replace(')',', .3)')};border-left:3px solid ${dc};border-radius:8px;padding:14px;cursor:pointer" data-tip="Avance de captura contra la meta en este distrito federal. Clic para ver sus municipios." onclick="drillF1('df','${df.id}')">
-          <div style="font-size:10px;font-family:var(--mono);color:var(--text3);margin-bottom:4px">${df.id}</div>
-          <div style="font-size:13px;font-weight:600;margin-bottom:4px">${df.n.replace('Distrito Federal ','DF ')}</div>
-          <div style="font-size:24px;font-weight:700;font-family:var(--mono);color:${dc};line-height:1;margin-bottom:4px">${dpv}%</div>
-          <div style="height:5px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden;margin-bottom:6px"><div style="width:${dpv}%;height:100%;background:${dc};border-radius:99px"></div></div>
-          <div style="font-size:11px;font-family:var(--mono);color:var(--text2)">${fmt(df.cap)} / ${fmt(df.meta)}</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px">${df.secs} secciones · ${df.cas} casillas · ${capsDF(df.id)} activistas</div>
-          <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px"><span style="font-size:16px">${semI(dpv)}</span><span style="color:var(--text3)">Ver municipios →</span></div>
-        </div>`;
-      }).join('')}
-    </div>
-  </div>`;
-
-  if(f1s.df){
-    const df=DFS.find(d=>d.id===f1s.df);
-    const muns=filtrarPorSem(MUNS.filter(m=>df.munIds.includes(m.id)),m=>m.cap,m=>m.meta);
-    html+=buildCuadF1('Municipio','Municipios en '+df.n,muns,
-      m=>m.cap,m=>m.meta,m=>m.n,m=>`${m.secs} secc. · ${capsMun(m.id)} capt.`,
-      m=>`drillF1('mun','${m.id}')`,f1s.mun);
-  }
-  if(f1s.mun){
-    const mun=MUNS.find(m=>m.id===f1s.mun);
-    const dls=filtrarPorSem(DLS.filter(dl=>dl.mun===f1s.mun),dl=>dl.cap,dl=>dl.meta);
-    html+=buildCuadF1('Dist. Local','Distritos locales en '+mun.n,dls,
-      dl=>dl.cap,dl=>dl.meta,dl=>dl.n,dl=>`${dl.secs} secc. · ${capsDL(dl.id)} capt.`,
-      dl=>`drillF1('dl','${dl.id}')`,f1s.dl);
-  }
-  if(f1s.dl){
-    const dl=DLS.find(d=>d.id===f1s.dl);
-    const secs=filtrarPorSem(SECS[f1s.dl]||[],s=>s.cap,s=>s.meta);
-    html+=buildCuadF1('Sección','Secciones en '+dl.n,secs,
-      s=>s.cap,s=>s.meta,s=>'Secc. '+s.num,s=>`${s.cas} casilla(s)`,
-      s=>`drillF1('sec','${s.id}')`,f1s.sec);
-  }
-  if(f1s.sec){
-    const sec=Object.values(SECS).flat().find(s=>s.id===f1s.sec);
-    if(sec){
-      html+=detalleSecF1(sec);
-      const caps=filtrarPorSem(CAPS[sec.id]||[],cap=>cap.cap,cap=>cap.meta);
-      if(caps.length) html+=buildCuadCapturistas(caps);
-    }
-  }
-  if(f1s.cap){
-    const cap=Object.values(CAPS).flat().find(c=>c.id===f1s.cap);
-    if(cap) html+=detalleCapturista(cap);
-  }
+    html+='</div>';}
+  if(f1s.mun){const mun=MUNS.find(m=>m.id===f1s.mun);
+    html+=`<div class="uq-regla">Distritos locales en ${mun.n} <span class="uq-regla-nota">· opcional — la tabla ya muestra las secciones; clic en un DL para recortarla (clic de nuevo para quitarlo)</span></div><div class="uq-grid">`;
+    DLS.filter(dl=>dl.mun===f1s.mun).forEach(dl=>{const p=pct(dl.cap,dl.meta);if(!okSem(p))return;
+      html+=card({lbl:'DIST. LOCAL',nom:dl.n,cap:dl.cap,meta:dl.meta,sel:f1s.dl===dl.id,click:`drillF1('dl','${dl.id}')`,hint:`${dl.secs} secciones`,tip:'Refinamiento opcional: recorta la tabla a las secciones de este distrito local.'});
+    });
+    html+='</div>';}
+  if(f1s.sec){const sec=Object.values(SECS).flat().find(s=>s.id===f1s.sec);
+    if(sec){html+=detalleSecF1(sec);
+      const caps=(CAPS[sec.id]||[]);
+      if(caps.length) html+=buildCuadCapturistas(caps);}}
+  if(f1s.cap){const cap=Object.values(CAPS).flat().find(c=>c.id===f1s.cap);
+    if(cap) html+=detalleCapturista(cap);}
   document.getElementById('cuad-f1').innerHTML=html;
 }
 
@@ -1243,18 +1225,20 @@ function detalleSecF1(sec){
 }
 
 function updateBcF1(){
-  ['df','mun','dl','sec','cap'].forEach(id=>{
-    const el=document.getElementById('bc1-'+id);
-    if(el){el.classList.remove('active');el.classList.add('disabled');el.textContent={df:'Dist. Federal',mun:'Municipio',dl:'Dist. Local',sec:'Sección',cap:'Activista'}[id];}
-  });
-  document.querySelectorAll('#bc-f1 .bc-item').forEach(e=>e.classList.remove('active'));
-  document.querySelectorAll('#bc-f1 .bc-item')[0].classList.add('active');
-  if(f1s.df){const e=document.getElementById('bc1-df');if(e){e.classList.add('active');e.textContent=f1s.df;}}
-  if(f1s.mun){const e=document.getElementById('bc1-mun');const m=MUNS.find(x=>x.id===f1s.mun);if(e&&m){e.classList.add('active');e.textContent=m.n;}}
-  if(f1s.dl){const e=document.getElementById('bc1-dl');if(e){e.classList.add('active');const _dl=DLS.find(d=>d.id===f1s.dl);e.textContent='DL '+(_dl?_dl.num:f1s.dl.replace('DL',''));}}
-  if(f1s.sec){const s=Object.values(SECS).flat().find(x=>x.id===f1s.sec);const e=document.getElementById('bc1-sec');if(e&&s){e.classList.add('active');e.textContent='Secc. '+s.num;}}
-  if(f1s.cap){const cap=Object.values(CAPS).flat().find(c=>c.id===f1s.cap);const e=document.getElementById('bc1-cap');if(e&&cap){e.classList.add('active');e.textContent=cap.nombre.split(' ')[0];}}
-  document.querySelectorAll('#bc-f1 .bc-item.active').forEach(e=>e.classList.remove('disabled'));
+  const el=document.getElementById('bc-f1'); if(!el) return;
+  let h=`<a onclick="drillF1('candidato',null)" class="${!f1s.df&&!f1s.mun?'act':''}">🏛 Candidato · Colima</a>`;
+  if(f1s.df){const df=DFS.find(d=>d.id===f1s.df);
+    h+=`<span class="sep">›</span><a onclick="drillF1('df','${f1s.df}')" class="${!f1s.mun?'act':''}">${df?df.n.replace('Distrito Federal ','DF ')+(df.id==='DF1'?' · Norte':' · Sur'):f1s.df}</a>`;}
+  if(f1s.mun){const m=MUNS.find(x=>x.id===f1s.mun);
+    h+=`<span class="sep">›</span><a onclick="drillF1('mun','${f1s.mun}')" class="${!f1s.dl&&!f1s.sec?'act':''}">${m?m.n:''}</a>`;}
+  if(f1s.dl){const dl=DLS.find(d=>d.id===f1s.dl);
+    h+=`<span class="sep">›</span><a onclick="drillF1('dl','${f1s.dl}')" class="${!f1s.sec?'act':''}">${dl?dl.n:''}</a>`;}
+  if(f1s.sec){const s=Object.values(SECS).flat().find(x=>x.id===f1s.sec);
+    h+=`<span class="sep">›</span><a class="act">Secc. ${s?s.num:''}</a>`;}
+  if(f1s.cap){const c=Object.values(CAPS).flat().find(x=>x.id===f1s.cap);
+    h+=`<span class="sep">›</span><a class="act">${c?c.nombre:''}</a>`;}
+  h+=`<span class="fill"></span><span class="hint">clic en cualquier nivel para regresar</span>`;
+  el.innerHTML=h;
 }
 
 // ══════════════════════════════════════════════════
@@ -1418,11 +1402,12 @@ function renderMunF2(){
     const mun=MUNS.find(m=>m.id===f2s.mun);
     let secs=DLS.filter(dl=>dl.mun===f2s.mun).flatMap(dl=>SECS[dl.id]||[]);
     if(f2s.dl){const r=secs.filter(s=>s.dl===f2s.dl || ((SECS[f2s.dl]||[]).some(x=>x.id===s.id)));if(r.length)secs=r;}
+    if(filtrosF2.sem){secs=secs.filter(s=>{const st=casStats([s.id]);const act=st.ab+st.ce;const pv=Math.round(st.votos/Math.max(act*32,1)*100);return wrSemOk2(pv);});}
     if(thN)thN.textContent='Sección';
     if(capEl)capEl.textContent=`${secs.length} secciones · ${mun?mun.n:''}${f2s.dl?(' · '+(((DLS.find(d=>d.id===f2s.dl)||{}).n)||'')):' (directo; DL opcional en cuadrantes)'}`;
     document.getElementById('mun-f2-tbody').innerHTML=secs.map(s=>{
       const st=casStats([s.id]);const act=st.ab+st.ce;
-      const pv=Math.round(st.votos/Math.max(act*32,1)*100);const c=semC(pv);
+      const pv=Math.round(st.votos/Math.max(act*32,1)*100);const c=semC2(pv);
       return`<tr onclick="drillF2(\'sec\',\'${s.id}\')" class="${f2s.sec===s.id?'sel':''}">
         <td><div class="nm">Secc. ${s.num}</div><div class="sub">${s.munNombre||''}</div></td>
         <td class="mono" style="text-align:center">${st.total}</td>
@@ -1433,7 +1418,7 @@ function renderMunF2(){
         <td class="mono" style="text-align:center;color:var(--accent)">${st.nuevos}</td>
         <td class="mono" style="text-align:center;color:${c};font-weight:600">${pv}%</td>
         <td style="text-align:center"><div class="mbar" style="max-width:80px;margin:0 auto"><div class="mbar-f" style="width:${Math.min(pv/60*100,100)}%;background:${c}"></div></div></td>
-        <td style="text-align:center;font-size:13px">${semI(pv)}</td>
+        <td style="text-align:center;font-size:13px">${semI2(pv)}</td>
       </tr>`;
     }).join('');
     return;
@@ -1443,7 +1428,7 @@ function renderMunF2(){
   const baseMuns=f2s.df?MUNS.filter(m=>(DFS.find(d=>d.id===f2s.df)||{munIds:[]}).munIds.includes(m.id)):MUNS;
   if(capEl)capEl.textContent=(f2s.df?(((DFS.find(d=>d.id===f2s.df)||{}).n||'')+' · '):'')+baseMuns.length+' municipios · clic para ver secciones';
   // Pre-compute stats for sorting
-  const munsWithStats = baseMuns.map(m => {
+  let munsWithStats = baseMuns.map(m => {
 
     const secIds = munSecIds(m.id);
     const st = casStats(secIds);
@@ -1451,6 +1436,8 @@ function renderMunF2(){
     const pv = Math.round(st.votos / Math.max(act * 32, 1) * 100);
     return { m, st, pv };
   });
+
+  if(filtrosF2.sem) munsWithStats=munsWithStats.filter(x=>wrSemOk2(x.pv));
 
   // Apply sort if active
   if (_f2SortField) {
@@ -1471,7 +1458,7 @@ function renderMunF2(){
 
   document.getElementById('mun-f2-tbody').innerHTML = munsWithStats.map(({m, st, pv}) => {
     const act = st.ab + st.ce;
-    const c = semC(pv);
+    const c = semC2(pv);
     return`<tr onclick="drillF2('mun','${m.id}')" class="${f2s.mun===m.id?'sel':''}">
       <td><div class="nm">${m.n}</div></td>
       <td class="mono" style="text-align:center">${m.cas}</td>
@@ -1482,7 +1469,7 @@ function renderMunF2(){
       <td class="mono" style="text-align:center;color:var(--accent)">${st.nuevos}</td>
       <td class="mono" style="text-align:center;color:${c};font-weight:600">${pv}%</td>
       <td style="text-align:center"><div class="mbar" style="max-width:80px;margin:0 auto"><div class="mbar-f" style="width:${Math.min(pv/60*100,100)}%;background:${c}"></div></div></td>
-      <td style="text-align:center;font-size:13px">${semI(pv)}</td>
+      <td style="text-align:center;font-size:13px">${semI2(pv)}</td>
     </tr>`;
   }).join('');
 }
@@ -1513,10 +1500,9 @@ function buildAlertasF2(){
 function setLensF2(l){
   const t=document.getElementById('card-terr-f2'),a=document.getElementById('card-act-f2');
   const bt=document.getElementById('lens-f2-terr'),ba=document.getElementById('lens-f2-act');
-  const on='background:var(--bg4);border:none;color:var(--text);font-size:12px;font-weight:600;padding:7px 14px;cursor:pointer;font-family:var(--sans)';
-  const off='background:transparent;border:none;color:var(--text2);font-size:12px;font-weight:600;padding:7px 14px;cursor:pointer;font-family:var(--sans)';
-  if(l==='terr'){if(t)t.style.display='';if(a)a.style.display='none';if(bt)bt.style.cssText=on;if(ba)ba.style.cssText=off;renderMunF2();}
-  else{if(t)t.style.display='none';if(a)a.style.display='';if(ba)ba.style.cssText=on;if(bt)bt.style.cssText=off;renderTablaActF2();}
+  const capT=document.getElementById('f2-table-caption'),capA=document.getElementById('act-f2-count');
+  if(l==='terr'){if(t)t.style.display='';if(a)a.style.display='none';if(bt)bt.classList.add('on');if(ba)ba.classList.remove('on');if(capT)capT.style.display='';if(capA)capA.style.display='none';renderMunF2();}
+  else{if(t)t.style.display='none';if(a)a.style.display='';if(ba)ba.classList.add('on');if(bt)bt.classList.remove('on');if(capT)capT.style.display='none';if(capA)capA.style.display='';renderTablaActF2();}
 }
 function renderTablaActF2(){
   const tb=document.getElementById('act-f2-tbody'); if(!tb) return;
@@ -1525,12 +1511,13 @@ function renderTablaActF2(){
   else if(f2s.dl){const ids=(SECS[f2s.dl]||[]).map(s=>s.id); if(ids.length) todos=todos.filter(c=>ids.includes(c.seccion));}
   else if(f2s.mun) todos=todos.filter(c=>c.mun===f2s.mun);
   else if(f2s.df){const ids=(DFS.find(d=>d.id===f2s.df)||{munIds:[]}).munIds; todos=todos.filter(c=>ids.includes(c.mun));}
+  if(filtrosF2.sem) todos=todos.filter(c=>wrSemOk2(pct(c.votosF2,Math.max(c.cap,1))));
   const cnt=document.getElementById('act-f2-count'); if(cnt)cnt.textContent=todos.length+' activistas';
   if(!todos.length){tb.innerHTML='<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text3);font-size:12px">Sin activistas en este nivel</td></tr>';return;}
   todos=[...todos].sort((a,b)=>b.votosF2-a.votosF2);
   tb.innerHTML=todos.map(c=>{
-    const p=pct(c.votosF2,Math.max(c.cap,1));const col=p>=40?'var(--green)':p>=15?'var(--amber)':'var(--red)';
-    const ic=p>=40?'🟢':p>=15?'🟡':'🔴';
+    const p=pct(c.votosF2,Math.max(c.cap,1));const col=semC2(p);
+    const ic=semI2(p);
     return`<tr>
       <td><div class="nm">${c.nombre}</div><div class="sub">${c.tel}</div></td>
       <td class="mono" style="text-align:center">Secc. ${c.secNum}</td>
@@ -1562,85 +1549,49 @@ function drillF2(nivel,id){
 
 function renderCuadF2(){
   let html='';
-  // Candidato
+  const ok=p=>wrSemOk2(p);
+  const card2=(o)=>{const c=semC2(o.p);
+    return `<div class="uq-cq${o.sel?' sel':''}${o.fixed?' fixed':''}" ${o.click?('onclick="'+o.click+'"'):''} data-tip="${o.tip}">`
+      +`<div class="lbl">${o.lbl}</div><div class="nom">${o.nom}</div>`
+      +`<div class="big" style="color:${c}">${o.p}% <span style="font-size:12px">cas.</span></div>`
+      +`<div class="bar"><i style="width:${Math.min(o.p,100)}%;background:${c}"></i></div>`
+      +`<div class="sub" style="color:var(--green)">${fmt(o.votos)} votos</div>`
+      +(o.extra?`<div class="hint" style="color:${o.inc>0?'var(--red)':'var(--text3)'}">${o.extra}</div>`:'')
+      +(o.hint?`<div class="hint">${o.hint}</div>`:'')+`</div>`;};
   const allSecIds=Object.values(SECS).flat().map(s=>s.id);
-  const stEst=casStats(allSecIds);
-  const pctCas=Math.round((stEst.ab+stEst.ce)/Math.max(stEst.total,1)*100);
-  const pctVot=Math.round(stEst.votos/Math.max((stEst.ab+stEst.ce)*32,1)*100);
-  html+=`<div style="margin-bottom:14px">
-    <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">🗳 Cuadrante del candidato — Jornada estatal</div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px">
-      <div data-tip="Porcentaje de casillas ya abiertas o cerradas respecto al total del estado." style="background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--green);border-radius:8px;padding:14px">
-        <div style="font-size:10px;font-family:var(--mono);color:var(--text3);margin-bottom:3px">CASILLAS ACTIVAS</div>
-        <div style="font-size:26px;font-weight:700;font-family:var(--mono);color:var(--green);line-height:1;margin-bottom:4px">${pctCas}%</div>
-        <div style="height:5px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden;margin-bottom:5px"><div style="width:${pctCas}%;height:100%;background:var(--green);border-radius:99px"></div></div>
-        <div style="font-size:11px;font-family:var(--mono);color:var(--text2)">${stEst.ab+stEst.ce} / ${stEst.total} casillas</div>
-        <div style="font-size:10px;color:var(--red);margin-top:2px">${stEst.inc} incid. · ${stEst.sr} s/reporte</div>
-      </div>
-      <div data-tip="Votos de tu base ya confirmados. El porcentaje es contra lo esperado en casillas activas." style="background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;padding:14px">
-        <div style="font-size:10px;font-family:var(--mono);color:var(--text3);margin-bottom:3px">VOTOS CONFIRMADOS</div>
-        <div style="font-size:26px;font-weight:700;font-family:var(--mono);color:var(--accent);line-height:1;margin-bottom:4px">${pctVot}%</div>
-        <div style="height:5px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden;margin-bottom:5px"><div style="width:${pctVot}%;height:100%;background:var(--accent);border-radius:99px"></div></div>
-        <div style="font-size:11px;font-family:var(--mono);color:var(--text2)">${fmt(stEst.votos)} confirmados</div>
-        <div style="font-size:10px;color:var(--cyan);margin-top:2px">${fmt(stEst.nuevos)} nuevos registros</div>
-      </div>
-      ${DFS.map(df=>{
-        const secIds=MUNS.filter(m=>df.munIds.includes(m.id)).flatMap(m=>munSecIds(m.id));
-        const st=casStats(secIds);
-        const pc=Math.round((st.ab+st.ce)/Math.max(st.total,1)*100);
-        const cc=semC(pc);
-        return`<div style="background:var(--bg2);border:1px solid ${f2s.df===df.id?'var(--accent)':'var(--border)'};border-left:3px solid ${cc};border-radius:8px;padding:14px;cursor:pointer" data-tip="Avance de casillas y votos confirmados en este distrito federal. Clic para ver sus municipios." onclick="drillF2('df','${df.id}')">
-          <div style="font-size:10px;font-family:var(--mono);color:var(--text3);margin-bottom:3px">${df.id}</div>
-          <div style="font-size:13px;font-weight:600;margin-bottom:3px">${df.n.replace('Distrito Federal ','DF ')}</div>
-          <div style="font-size:22px;font-weight:700;font-family:var(--mono);color:${cc};line-height:1;margin-bottom:3px">${pc}% cas.</div>
-          <div style="height:4px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden;margin-bottom:4px"><div style="width:${pc}%;height:100%;background:${cc};border-radius:99px"></div></div>
-          <div style="font-size:11px;font-family:var(--mono);color:var(--green)">${fmt(st.votos)} votos</div>
-          <div style="font-size:10px;color:${st.inc>0?'var(--red)':'var(--text3)'};margin-top:2px">${st.inc} incid. · ${st.sr} s/rep.</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:6px">Ver municipios →</div>
-        </div>`;
-      }).join('')}
-    </div>
-  </div>`;
-
-  // Municipios del DF
-  if(f2s.df){
-    const df=DFS.find(d=>d.id===f2s.df);
-    const muns=MUNS.filter(m=>df.munIds.includes(m.id));
-    html+=buildCuadF2('Municipio','Municipios en '+df.n,muns,
-      m=>casStats(munSecIds(m.id)),m=>m.n,m=>`${m.cas} casillas`,
-      m=>`drillF2('mun','${m.id}')`,f2s.mun);
-  }
-  // DLs
-  if(f2s.mun){
-    const mun=MUNS.find(m=>m.id===f2s.mun);
-    const dls=DLS.filter(dl=>dl.mun===f2s.mun);
-    html+=buildCuadF2('Dist. Local','Distritos locales en '+mun.n,dls,
-      dl=>casStats((SECS[dl.id]||[]).map(s=>s.id)),dl=>dl.n,dl=>`${dl.cas} casillas`,
-      dl=>`drillF2('dl','${dl.id}')`,f2s.dl);
-  }
-  // Secciones
-  if(f2s.dl){
-    const dl=DLS.find(d=>d.id===f2s.dl);
-    const secs=SECS[f2s.dl]||[];
-    html+=buildCuadF2('Sección','Secciones en '+dl.n,secs,
-      s=>casStats([s.id]),s=>'Secc. '+s.num,s=>`${s.cas} casilla(s)`,
-      s=>`drillF2('sec','${s.id}')`,f2s.sec);
-  }
-  // Detalle sección con tabla de casillas + cuadrante capturistas F2
-  if(f2s.sec){
-    const sec=Object.values(SECS).flat().find(s=>s.id===f2s.sec);
-    if(sec){
-      html+=detalleSecF2(sec);
-      // Cuadrante capturistas en F2
+  const stE=casStats(allSecIds);
+  const pcasE=Math.round((stE.ab+stE.ce)/Math.max(stE.total,1)*100);
+  html+='<div class="uq-grid">';
+  html+=card2({lbl:'ESTADO COMPLETO',nom:'Jornada estatal',p:pcasE,votos:stE.votos,inc:stE.inc,extra:`${stE.inc} incid. · ${stE.sr} s/reporte · ${fmt(stE.nuevos)} nuevos`,fixed:1,tip:'Casillas activas y votos confirmados en todo el estado.'});
+  DFS.forEach(df=>{
+    const secIds=MUNS.filter(m=>df.munIds.includes(m.id)).flatMap(m=>munSecIds(m.id));
+    const st=casStats(secIds);const p=Math.round((st.ab+st.ce)/Math.max(st.total,1)*100);
+    if(!ok(p))return;
+    html+=card2({lbl:df.id,nom:df.n.replace('Distrito Federal ','DF ')+(df.id==='DF1'?' · Norte':' · Sur'),p:p,votos:st.votos,inc:st.inc,extra:`${st.inc} incid. · ${st.sr} s/rep.`,sel:f2s.df===df.id,click:`drillF2('df','${df.id}')`,hint:'Ver municipios →',tip:'Jornada en este distrito. Clic: los cuadrantes y la tabla se enfocan aquí.'});
+  });
+  html+='</div>';
+  if(f2s.df){const df=DFS.find(d=>d.id===f2s.df);
+    html+=`<div class="uq-regla">Municipios en ${df.n}</div><div class="uq-grid">`;
+    MUNS.filter(m=>df.munIds.includes(m.id)).forEach(m=>{
+      const st=casStats(munSecIds(m.id));const p=Math.round((st.ab+st.ce)/Math.max(st.total,1)*100);
+      if(!ok(p))return;
+      html+=card2({lbl:'MUNICIPIO',nom:m.n,p:p,votos:st.votos,inc:st.inc,extra:`${st.inc} incid. · ${st.sr} s/rep.`,sel:f2s.mun===m.id,click:`drillF2('mun','${m.id}')`,hint:'Ver secciones ↓',tip:'Clic: la tabla de abajo salta directo a las secciones de este municipio.'});
+    });
+    html+='</div>';}
+  if(f2s.mun){const mun=MUNS.find(m=>m.id===f2s.mun);
+    html+=`<div class="uq-regla">Distritos locales en ${mun.n} <span class="uq-regla-nota">· opcional — la tabla ya muestra las secciones; clic en un DL para recortarla (clic de nuevo para quitarlo)</span></div><div class="uq-grid">`;
+    DLS.filter(dl=>dl.mun===f2s.mun).forEach(dl=>{
+      const st=casStats((SECS[dl.id]||[]).map(s=>s.id));const p=Math.round((st.ab+st.ce)/Math.max(st.total,1)*100);
+      if(!ok(p))return;
+      html+=card2({lbl:'DIST. LOCAL',nom:dl.n,p:p,votos:st.votos,inc:st.inc,extra:`${dl.secs} secciones`,sel:f2s.dl===dl.id,click:`drillF2('dl','${dl.id}')`,tip:'Refinamiento opcional: recorta la tabla a las secciones de este distrito local.'});
+    });
+    html+='</div>';}
+  if(f2s.sec){const sec=Object.values(SECS).flat().find(s=>s.id===f2s.sec);
+    if(sec){html+=detalleSecF2(sec);
       const caps = CAPS[sec.id]||[];
-      if(caps.length) html+=buildCuadCapturistasF2(caps);
-    }
-  }
-  // Detalle casilla
-  if(f2s.cas){
-    const cas=Object.values(CAS_SEC).flat().find(c=>c.id===f2s.cas);
-    if(cas)html+=detalleCasilla(cas);
-  }
+      if(caps.length) html+=buildCuadCapturistasF2(caps);}}
+  if(f2s.cas){const cas=Object.values(CAS_SEC).flat().find(c=>c.id===f2s.cas);
+    if(cas)html+=detalleCasilla(cas);}
   document.getElementById('cuad-f2').innerHTML=html;
 }
 
@@ -1978,16 +1929,19 @@ function actualizarHistorialAlertas(){
 
 
 function updateBcF2(){
-  ['df','mun','dl','sec','cas'].forEach(id=>{
-    const el=document.getElementById('bc2-'+id);
-    if(el){el.classList.remove('active');el.classList.add('disabled');el.textContent={df:'Dist. Federal',mun:'Municipio',dl:'Dist. Local',sec:'Sección',cas:'Casilla'}[id];}
-  });
-  if(f2s.df){const e=document.getElementById('bc2-df');if(e){e.classList.add('active');e.textContent=f2s.df;}}
-  if(f2s.mun){const m=MUNS.find(x=>x.id===f2s.mun);const e=document.getElementById('bc2-mun');if(e&&m){e.classList.add('active');e.textContent=m.n;}}
-  if(f2s.dl){const e=document.getElementById('bc2-dl');if(e){e.classList.add('active');const _dl=DLS.find(d=>d.id===f2s.dl);e.textContent='DL '+(_dl?_dl.num:f2s.dl.replace('DL',''));}}
-  if(f2s.sec){const s=Object.values(SECS).flat().find(x=>x.id===f2s.sec);const e=document.getElementById('bc2-sec');if(e&&s){e.classList.add('active');e.textContent='Secc.'+s.num;}}
-  if(f2s.cas){const e=document.getElementById('bc2-cas');if(e){e.classList.add('active');e.textContent=f2s.cas;}}
-  document.querySelectorAll('#bc-f2 .bc-item.active').forEach(e=>e.classList.remove('disabled'));
+  const el=document.getElementById('bc-f2'); if(!el) return;
+  let h=`<a onclick="drillF2('candidato',null)" class="${!f2s.df&&!f2s.mun?'act':''}">🏛 Candidato · Jornada estatal</a>`;
+  if(f2s.df){const df=DFS.find(d=>d.id===f2s.df);
+    h+=`<span class="sep">›</span><a onclick="drillF2('df','${f2s.df}')" class="${!f2s.mun?'act':''}">${df?df.n.replace('Distrito Federal ','DF ')+(df.id==='DF1'?' · Norte':' · Sur'):f2s.df}</a>`;}
+  if(f2s.mun){const m=MUNS.find(x=>x.id===f2s.mun);
+    h+=`<span class="sep">›</span><a onclick="drillF2('mun','${f2s.mun}')" class="${!f2s.dl&&!f2s.sec?'act':''}">${m?m.n:''}</a>`;}
+  if(f2s.dl){const dl=DLS.find(d=>d.id===f2s.dl);
+    h+=`<span class="sep">›</span><a onclick="drillF2('dl','${f2s.dl}')" class="${!f2s.sec?'act':''}">${dl?dl.n:''}</a>`;}
+  if(f2s.sec){const s=Object.values(SECS).flat().find(x=>x.id===f2s.sec);
+    h+=`<span class="sep">›</span><a onclick="drillF2('sec','${f2s.sec}')" class="${!f2s.cas?'act':''}">Secc. ${s?s.num:''}</a>`;}
+  if(f2s.cas){h+=`<span class="sep">›</span><a class="act">${f2s.cas}</a>`;}
+  h+=`<span class="fill"></span><span class="hint">clic en cualquier nivel para regresar</span>`;
+  el.innerHTML=h;
 }
 
 function simActualizar(){
@@ -2131,9 +2085,9 @@ setInterval(tick,1000);tick();
 let CAP_SORT = {col: null, asc: true};
 
 function renderTablaCapturistas(){
-  const munFiltro = document.getElementById('cap-flt-mun') ? document.getElementById('cap-flt-mun').value : '';
-  let secFiltro = document.getElementById('cap-flt-sec') ? document.getElementById('cap-flt-sec').value : '';
-  const semFiltro = document.getElementById('cap-flt-sem') ? document.getElementById('cap-flt-sem').value : '';
+  const munFiltro = (typeof f1s!=='undefined' && f1s.mun) ? f1s.mun : (document.getElementById('cap-flt-mun') ? document.getElementById('cap-flt-mun').value : '');
+  let secFiltro = (typeof f1s!=='undefined' && f1s.sec) ? f1s.sec : (document.getElementById('cap-flt-sec') ? document.getElementById('cap-flt-sec').value : '');
+  const semFiltro = (typeof filtros!=='undefined' && filtros.sem) ? filtros.sem : (document.getElementById('cap-flt-sem') ? document.getElementById('cap-flt-sem').value : '');
 
   // Actualizar secciones según municipio
   const secSel = document.getElementById('cap-flt-sec');
@@ -2314,7 +2268,7 @@ function limpiarFiltrosCap(){
 }
 
 
-let filtrosF2 = { mun:'', sec:'', est:'' };
+let filtrosF2 = { mun:'', sec:'', est:'', sem:'' };
 
 function aplicarFiltrosF2(){
   filtrosF2.mun = document.getElementById('f2-flt-mun').value;
