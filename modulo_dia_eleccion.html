@@ -183,7 +183,10 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
     if (!s || !s.ts) { window.location.replace('login.html'); return; }
     const horas = (Date.now() - s.ts) / 3600000;
     if (horas >= 8) { localStorage.removeItem('electoral_sesion'); window.location.replace('login.html'); return; }
-    const rolesPermitidos = ["capturista", "jefe_seccion", "coordinador"];
+    // [18 jul · Fase 4] repr_casilla es el rol titular del Día D (aterriza aquí
+    // directo, sin hub). admin/super_admin entran para supervisar. capturista
+    // SALE del Día D según el nuevo modelo de roles (ver 24_rls_repr_casilla).
+    const rolesPermitidos = ["repr_casilla", "jefe_seccion", "coordinador", "admin", "super_admin"];
     if (!rolesPermitidos.includes(s.rol)) { window.location.replace('login.html'); return; }
     window._sesion = s;
   } catch(e) { window.location.replace('login.html'); }
@@ -200,7 +203,11 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
       <div class="topbar-sub" id="topbar-casilla">Sección — · Cargando...</div>
     </div>
   </div>
-  <div class="reloj-badge" id="reloj">00:00</div>
+  <div class="topbar-left" style="gap:10px">
+    <div class="reloj-badge" id="reloj">00:00</div>
+    <button onclick="cerrarSesionDiaE()" title="Cerrar sesión"
+      style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);color:var(--red);border-radius:6px;padding:5px 10px;font-size:11px;font-weight:600;cursor:pointer;">Salir</button>
+  </div>
 </div>
 
 <!-- TABS -->
@@ -538,6 +545,14 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 const SESION = (() => {
   try { return JSON.parse(localStorage.getItem('electoral_sesion') || 'null'); } catch(e) { return null; }
 })();
+
+// [18 jul · Fase 4] Salir del kiosco Día E → login. Único camino de navegación
+// para repr_casilla (no ve hub ni otros módulos).
+function cerrarSesionDiaE() {
+  if (!confirm('¿Cerrar sesión?')) return;
+  localStorage.removeItem('electoral_sesion');
+  window.location.replace('login.html');
+}
 
 const CAPTURISTA_ID = SESION?.id       || 'CAP-017';
 const MUNICIPIO     = SESION?.municipio|| 'VILLA DE ALVAREZ';
