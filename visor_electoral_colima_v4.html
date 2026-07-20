@@ -162,7 +162,8 @@ select{background:#0f3460;color:#eee;border:1px solid #444;border-radius:4px;pad
     if (!s || !s.ts) { window.location.replace('login.html'); return; }
     const horas = (Date.now() - s.ts) / 3600000;
     if (horas >= 8) { localStorage.removeItem('electoral_sesion'); window.location.replace('login.html'); return; }
-    const rolesPermitidos = ['super_admin','admin','coordinador','jefe_seccion'];
+    // [18 jul · Fase 4] consulta ve el Visor en solo lectura (Tabla 5/6).
+    const rolesPermitidos = ['super_admin','admin','coordinador','jefe_seccion','consulta'];
     if (!rolesPermitidos.includes(s.rol)) { window.location.replace('login.html'); return; }
     window._sesion = s;
     window._esLider = (s.rol === 'jefe_seccion');

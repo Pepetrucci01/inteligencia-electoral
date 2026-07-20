@@ -172,7 +172,8 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
     if (!s || !s.ts) { window.location.replace('login.html'); return; }
     const horas = (Date.now() - s.ts) / 3600000;
     if (horas >= 8) { localStorage.removeItem('electoral_sesion'); window.location.replace('login.html'); return; }
-    const rolesPermitidos = ["coordinador", "admin", "super_admin"];
+    // [18 jul · Fase 4] consulta ve Reportes en solo lectura (Tabla 5/6).
+    const rolesPermitidos = ["coordinador", "admin", "super_admin", "consulta"];
     if (!rolesPermitidos.includes(s.rol)) { window.location.replace('login.html'); return; }
     window._sesion = s;
   } catch(e) { window.location.replace('login.html'); }

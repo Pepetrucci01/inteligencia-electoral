@@ -379,6 +379,19 @@ input:focus,select:focus,textarea:focus{border-color:var(--cyan);}
 
 <script>
 'use strict';
+// [18 jul · Fase 4] Guard de entrada: Encuestas es solo super_admin/admin/
+// coordinador (Tabla 6). Defensa en profundidad además del ocultado del hub
+// y del RLS de respuestas_insert (SQL 25). consulta NO entra (no ve Encuestas).
+(function guardEncuestas(){
+  try {
+    const s = JSON.parse(localStorage.getItem('electoral_sesion') || 'null');
+    if (!s || !s.ts) { window.location.replace('login.html'); return; }
+    if ((Date.now() - s.ts) / 3600000 >= 8) { localStorage.removeItem('electoral_sesion'); window.location.replace('login.html'); return; }
+    const rolesPermitidos = ['super_admin','admin','coordinador'];
+    if (!rolesPermitidos.includes(s.rol)) { window.location.replace('login.html'); return; }
+    window._sesion = s;
+  } catch(e) { window.location.replace('login.html'); }
+})();
 /* ============================================================
    DATOS SIMULADOS (DEMO)
    [SWAP LUIS] Fase 4+: reemplazar por SELECT a Supabase:
