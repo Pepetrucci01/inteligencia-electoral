@@ -3064,8 +3064,23 @@ document.addEventListener('DOMContentLoaded',()=>{
   actualizarHistorialAlertas();
   renderSemaforoGlobal();
   renderSemaforoF2();
+
+  // [T11-14 20 jul] Refresco en vivo: reejecuta la carga vía RPC en
+  // intervalo. cargarDesdeRPC es idempotente (repinta KPIs, barra,
+  // MUNS, tabla de capturistas cada vez), así que refresca el panel
+  // completo. Default 30s; palanca en vivo window.WR_REFRESH_MS
+  // (bajar a 10000 el día E desde la consola sin tocar build).
+  if (typeof createRefresher === 'function') {
+    window.wrRefresher = createRefresher({
+      fn: cargarDesdeRPC,
+      intervalMs: window.WR_REFRESH_MS || 30000,
+      label: 'war-room',
+    });
+    window.wrRefresher.start();
+  }
 });
 </script>
+<script src="dataRefresh.js"></script>
 <script src="theme.js"></script>
 <script>
 // [SWAP LUIS / T20 ✓] Meta tras theme.js. Fuente única: Supabase → horneado → 208,717.
