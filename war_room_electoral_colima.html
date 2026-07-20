@@ -381,50 +381,6 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
       <div class="kpi pu" data-tip="Registros repetidos que inflan tus números. Hay que depurarlos."><div class="kl">Duplicados</div><div class="kv" id="kpi-depurar">408</div><div class="ks">registros a depurar</div></div>
     </div>
 
-    <!-- 3 TARJETAS EN HORIZONTAL -->
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
-
-      <!-- Alertas del sistema -->
-      <div class="card">
-        <div class="card-h">
-          <span class="card-title" data-tip="Avisos automáticos sobre riesgos y pendientes detectados.">Alertas del sistema</span>
-          <span style="font-size:10px;font-family:var(--mono);color:var(--red)">● 3 críticas</span>
-        </div>
-        <div class="al-item"><div class="al-dot" style="background:var(--red)"></div><div><div class="al-title">Secciones sin captura</div><div class="al-desc">Comala (98,99), Coquimatlán (114,119),<br>Manzanillo (207) — 0% avance</div></div></div>
-        <div class="al-item"><div class="al-dot" style="background:var(--red)"></div><div><div class="al-title">408 registros duplicados</div><div class="al-desc">4.1% de la base — requieren<br>depuración urgente</div></div></div>
-        <div class="al-item"><div class="al-dot" style="background:var(--red)"></div><div><div class="al-title">55 secciones ganadas por oposición</div><div class="al-desc">Partido B ganó 14% de secciones<br>en 2024 — zonas de mayor esfuerzo</div></div></div>
-        <div class="al-item"><div class="al-dot" style="background:var(--amber)"></div><div><div class="al-title">Ritmo insuficiente — se requiere ×7.2</div><div class="al-desc">Actual 574/sem · Req. 4,140/sem</div></div></div>
-        <div class="al-item"><div class="al-dot" style="background:var(--amber)"></div><div><div class="al-title">1,845 votantes sin apoyo asignado</div><div class="al-desc">Logística pendiente de asignar</div></div></div>
-      </div>
-
-      <!-- Nivel de compromiso -->
-      <div class="card">
-        <div class="card-h"><span class="card-title" data-tip="Qué tan seguro es el voto de cada ciudadano (1 = frío, 4 = seguro).">Nivel de compromiso</span></div>
-        <div class="card-b">
-          <div class="comp-row"><div class="comp-lbl">4 · Moviliza</div><div class="comp-track"><div class="comp-fill" style="width:11.7%;background:var(--green)"></div></div><div class="comp-num" style="color:var(--green)">1,169</div></div>
-          <div class="comp-row"><div class="comp-lbl">3 · Seguro vota</div><div class="comp-track"><div class="comp-fill" style="width:34.3%;background:#16a34a"></div></div><div class="comp-num" style="color:#16a34a">3,432</div></div>
-          <div class="comp-row"><div class="comp-lbl">2 · Simpatiza</div><div class="comp-track"><div class="comp-fill" style="width:32.2%;background:var(--accent)"></div></div><div class="comp-num" style="color:var(--accent)">3,219</div></div>
-          <div class="comp-row"><div class="comp-lbl">1 · Contacto</div><div class="comp-track"><div class="comp-fill" style="width:21.8%;background:var(--text3)"></div></div><div class="comp-num" style="color:var(--text3)">2,180</div></div>
-          <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:11px;font-family:var(--mono)">
-            <span style="color:var(--text3)">VOTO SEGURO (3+4)</span>
-            <span style="color:var(--green);font-weight:600">4,601 — 46%</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Origen de captura -->
-      <div class="card">
-        <div class="card-h"><span class="card-title" data-tip="De dónde vienen tus registros: campo, call center, eventos, etc.">Origen de captura</span></div>
-        <div class="card-b">
-          <div class="or-row"><div class="or-ic" style="background:rgba(59,130,246,.12);color:var(--accent)">🚪</div><div class="or-nm">Casa por casa</div><div class="or-bar"><div class="or-fill" style="width:45.4%;background:var(--accent)"></div></div><div class="or-num">4,538</div></div>
-          <div class="or-row"><div class="or-ic" style="background:rgba(168,85,247,.12);color:var(--purple)">👥</div><div class="or-nm">Referido</div><div class="or-bar"><div class="or-fill" style="width:25.2%;background:var(--purple)"></div></div><div class="or-num">2,519</div></div>
-          <div class="or-row"><div class="or-ic" style="background:rgba(245,158,11,.12);color:var(--amber)">🎪</div><div class="or-nm">Evento</div><div class="or-bar"><div class="or-fill" style="width:17.1%;background:var(--amber)"></div></div><div class="or-num">1,711</div></div>
-          <div class="or-row"><div class="or-ic" style="background:rgba(6,182,212,.12);color:var(--cyan)">💻</div><div class="or-nm">Digital</div><div class="or-bar"><div class="or-fill" style="width:12.3%;background:var(--cyan)"></div></div><div class="or-num">1,232</div></div>
-        </div>
-      </div>
-
-    </div>
-
     <!-- DIVIDER CUADRANTES F1 -->
     <div class="divider"></div>
     <div class="uq-regla">Regla de oro: <b>los cuadrantes definen dónde</b> estás parado · <b>las pestañas definen qué lente</b> usas · la tabla siempre obedece a ambos</div>
@@ -554,6 +510,52 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
     </div>
 
 
+
+    <div class="divider"></div>
+    <!-- 3 TARJETAS EN HORIZONTAL -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
+
+      <!-- Alertas del sistema -->
+      <div class="card">
+        <div class="card-h">
+          <span class="card-title" data-tip="Avisos automáticos sobre riesgos y pendientes detectados.">Alertas del sistema</span>
+          <span style="font-size:10px;font-family:var(--mono);color:var(--red)">● 3 críticas</span>
+        </div>
+        <div class="al-item"><div class="al-dot" style="background:var(--red)"></div><div><div class="al-title">Secciones sin captura</div><div class="al-desc">Comala (98,99), Coquimatlán (114,119),<br>Manzanillo (207) — 0% avance</div></div></div>
+        <div class="al-item"><div class="al-dot" style="background:var(--red)"></div><div><div class="al-title">408 registros duplicados</div><div class="al-desc">4.1% de la base — requieren<br>depuración urgente</div></div></div>
+        <div class="al-item"><div class="al-dot" style="background:var(--red)"></div><div><div class="al-title">55 secciones ganadas por oposición</div><div class="al-desc">Partido B ganó 14% de secciones<br>en 2024 — zonas de mayor esfuerzo</div></div></div>
+        <div class="al-item"><div class="al-dot" style="background:var(--amber)"></div><div><div class="al-title">Ritmo insuficiente — se requiere ×7.2</div><div class="al-desc">Actual 574/sem · Req. 4,140/sem</div></div></div>
+        <div class="al-item"><div class="al-dot" style="background:var(--amber)"></div><div><div class="al-title">1,845 votantes sin apoyo asignado</div><div class="al-desc">Logística pendiente de asignar</div></div></div>
+      </div>
+
+      <!-- Nivel de compromiso -->
+      <div class="card">
+        <div class="card-h"><span class="card-title" data-tip="Qué tan seguro es el voto de cada ciudadano (1 = frío, 4 = seguro).">Nivel de compromiso</span></div>
+        <div class="card-b">
+          <div class="comp-row"><div class="comp-lbl">4 · Moviliza</div><div class="comp-track"><div class="comp-fill" style="width:11.7%;background:var(--green)"></div></div><div class="comp-num" style="color:var(--green)">1,169</div></div>
+          <div class="comp-row"><div class="comp-lbl">3 · Seguro vota</div><div class="comp-track"><div class="comp-fill" style="width:34.3%;background:#16a34a"></div></div><div class="comp-num" style="color:#16a34a">3,432</div></div>
+          <div class="comp-row"><div class="comp-lbl">2 · Simpatiza</div><div class="comp-track"><div class="comp-fill" style="width:32.2%;background:var(--accent)"></div></div><div class="comp-num" style="color:var(--accent)">3,219</div></div>
+          <div class="comp-row"><div class="comp-lbl">1 · Contacto</div><div class="comp-track"><div class="comp-fill" style="width:21.8%;background:var(--text3)"></div></div><div class="comp-num" style="color:var(--text3)">2,180</div></div>
+          <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:11px;font-family:var(--mono)">
+            <span style="color:var(--text3)">VOTO SEGURO (3+4)</span>
+            <span style="color:var(--green);font-weight:600">4,601 — 46%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Origen de captura -->
+      <div class="card">
+        <div class="card-h"><span class="card-title" data-tip="De dónde vienen tus registros: campo, call center, eventos, etc.">Origen de captura</span></div>
+        <div class="card-b">
+          <div class="or-row"><div class="or-ic" style="background:rgba(59,130,246,.12);color:var(--accent)">🚪</div><div class="or-nm">Casa por casa</div><div class="or-bar"><div class="or-fill" style="width:45.4%;background:var(--accent)"></div></div><div class="or-num">4,538</div></div>
+          <div class="or-row"><div class="or-ic" style="background:rgba(168,85,247,.12);color:var(--purple)">👥</div><div class="or-nm">Referido</div><div class="or-bar"><div class="or-fill" style="width:25.2%;background:var(--purple)"></div></div><div class="or-num">2,519</div></div>
+          <div class="or-row"><div class="or-ic" style="background:rgba(245,158,11,.12);color:var(--amber)">🎪</div><div class="or-nm">Evento</div><div class="or-bar"><div class="or-fill" style="width:17.1%;background:var(--amber)"></div></div><div class="or-num">1,711</div></div>
+          <div class="or-row"><div class="or-ic" style="background:rgba(6,182,212,.12);color:var(--cyan)">💻</div><div class="or-nm">Digital</div><div class="or-bar"><div class="or-fill" style="width:12.3%;background:var(--cyan)"></div></div><div class="or-num">1,232</div></div>
+        </div>
+      </div>
+
+    </div>
+
   </div>
 </div><!-- /f1 -->
 
@@ -586,73 +588,6 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
   </div>
 
   <div class="main">
-
-    <!-- ALERTAS DE JORNADA (la tabla vive tras los cuadrantes) -->
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
-      <style>
-      table.t th, table.t td { vertical-align:middle; }
-      #card-terr-f2 table th:not(:first-child),
-      #card-terr-f2 table td:not(:first-child) { text-align:center !important; }
-      #card-act-f2 table th:not(:first-child),
-      #card-act-f2 table td:not(:first-child) { text-align:center !important; }
-      </style>
-        <div class="card">
-          <div class="card-h">
-            <span class="card-title" data-tip="Incidencias y avisos durante el día de la elección.">Alertas jornada</span>
-            <span style="font-size:10px;font-family:var(--mono);color:var(--red)" id="f2-alert-badge">● 0</span>
-          </div>
-          <div id="f2-alertas-list"></div>
-        </div>
-        <div class="card">
-          <div class="card-h"><span class="card-title" data-tip="Manda un mensaje urgente a tu estructura en campo.">⚡ Enviar alerta a activistas</span></div>
-          <div class="card-b">
-            <div style="font-size:11px;color:var(--text2);margin-bottom:10px">Notifica a los activistas que van en rojo o sin reporte. El mensaje llega dentro del sistema y por WhatsApp.</div>
-
-            <!-- Destinatarios -->
-            <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Destinatarios</div>
-            <select id="alerta-dest" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:7px 10px;outline:none;margin-bottom:8px" onchange="actualizarConteoAlerta()">
-              <option value="rojos">Solo secciones en rojo (bajo meta)</option>
-              <option value="sinreporte">Sin reporte de avance</option>
-              <option value="municipio">Por municipio</option>
-              <option value="todos">Todos los activistas</option>
-            </select>
-            <select id="alerta-mun" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:7px 10px;outline:none;margin-bottom:10px;display:none" onchange="actualizarConteoAlerta()">
-              <option value="">Todos los municipios</option>
-              <option>Armería</option><option>Colima</option><option>Comala</option>
-              <option>Coquimatlán</option><option>Cuauhtémoc</option><option>Ixtlahuacán</option>
-              <option>Manzanillo</option><option>Minatitlán</option><option>Tecomán</option>
-              <option>Villa de Álvarez</option>
-            </select>
-
-            <!-- Contador -->
-            <div id="alerta-conteo" style="font-size:11px;font-family:var(--mono);color:var(--amber);margin-bottom:10px;padding:6px 10px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:6px">
-              ● Calculando destinatarios...
-            </div>
-
-            <!-- Mensaje -->
-            <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Mensaje</div>
-            <textarea id="alerta-msg" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:8px 10px;outline:none;resize:vertical;min-height:72px;font-family:var(--mono);line-height:1.5" placeholder="Escribe el mensaje de alerta...">⚠️ ALERTA: Tu sección va por debajo de la meta. Se requiere acelerar la captura de simpatizantes de inmediato. Reporta tu avance al coordinador.</textarea>
-            <div style="display:flex;gap:6px;margin-top:6px;margin-bottom:10px;flex-wrap:wrap">
-              <button onclick="msgRapido('⚠️ ALERTA: Tu sección va por debajo de la meta. Se requiere acelerar la captura de simpatizantes de inmediato. Reporta tu avance al coordinador.')" style="font-size:10px;font-family:var(--mono);padding:4px 8px;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);border-radius:5px;cursor:pointer">Alerta meta</button>
-              <button onclick="msgRapido('🔴 URGENTE: Necesitamos tu reporte de avance. Marca cuántos simpatizantes has contactado hoy y actualiza tu panel ahora.')" style="font-size:10px;font-family:var(--mono);padding:4px 8px;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);border-radius:5px;cursor:pointer">Sin reporte</button>
-              <button onclick="msgRapido('📋 Recordatorio: Verifica que todos tus simpatizantes con compromiso alto estén confirmados para el día de la elección.')" style="font-size:10px;font-family:var(--mono);padding:4px 8px;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);border-radius:5px;cursor:pointer">Recordatorio</button>
-            </div>
-
-            <!-- Botón enviar -->
-            <button onclick="enviarAlertaCompleta()" style="width:100%;font-family:var(--mono);font-size:12px;font-weight:600;padding:9px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:var(--red);border-radius:6px;cursor:pointer;transition:background .15s" onmouseover="this.style.background='rgba(239,68,68,.25)'" onmouseout="this.style.background='rgba(239,68,68,.15)'">
-              🚨 Enviar alerta ahora
-            </button>
-          </div>
-        </div>
-
-        <!-- Historial de alertas enviadas -->
-        <div class="card">
-          <div class="card-h"><span class="card-title" data-tip="Registro de todas las alertas enviadas hoy.">Historial de alertas</span><span id="alerta-hist-count" style="font-size:10px;font-family:var(--mono);color:var(--text3)">0 enviadas</span></div>
-          <div id="alerta-historial" style="max-height:160px;overflow-y:auto">
-            <div style="font-size:11px;color:var(--text3);padding:10px;text-align:center">Sin alertas enviadas</div>
-          </div>
-        </div>
-    </div>
 
     <!-- DIVIDER CUADRANTES F2 -->
     <div class="divider"></div>
@@ -786,6 +721,75 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
       </table>
     </div>
   </div>
+
+
+    <div class="divider"></div>
+    <!-- ALERTAS DE JORNADA (la tabla vive tras los cuadrantes) -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
+      <style>
+      table.t th, table.t td { vertical-align:middle; }
+      #card-terr-f2 table th:not(:first-child),
+      #card-terr-f2 table td:not(:first-child) { text-align:center !important; }
+      #card-act-f2 table th:not(:first-child),
+      #card-act-f2 table td:not(:first-child) { text-align:center !important; }
+      </style>
+        <div class="card">
+          <div class="card-h">
+            <span class="card-title" data-tip="Incidencias y avisos durante el día de la elección.">Alertas jornada</span>
+            <span style="font-size:10px;font-family:var(--mono);color:var(--red)" id="f2-alert-badge">● 0</span>
+          </div>
+          <div id="f2-alertas-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><span class="card-title" data-tip="Manda un mensaje urgente a tu estructura en campo.">⚡ Enviar alerta a activistas</span></div>
+          <div class="card-b">
+            <div style="font-size:11px;color:var(--text2);margin-bottom:10px">Notifica a los activistas que van en rojo o sin reporte. El mensaje llega dentro del sistema y por WhatsApp.</div>
+
+            <!-- Destinatarios -->
+            <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Destinatarios</div>
+            <select id="alerta-dest" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:7px 10px;outline:none;margin-bottom:8px" onchange="actualizarConteoAlerta()">
+              <option value="rojos">Solo secciones en rojo (bajo meta)</option>
+              <option value="sinreporte">Sin reporte de avance</option>
+              <option value="municipio">Por municipio</option>
+              <option value="todos">Todos los activistas</option>
+            </select>
+            <select id="alerta-mun" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:7px 10px;outline:none;margin-bottom:10px;display:none" onchange="actualizarConteoAlerta()">
+              <option value="">Todos los municipios</option>
+              <option>Armería</option><option>Colima</option><option>Comala</option>
+              <option>Coquimatlán</option><option>Cuauhtémoc</option><option>Ixtlahuacán</option>
+              <option>Manzanillo</option><option>Minatitlán</option><option>Tecomán</option>
+              <option>Villa de Álvarez</option>
+            </select>
+
+            <!-- Contador -->
+            <div id="alerta-conteo" style="font-size:11px;font-family:var(--mono);color:var(--amber);margin-bottom:10px;padding:6px 10px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:6px">
+              ● Calculando destinatarios...
+            </div>
+
+            <!-- Mensaje -->
+            <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Mensaje</div>
+            <textarea id="alerta-msg" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:8px 10px;outline:none;resize:vertical;min-height:72px;font-family:var(--mono);line-height:1.5" placeholder="Escribe el mensaje de alerta...">⚠️ ALERTA: Tu sección va por debajo de la meta. Se requiere acelerar la captura de simpatizantes de inmediato. Reporta tu avance al coordinador.</textarea>
+            <div style="display:flex;gap:6px;margin-top:6px;margin-bottom:10px;flex-wrap:wrap">
+              <button onclick="msgRapido('⚠️ ALERTA: Tu sección va por debajo de la meta. Se requiere acelerar la captura de simpatizantes de inmediato. Reporta tu avance al coordinador.')" style="font-size:10px;font-family:var(--mono);padding:4px 8px;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);border-radius:5px;cursor:pointer">Alerta meta</button>
+              <button onclick="msgRapido('🔴 URGENTE: Necesitamos tu reporte de avance. Marca cuántos simpatizantes has contactado hoy y actualiza tu panel ahora.')" style="font-size:10px;font-family:var(--mono);padding:4px 8px;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);border-radius:5px;cursor:pointer">Sin reporte</button>
+              <button onclick="msgRapido('📋 Recordatorio: Verifica que todos tus simpatizantes con compromiso alto estén confirmados para el día de la elección.')" style="font-size:10px;font-family:var(--mono);padding:4px 8px;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);border-radius:5px;cursor:pointer">Recordatorio</button>
+            </div>
+
+            <!-- Botón enviar -->
+            <button onclick="enviarAlertaCompleta()" style="width:100%;font-family:var(--mono);font-size:12px;font-weight:600;padding:9px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:var(--red);border-radius:6px;cursor:pointer;transition:background .15s" onmouseover="this.style.background='rgba(239,68,68,.25)'" onmouseout="this.style.background='rgba(239,68,68,.15)'">
+              🚨 Enviar alerta ahora
+            </button>
+          </div>
+        </div>
+
+        <!-- Historial de alertas enviadas -->
+        <div class="card">
+          <div class="card-h"><span class="card-title" data-tip="Registro de todas las alertas enviadas hoy.">Historial de alertas</span><span id="alerta-hist-count" style="font-size:10px;font-family:var(--mono);color:var(--text3)">0 enviadas</span></div>
+          <div id="alerta-historial" style="max-height:160px;overflow-y:auto">
+            <div style="font-size:11px;color:var(--text3);padding:10px;text-align:center">Sin alertas enviadas</div>
+          </div>
+        </div>
+    </div>
 
   </div>
 </div><!-- /f2 -->
