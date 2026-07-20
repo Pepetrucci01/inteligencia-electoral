@@ -501,7 +501,11 @@ const DESTINOS_ROL = {
   admin:         'index.html',
   coordinador:   'index.html',
   jefe_seccion: 'panel_lider.html',
-  capturista:    'modulo_captura.html',
+  capturista:    'panel_capturista_personal.html',
+  // [18 jul · Tarea 8 José · routing por rol]
+  consulta:      'index.html',              // como admin pero solo lectura (hub)
+  repr_casilla:  'modulo_dia_eleccion.html',// aterriza directo en el módulo Día E
+  operador_cc:   'modulo_callcenter.html',  // aterriza directo (módulo pendiente de crear)
 };
 
 async function intentarLogin() {
@@ -624,7 +628,7 @@ function mostrarError(msg) {
 }
 
 function labelRol(rol) {
-  return { super_admin:'Super Admin', admin:'Admin Estatal', coordinador:'Coordinador', jefe_seccion:'Líder de Sección', capturista:'Capturista' }[rol] || rol;
+  return { super_admin:'Super Admin', admin:'Admin Estatal', coordinador:'Coordinador', jefe_seccion:'Líder de Sección', capturista:'Capturista', consulta:'Consulta', repr_casilla:'Rep. de Casilla', operador_cc:'Call Center' }[rol] || rol;
 }
 
 // ══════════════════════════════════════════════════════
@@ -662,7 +666,10 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
           admin:         'index.html',
           coordinador:   'index.html',
           jefe_seccion: 'panel_lider.html',
-          capturista:    'modulo_captura.html',
+          capturista:    'panel_capturista_personal.html',
+          consulta:      'index.html',
+          repr_casilla:  'modulo_dia_eleccion.html',
+          operador_cc:   'modulo_callcenter.html',
         };
         const dest = destinos[sesion.rol];
         if (dest) {

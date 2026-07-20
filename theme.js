@@ -481,3 +481,35 @@ setInterval(() => {
     lanzar();
   }
 })();
+
+// ══════════════════════════════════════════════════════════════════
+//  [18 jul · Tarea 5B José] Modo SOLO LECTURA para el rol "consulta".
+//  Marca <body class="rol-consulta"> y oculta controles de escritura
+//  (captura/editar/eliminar/exportar) vía CSS. Los módulos pueden marcar
+//  cualquier control con la clase .accion-escritura o [data-escritura]
+//  para que se oculte; además se ocultan patrones comunes por heurística.
+// ══════════════════════════════════════════════════════════════════
+(function aplicarModoRol() {
+  const marca = () => {
+    const ses = _leerSesionAlcance();
+    const rol = (ses && ses.rol ? String(ses.rol) : '').toLowerCase().trim();
+    if (!rol) return;
+    document.body.classList.add('rol-' + rol);
+    if (rol === 'consulta') {
+      const st = document.createElement('style');
+      st.id = 'css-solo-lectura';
+      st.textContent =
+        '.rol-consulta .accion-escritura,' +
+        '.rol-consulta [data-escritura],' +
+        '.rol-consulta .btn-capturar,' +
+        '.rol-consulta .btn-editar,' +
+        '.rol-consulta .btn-eliminar,' +
+        '.rol-consulta .btn-exportar,' +
+        '.rol-consulta .btn-nuevo{display:none !important;}';
+      document.head.appendChild(st);
+    }
+  };
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', marca);
+  } else { marca(); }
+})();
