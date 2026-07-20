@@ -1,0 +1,73 @@
+-- ═══════════════════════════════════════════════════════════════════════════
+-- 27_rls_operador_cc.sql · 18 jul 2026
+-- Instructivo de Roles Fase 4 (José) — Tarea 2: RLS del rol operador_cc.
+--
+-- ⚠️ NO APLICAR TODAVÍA. La tabla de cola del call center (cola_callcenter /
+-- contactos_cc) aún NO existe, y el módulo modulo_callcenter.html está pendiente
+-- de crear. Este archivo queda LISTO para aplicarse en el mismo momento en que
+-- se cree la tabla, para que el operador nazca ya aislado.
+--
+-- Principio (del instructivo):
+--   ▸ operador_cc solo LEE contactos donde operador_id = auth.uid()
+--   ▸ solo ESCRIBE disposiciones en su propia cola
+--   ▸ siempre filtrado por licencia_id = get_mi_licencia()
+--   ▸ NO aparece en ninguna otra política RLS (ciudadanos, encuestas,
+--     respuestas_encuesta, secciones, casillas, configuracion_sistema).
+--
+-- Ajustar el nombre de la tabla y de la columna de operador si al crearla
+-- difieren de cola_callcenter / operador_id.
+--
+-- ⚠️ REVISAR CON JOSÉ AL CREAR EL MÓDULO CC (cambio de RLS + tabla nueva).
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- Suponiendo una tabla:
+--   cola_callcenter (id uuid pk, licencia_id uuid, operador_id uuid,
+--                    contacto ..., disposicion text, actualizado_en timestamptz, ...)
+--
+-- ALTER TABLE public.cola_callcenter ENABLE ROW LEVEL SECURITY;
+
+-- Lectura: solo su propia cola
+-- DROP POLICY IF EXISTS cc_operador_select ON public.cola_callcenter;
+-- CREATE POLICY cc_operador_select ON public.cola_callcenter
+--   FOR SELECT USING (
+--     get_mi_rol() = 'operador_cc'
+--     AND operador_id = auth.uid()
+--     AND licencia_id = get_mi_licencia()
+--   );
+
+-- Actualización: solo registrar disposición en su cola (no reasignarse otras)
+-- DROP POLICY IF EXISTS cc_operador_update ON public.cola_callcenter;
+-- CREATE POLICY cc_operador_update ON public.cola_callcenter
+--   FOR UPDATE
+--   USING (
+--     get_mi_rol() = 'operador_cc'
+--     AND operador_id = auth.uid()
+--     AND licencia_id = get_mi_licencia()
+--   )
+--   WITH CHECK (
+--     operador_id = auth.uid()
+--     AND licencia_id = get_mi_licencia()
+--   );
+
+-- Mando (super_admin/admin/coordinador) gestiona la cola de SU licencia:
+-- DROP POLICY IF EXISTS cc_mando_all ON public.cola_callcenter;
+-- CREATE POLICY cc_mando_all ON public.cola_callcenter
+--   FOR ALL
+--   USING (
+--     get_mi_rol() = ANY (ARRAY['super_admin','admin','coordinador'])
+--     AND licencia_id = get_mi_licencia()
+--   )
+--   WITH CHECK (
+--     licencia_id = get_mi_licencia()
+--   );
+
+-- ─────────────────────────────────────────────────────────────────────────
+-- Al aplicar, verificar el bloqueo transversal (indicación de José):
+--   operador_cc NO debe aparecer en ninguna política de ciudadanos, encuestas,
+--   respuestas_encuesta, secciones_electorales(_colima), casillas,
+--   configuracion_sistema. Query de auditoría:
+--     SELECT tablename, policyname, qual, with_check FROM pg_policies
+--      WHERE (qual ILIKE '%operador_cc%' OR with_check ILIKE '%operador_cc%')
+--        AND tablename <> 'cola_callcenter';
+--   -- Debe devolver 0 filas.
+-- ─────────────────────────────────────────────────────────────────────────
