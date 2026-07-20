@@ -190,7 +190,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
   </div>
   <div class="topbar-right" style="display:flex;align-items:center;gap:10px;">
     <div id="rol-indicator" style="font-size:10px;font-family:var(--mono);padding:3px 10px;border-radius:99px;background:var(--bg3);border:1px solid var(--border2);color:var(--text3)">Cargando rol...</div>
-    <button class="export-btn primary" onclick="showTab('descargas')">⬇ Descargar datos</button>
+    <button class="export-btn primary accion-escritura" onclick="showTab('descargas')">⬇ Descargar datos</button>
   </div>
 </div>
 
@@ -544,7 +544,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
         <div class="card-title" id="sec-vista-titulo">Avance por sección</div>
         <div style="display:flex;align-items:center;gap:8px">
           <div id="sec-kpi-resumen" style="font-family:var(--mono);font-size:10px;color:var(--text3)"></div>
-          <button onclick="exportarSecciones()" style="font-family:var(--mono);font-size:10px;padding:4px 10px;border-radius:5px;border:1px solid rgba(34,197,94,0.3);background:rgba(34,197,94,0.1);color:var(--green);cursor:pointer;">⬇ Excel</button>
+          <button class="accion-escritura" onclick="exportarSecciones()" style="font-family:var(--mono);font-size:10px;padding:4px 10px;border-radius:5px;border:1px solid rgba(34,197,94,0.3);background:rgba(34,197,94,0.1);color:var(--green);cursor:pointer;">⬇ Excel</button>
         </div>
       </div>
       <div class="table-wrap">
@@ -634,7 +634,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
         <button id="btn-top10" onclick="toggleRankingCap('top')" style="font-family:var(--mono);font-size:10px;padding:4px 12px;border-radius:5px;border:1px solid var(--border2);background:var(--green);color:#fff;cursor:pointer;"> Top 10</button>
         <button id="btn-bot10" onclick="toggleRankingCap('bottom')" style="font-family:var(--mono);font-size:10px;padding:4px 12px;border-radius:5px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;">⚠ Bottom 10</button>
         <button id="btn-all" onclick="toggleRankingCap('all')" style="font-family:var(--mono);font-size:10px;padding:4px 12px;border-radius:5px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;">Ver todos</button>
-        <button onclick="exportarRankingCap()" style="font-family:var(--mono);font-size:10px;padding:4px 12px;border-radius:5px;border:1px solid rgba(34,197,94,0.3);background:rgba(34,197,94,0.1);color:var(--green);cursor:pointer;">⬇ Excel</button>
+        <button class="accion-escritura" onclick="exportarRankingCap()" style="font-family:var(--mono);font-size:10px;padding:4px 12px;border-radius:5px;border:1px solid rgba(34,197,94,0.3);background:rgba(34,197,94,0.1);color:var(--green);cursor:pointer;">⬇ Excel</button>
       </div>
     </div>
     <div class="table-wrap">

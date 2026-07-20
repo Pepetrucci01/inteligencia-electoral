@@ -507,6 +507,37 @@ setInterval(() => {
         '.rol-consulta .btn-exportar,' +
         '.rol-consulta .btn-nuevo{display:none !important;}';
       document.head.appendChild(st);
+
+      // [18 jul · Tarea 5B] Auto-etiquetado: además de las clases explícitas,
+      // ocultar botones cuyo onclick invoque una ACCIÓN DE ESCRITURA conocida
+      // (exportar/descargar/generar/guardar/editar/eliminar/nuevo/crear). Así
+      // el modo lectura cubre módulos que aún no marcaron sus botones a mano y
+      // los que se agreguen a futuro. Los filtros/ver/limpiar (solo lectura) se
+      // dejan intactos. Re-corre ante cambios del DOM (tablas que se repintan).
+      const PATRON_ESCRITURA = /\b(export|exportar|descargar|generar|guardar|editar|eliminar|borrar|crear|nuevo|nueva|enviar|subir|importar)/i;
+      const ocultarAcciones = (raiz) => {
+        (raiz || document).querySelectorAll('[onclick]').forEach(el => {
+          if (el.dataset._lecturaChecked) return;
+          el.dataset._lecturaChecked = '1';
+          const oc = el.getAttribute('onclick') || '';
+          // Excluir explícitamente acciones de solo lectura frecuentes.
+          if (/\b(filtrar|limpiar|toggle|ver|mostrar|abrir|cerrarModal|showTab|copiar)/i.test(oc)) return;
+          if (PATRON_ESCRITURA.test(oc)) el.style.display = 'none';
+        });
+      };
+      const arrancar = () => {
+        ocultarAcciones(document);
+        // Observa repintados (rankings, tablas) para volver a ocultar.
+        const mo = new MutationObserver(muts => {
+          muts.forEach(m => m.addedNodes && m.addedNodes.forEach(n => {
+            if (n.nodeType === 1) ocultarAcciones(n);
+          }));
+        });
+        mo.observe(document.body, { childList: true, subtree: true });
+      };
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', arrancar);
+      } else { arrancar(); }
     }
   };
   if (document.readyState === 'loading') {
