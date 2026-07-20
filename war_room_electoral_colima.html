@@ -133,6 +133,15 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--sans);}
 .uq-chip.on-verde{background:rgba(34,197,94,.15);color:var(--green);border-color:rgba(34,197,94,.4);}
 .uq-chip.on-amarillo{background:rgba(245,158,11,.15);color:var(--amber);border-color:rgba(245,158,11,.4);}
 .uq-chip.on-rojo{background:rgba(239,68,68,.15);color:var(--red);border-color:rgba(239,68,68,.4);}
+.al-click{cursor:pointer;transition:background .15s;}
+.al-click:hover{background:var(--bg3);}
+.al-chev{color:var(--text3);font-size:11px;align-self:center;margin-left:auto;padding-left:6px;transition:transform .15s;}
+.al-detail{display:none;background:var(--bg3);border-bottom:1px solid var(--border);padding:8px 16px 10px 34px;}
+.al-d-cap{font-size:10px;font-family:var(--mono);color:var(--text3);margin:4px 0 6px;}
+.al-d-row{display:flex;justify-content:space-between;gap:10px;padding:5px 8px;font-size:11px;font-family:var(--mono);border-bottom:1px solid var(--border);cursor:pointer;border-radius:4px;}
+.al-d-row:hover{background:var(--bg4);}
+.al-d-row.static{cursor:default;}
+.al-d-row.static:hover{background:transparent;}
 
 /* GRID */
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
@@ -521,11 +530,16 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
           <span class="card-title" data-tip="Avisos automáticos sobre riesgos y pendientes detectados.">Alertas del sistema</span>
           <span style="font-size:10px;font-family:var(--mono);color:var(--red)">● 3 críticas</span>
         </div>
-        <div class="al-item"><div class="al-dot" style="background:var(--red)"></div><div><div class="al-title">Secciones sin captura</div><div class="al-desc">Comala (98,99), Coquimatlán (114,119),<br>Manzanillo (207) — 0% avance</div></div></div>
-        <div class="al-item"><div class="al-dot" style="background:var(--red)"></div><div><div class="al-title">408 registros duplicados</div><div class="al-desc">4.1% de la base — requieren<br>depuración urgente</div></div></div>
-        <div class="al-item"><div class="al-dot" style="background:var(--red)"></div><div><div class="al-title">55 secciones ganadas por oposición</div><div class="al-desc">Partido B ganó 14% de secciones<br>en 2024 — zonas de mayor esfuerzo</div></div></div>
-        <div class="al-item"><div class="al-dot" style="background:var(--amber)"></div><div><div class="al-title">Ritmo insuficiente — se requiere ×7.2</div><div class="al-desc">Actual 574/sem · Req. 4,140/sem</div></div></div>
-        <div class="al-item"><div class="al-dot" style="background:var(--amber)"></div><div><div class="al-title">1,845 votantes sin apoyo asignado</div><div class="al-desc">Logística pendiente de asignar</div></div></div>
+        <div class="al-item al-click" data-tip="Clic para desplegar el detalle." onclick="toggleAlertaF1('sincap')"><div class="al-dot" style="background:var(--red)"></div><div><div class="al-title">Secciones sin captura</div><div class="al-desc">Comala (98,99), Coquimatlán (114,119),<br>Manzanillo (207) — 0% avance</div><div class="al-chev" id="alch-sincap">▸</div></div></div>
+        <div class="al-detail" id="alx-sincap"></div>
+        <div class="al-item al-click" data-tip="Clic para desplegar el detalle." onclick="toggleAlertaF1('dup')"><div class="al-dot" style="background:var(--red)"></div><div><div class="al-title">408 registros duplicados</div><div class="al-desc">4.1% de la base — requieren<br>depuración urgente</div><div class="al-chev" id="alch-dup">▸</div></div></div>
+        <div class="al-detail" id="alx-dup"></div>
+        <div class="al-item al-click" data-tip="Clic para desplegar el detalle." onclick="toggleAlertaF1('oposicion')"><div class="al-dot" style="background:var(--red)"></div><div><div class="al-title">55 secciones ganadas por oposición</div><div class="al-desc">Partido B ganó 14% de secciones<br>en 2024 — zonas de mayor esfuerzo</div><div class="al-chev" id="alch-oposicion">▸</div></div></div>
+        <div class="al-detail" id="alx-oposicion"></div>
+        <div class="al-item al-click" data-tip="Clic para desplegar el detalle." onclick="toggleAlertaF1('ritmo')"><div class="al-dot" style="background:var(--amber)"></div><div><div class="al-title">Ritmo insuficiente — se requiere ×7.2</div><div class="al-desc">Actual 574/sem · Req. 4,140/sem</div><div class="al-chev" id="alch-ritmo">▸</div></div></div>
+        <div class="al-detail" id="alx-ritmo"></div>
+        <div class="al-item al-click" data-tip="Clic para desplegar el detalle." onclick="toggleAlertaF1('apoyo')"><div class="al-dot" style="background:var(--amber)"></div><div><div class="al-title">1,845 votantes sin apoyo asignado</div><div class="al-desc">Logística pendiente de asignar</div><div class="al-chev" id="alch-apoyo">▸</div></div></div>
+        <div class="al-detail" id="alx-apoyo"></div>
       </div>
 
       <!-- Nivel de compromiso -->
@@ -1067,6 +1081,61 @@ function recalc(){
   if(f1s.nivel!=='candidato') renderCuadF1();
 }
 
+function irSeccionF1(secId){
+  const s=Object.values(SECS).flat().find(x=>x.id===secId); if(!s) return;
+  const m=MUNS.find(x=>x.id===s.mun);
+  f1s={nivel:'sec',df:m?m.df:null,mun:s.mun,dl:s.dl||null,sec:s.id,cap:null};
+  syncFiltrosDesdeDrillF1();renderCuadF1();renderMunF1();renderTablaCapturistas();updateBcF1();
+  document.getElementById('cuad-f1').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function toggleAlertaF1(k){
+  const el=document.getElementById('alx-'+k); if(!el) return;
+  const abierto=el.style.display==='block';
+  document.querySelectorAll('.al-detail').forEach(x=>x.style.display='none');
+  document.querySelectorAll('.al-chev').forEach(x=>x.style.transform='');
+  if(abierto) return;
+  el.style.display='block';
+  const ch=document.getElementById('alch-'+k); if(ch)ch.style.transform='rotate(90deg)';
+  if(!el.dataset.filled){el.innerHTML=detalleAlertaF1(k);el.dataset.filled='1';}
+}
+function detalleAlertaF1(k){
+  if(k==='sincap'){
+    let lista=Object.values(SECS).flat().map(s=>({s,p:pct(s.cap,s.meta)})).filter(x=>x.p<1);
+    if(!lista.length) lista=Object.values(SECS).flat().map(s=>({s,p:pct(s.cap,s.meta)})).sort((a,b)=>a.p-b.p).slice(0,10);
+    lista.sort((a,b)=>a.p-b.p);
+    return `<div class="al-d-cap">${lista.length} secciones con menor captura — clic en una para ir directo:</div>`+
+      lista.slice(0,12).map(({s,p})=>`<div class="al-d-row" onclick="irSeccionF1('${s.id}')"><span>Secc. ${s.num} · ${s.munNombre}</span><span style="color:${semC(p)}">${p}% · ${fmt(s.cap)}/${fmt(s.meta)}</span></div>`).join('')+
+      (lista.length>12?`<div class="al-d-cap">…y ${lista.length-12} más — usa el chip 🔴 Crítico en la tabla para verlas todas.</div>`:'');
+  }
+  if(k==='oposicion'){
+    const rows=[...MUNS].sort((a,b)=>(a.g24==='Partido B'?-1:1)-(b.g24==='Partido B'?-1:1)||b.p24-a.p24);
+    return `<div class="al-d-cap">Resultado 2024 por municipio — clic para enfocar el municipio:</div>`+
+      rows.map(m=>`<div class="al-d-row" onclick="drillF1('df','${m.df}');drillF1('mun','${m.id}')"><span>${m.n}</span><span style="color:${m.g24==='Partido A'?'var(--green)':'var(--red)'}">${m.g24} · ${m.p24}% · ${fmt(m.v24)} votos</span></div>`).join('');
+  }
+  if(k==='ritmo'){
+    const cap=_totalCapturadosReal, meta=Math.round(META_WR), rest=meta-cap;
+    const sem=48, req=Math.ceil(rest/sem), act=574;
+    return `<div class="al-d-cap">Matemática del ritmo (48 semanas a la elección):</div>`
+      +`<div class="al-d-row static"><span>Meta estatal</span><span>${fmt(meta)}</span></div>`
+      +`<div class="al-d-row static"><span>Capturados hoy</span><span style="color:var(--green)">${fmt(cap)}</span></div>`
+      +`<div class="al-d-row static"><span>Faltan</span><span style="color:var(--amber)">${fmt(rest)}</span></div>`
+      +`<div class="al-d-row static"><span>Ritmo actual</span><span>${fmt(act)}/semana</span></div>`
+      +`<div class="al-d-row static"><span>Ritmo requerido</span><span style="color:var(--red)">${fmt(req)}/semana (×${(req/act).toFixed(1)})</span></div>`
+      +`<div class="al-d-cap">Palancas: más activistas por sección (lente 👤), reforzar municipios en 🔴 y campañas del Centro de Llamadas.</div>`;
+  }
+  if(k==='dup'){
+    return `<div class="al-d-cap">Registros con CURP o clave de elector repetida. Inflan tus números y duplican trabajo de campo.</div>`
+      +`<div class="al-d-row static"><span>Total detectados</span><span style="color:var(--red)">408 · 4.1% de la base</span></div>`
+      +`<div class="al-d-cap">Dónde se depuran: módulo Captura ciudadana → buscador → pestaña Duplicados. Ahí se fusionan o eliminan uno por uno con confirmación.</div>`;
+  }
+  if(k==='apoyo'){
+    return `<div class="al-d-cap">Votantes que declararon necesitar apoyo el día de la elección (transporte, acompañamiento) y aún no tienen responsable asignado.</div>`
+      +`<div class="al-d-row static"><span>Sin asignar</span><span style="color:var(--amber)">1,845</span></div>`
+      +`<div class="al-d-cap">Acción sugerida: asignarlos por sección desde la lente 👤 Activistas para repartir la logística antes de la jornada.</div>`;
+  }
+  return '';
+}
+
 function setLensF1(l){
   const t=document.getElementById('card-terr-f1'),a=document.getElementById('card-act-f1');
   const bt=document.getElementById('lens-f1-terr'),ba=document.getElementById('lens-f1-act');
@@ -1136,7 +1205,7 @@ function renderCuadF1(){
       +(o.hint?`<div class="hint">${o.hint}</div>`:'')+`</div>`;};
   const capTot=MUNS.reduce((s,m)=>s+m.cap,0), metaTot=MUNS.reduce((s,m)=>s+m.meta,0);
   html+='<div class="uq-grid">';
-  html+=card({lbl:'ESTADO COMPLETO',nom:'Colima',cap:capTot,meta:metaTot,fixed:1,tip:'Avance total del estado: ciudadanos capturados contra la meta 2027.'});
+  html+=card({lbl:'ESTADO COMPLETO',nom:'Colima',cap:capTot,meta:metaTot,sel:!f1s.df&&!f1s.mun,click:`drillF1('candidato',null)`,hint:(f1s.df||f1s.mun)?'← Clic para regresar a la vista estatal':'',tip:'Avance total del estado contra la meta 2027. Clic: regresa el War Room a la vista inicial.'});
   DFS.forEach(df=>{const p=pct(df.cap,df.meta);if(!okSem(p))return;
     html+=card({lbl:df.id,nom:df.n.replace('Distrito Federal ','DF ')+(df.id==='DF1'?' · Norte':' · Sur'),cap:df.cap,meta:df.meta,sel:f1s.df===df.id,click:`drillF1('df','${df.id}')`,hint:`${df.secs} secc. · ${capsDF(df.id)} activistas · Ver municipios →`,tip:'Avance del distrito federal. Clic: los cuadrantes y la tabla se enfocan aquí.'});
   });
@@ -1566,7 +1635,7 @@ function renderCuadF2(){
   const stE=casStats(allSecIds);
   const pcasE=Math.round((stE.ab+stE.ce)/Math.max(stE.total,1)*100);
   html+='<div class="uq-grid">';
-  html+=card2({lbl:'ESTADO COMPLETO',nom:'Jornada estatal',p:pcasE,votos:stE.votos,inc:stE.inc,extra:`${stE.inc} incid. · ${stE.sr} s/reporte · ${fmt(stE.nuevos)} nuevos`,fixed:1,tip:'Casillas activas y votos confirmados en todo el estado.'});
+  html+=card2({lbl:'ESTADO COMPLETO',nom:'Jornada estatal',p:pcasE,votos:stE.votos,inc:stE.inc,extra:`${stE.inc} incid. · ${stE.sr} s/reporte · ${fmt(stE.nuevos)} nuevos`,sel:!f2s.df&&!f2s.mun,click:`drillF2('candidato',null)`,hint:(f2s.df||f2s.mun)?'← Clic para regresar a la vista estatal':'',tip:'Casillas activas y votos confirmados en todo el estado. Clic: regresa el War Room a la vista inicial.'});
   DFS.forEach(df=>{
     const secIds=MUNS.filter(m=>df.munIds.includes(m.id)).flatMap(m=>munSecIds(m.id));
     const st=casStats(secIds);const p=Math.round((st.ab+st.ce)/Math.max(st.total,1)*100);
