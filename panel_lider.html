@@ -1174,11 +1174,26 @@ function toggleDuplicadoLider(cid) {
 window.addEventListener('DOMContentLoaded', () => {
   cargarDatos();
   cargarMetaSeccion(SECCION_LIDER);
-  // Refresco automático cada 2 minutos
-  setInterval(cargarDatos, 120000);
+  // [T11-14 20 jul] Refresco en vivo vía createRefresher (dataRefresh.js).
+  // Reemplaza el setInterval crudo anterior: ahora no solapa ticks, pausa
+  // cuando la pestaña está en background (y refresca al volver al foco), y
+  // un fallo puntual no rompe el ciclo. Default 60s; palanca en vivo
+  // window.PL_REFRESH_MS. cargarDatos ya usa plFetch/plRpc con asegurarToken.
+  if (typeof createRefresher === 'function') {
+    window.plRefresher = createRefresher({
+      fn: cargarDatos,
+      intervalMs: window.PL_REFRESH_MS || 60000,
+      label: 'panel-lider',
+    });
+    window.plRefresher.start();
+  } else {
+    // Respaldo si dataRefresh.js no cargó: refresco crudo como antes.
+    setInterval(cargarDatos, 120000);
+  }
 });
 </script>
 
+<script src="dataRefresh.js"></script>
 <script src="theme.js"></script>
 <!-- ── MODAL FICHA CIUDADANO ─────────────────── -->
 <div id="modal-ficha" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:16px;">
