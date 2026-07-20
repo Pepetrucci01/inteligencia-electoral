@@ -1097,11 +1097,14 @@ function actualizarKPIsResumen(kpis) {
   const riesgo    = kpis.riesgo   || 0;
   const duplicado = kpis.depurar  || 0;   // duplicados
 
-  // Meta viva: Supabase → horneado → 208,717 (misma cadena que el resto).
-  const meta = (typeof window.SISTEMA_META === 'number' && window.SISTEMA_META > 0)
-    ? window.SISTEMA_META
-    : ((typeof IE_METAS_CASILLA !== 'undefined' && IE_METAS_CASILLA.meta_estatal)
-        ? IE_METAS_CASILLA.meta_estatal : 208717);
+  // [FIX 18 jul · Bug 7 José] La meta del ALCANCE la manda la RPC v3 (municipal
+  // para coordinador, estatal para admin). Antes se usaba siempre la estatal
+  // local: el coordinador veía Meta 208,717 / 1.7% en vez de ~22,050 / 16%.
+  const meta = (Number(kpis.meta) > 0) ? Number(kpis.meta)
+    : ((typeof window.SISTEMA_META === 'number' && window.SISTEMA_META > 0)
+        ? window.SISTEMA_META
+        : ((typeof IE_METAS_CASILLA !== 'undefined' && IE_METAS_CASILLA.meta_estatal)
+            ? IE_METAS_CASILLA.meta_estatal : 208717));
 
   const pct = meta > 0 ? (total / meta * 100) : 0;
 
@@ -1350,9 +1353,15 @@ let SEC_DATA = [];
 async function cargarSecciones() {
   try {
     if (!await esperarSupabase(8000)) return;
-    const { data, error } = await window.supabase.rpc('get_avance_secciones');
+    const { data, error } = await rpcConReintento('get_avance_secciones');
     if (error || !Array.isArray(data) || !data.length) {
-      console.warn('Secciones: sin datos (¿falta correr 11_secciones_calidad.sql?).', error);
+      // [FIX 18 jul] Distinguir fallo de red (fetch abortado/sin conexión) de
+      // "la RPC no existe o no devolvió filas": antes ambos casos acusaban al SQL.
+      if (esErrorDeRed(error)) {
+        console.warn('Secciones: fallo de red persistente tras reintento (no es problema del SQL).', error);
+      } else {
+        console.warn('Secciones: sin datos (¿falta correr 11_secciones_calidad.sql?).', error);
+      }
       SEC_DATA = [];
       if (typeof renderSecciones === 'function') renderSecciones();
       return;
@@ -2046,6 +2055,22 @@ function setLog(nivelRol, msg) {
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
+// [FIX 18 jul] Reintento para fallos DE RED (fetch abortado por recarga del
+// dev server, wifi, etc). Un error de red del SDK no trae .code de Postgres;
+// uno de PostgREST/SQL sí. Reintentar solo tiene sentido en el primero.
+function esErrorDeRed(e) {
+  return !!e && !e.code && /failed to fetch|networkerror|network request failed|abort/i.test(String(e.message || e));
+}
+async function rpcConReintento(fn, args) {
+  let r = await window.supabase.rpc(fn, args);
+  if (r && r.error && esErrorDeRed(r.error)) {
+    console.warn(`${fn}: fallo de red, reintentando en 1s…`);
+    await sleep(1000);
+    r = await window.supabase.rpc(fn, args);
+  }
+  return r;
+}
+
 
 // ══════════════════════════════════════════════════════
 // DÍA DE ELECCIÓN — COORDINADOR
@@ -2687,9 +2712,14 @@ async function cargarRitmo() {
   };
   try {
     if (!await esperarSupabase(8000)) return;
-    let { data, error } = await window.supabase.rpc('get_ritmo_capturas');
+    let { data, error } = await rpcConReintento('get_ritmo_capturas');
     if (error || !data) {
-      console.warn('Ritmo: no disponible (¿falta correr 10_historico_capturas.sql?).', error);
+      // [FIX 18 jul] Igual que Secciones: separar red de SQL faltante.
+      if (esErrorDeRed(error)) {
+        console.warn('Ritmo: fallo de red persistente tras reintento (no es problema del SQL).', error);
+      } else {
+        console.warn('Ritmo: no disponible (¿falta correr 10_historico_capturas.sql?).', error);
+      }
       ['ritmo-diario','ritmo-mejor','ritmo-peor','ritmo-actual'].forEach(i => set(i,'—'));
       set('ritmo-mejor-fecha','sin datos'); set('ritmo-peor-fecha','sin datos');
       return null;
