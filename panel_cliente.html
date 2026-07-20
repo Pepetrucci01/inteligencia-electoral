@@ -632,17 +632,24 @@ async function pcCount(path) {
   return Number.isFinite(n) ? n : 0;
 }
 
-async function pcFetch(path) {
+async function pcFetch(path, options = {}) {
   // [T5 16 jul] Lee el token del SDK (getSession) y reintenta ante 401
   // refrescando vía theme.js. Antes no refrescaba: un token vencido = error.
-  const armar = async () => ({
+  // [FIX 20 jul] Acepta options (method/body) para poder invocar RPC por POST
+  // igual que wrFetch. Las llamadas GET existentes pasan un solo argumento y
+  // no cambian. Los RPC exigen el token del usuario: el GRANT EXECUTE de
+  // get_war_room_kpis es solo para 'authenticated', así que llamarlo como
+  // 'anon' (SDK sin token) daba "permission denied". Aquí siempre va Bearer.
+  const armar = async () => Object.assign({
     'apikey': SUPA_KEY,
     'Authorization': `Bearer ${(await window.supabase.auth.getSession()).data.session?.access_token || SUPA_KEY}`
-  });
-  let res = await fetch(`${SUPA_URL}/rest/v1/${path}`, { headers: await armar() });
+  }, options.headers || {});
+  const pedir = async () => fetch(`${SUPA_URL}/rest/v1/${path}`,
+    Object.assign({}, options, { headers: await armar() }));
+  let res = await pedir();
   if ((res.status === 401 || res.status === 403) && window.refrescarTokenSupabase) {
     const ok = await window.refrescarTokenSupabase();
-    if (ok) res = await fetch(`${SUPA_URL}/rest/v1/${path}`, { headers: await armar() });
+    if (ok) res = await pedir();
   }
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
@@ -660,11 +667,16 @@ async function cargarDatosCliente() {
     // agregados vienen del servidor: get_war_room_kpis (1 llamada) + queries
     // ligeras puntuales. El "10,092" histórico nació justo de truncar esa
     // bajada masiva; al no bajarla, la clase entera de bug desaparece.
-    const { data: kpis, error: eK } = await Promise.race([
-      window.supabase.rpc('get_war_room_kpis'),
+    // [FIX 20 jul] Vía pcFetch (POST con token del usuario), NO window.supabase.rpc.
+    // El SDK llamaba el RPC como 'anon' → "permission denied" (GRANT solo a
+    // 'authenticated'). pcFetch arma Bearer <token> y reintenta ante 401/403.
+    const kpis = await Promise.race([
+      pcFetch('rpc/get_war_room_kpis', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }),
       new Promise((_, rej) => setTimeout(() => rej(new Error('timeout get_war_room_kpis')), 15000)),
     ]);
-    if (eK || !kpis) throw new Error('get_war_room_kpis: ' + ((eK && eK.message) || 'sin datos'));
+    if (!kpis || typeof kpis !== 'object' || kpis.total === undefined) {
+      throw new Error('get_war_room_kpis: respuesta inesperada');
+    }
 
     const totalCapturados = Number(kpis.total) || 0;
     // Meta: la que reporta la RPC → SISTEMA_META (configuracion_sistema) → 208,717.
@@ -764,8 +776,10 @@ async function cargarDatosCliente() {
       }));
 
       // Enriquecer con capturas por capturista (vía RPC; ya no bajamos el padrón)
+      // [FIX 20 jul] pcFetch (POST con token), NO window.supabase.rpc: mismo
+      // "permission denied" que get_war_room_kpis (GRANT solo a authenticated).
       try {
-        const { data: cst } = await window.supabase.rpc('get_capturistas_stats');
+        const cst = await pcFetch('rpc/get_capturistas_stats', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
         const lista = (cst && Array.isArray(cst.capturistas)) ? cst.capturistas : [];
         const capPorId = {};
         lista.forEach(s => { const k = s.id || s.capturista_id; if (k) capPorId[k] = s.total || 0; });

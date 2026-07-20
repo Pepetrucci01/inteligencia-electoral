@@ -1,0 +1,33 @@
+# ══════════════════════════════════════════════════════════════════
+# .gitattributes — Normaliza fin de línea (EOL) para todo el repo.
+# Fija el EOL EN EL REPOSITORIO, mandando sobre core.autocrlf de
+# cada máquina. Fin de los diffs fantasma de miles de líneas al
+# clonar o cambiar de rama en Windows.
+# ══════════════════════════════════════════════════════════════════
+
+# Por defecto: Git decide si un archivo es texto y, si lo es, lo
+# normaliza a LF en el repositorio.
+* text=auto eol=lf
+
+# ── Código y contenido: SIEMPRE LF en el repo ──────────────────────
+*.html  text eol=lf
+*.js    text eol=lf
+*.ts    text eol=lf
+*.css   text eol=lf
+*.json  text eol=lf
+*.sql   text eol=lf
+*.toml  text eol=lf
+*.md    text eol=lf
+*.npmrc text eol=lf
+
+# ── Binarios: Git NO los toca (sin conversión de EOL) ──────────────
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.webp  binary
+*.ico   binary
+*.pdf   binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
