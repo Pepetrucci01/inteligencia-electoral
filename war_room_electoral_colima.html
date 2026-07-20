@@ -2637,7 +2637,6 @@ async function cargarDesdeRPC() {
     // ── 5. Re-render con datos reales ──────────────────────────────
     renderMunF1();
     renderTablaCapturistas();
-    cargarKPIsReales();  // [MERGE] rellena los KPIs de la estructura nueva de José
 
     // Guardar el bloque de KPIs por si otra parte del código lo necesita
     window._kpisRPC = data;
@@ -3112,8 +3111,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   renderCuadF1();
   updateBcF1();
   renderTablaCapturistas();
-  cargarKPIsReales();
-  cargarDesdeRPC(); // ÔåÉ carga datos reales y re-renderiza con Supabase
+  cargarDesdeRPC(); // ← carga datos reales vía RPC (con token, sin paginación); cargarKPIsReales queda solo como parte del fallback cargarDatosReales
   actualizarConteoAlerta();
   actualizarHistorialAlertas();
   renderSemaforoGlobal();
