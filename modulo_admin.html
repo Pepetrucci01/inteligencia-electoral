@@ -10,7 +10,7 @@
   --bg:#0a0e1a;--bg2:#0f1526;--bg3:#141b2e;--bg4:#1a2238;
   --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.14);
   --text:#e8edf5;--text2:#8a9ab5;--text3:#5a6a85;
-  --accent:#3b82f6;--green:#22c55e;--red:#ef4444;
+  --accent:#3b82f6;--accent-text:#3b82f6;--green:#22c55e;--red:#ef4444;
   --amber:#f59e0b;--cyan:#06b6d4;--purple:#a855f7;
   --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
 }
@@ -46,14 +46,14 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--sans);}
 .kpi.re::before{background:var(--red);}
 .kpi.gr::before{background:var(--green);}
 .kpi.am::before{background:var(--amber);}
-.kpi.bl::before{background:var(--accent);}
+.kpi.bl::before{background:var(--accent-text,var(--accent));}
 .kpi.cy::before{background:var(--cyan);}
 .kpi.pu::before{background:var(--purple);}
 .kpi-val{font-size:22px;font-weight:600;font-family:var(--mono);line-height:1;margin-bottom:4px;}
 .kpi.re .kpi-val{color:var(--red);}
 .kpi.gr .kpi-val{color:var(--green);}
 .kpi.am .kpi-val{color:var(--amber);}
-.kpi.bl .kpi-val{color:var(--accent);}
+.kpi.bl .kpi-val{color:var(--accent-text,var(--accent));}
 .kpi.cy .kpi-val{color:var(--cyan);}
 .kpi.pu .kpi-val{color:var(--purple);}
 .kpi-lbl{font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.04em;}
@@ -78,14 +78,14 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
 .b-red{background:rgba(239,68,68,0.12);color:var(--red);border:1px solid rgba(239,68,68,0.2);}
 .b-amber{background:rgba(245,158,11,0.12);color:var(--amber);border:1px solid rgba(245,158,11,0.2);}
 .b-green{background:rgba(34,197,94,0.12);color:var(--green);border:1px solid rgba(34,197,94,0.2);}
-.b-blue{background:rgba(59,130,246,0.12);color:var(--accent);border:1px solid rgba(59,130,246,0.2);}
+.b-blue{background:rgba(59,130,246,0.12);color:var(--accent-text,var(--accent));border:1px solid rgba(59,130,246,0.2);}
 .b-purple{background:rgba(168,85,247,0.12);color:var(--purple);border:1px solid rgba(168,85,247,0.2);}
 .b-gray{background:rgba(100,116,139,0.12);color:var(--text2);border:1px solid var(--border2);}
 .b-cyan{background:rgba(6,182,212,0.12);color:var(--cyan);border:1px solid rgba(6,182,212,0.2);}
 
 /* BUTTONS */
 .btn{font-family:var(--mono);font-size:11px;padding:5px 12px;border-radius:6px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;transition:all .15s;}
-.btn:hover{border-color:var(--accent);color:var(--text);}
+.btn:hover{border-color:var(--accent-text,var(--accent));color:var(--text);}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
 .btn.primary:hover{background:#2563eb;}
 .btn.danger{background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);color:var(--red);}
@@ -98,9 +98,9 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
 .form-group{margin-bottom:14px;}
 .form-label{font-size:12px;color:var(--text2);margin-bottom:6px;display:block;}
 .form-input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--sans);font-size:13px;padding:9px 12px;outline:none;transition:border-color .2s;}
-.form-input:focus{border-color:var(--accent);}
+.form-input:focus{border-color:var(--accent-text,var(--accent));}
 .form-select{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:12px;padding:9px 12px;outline:none;-webkit-appearance:none;}
-.form-select:focus{border-color:var(--accent);}
+.form-select:focus{border-color:var(--accent-text,var(--accent));}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 .form-textarea{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:11px;padding:9px 12px;outline:none;resize:none;}
 
@@ -165,12 +165,12 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
 /* ALERT */
 .alert{padding:10px 14px;border-radius:6px;font-size:12px;margin-bottom:12px;display:flex;align-items:flex-start;gap:8px;line-height:1.5;}
 .alert.warning{background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);color:var(--amber);}
-.alert.info{background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.25);color:var(--accent);}
+.alert.info{background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.25);color:var(--accent-text,var(--accent));}
 
 /* SEARCH */
 .search-bar{position:relative;margin-bottom:14px;}
 .search-input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:13px;padding:9px 12px 9px 36px;outline:none;}
-.search-input:focus{border-color:var(--accent);}
+.search-input:focus{border-color:var(--accent-text,var(--accent));}
 .search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px;}
 
 /* ── Botón regreso al menú ── */
@@ -463,7 +463,7 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
       </div>
       <div id="perm-matriz-content" style="padding:14px 16px">
         <div style="display:flex;align-items:center;gap:10px;color:var(--text3);font-size:12px;padding:20px 0">
-          <div style="width:14px;height:14px;border:2px solid rgba(255,255,255,0.1);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite"></div>
+          <div style="width:14px;height:14px;border:2px solid rgba(255,255,255,0.1);border-top-color:var(--accent-text,var(--accent));border-radius:50%;animation:spin .7s linear infinite"></div>
           Cargando permisos...
         </div>
       </div>
@@ -523,7 +523,7 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
         <div><div class="audit-user">CAP-032 · Manzanillo</div><div class="audit-action">Nuevo registro capturado: REG-10001 · María López Sánchez · Sección 236</div><div class="audit-meta">Módulo: Captura · Asignado a: CAP-057</div></div>
       </div>
       <div class="audit-item">
-        <div class="audit-dot" style="background:var(--accent)"></div>
+        <div class="audit-dot" style="background:var(--accent-text,var(--accent))"></div>
         <div class="audit-time">14/05 · 09:22</div>
         <div><div class="audit-user">ADMIN-01 · Super Admin</div><div class="audit-action">Meta estatal recalculada: 6% → 6.5% sobre voto ganador · Nueva meta: 213,238</div><div class="audit-meta">Módulo: Configurador · Estado: Colima</div></div>
       </div>
@@ -562,8 +562,8 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
   <!-- ── NUEVO: TEMA DEL PARTIDO ── -->
   <div class="card" style="margin-bottom:18px;border:1px solid rgba(59,130,246,0.3)">
     <div class="card-head" style="background:rgba(59,130,246,0.06)">
-      <div class="card-title" style="color:var(--accent)">🎨 Tema del partido — Identidad visual</div>
-      <span class="badge b-blue" style="font-size:10px;font-family:var(--mono);padding:2px 10px;border-radius:99px;background:rgba(59,130,246,.12);color:var(--accent);border:1px solid rgba(59,130,246,.25)">Se aplica a todos los módulos</span>
+      <div class="card-title" style="color:var(--accent-text,var(--accent))">🎨 Tema del partido — Identidad visual</div>
+      <span class="badge b-blue" style="font-size:10px;font-family:var(--mono);padding:2px 10px;border-radius:99px;background:rgba(59,130,246,.12);color:var(--accent-text,var(--accent));border:1px solid rgba(59,130,246,.25)">Se aplica a todos los módulos</span>
     </div>
     <div class="card-body">
       <div class="grid2" style="gap:20px">
@@ -602,7 +602,7 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
             <label class="form-label">Logo del partido (PNG, JPG, SVG)</label>
             <div style="display:flex;gap:8px;align-items:center">
               <label style="flex:1;cursor:pointer">
-                <div style="background:var(--bg3);border:1px dashed var(--border2);border-radius:6px;padding:10px 14px;font-size:12px;color:var(--text3);text-align:center;transition:all .2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)'">
+                <div style="background:var(--bg3);border:1px dashed var(--border2);border-radius:6px;padding:10px 14px;font-size:12px;color:var(--text3);text-align:center;transition:all .2s" onmouseover="this.style.borderColor='var(--accent-text,var(--accent))'" onmouseout="this.style.borderColor='var(--border2)'">
                   📁 Subir imagen del logo
                 </div>
                 <input type="file" accept="image/*" style="display:none" onchange="cargarLogo(this)">
@@ -629,6 +629,7 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
             </div>
             <div id="swatches-primario" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
               <!-- Colores por partido -->
+              <div title="Negro (Admin)" onclick="setColor('tm-c1','tm-c1-hex','#000000')" style="width:22px;height:22px;border-radius:4px;background:#000000;cursor:pointer;border:2px solid var(--border2);transition:.15s" onmouseover="this.style.border='2px solid white'" onmouseout="this.style.border='2px solid var(--border2)'"></div>
               <div title="Azul (PAN)" onclick="setColor('tm-c1','tm-c1-hex','#0055A4')" style="width:22px;height:22px;border-radius:4px;background:#0055A4;cursor:pointer;border:2px solid transparent;transition:.15s" onmouseover="this.style.border='2px solid white'" onmouseout="this.style.border='2px solid transparent'"></div>
               <div title="Rojo (PRI)" onclick="setColor('tm-c1','tm-c1-hex','#C8102E')" style="width:22px;height:22px;border-radius:4px;background:#C8102E;cursor:pointer;border:2px solid transparent;transition:.15s" onmouseover="this.style.border='2px solid white'" onmouseout="this.style.border='2px solid transparent'"></div>
               <div title="Guinda (Morena)" onclick="setColor('tm-c1','tm-c1-hex','#7B1F3A')" style="width:22px;height:22px;border-radius:4px;background:#7B1F3A;cursor:pointer;border:2px solid transparent;transition:.15s" onmouseover="this.style.border='2px solid white'" onmouseout="this.style.border='2px solid transparent'"></div>
@@ -654,7 +655,7 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
             <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Vista previa en vivo</div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
               <div id="prev-btn" style="background:var(--accent);color:#fff;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600">Botón primario</div>
-              <div id="prev-badge" style="background:rgba(59,130,246,.12);color:var(--accent);border:1px solid rgba(59,130,246,.25);padding:3px 10px;border-radius:99px;font-size:10px;font-family:var(--mono)">BADGE</div>
+              <div id="prev-badge" style="background:rgba(59,130,246,.12);color:var(--accent-text,var(--accent));border:1px solid rgba(59,130,246,.25);padding:3px 10px;border-radius:99px;font-size:10px;font-family:var(--mono)">BADGE</div>
               <div id="prev-bar" style="flex:1;min-width:100px;height:8px;border-radius:99px;background:linear-gradient(90deg,#1d4ed8,var(--accent))"></div>
             </div>
           </div>
@@ -709,7 +710,7 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
             <input class="form-input" type="number" id="cfg-meta" value="197297" placeholder="Ej. 197297"
               oninput="actualizarPrevMeta(this.value)">
             <div style="font-size:10px;font-family:var(--mono);color:var(--text3);margin-top:4px">
-              Vista previa: <span id="cfg-meta-prev" style="color:var(--accent);font-weight:600">197,297</span> registros
+              Vista previa: <span id="cfg-meta-prev" style="color:var(--accent-text,var(--accent));font-weight:600">197,297</span> registros
             </div>
           </div>
           <button class="btn primary" style="width:100%;margin-top:4px" onclick="guardarConfigOperativa()">💾 Guardar datos operativos</button>
@@ -904,7 +905,7 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
       <button class="btn primary" onclick="aplicarFiltroCandidatura()">Aplicar filtro</button>
       <button class="btn" onclick="limpiarFiltro()">✕ Ver todo</button>
     </div>
-    <div id="filtro-activo-banner" style="display:none;margin-top:10px;padding:8px 12px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);border-radius:6px;font-size:12px;font-family:var(--mono);color:var(--accent)"></div>
+    <div id="filtro-activo-banner" style="display:none;margin-top:10px;padding:8px 12px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);border-radius:6px;font-size:12px;font-family:var(--mono);color:var(--accent-text,var(--accent))"></div>
   </div>
 
   <!-- HEADER ACCIONES -->
@@ -947,7 +948,7 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
     <div style="padding:14px 16px;">
       <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Esta ciudadana fue capturada una sola vez pero tiene compromisos con múltiples candidaturas del mismo partido:</div>
       <div id="ejemplo-compromisos"></div>
-      <div style="margin-top:12px;padding:10px 14px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:6px;font-size:12px;color:var(--accent)">
+      <div style="margin-top:12px;padding:10px 14px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:6px;font-size:12px;color:var(--accent-text,var(--accent))">
         💡 <strong>Clave del sistema:</strong> Un solo registro de ciudadano — múltiples compromisos. El capturista selecciona para qué candidatura(s) apoya al momento de capturar.
       </div>
     </div>
@@ -1003,7 +1004,7 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
 const ROLES = {
   super_admin:   {label:'Super Admin',      color:'var(--red)'},
   admin:         {label:'Admin Estatal',    color:'var(--amber)'},
-  coordinador:   {label:'Coordinador Mun.', color:'var(--accent)'},
+  coordinador:   {label:'Coordinador Mun.', color:'var(--accent-text,var(--accent))'},
   lider_seccion: {label:'Líder de Sección', color:'#a855f7'},
   capturista:    {label:'Capturista',       color:'var(--green)'},
 };
@@ -1220,7 +1221,7 @@ function modalNuevaLicencia(){
     <div class="form-group"><label class="form-label">Notas de contrato</label><textarea class="form-textarea" rows="2" placeholder="Condiciones especiales, descuentos..."></textarea></div>
 
     <div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.3);border-radius:8px;padding:14px;margin-top:10px;">
-      <div style="font-size:12px;font-weight:700;color:var(--accent,#3b82f6);margin-bottom:10px;">🛡️ ACUERDO DE EXCLUSIVIDAD Y CONFIDENCIALIDAD</div>
+      <div style="font-size:12px;font-weight:700;color:var(--accent-text,#3b82f6);margin-bottom:10px;">🛡️ ACUERDO DE EXCLUSIVIDAD Y CONFIDENCIALIDAD</div>
       <div style="font-size:11px;color:var(--text2,#8b949e);line-height:1.6;margin-bottom:10px;">
         Al crear esta licencia, el sistema se compromete a <strong style="color:var(--text,#e6edf3)">NO vender ni compartir</strong> este servicio 
         a ningún otro partido o candidato que compita en el mismo cargo y elección. 
@@ -1228,8 +1229,8 @@ function modalNuevaLicencia(){
         y serán eliminados del sistema al término del contrato.
       </div>
       <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;font-size:12px;color:var(--text2,#8b949e);">
-        <input type="checkbox" id="chk-terminos-lic" style="accent-color:var(--accent,#3b82f6);margin-top:2px;width:14px;height:14px;" onchange="checkTerminosLic()">
-        <span>Confirmo haber leído y aceptado los <strong style="color:var(--accent,#3b82f6)">Términos de Exclusividad y Confidencialidad</strong> en nombre del contratante.</span>
+        <input type="checkbox" id="chk-terminos-lic" style="accent-color:var(--accent-text,#3b82f6);margin-top:2px;width:14px;height:14px;" onchange="checkTerminosLic()">
+        <span>Confirmo haber leído y aceptado los <strong style="color:var(--accent-text,#3b82f6)">Términos de Exclusividad y Confidencialidad</strong> en nombre del contratante.</span>
       </label>
     </div>
 
@@ -1326,22 +1327,40 @@ function setColor(pickerId, hexId, value) {
 }
 
 function syncColorPicker(pickerId, hexId) {
-  const val = document.getElementById(hexId).value;
+  let val = document.getElementById(hexId).value.trim();
+  if (val && val[0] !== '#') val = '#' + val;              // acepta "000000" sin #
+  if (/^#[0-9a-fA-F]{3}$/.test(val)) {                     // expande #000 -> #000000
+    val = '#' + val[1]+val[1] + val[2]+val[2] + val[3]+val[3];
+  }
   if (/^#[0-9a-fA-F]{6}$/.test(val)) {
-    document.getElementById(pickerId).value = val;
+    document.getElementById(pickerId).value = val.toLowerCase();
     previewColor();
   }
+}
+
+// Versión legible local (espejo de ensureVisibleColor de theme.js)
+function colorLegible(hex) {
+  try {
+    const num = parseInt(hex.replace('#',''), 16);
+    const r = (num >> 16) & 0xff, g = (num >> 8) & 0xff, b = num & 0xff;
+    const lum = (0.2126*r + 0.7152*g + 0.0722*b) / 255;
+    if (lum >= 0.28) return hex;
+    const amt = Math.round((0.42 - lum) * 400);
+    const r2 = Math.min(255, r + amt), g2 = Math.min(255, g + amt), b2 = Math.min(255, b + amt);
+    return '#' + ((r2 << 16) | (g2 << 8) | b2).toString(16).padStart(6, '0');
+  } catch(e) { return hex; }
 }
 
 function previewColor() {
   const c1 = document.getElementById('tm-c1').value;
   const c2 = document.getElementById('tm-c2').value;
-  // Vista previa en vivo
+  const c1vis = colorLegible(c1);
+  // Vista previa en vivo — botón usa el color puro (texto blanco), textos usan versión legible
   document.getElementById('prev-btn').style.background = c1;
-  document.getElementById('prev-badge').style.color = c1;
-  document.getElementById('prev-badge').style.background = c1 + '20';
-  document.getElementById('prev-badge').style.borderColor = c1 + '40';
-  document.getElementById('prev-bar').style.background = `linear-gradient(90deg, ${c2}, ${c1})`;
+  document.getElementById('prev-badge').style.color = c1vis;
+  document.getElementById('prev-badge').style.background = c1vis + '20';
+  document.getElementById('prev-badge').style.borderColor = c1vis + '40';
+  document.getElementById('prev-bar').style.background = `linear-gradient(90deg, ${c2}, ${c1vis})`;
   document.getElementById('logo-preview').style.background = c1;
 }
 
@@ -1408,7 +1427,7 @@ function guardarTema() {
   if (typeof saveTheme === 'function') {
     saveTheme(config);
   } else {
-    localStorage.setItem(' electoral_theme_v1', JSON.stringify(config));
+    localStorage.setItem('electoral_theme_v1', JSON.stringify(config));
   }
 
   // Mostrar mensaje de éxito
@@ -1423,7 +1442,7 @@ function guardarTema() {
 
 function resetearTema() {
   if (!confirm('¿Restablecer el tema por defecto? Se perderán los colores actuales.')) return;
-  localStorage.removeItem(' electoral_theme_v1');
+  localStorage.removeItem('electoral_theme_v1');
   location.reload();
 }
 
@@ -1461,7 +1480,7 @@ document.getElementById('modal-bg').addEventListener('click',function(e){
 
 const TIPOS_COLOR = {
   gobernador:  {color:'var(--purple)', bg:'rgba(168,85,247,.12)', icon:'🏛'},
-  senador:     {color:'var(--accent)', bg:'rgba(59,130,246,.12)',  icon:'🏅'},
+  senador:     {color:'var(--accent-text,var(--accent))', bg:'rgba(59,130,246,.12)',  icon:'🏅'},
   dip_federal: {color:'var(--cyan)',   bg:'rgba(6,182,212,.12)',   icon:'🇲🇽'},
   dip_local:   {color:'var(--amber)',  bg:'rgba(245,158,11,.12)',  icon:'📋'},
   presidente:  {color:'var(--green)',  bg:'rgba(34,197,94,.12)',   icon:'🏙'},
@@ -1563,7 +1582,7 @@ function renderTablaCandidaturas(){
 
 function renderCompromisosEjemplo(){
   const cont = document.getElementById('ejemplo-compromisos');
-  const compColors = {1:'#64748b',2:'var(--accent)',3:'var(--green)',4:'var(--purple)'};
+  const compColors = {1:'#64748b',2:'var(--accent-text,var(--accent))',3:'var(--green)',4:'var(--purple)'};
   cont.innerHTML = `<div style="display:flex;flex-direction:column;gap:6px">` +
     COMPROMISOS_EJEMPLO.map(c=>{
       const t = TIPOS_COLOR[c.tipo]||{color:'var(--text2)',bg:'rgba(100,116,139,.12)',icon:'🗳'};
@@ -1917,7 +1936,7 @@ function permVerDetalle(rolId) {
             onchange="permRegistrarCambio('${rolId}','${p.id}',this.checked)"
             style="opacity:0;width:0;height:0;position:absolute">
           <div style="position:absolute;inset:0;border-radius:10px;background:${tiene?'rgba(59,130,246,0.2)':'var(--bg3)'};border:1px solid ${tiene?'rgba(59,130,246,0.5)':'var(--border)'};transition:all .2s" class="tt${p.id.replace(/-/g,'')}"></div>
-          <div style="position:absolute;top:3px;left:${tiene?'19':'3'}px;width:12px;height:12px;border-radius:50%;background:${tiene?'var(--accent)':'var(--text3)'};transition:all .2s;${tiene?'box-shadow:0 0 6px rgba(59,130,246,.5)':''}" class="th${p.id.replace(/-/g,'')}"></div>
+          <div style="position:absolute;top:3px;left:${tiene?'19':'3'}px;width:12px;height:12px;border-radius:50%;background:${tiene?'var(--accent-text,var(--accent))':'var(--text3)'};transition:all .2s;${tiene?'box-shadow:0 0 6px rgba(59,130,246,.5)':''}" class="th${p.id.replace(/-/g,'')}"></div>
         </label>
       </div>`;
     });
