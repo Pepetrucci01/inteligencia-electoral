@@ -7,6 +7,33 @@
 <title>Centro de Llamadas · VOTERA</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+// ══ [T-CC 21 jul] GUARD DE ENTRADA ═══════════════════════════════════════
+// El módulo no tenía NINGÚN guard: cualquiera con la URL lo abría.
+// Mismo patrón que el resto de los módulos (war_room, reportes, etc.).
+// Además deja window._sesion listo, que es lo que el módulo ya espera
+// para leer la licencia real (línea del LICENCIA_ID).
+(function(){
+  // Candado de dominio — solo corre en dominios autorizados
+  const ALLOW = ['votera.mx','www.votera.mx','localhost','127.0.0.1'];
+  const h = location.hostname;
+  if(!(ALLOW.includes(h) || h.includes('inteligencia-electoral'))){
+    location.replace('https://inteligencia-electoral.vercel.app/');
+  }
+})();
+(function(){
+  try {
+    const s = JSON.parse(localStorage.getItem('electoral_sesion') || 'null');
+    if (!s || !s.ts) { window.location.replace('login.html'); return; }
+    const horas = (Date.now() - s.ts) / 3600000;
+    if (horas >= 8) { localStorage.removeItem('electoral_sesion'); window.location.replace('login.html'); return; }
+    // operador_cc es el dueño del módulo; el mando entra a supervisar.
+    const rolesPermitidos = ["operador_cc", "coordinador", "admin", "super_admin"];
+    if (!rolesPermitidos.includes(s.rol)) { window.location.replace('login.html'); return; }
+    window._sesion = s;
+  } catch(e) { window.location.replace('login.html'); }
+})();
+</script>
 <style>
   :root{
     --bg:#0d1321; --panel:#151d2e; --panel2:#1b2438; --border:#26314a;
@@ -162,8 +189,8 @@
   <button class="tab active" onclick="verTab('operador',this)">📞 Pantalla de Operador</button>
   <button class="tab" onclick="verTab('campanas',this)">📋 Campañas</button>
   <button class="tab" onclick="verTab('productividad',this)">📊 Productividad</button>
-  <button class="tab" onclick="verTab('supervision',this)">🛡️ Supervisión</button>
-  <button class="tab" onclick="verTab('gestion',this)">📥 Gestión</button>
+  <button class="tab" id="tab-supervision" onclick="verTab('supervision',this)">🛡️ Supervisión</button>
+  <button class="tab" id="tab-gestion" onclick="verTab('gestion',this)">📥 Gestión</button>
 </div>
 
 <!-- ══════════ VISTA OPERADOR ══════════ -->
@@ -896,6 +923,10 @@ function llenarCampDestino(){
 
 /* ── Navegación ──────────────────────────── */
 function verTab(id, btn){
+  // [T-CC 21 jul] Candado por rol: Supervisión y Gestión son solo del mando.
+  // Se valida aquí además de ocultar el botón, para que no baste con llamar
+  // verTab('gestion') desde la consola.
+  if (TABS_MANDO.indexOf(id) !== -1 && !ES_MANDO) return;
   document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
   btn.classList.add('active');
   document.querySelectorAll('.view').forEach(function(v){ v.classList.remove('active'); });
@@ -904,6 +935,20 @@ function verTab(id, btn){
   if (id === 'campanas') pintarCampanas();
   if (id === 'supervision') pintarSupervision();
   if (id === 'gestion') llenarCampDestino();
+}
+
+/* ── [T-CC 21 jul] Gating de tabs por rol ──────────────────────────────
+   El instructivo marca que Supervisión y Gestión (carga masiva) son solo
+   para coordinador/admin/super_admin. El operador_cc ve únicamente su
+   pantalla de trabajo, Campañas y Productividad. */
+var ROL_CC   = (window._sesion && window._sesion.rol) || '';
+var ES_MANDO = ['coordinador','admin','super_admin'].indexOf(ROL_CC) !== -1;
+var TABS_MANDO = ['supervision','gestion'];
+if (!ES_MANDO) {
+  ['tab-supervision','tab-gestion'].forEach(function(id){
+    var b = document.getElementById(id);
+    if (b) b.style.display = 'none';
+  });
 }
 
 /* ── Init ────────────────────────────────── */

@@ -301,6 +301,13 @@ iframe{width:100%;height:100%;border:none;display:block;}
       <div class="nav-tip">Encuestas</div>
     </div>
 
+    <div class="nav-item" id="nav-cc" data-rol="super_admin,admin,coordinador,operador_cc" onclick="load('cc','modulo_callcenter.html','Centro de Llamadas','Campañas telefónicas y CATI')">
+      <div class="nav-icon" style="background:rgba(63,167,255,.12);color:#3fa7ff">📞</div>
+      <span class="nav-label">Call Center</span>
+      <span style="margin-left:auto;font-size:8px;font-weight:700;color:#3fa7ff;background:rgba(63,167,255,.15);padding:1px 5px;border-radius:6px;letter-spacing:.5px;">NUEVO</span>
+      <div class="nav-tip">Centro de Llamadas</div>
+    </div>
+
     <div class="nav-section">Sistema</div>
     <div class="nav-item admin-item" id="nav-adm" data-rol="super_admin,admin" onclick="load('adm','modulo_admin.html','Administración','Usuarios · licencias · auditoría')">
       <div class="nav-icon" style="background:rgba(239,68,68,.12);color:var(--red)">🔒</div>
@@ -507,7 +514,7 @@ iframe{width:100%;height:100%;border:none;display:block;}
 <script>
 // APP_BUILD: versin de build para cache-busting de los mdulos en iframe.
 // ⚠️ SUBE este nmero en cada deploy con cambios en los mdulos.
-const APP_BUILD = '20260721a';
+const APP_BUILD = '20260721b';
 
 let collapsed = false;
 
