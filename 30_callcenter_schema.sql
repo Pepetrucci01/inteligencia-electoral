@@ -320,6 +320,16 @@ CREATE POLICY cola_mando_all ON public.cola_llamadas
 
 COMMIT;
 
+-- ══ 6. GRANTS DE TABLA (imprescindibles para PostgREST) ══════════════════
+-- La RLS decide QUÉ FILAS ve cada quien, pero Postgres primero exige permiso
+-- sobre la TABLA. Sin estos GRANT, PostgREST devuelve 403 antes siquiera de
+-- evaluar las políticas. (Las tablas viejas del proyecto ya los tenían; las
+-- nuevas hay que otorgarlos explícitamente.)
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.campanas_llamadas TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.cola_llamadas     TO authenticated;
+GRANT SELECT ON public.v_productividad_callcenter TO authenticated;
+GRANT SELECT ON public.v_auditoria_callcenter     TO authenticated;
+
 -- ═══════════════════════════════════════════════════════════════════════════
 -- VERIFICACIÓN (correr desde la app o con una sesión real; en el SQL Editor
 -- auth.uid() es NULL y las funciones con guard fallan por diseño).

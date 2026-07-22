@@ -404,8 +404,17 @@ async function ccFetch(path, options) {
     options.headers || {}
   );
   const res = await fetch(SUPA_URL + '/rest/v1/' + path, Object.assign({}, options, { headers }));
-  if (!res.ok) throw new Error('HTTP ' + res.status + ' en ' + path);
-  return res.json();
+  if (!res.ok) {
+    // Traer el detalle del error de PostgREST, que explica mucho mejor que el código.
+    let detalle = '';
+    try { detalle = ' · ' + (await res.text()); } catch (e) {}
+    throw new Error('HTTP ' + res.status + ' en ' + path + detalle);
+  }
+  // [FIX] Con Prefer: return=minimal PostgREST responde 204 SIN cuerpo.
+  // Llamar res.json() sobre un cuerpo vacío lanza "Unexpected end of JSON input".
+  if (res.status === 204) return null;
+  const texto = await res.text();
+  return texto ? JSON.parse(texto) : null;
 }
 
 // ── [SWAP 1] Campañas activas de la licencia ──────────────────────────────
@@ -414,14 +423,14 @@ async function cargarCampanasReales() {
     'campanas_llamadas?select=id,nombre,tipo,estado,guion,encuesta_id' +
     '&licencia_id=eq.' + LICENCIA_ID + '&estado=eq.activa&order=creado_en.desc'
   );
-  // Conteos por campaña para la barra de progreso (total y completadas).
+  // Conteos reales por campaña (total en cola y completadas).
   for (const c of filas) {
     try {
-      const tot = await ccFetch('cola_llamadas?select=id&campana_id=eq.' + c.id + '&limit=1', 
-        { headers: { 'Prefer': 'count=exact' } });
-      c.total = Array.isArray(tot) ? tot.length : 0;
-    } catch (e) { c.total = 0; }
-    c.completadas = 0;
+      const todos = await ccFetch('cola_llamadas?select=estado&campana_id=eq.' + c.id);
+      c.total       = todos ? todos.length : 0;
+      c.completadas = todos ? todos.filter(function(x){ return x.estado === 'completada'; }).length : 0;
+      c.pendientes  = todos ? todos.filter(function(x){ return x.estado !== 'completada' && x.estado !== 'descartada'; }).length : 0;
+    } catch (e) { c.total = 0; c.completadas = 0; c.pendientes = 0; }
   }
   return filas;
 }
@@ -486,21 +495,39 @@ async function iniciarDatosReales() {
     if (tag) tag.style.display = 'none';
     console.log('✅ Call Center: ' + camps.length + ' campaña(s) activa(s) desde la BD.');
     if (typeof pintarCampanas === 'function') pintarCampanas();
-    await cargarSiguienteReal();
+    await cargarSiguienteReal(true);   // true = recuperar reserva previa, no consumir cola
   } catch (e) {
     console.warn('Call Center: fallo al cargar datos reales, se mantiene MODO DEMO:', e.message);
   }
 }
 
 // Pide el siguiente contacto real y lo pinta en la pantalla de operador.
-async function cargarSiguienteReal() {
+// [FIX] Al ARRANCAR (recuperar=true) NO consume cola: primero busca si el
+// operador ya tiene un contacto reservado sin terminar y lo retoma. Así
+// recargar la página no quema contactos de la cola.
+async function cargarSiguienteReal(recuperar) {
   if (CC_DEMO) return;
   try {
     const camp = CAMPANAS[0];
     if (!camp) return;
-    const c = await siguienteLlamadaReal(camp.id);
+    let c = null;
+
+    if (recuperar) {
+      const uid = (window._sesion && window._sesion.id) || null;
+      if (uid) {
+        const míos = await ccFetch(
+          'cola_llamadas?select=*&campana_id=eq.' + camp.id +
+          '&operador_id=eq.' + uid + '&estado=eq.reservada&limit=1'
+        );
+        if (míos && míos.length) c = míos[0];
+      }
+    }
+    if (!c) c = await siguienteLlamadaReal(camp.id);
+
     if (!c) {
       console.log('Call Center: no hay contactos pendientes en la cola.');
+      demoState.cola = [];
+      if (typeof pintarContacto === 'function') pintarContacto();
       return;
     }
     // Adaptar al formato que ya usa la UI del módulo.
