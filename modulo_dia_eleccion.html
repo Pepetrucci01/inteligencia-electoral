@@ -1316,6 +1316,64 @@ async function guardarInstalacionEnBD(inst) {
 
 // [DÍA E 16 jul] Persiste el cierre de casilla en casillas (UPDATE a la misma
 // casilla instalada, vía upsert por la key). Mapea votos y hora de cierre.
+// ══════════════════════════════════════════════════════════════════════════
+// [FIX 21 jul · auditoría de escrituras] REINTENTO DE REPORTES PENDIENTES
+// ──────────────────────────────────────────────────────────────────────────
+// PROBLEMA DETECTADO: guardarInstalacionEnBD y guardarCierreEnBD marcaban
+// 'dia_eleccion_*_pendiente' cuando la BD fallaba, pero NADIE leía esas
+// banderas jamás (solo setItem/removeItem en todo el proyecto, ni un getItem)
+// y sync_queue.js solo cubre la captura de ciudadanos, no el Día E.
+// Consecuencia el día de la elección: el representante reporta, la red falla
+// (habitual en zonas rurales), queda "pendiente"… y ahí muere. El reporte se
+// pierde y el War Room muestra esa casilla como "sin reporte" aunque SÍ se
+// reportó.
+// SOLUCIÓN: el contenido sí se persiste (dia_eleccion_instalacion / _cierre),
+// así que al recuperar conexión se reenvía. Se reintenta al cargar el módulo,
+// al volver la red (evento 'online') y cada 2 minutos mientras quede algo.
+// ══════════════════════════════════════════════════════════════════════════
+async function reintentarPendientesDiaE() {
+  try {
+    const hayInst   = localStorage.getItem('dia_eleccion_instalacion_pendiente') === '1';
+    const hayCierre = localStorage.getItem('dia_eleccion_cierre_pendiente') === '1';
+    if (!hayInst && !hayCierre) return;
+    if (!navigator.onLine) return;               // sin red: esperar al evento 'online'
+    if (!await esperarSupabase(8000)) return;    // sin sesión: reintentar luego
+
+    if (hayInst) {
+      try {
+        const inst = JSON.parse(localStorage.getItem('dia_eleccion_instalacion') || 'null');
+        if (inst) {
+          const ok = await guardarInstalacionEnBD(inst);
+          if (ok) console.log('✅ Día E: instalación pendiente sincronizada.');
+        } else {
+          // Bandera huérfana sin datos: limpiarla para no reintentar en vano.
+          localStorage.removeItem('dia_eleccion_instalacion_pendiente');
+        }
+      } catch (e) { console.warn('Día E: reintento de instalación falló:', e.message); }
+    }
+
+    if (hayCierre) {
+      try {
+        const cierre = JSON.parse(localStorage.getItem('dia_eleccion_cierre') || 'null');
+        if (cierre) {
+          const ok = await guardarCierreEnBD(cierre);
+          if (ok) console.log('✅ Día E: cierre pendiente sincronizado.');
+        } else {
+          localStorage.removeItem('dia_eleccion_cierre_pendiente');
+        }
+      } catch (e) { console.warn('Día E: reintento de cierre falló:', e.message); }
+    }
+  } catch (e) {
+    console.warn('Día E: error en el reintento de pendientes:', e.message);
+  }
+}
+
+// Disparadores del reintento: al cargar, al volver la red, y cada 2 minutos
+// mientras quede algo pendiente (la función sale sola si no hay nada).
+window.addEventListener('online', reintentarPendientesDiaE);
+setTimeout(reintentarPendientesDiaE, 3000);          // al arrancar, tras la carga inicial
+setInterval(reintentarPendientesDiaE, 120000);
+
 async function guardarCierreEnBD(cierre) {
   try {
     if (!await esperarSupabase(8000)) {
