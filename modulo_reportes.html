@@ -653,7 +653,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
     <div class="card">
       <div class="card-head"><div class="card-title" data-tip="Cuántos ciudadanos tienes en cada rango de edad.">Distribución por edad</div></div>
       <div class="chart-wrap" style="height:220px">
-        <canvas id="ch-edad" role="img" aria-label="Distribución por edad: 18-29: 1887, 30-39: 1448, 40-49: 1530, 50-59: 1547, 60-69: 1541, 70+: 2047">Grupos de edad con mayor concentración en 70+.</canvas>
+        <canvas id="ch-edad" role="img" aria-label="Distribución por edad y sexo: 18-29: 981 H / 906 M, 30-39: 746 H / 702 M, 40-49: 780 H / 750 M, 50-59: 774 H / 773 M, 60-69: 747 H / 794 M, 70+: 979 H / 1,068 M">Grupos de edad con mayor concentración en 70+, apilados por sexo.</canvas>
       </div>
     </div>
     <div class="card">
@@ -1391,11 +1391,19 @@ function buildCharts(tab){
       type:'bar',
       data:{
         labels:['18–29','30–39','40–49','50–59','60–69','70+'],
-        datasets:[{label:'Ciudadanos',data:[1887,1448,1530,1547,1541,2047],
-          backgroundColor:['#3b82f6bb','#22c55ebb','#22c55ebb','#22c55ebb','#22c55ebb','#a855f7bb'],borderRadius:4}]
+        datasets:[
+          {label:'Hombres',data:[981,746,780,774,747,979],
+            backgroundColor:'#3b82f6bb',borderRadius:{topLeft:0,topRight:0,bottomLeft:4,bottomRight:4}},
+          {label:'Mujeres',data:[906,702,750,773,794,1068],
+            backgroundColor:'#a855f7bb',borderRadius:{topLeft:4,topRight:4,bottomLeft:0,bottomRight:0}}
+        ]
       },
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-        scales:{x:{ticks:{color:TICK,font:FONT},grid:{color:GRID}},y:{ticks:{color:TICK,font:FONT},grid:{color:GRID}}}}
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{
+          legend:{display:true,labels:{color:TICK,font:FONT,boxWidth:12}},
+          tooltip:{mode:'index',callbacks:{footer:(items)=>'Total: '+items.reduce((s,i)=>s+i.parsed.y,0).toLocaleString('es-MX')}}
+        },
+        scales:{x:{stacked:true,ticks:{color:TICK,font:FONT},grid:{color:GRID}},y:{stacked:true,ticks:{color:TICK,font:FONT},grid:{color:GRID}}}}
     });
     new Chart(document.getElementById('ch-sexo'),{
       type:'doughnut',
