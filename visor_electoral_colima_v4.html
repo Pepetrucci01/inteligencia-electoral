@@ -263,7 +263,7 @@ async function cargarAvanceSupabase() {
   <div id="stats-bar">
     <div class="stat">Capa: <span id="sLayer">GOBERNADOR</span></div>
     <div class="stat">Casillas: <span id="sCasillas">1032</span></div>
-    <div class="stat">Secciones: <span>430</span></div>
+    <div class="stat">Secciones: <span id="sSecciones">—</span></div>
     <div class="stat green">Meta Total: <span id="sMetaTotal">—</span></div>
     <div class="stat green">Avance: <span id="sAvance">0%</span></div>
     <div class="stat">Fácil: <span id="sFacil" style="color:#00cc66;">—</span></div>
@@ -335,18 +335,24 @@ const DL_COLORS = {"DL-1 COLIMA": "#e94560", "DL-2 COLIMA": "#ff6b35", "DL-3 COL
 const DF_COLORS = {"COLIMA": "#e94560", "VALLE DE LAS GARZAS": "#0f9b8e"};
 
 // Compute stats
-const metaTotal = CASILLAS.reduce((a,c)=>a+(c.meta||0),0);
-let facil=0,medio=0,dificil=0;
+// REGLA: en el JSON horneado, c.meta trae la meta de la SECCION repetida en
+// cada una de sus casillas. La meta total se suma UNA sola vez por seccion.
+// [SWAP LUIS] En Fase 4 este resumen se leera de secciones_electorales_colima.
+let metaTotal=0, facil=0, medio=0, dificil=0;
 const secSeen={};
 CASILLAS.forEach(c=>{
   if(!secSeen[c.seccion]){
     secSeen[c.seccion]=true;
+    metaTotal += (c.meta||0);
     if(c.estatus==='FACIL') facil++;
     else if(c.estatus==='MEDIO') medio++;
     else if(c.estatus==='DIFICIL') dificil++;
   }
 });
-document.getElementById('sMetaTotal').textContent = Math.round(metaTotal/CASILLAS.length*430).toLocaleString();
+const numSecciones = Object.keys(secSeen).length;
+document.getElementById('sMetaTotal').textContent = Math.round(metaTotal).toLocaleString();
+document.getElementById('sCasillas').textContent = CASILLAS.length.toLocaleString();
+document.getElementById('sSecciones').textContent = numSecciones;
 document.getElementById('sFacil').textContent = facil;
 document.getElementById('sMedio').textContent = medio;
 document.getElementById('sDificil').textContent = dificil;
