@@ -894,16 +894,22 @@ function pintarCampanas(){
 var chartsListos = false;
 function pintarProductividad(){
   // [T-CC 21 jul] Con datos reales, recarga la vista antes de pintar.
-  if (!CC_DEMO && !window._ccProdCargando) {
+  // El flag _ccProdCargado garantiza que esto ocurra UNA sola vez por
+  // visita al tab: si un error de render se colara en el .catch(), sin
+  // este candado se reintentaría en bucle.
+  if (!CC_DEMO && !window._ccProdCargando && !window._ccProdCargado) {
     window._ccProdCargando = true;
     cargarProductividadReal().then(function(filas){
       window._ccProdCargando = false;
+      window._ccProdCargado  = true;
       PRODUCTIVIDAD.length = 0;
       filas.forEach(function(f){ PRODUCTIVIDAD.push(f); });
-      chartsListos = false;   // permitir redibujar la gráfica con datos nuevos
-      pintarProductividad();
+      chartsListos = false;   // permitir redibujar las gráficas con datos nuevos
+      try { pintarProductividad(); }
+      catch (err) { console.warn('Call Center: error al pintar productividad:', err.message); }
     }).catch(function(e){
       window._ccProdCargando = false;
+      window._ccProdCargado  = true;   // no reintentar en bucle
       console.warn('Call Center: no se pudo cargar productividad:', e.message);
     });
   }
@@ -937,7 +943,8 @@ function pintarProductividad(){
     options:{ responsive:true, maintainAspectRatio:false,
       scales:{ x:{ stacked:true }, y:{ stacked:true } } }
   });
-  new Chart(document.getElementById('ch-disposiciones'), {
+  if (window._chDisposiciones) { try { window._chDisposiciones.destroy(); } catch(e){} }
+  window._chDisposiciones = new Chart(document.getElementById('ch-disposiciones'), {
     type:'doughnut',
     data:{ labels:['Contactado','Comprometido','No contesta','Buzón','Volver a llamar','Núm. equivocado','Rechazo','No molestar'],
       datasets:[{ data:Object.keys(DISPOSICIONES_GLOBAL).map(function(k){ return DISPOSICIONES_GLOBAL[k]; }),
@@ -968,15 +975,19 @@ var DISP_LABEL = { contactado:'Contactado', comprometido:'Comprometido', no_cont
 
 function pintarSupervision(){
   // [T-CC 21 jul] Con datos reales, recarga la auditoría antes de pintar.
-  if (!CC_DEMO && !window._ccAudCargando) {
+  // _ccAudCargado evita que un error de render reintente en bucle.
+  if (!CC_DEMO && !window._ccAudCargando && !window._ccAudCargado) {
     window._ccAudCargando = true;
     cargarAuditoriaReal().then(function(filas){
       window._ccAudCargando = false;
+      window._ccAudCargado  = true;
       AUDITORIA.length = 0;
       filas.forEach(function(f){ AUDITORIA.push(f); });
-      pintarSupervision();
+      try { pintarSupervision(); }
+      catch (err) { console.warn('Call Center: error al pintar supervisión:', err.message); }
     }).catch(function(e){
       window._ccAudCargando = false;
+      window._ccAudCargado  = true;
       console.warn('Call Center: no se pudo cargar auditoría:', e.message);
     });
   }
@@ -1289,9 +1300,9 @@ function verTab(id, btn){
   btn.classList.add('active');
   document.querySelectorAll('.view').forEach(function(v){ v.classList.remove('active'); });
   document.getElementById('view-' + id).classList.add('active');
-  if (id === 'productividad') pintarProductividad();
+  if (id === 'productividad') { window._ccProdCargado = false; pintarProductividad(); }
   if (id === 'campanas') pintarCampanas();
-  if (id === 'supervision') pintarSupervision();
+  if (id === 'supervision') { window._ccAudCargado = false; pintarSupervision(); }
   if (id === 'gestion') llenarCampDestino();
 }
 
