@@ -198,6 +198,20 @@ table.cap-table tr.selected{background:rgba(59,130,246,0.1);}
   </div>
 </div>
 
+<!-- [FIX 21 jul · auditoría de fallbacks] Aviso VISIBLE de datos simulados.
+     Antes, si el RPC fallaba, el panel pintaba 60 capturistas ficticios
+     generados con Math.random() (nombres, avances y scores inventados) y el
+     único aviso era un console.warn que nadie ve. Un coordinador podía estar
+     evaluando el desempeño de gente que no existe. Ahora el fallback se
+     anuncia en pantalla. -->
+<div id="aviso-simulados" style="display:none;margin:10px 16px 0;padding:10px 14px;
+     background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35);
+     border-radius:8px;color:#fca5a5;font-family:monospace;font-size:12px;line-height:1.5">
+  ⚠️ <b>DATOS SIMULADOS</b> — no se pudieron cargar los capturistas reales.
+  Lo que ves abajo es <b>ejemplo, no información de campo</b>. Revisa la consola (F12)
+  para el detalle y recarga la página.
+</div>
+
 <div class="filters">
   <span class="filter-label">MUNICIPIO</span>
   <select id="fil-municipio" onchange="aplicarFiltros()">
@@ -410,6 +424,10 @@ async function cargarDatosSupabase() {
       return;
     }
 
+    // [FIX 21 jul] Datos reales confirmados: retirar el aviso de simulados.
+    var _av = document.getElementById('aviso-simulados');
+    if (_av) _av.style.display = 'none';
+
     aplicarFiltros();
 
     // Poblar selector de municipio con los municipios presentes
@@ -436,6 +454,9 @@ async function cargarDatosSupabase() {
 }
 
 function cargarDatosSimulados() {
+  // [FIX 21 jul] Anunciar en pantalla que estos datos NO son reales.
+  var _av = document.getElementById('aviso-simulados');
+  if (_av) _av.style.display = 'block';
   const MUNS = ['Colima','Manzanillo','Villa de Álvarez','Tecomán','Comala','Armería','Cuauhtémoc','Minatitlán','Ixtlahuacán','Coquimatlán'];
   const NOMS = ['Carlos Mendoza','Rosa Jiménez','Pedro Soto','Ana Flores','Luis Torres','María Ruiz','Jorge Díaz','Elena Vega','Roberto Cruz','Carmen López','Arturo Reyes','Silvia Morales','David Herrera','Patricia Núñez','Miguel Ángel Ríos','Fernanda Castillo','Héctor Vargas','Laura Guzmán','Oscar Ramírez','Beatriz Leal','Ramón Ibarra','Claudia Espinoza','Felipe Guerrero','Adriana Salinas','Ernesto Peña','Norma Castellanos','Alfredo Ramos','Yolanda Fuentes','Sergio Acosta','Irma Delgado','Benjamín Ortega','Marisol Cabrera','Rodrigo Sandoval','Verónica Montes','Salvador Trejo','Alejandra Cortés','Ignacio Medina','Lucía Pacheco','Óscar Bermúdez','Diana Aguilar','Aurelio Zúñiga','Rocío Villanueva','Jesús Cárdenas','Mónica Estrada','Jaime Leyva','Esperanza Molina','Genaro Vázquez','Concepción Solís','Rubén Santana','Gloria Ochoa','Edmundo Cisneros','Alicia Ponce','Heriberto Mendívil','Pilar Arellano','Tomás Carrillo','Rebeca Quintero','Esteban Fragoso','Margarita Alvarado','Gilberto Durán','Nadia Robles'];
   DATOS = NOMS.map((n, i) => {

@@ -2587,9 +2587,29 @@ async function cargarDatosReales() {
     cargarKPIsReales();
 
     console.log('✅ Datos reales cargados desde Supabase');
+    var _avWr = document.getElementById('wr-aviso-simulados');
+    if (_avWr) _avWr.style.display = 'none';
   } catch(e) {
     console.warn('⚠️ Error cargando datos reales, usando simulados:', e);
-    // El sistema ya tiene datos simulados de fallback — no hace nada
+    // [FIX 21 jul · auditoría de fallbacks] Antes esto quedaba SOLO en consola:
+    // el War Room seguía mostrando sus cifras horneadas como si fueran reales.
+    // Un panel de mando electoral con números inventados y sin avisar es el
+    // peor tipo de fallo: nadie se entera. Ahora se anuncia en pantalla.
+    var _avWr = document.getElementById('wr-aviso-simulados');
+    if (!_avWr) {
+      _avWr = document.createElement('div');
+      _avWr.id = 'wr-aviso-simulados';
+      _avWr.style.cssText = 'margin:10px 16px;padding:10px 14px;' +
+        'background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35);' +
+        'border-radius:8px;color:#fca5a5;font-family:var(--mono,monospace);' +
+        'font-size:12px;line-height:1.5';
+      _avWr.innerHTML = '⚠️ <b>DATOS SIMULADOS</b> — no se pudieron cargar los datos ' +
+        'reales desde Supabase. Las cifras mostradas son <b>de ejemplo, no del padrón</b>. ' +
+        'Revisa la consola (F12) y recarga la página.';
+      var _cont = document.querySelector('.wrap') || document.body;
+      _cont.insertBefore(_avWr, _cont.firstChild);
+    }
+    _avWr.style.display = 'block';
   }
 }
 
