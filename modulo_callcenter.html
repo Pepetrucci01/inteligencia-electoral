@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<!-- ═══ VOTERA · MODULO CALL CENTER · VERSION 2 (AUDITORIA + SUPERVISION) ═══ -->
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Centro de Llamadas · VOTERA</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --bg:#0d1321; --panel:#151d2e; --panel2:#1b2438; --border:#26314a;
+    --txt:#e8edf6; --mut:#8fa0bd; --dim:#5f7095;
+    --acc:#3fa7ff; --ok:#2ecc8f; --warn:#f0b543; --bad:#f0566b; --neu:#7d8db0;
+    --radius:12px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;}
+  body{background:var(--bg);color:var(--txt);min-height:100vh;padding:18px;}
+
+  /* ── Header ─────────────────────────────── */
+  .top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px;}
+  .top h1{font-size:1.25rem;font-weight:700;letter-spacing:.3px;display:flex;align-items:center;gap:10px;}
+  .top h1 .dot{width:10px;height:10px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok);animation:pulse 2s infinite;}
+  @keyframes pulse{50%{opacity:.4;}}
+  .top .sub{color:var(--mut);font-size:.8rem;margin-top:2px;}
+  .kpis{display:flex;gap:10px;flex-wrap:wrap;}
+  .kpi{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:8px 14px;min-width:110px;}
+  .kpi .v{font-size:1.25rem;font-weight:700;}
+  .kpi .l{font-size:.68rem;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;}
+  .kpi.ok .v{color:var(--ok);} .kpi.acc .v{color:var(--acc);} .kpi.warn .v{color:var(--warn);}
+
+  /* ── Tabs ───────────────────────────────── */
+  .tabs{display:flex;gap:6px;margin-bottom:16px;border-bottom:1px solid var(--border);}
+  .tab{background:none;border:none;color:var(--mut);padding:10px 16px;font-size:.85rem;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;}
+  .tab.active{color:var(--txt);border-bottom-color:var(--acc);}
+  .view{display:none;} .view.active{display:block;}
+
+  /* ── Vista Operador ─────────────────────── */
+  .op-grid{display:grid;grid-template-columns:300px 1fr 280px;gap:14px;align-items:start;}
+  @media(max-width:1100px){.op-grid{grid-template-columns:1fr;}}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px;}
+  .card h3{font-size:.72rem;text-transform:uppercase;letter-spacing:1px;color:var(--dim);margin-bottom:12px;}
+
+  .contacto .nombre{font-size:1.1rem;font-weight:700;margin-bottom:2px;}
+  .contacto .tel{font-size:1.7rem;font-weight:800;color:var(--acc);letter-spacing:1px;margin:8px 0;font-variant-numeric:tabular-nums;}
+  .meta-row{display:flex;justify-content:space-between;font-size:.8rem;padding:6px 0;border-bottom:1px dashed var(--border);}
+  .meta-row .k{color:var(--mut);} .meta-row .v{font-weight:600;}
+  .chip{display:inline-block;font-size:.66rem;font-weight:700;padding:3px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px;}
+  .chip.ok{background:rgba(46,204,143,.15);color:var(--ok);}
+  .chip.warn{background:rgba(240,181,67,.15);color:var(--warn);}
+  .chip.bad{background:rgba(240,86,107,.15);color:var(--bad);}
+  .chip.acc{background:rgba(63,167,255,.15);color:var(--acc);}
+
+  .guion .apertura{background:var(--panel2);border-left:3px solid var(--acc);border-radius:8px;padding:12px 14px;font-size:.92rem;line-height:1.55;margin-bottom:14px;}
+  .preg{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px;}
+  .preg .q{font-size:.88rem;font-weight:600;margin-bottom:8px;}
+  .opts{display:flex;flex-wrap:wrap;gap:6px;}
+  .opt{background:var(--panel);border:1px solid var(--border);color:var(--txt);border-radius:8px;padding:6px 12px;font-size:.8rem;cursor:pointer;}
+  .opt:hover{border-color:var(--acc);}
+  .opt.sel{background:rgba(63,167,255,.2);border-color:var(--acc);color:var(--acc);font-weight:700;}
+
+  /* Pad de disposiciones */
+  .pad{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+  .disp{border:none;border-radius:10px;padding:12px 8px;font-size:.78rem;font-weight:700;cursor:pointer;color:#fff;text-align:center;line-height:1.3;transition:transform .08s;}
+  .disp:hover{transform:scale(1.03);}
+  .disp.sel-disp{outline:3px solid rgba(255,255,255,.55);}
+  .d-contactado{background:#1f9e6e;} .d-comprometido{background:#168a5c;}
+  .d-nocontesta{background:#5f7095;} .d-buzon{background:#4a5878;}
+  .d-volver{background:#c98f2a;} .d-equivocado{background:#8a5fb0;}
+  .d-rechazo{background:#c04a5c;} .d-nomolestar{background:#8c2f3e;}
+  textarea{width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--txt);padding:10px;font-size:.82rem;resize:vertical;min-height:64px;}
+  input[type="datetime-local"]{width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--txt);padding:8px;font-size:.8rem;margin-top:6px;}
+  .lbl{font-size:.7rem;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;display:block;margin-top:10px;}
+  .btn-next{width:100%;margin-top:14px;background:var(--acc);border:none;border-radius:10px;color:#fff;font-size:.92rem;font-weight:700;padding:13px;cursor:pointer;}
+  .btn-next:disabled{background:var(--border);color:var(--dim);cursor:not-allowed;}
+  .cola-mini{margin-top:12px;font-size:.75rem;color:var(--mut);text-align:center;}
+
+  /* ── Vista Campañas ─────────────────────── */
+  .camp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;}
+  .camp .tipo{font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;}
+  .camp .nom{font-size:1rem;font-weight:700;margin:6px 0 10px;}
+  .bar{height:8px;background:var(--panel2);border-radius:6px;overflow:hidden;margin:8px 0 4px;}
+  .bar i{display:block;height:100%;border-radius:6px;background:var(--acc);}
+  .camp .nums{display:flex;justify-content:space-between;font-size:.75rem;color:var(--mut);}
+  .camp .foot{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);font-size:.75rem;color:var(--mut);}
+
+  /* ── Vista Productividad ────────────────── */
+  .prod-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:14px;margin-bottom:14px;}
+  @media(max-width:900px){.prod-grid{grid-template-columns:1fr;}}
+  .chart-box{position:relative;height:250px;}
+  table{width:100%;border-collapse:collapse;font-size:.82rem;}
+  th{color:var(--dim);text-transform:uppercase;font-size:.66rem;letter-spacing:.8px;text-align:left;padding:8px;border-bottom:1px solid var(--border);}
+  td{padding:9px 8px;border-bottom:1px solid var(--border);}
+  td.num{font-variant-numeric:tabular-nums;font-weight:600;}
+
+  .demo-tag{position:fixed;bottom:12px;right:14px;background:rgba(240,181,67,.12);border:1px solid rgba(240,181,67,.4);color:var(--warn);font-size:.64rem;font-weight:700;letter-spacing:1px;padding:5px 10px;border-radius:20px;pointer-events:none;}
+
+  /* ── Auditoría / Supervisión ────────────── */
+  .timer{font-size:.85rem;font-weight:700;color:var(--warn);font-variant-numeric:tabular-nums;margin-bottom:8px;}
+  .timer::before{content:'⏱ ';}
+  .sup-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:14px;}
+  .sem-card{position:relative;}
+  .sem-dot{position:absolute;top:16px;right:16px;width:14px;height:14px;border-radius:50%;}
+  .sem-verde{background:var(--ok);box-shadow:0 0 8px var(--ok);}
+  .sem-amarillo{background:var(--warn);box-shadow:0 0 8px var(--warn);}
+  .sem-rojo{background:var(--bad);box-shadow:0 0 8px var(--bad);animation:pulse 1.2s infinite;}
+  .sem-card .op-nom{font-size:.98rem;font-weight:700;margin-bottom:2px;}
+  .sem-card .op-est{font-size:.72rem;color:var(--mut);margin-bottom:10px;}
+  .sem-card .op-stats{display:flex;gap:14px;font-size:.75rem;color:var(--mut);margin-bottom:10px;}
+  .sem-card .op-stats b{color:var(--txt);display:block;font-size:.95rem;}
+  .flag{display:block;font-size:.72rem;font-weight:600;padding:5px 9px;border-radius:7px;margin-top:5px;}
+  .flag.roja{background:rgba(240,86,107,.13);color:var(--bad);border:1px solid rgba(240,86,107,.35);}
+  .flag.ambar{background:rgba(240,181,67,.11);color:var(--warn);border:1px solid rgba(240,181,67,.3);}
+  .flag.limpia{background:rgba(46,204,143,.1);color:var(--ok);border:1px solid rgba(46,204,143,.25);}
+  .dur-corta{color:var(--bad);font-weight:700;}
+  .verif-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);font-size:.82rem;flex-wrap:wrap;}
+  .verif-row .info b{display:block;}
+  .verif-row .info span{color:var(--mut);font-size:.74rem;}
+  .verif-btns{display:flex;gap:6px;}
+  .vbtn{border:none;border-radius:8px;padding:7px 12px;font-size:.74rem;font-weight:700;cursor:pointer;color:#fff;}
+  .vbtn.ok{background:#1f9e6e;} .vbtn.bad{background:#c04a5c;}
+  .verif-res{font-size:.76rem;font-weight:700;}
+
+  /* ── Gestión / Carga de cola ────────────── */
+  .gest-grid{display:grid;grid-template-columns:340px 1fr;gap:14px;align-items:start;}
+  @media(max-width:900px){.gest-grid{grid-template-columns:1fr;}}
+  .drop{border:2px dashed var(--border);border-radius:12px;padding:26px 16px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;}
+  .drop:hover,.drop.over{border-color:var(--acc);background:rgba(63,167,255,.06);}
+  .drop .ico{font-size:2rem;}
+  .drop .big{font-weight:700;margin:8px 0 4px;}
+  .drop .small{font-size:.74rem;color:var(--mut);line-height:1.5;}
+  .file-name{font-size:.8rem;color:var(--acc);font-weight:600;margin-top:10px;word-break:break-all;}
+  .sel-camp{width:100%;background:var(--panel2);border:1px solid var(--border);color:var(--txt);border-radius:8px;padding:9px;font-size:.82rem;margin-top:6px;}
+  .sum-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:14px;}
+  .sum{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:12px;}
+  .sum .n{font-size:1.5rem;font-weight:800;font-variant-numeric:tabular-nums;}
+  .sum .t{font-size:.66rem;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;margin-top:2px;}
+  .sum.ok .n{color:var(--ok);} .sum.bad .n{color:var(--bad);} .sum.acc .n{color:var(--acc);}
+  .desglose{font-size:.8rem;color:var(--mut);line-height:1.8;margin-bottom:12px;}
+  .desglose b{color:var(--txt);}
+  .empty-gest{color:var(--dim);font-size:.85rem;text-align:center;padding:44px 10px;line-height:1.6;}
+  .btn-cargar{width:100%;background:var(--ok);border:none;border-radius:10px;color:#fff;font-size:.9rem;font-weight:700;padding:12px;cursor:pointer;margin-top:6px;}
+  .btn-cargar:disabled{background:var(--border);color:var(--dim);cursor:not-allowed;}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div>
+    <h1><span class="dot"></span>Centro de Llamadas</h1>
+    <div class="sub">Campaña activa: <strong id="camp-activa-nombre">—</strong> · Operador: <strong>María Torres</strong></div>
+  </div>
+  <div class="kpis">
+    <div class="kpi acc"><div class="v" id="kpi-pend">—</div><div class="l">En cola</div></div>
+    <div class="kpi ok"><div class="v" id="kpi-cont">—</div><div class="l">Contactados hoy</div></div>
+    <div class="kpi warn"><div class="v" id="kpi-tasa">—</div><div class="l">Tasa de contacto</div></div>
+    <div class="kpi"><div class="v" id="kpi-reint">—</div><div class="l">Reintentos prog.</div></div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="verTab('operador',this)">📞 Pantalla de Operador</button>
+  <button class="tab" onclick="verTab('campanas',this)">📋 Campañas</button>
+  <button class="tab" onclick="verTab('productividad',this)">📊 Productividad</button>
+  <button class="tab" onclick="verTab('supervision',this)">🛡️ Supervisión</button>
+  <button class="tab" onclick="verTab('gestion',this)">📥 Gestión</button>
+</div>
+
+<!-- ══════════ VISTA OPERADOR ══════════ -->
+<div class="view active" id="view-operador">
+  <div class="op-grid">
+
+    <!-- Ficha de contacto -->
+    <div class="card contacto">
+      <h3>Contacto actual</h3>
+      <div class="nombre" id="c-nombre">—</div>
+      <span class="chip acc" id="c-chip">—</span>
+      <div class="tel" id="c-tel">—</div>
+      <div class="timer" id="c-timer">00:00</div>
+      <div class="meta-row"><span class="k">Sección</span><span class="v" id="c-seccion">—</span></div>
+      <div class="meta-row"><span class="k">Municipio</span><span class="v" id="c-municipio">—</span></div>
+      <div class="meta-row"><span class="k">Intentos previos</span><span class="v" id="c-intentos">—</span></div>
+      <div class="meta-row"><span class="k">Consentimiento</span><span class="v" id="c-consent">—</span></div>
+      <div class="cola-mini" id="c-progreso">—</div>
+    </div>
+
+    <!-- Guion y preguntas -->
+    <div class="card guion">
+      <h3>Guion de llamada</h3>
+      <div class="apertura" id="g-apertura">—</div>
+      <div id="g-preguntas"></div>
+    </div>
+
+    <!-- Disposiciones -->
+    <div class="card">
+      <h3>Resultado de la llamada</h3>
+      <div class="pad">
+        <button class="disp d-contactado"  onclick="setDisp('contactado',this)">✓ Contactado</button>
+        <button class="disp d-comprometido" onclick="setDisp('comprometido',this)">★ Comprometido</button>
+        <button class="disp d-nocontesta"  onclick="setDisp('no_contesta',this)">No contesta</button>
+        <button class="disp d-buzon"       onclick="setDisp('buzon',this)">Buzón de voz</button>
+        <button class="disp d-volver"      onclick="setDisp('volver_llamar',this)">↻ Volver a llamar</button>
+        <button class="disp d-equivocado"  onclick="setDisp('numero_equivocado',this)">Núm. equivocado</button>
+        <button class="disp d-rechazo"     onclick="setDisp('rechazo',this)">Rechazo</button>
+        <button class="disp d-nomolestar"  onclick="setDisp('no_molestar',this)">⛔ No molestar</button>
+      </div>
+      <div id="reintento-wrap" style="display:none;">
+        <span class="lbl">Programar reintento</span>
+        <input type="datetime-local" id="reintento-fecha">
+      </div>
+      <span class="lbl">Notas del operador</span>
+      <textarea id="notas" placeholder="Ej. Pide que llamen después de las 6 pm..."></textarea>
+      <button class="btn-next" id="btn-next" disabled onclick="guardarYSiguiente()">Guardar y llamar siguiente →</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════ VISTA CAMPAÑAS ══════════ -->
+<div class="view" id="view-campanas">
+  <div class="camp-grid" id="camp-grid"></div>
+</div>
+
+<!-- ══════════ VISTA PRODUCTIVIDAD ══════════ -->
+<div class="view" id="view-productividad">
+  <div class="prod-grid">
+    <div class="card"><h3>Llamadas por operador (hoy)</h3><div class="chart-box"><canvas id="ch-operadores"></canvas></div></div>
+    <div class="card"><h3>Distribución de disposiciones</h3><div class="chart-box"><canvas id="ch-disposiciones"></canvas></div></div>
+  </div>
+  <div class="card">
+    <h3>Detalle por operador</h3>
+    <table>
+      <thead><tr><th>Operador</th><th>Llamadas</th><th>Contactados</th><th>Comprometidos</th><th>Sin respuesta</th><th>Tasa de contacto</th></tr></thead>
+      <tbody id="tabla-operadores"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════ VISTA SUPERVISIÓN (coordinador/admin) ══════════ -->
+<div class="view" id="view-supervision">
+  <div class="sup-grid" id="sup-grid"></div>
+  <div class="prod-grid">
+    <div class="card">
+      <h3>Bitácora de llamadas recientes</h3>
+      <table>
+        <thead><tr><th>Hora</th><th>Operador</th><th>Contacto</th><th>Duración</th><th>Disposición</th></tr></thead>
+        <tbody id="tabla-bitacora"></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h3>Verificación aleatoria de contactos</h3>
+      <p style="font-size:.76rem;color:var(--mut);margin-bottom:8px;">Llamadas marcadas "contactado/comprometido" seleccionadas al azar para re-verificación por un segundo operador.</p>
+      <div id="verif-lista"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ VISTA GESTIÓN (coordinador/admin) ══════════ -->
+<div class="view" id="view-gestion">
+  <div class="gest-grid">
+
+    <div class="card">
+      <h3>Cargar cola desde Excel externo</h3>
+      <div class="drop" id="drop-zone" onclick="document.getElementById('file-excel').click()">
+        <div class="ico">📥</div>
+        <div class="big">Arrastra o elige tu Excel</div>
+        <div class="small">Plantilla VOTERA (.xlsx). Solo entran filas con teléfono válido y consentimiento = SI. Los duplicados por teléfono se descartan solos.</div>
+        <div class="file-name" id="file-name"></div>
+      </div>
+      <input type="file" id="file-excel" accept=".xlsx,.xls" style="display:none" onchange="leerExcel(this.files[0])">
+      <span class="lbl">Campaña destino</span>
+      <select class="sel-camp" id="sel-camp-destino"></select>
+      <button class="btn-cargar" id="btn-cargar" disabled onclick="confirmarCarga()">Cargar a la cola →</button>
+      <p style="font-size:.72rem;color:var(--mut);margin-top:12px;line-height:1.65;">
+        La base externa entra <b>solo a la cola de llamadas</b> — nunca se mezcla con tu base de simpatizantes.
+        En duplicados se conserva el registro que ya estaba en la cola.
+      </p>
+    </div>
+
+    <div class="card">
+      <h3>Resultado del análisis</h3>
+      <div id="gest-empty" class="empty-gest">Sube un archivo para ver el desglose de deduplicación.</div>
+      <div id="gest-result" style="display:none;">
+        <div class="sum-grid">
+          <div class="sum"><div class="n" id="s-leidos">0</div><div class="t">Filas leídas</div></div>
+          <div class="sum ok"><div class="n" id="s-listos">0</div><div class="t">Listos para cargar</div></div>
+          <div class="sum bad"><div class="n" id="s-desc">0</div><div class="t">Descartados</div></div>
+        </div>
+        <div class="desglose" id="s-desglose"></div>
+        <table>
+          <thead><tr><th>Nombre</th><th>Teléfono</th><th>Sección</th><th>Municipio</th><th>Consent.</th></tr></thead>
+          <tbody id="tabla-preview"></tbody>
+        </table>
+        <p style="font-size:.72rem;color:var(--dim);margin-top:8px;" id="preview-nota"></p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="demo-tag">MODO DEMO · DATOS SIMULADOS</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   VOTERA™ · Módulo Centro de Llamadas — MODO DEMO
+   Todos los datos son horneados. Cero llamadas de red.
+   Los puntos de conexión real están marcados // [SWAP LUIS]
+   ═══════════════════════════════════════════════════════════ */
+
+// [SWAP LUIS] licencia de sesión — en Fase 4 viene de auth
+const LICENCIA_ID = (window._sesion && window._sesion.licencia_id) || 'a1b2c3d4-0001-0000-0000-000000000001';
+
+// [SWAP LUIS] SELECT * FROM campanas_llamadas WHERE licencia_id = ... AND estado='activa'
+const CAMPANAS = [
+  { id:'camp-001', nombre:'Identificación Zona Norte', tipo:'identificacion', estado:'activa',
+    guion:'Buenas tardes, le llamo del equipo de participación ciudadana. Estamos escuchando a los vecinos de su colonia rumbo a las elecciones de 2027. ¿Me regala dos minutos?',
+    total:1200, completadas:487 },
+  { id:'camp-002', nombre:'Encuesta telefónica julio (CATI)', tipo:'encuesta', estado:'activa',
+    guion:'Buen día, realizamos un estudio de opinión pública en Colima. Sus respuestas son anónimas y con fines estadísticos. ¿Acepta participar?',
+    total:800, completadas:214 },
+  { id:'camp-003', nombre:'Movilización simulacro Día E', tipo:'movilizacion', estado:'pausada',
+    guion:'¡Hola! Le recordamos que hoy es día de elección. Su casilla está en su sección. ¿Ya pasó a votar?',
+    total:3500, completadas:0 }
+];
+
+// [SWAP LUIS] SELECT * FROM cola_llamadas WHERE campana_id=... AND operador_id=auth.uid() AND estado<>'completada'
+const COLA_BASE = [
+  { id:'q-01', nombre:'Rosa Elena Gutiérrez', tel:'312 145 0982', seccion:'0087', municipio:'Colima',            intentos:0, consent:true },
+  { id:'q-02', nombre:'Jorge Alberto Ramos',  tel:'312 559 2210', seccion:'0112', municipio:'Villa de Álvarez',  intentos:1, consent:true },
+  { id:'q-03', nombre:'María del Carmen Ávila',tel:'313 887 4431', seccion:'0201', municipio:'Tecomán',           intentos:0, consent:true },
+  { id:'q-04', nombre:'Contacto sin registro', tel:'312 774 6650', seccion:'—',    municipio:'Manzanillo',        intentos:2, consent:false },
+  { id:'q-05', nombre:'Luis Fernando Ochoa',  tel:'314 220 9187', seccion:'0143', municipio:'Manzanillo',        intentos:0, consent:true },
+  { id:'q-06', nombre:'Patricia Rincón',      tel:'312 663 0045', seccion:'0095', municipio:'Comala',            intentos:1, consent:true },
+  { id:'q-07', nombre:'Héctor Manuel Solís',  tel:'313 402 7768', seccion:'0188', municipio:'Armería',           intentos:0, consent:true },
+  { id:'q-08', nombre:'Guadalupe Ceballos',   tel:'312 918 3324', seccion:'0064', municipio:'Cuauhtémoc',        intentos:0, consent:true }
+];
+
+// Preguntas del guion por tipo de campaña.
+// [SWAP LUIS] tipo='encuesta' → cargar preguntas desde el módulo de Encuestas vía encuesta_id
+const PREGUNTAS = {
+  identificacion: [
+    { q:'¿Cómo calificaría la situación actual de su colonia?', opts:['Buena','Regular','Mala'] },
+    { q:'¿Estaría dispuesto(a) a recibir información de propuestas?', opts:['Sí','No','Tal vez'] },
+    { q:'Nivel de simpatía detectado', opts:['Simpatizante','Indeciso','Opositor'] }
+  ],
+  encuesta: [
+    { q:'¿Conoce usted a los aspirantes que suenan para la gubernatura?', opts:['Sí','No'] },
+    { q:'Si hoy fuera la elección, ¿por qué opción votaría?', opts:['Opción A','Opción B','Opción C','Ninguna / no sabe'] },
+    { q:'¿Qué tan firme es su decisión?', opts:['Muy firme','Podría cambiar','Nada firme'] }
+  ],
+  movilizacion: [
+    { q:'¿Ya acudió a votar el día de hoy?', opts:['Sí, ya votó','Va más tarde','No piensa ir'] },
+    { q:'¿Necesita apoyo para llegar a su casilla?', opts:['Sí','No'] }
+  ]
+};
+
+// [SWAP LUIS] SELECT * FROM v_productividad_callcenter WHERE licencia_id=...
+const PRODUCTIVIDAD = [
+  { operador:'María Torres',    llamadas:96, contactados:41, comprometidos:12, sinResp:38 },
+  { operador:'Carlos Mendoza',  llamadas:88, contactados:35, comprometidos:9,  sinResp:40 },
+  { operador:'Ana Sofía Ruiz',  llamadas:74, contactados:33, comprometidos:14, sinResp:24 },
+  { operador:'Roberto Chávez',  llamadas:61, contactados:22, comprometidos:5,  sinResp:31 }
+];
+const DISPOSICIONES_GLOBAL = { contactado:131, comprometido:40, no_contesta:98, buzon:35, volver_llamar:22, numero_equivocado:11, rechazo:19, no_molestar:6 };
+
+/* ── Datos de auditoría (horneados) ──────────────────────────
+   [SWAP LUIS] SELECT * FROM v_auditoria_callcenter WHERE licencia_id=...
+   Umbrales de detección:
+   · DUR_MIN_CONTACTO: contactado con <10s = imposible aplicar guion
+   · RACHA_NC: 5+ "no contesta" consecutivas = tronando la cola
+   · RITMO_MAX: llamadas/hora > 2x promedio del equipo
+   · INACTIVO_MIN: 30+ min sin registrar llamada en turno       */
+const UMBRAL = { DUR_MIN_CONTACTO:10, RACHA_NC:5, RITMO_FACTOR:2, INACTIVO_MIN:30 };
+
+const AUDITORIA = [
+  { operador:'María Torres',   durProm:118, llamadasHora:14, rachaNC:1, cortasContactado:0, inactivoMin:2  },
+  { operador:'Carlos Mendoza', durProm:96,  llamadasHora:16, rachaNC:2, cortasContactado:0, inactivoMin:38 },
+  { operador:'Ana Sofía Ruiz', durProm:134, llamadasHora:12, rachaNC:0, cortasContactado:0, inactivoMin:5  },
+  { operador:'Roberto Chávez', durProm:22,  llamadasHora:34, rachaNC:8, cortasContactado:6, inactivoMin:1  }
+];
+
+// [SWAP LUIS] SELECT ... FROM cola_llamadas WHERE estado='completada' ORDER BY fecha_llamada DESC LIMIT 20
+const BITACORA_BASE = [
+  { hora:'12:41', operador:'Roberto Chávez', contacto:'J. Sánchez',   dur:6,   disp:'contactado' },
+  { hora:'12:40', operador:'Roberto Chávez', contacto:'M. Preciado',  dur:4,   disp:'contactado' },
+  { hora:'12:39', operador:'Ana Sofía Ruiz', contacto:'R. Cárdenas',  dur:187, disp:'comprometido' },
+  { hora:'12:38', operador:'Roberto Chávez', contacto:'L. Ventura',   dur:3,   disp:'no_contesta' },
+  { hora:'12:37', operador:'Roberto Chávez', contacto:'S. Michel',    dur:2,   disp:'no_contesta' },
+  { hora:'12:35', operador:'María Torres',   contacto:'F. Anguiano',  dur:142, disp:'contactado' },
+  { hora:'12:33', operador:'Ana Sofía Ruiz', contacto:'C. Larios',    dur:95,  disp:'volver_llamar' },
+  { hora:'12:31', operador:'María Torres',   contacto:'E. Brizuela',  dur:78,  disp:'buzon' }
+];
+
+// [SWAP LUIS] SELECT * FROM cola_llamadas WHERE verificado=false AND disposicion IN ('contactado','comprometido')
+//             ORDER BY random() LIMIT n  → asignar a segundo operador
+let VERIFICACION = [
+  { id:'v-01', contacto:'J. Sánchez',  tel:'312 401 XXXX', operador:'Roberto Chávez', disp:'contactado',   dur:6,   resultado:null },
+  { id:'v-02', contacto:'M. Preciado', tel:'313 220 XXXX', operador:'Roberto Chávez', disp:'contactado',   dur:4,   resultado:null },
+  { id:'v-03', contacto:'R. Cárdenas', tel:'312 887 XXXX', operador:'Ana Sofía Ruiz', disp:'comprometido', dur:187, resultado:null }
+];
+
+/* ── Estado de sesión demo (persiste en localStorage) ────── */
+const LS_KEY = 'votera_callcenter_demo_' + LICENCIA_ID;
+let demoState;
+try { demoState = JSON.parse(localStorage.getItem(LS_KEY)) || null; } catch(e){ demoState = null; }
+if (!demoState || !Array.isArray(demoState.cola) || demoState.cola.length === 0) {
+  demoState = { campanaId:'camp-001', cola: COLA_BASE.map(function(c){ return Object.assign({}, c); }), hechas:0, contactadasHoy:41, reintentos:22 };
+}
+let dispSel = null;
+let respuestas = {};
+
+/* ── Cronómetro de llamada (auditoría) ───── */
+let llamadaInicio = null;
+let timerInt = null;
+function fmtDur(s){
+  var m = Math.floor(s / 60), r = s % 60;
+  return (m < 10 ? '0' : '') + m + ':' + (r < 10 ? '0' : '') + r;
+}
+function arrancarTimer(){
+  llamadaInicio = Date.now();
+  var el = document.getElementById('c-timer');
+  if (timerInt) clearInterval(timerInt);
+  el.textContent = '00:00';
+  timerInt = setInterval(function(){
+    el.textContent = fmtDur(Math.floor((Date.now() - llamadaInicio) / 1000));
+  }, 1000);
+}
+function detenerTimer(){
+  if (timerInt) { clearInterval(timerInt); timerInt = null; }
+  if (!llamadaInicio) return 0;
+  var dur = Math.floor((Date.now() - llamadaInicio) / 1000);
+  llamadaInicio = null;
+  return dur;
+}
+
+function campActiva(){ return CAMPANAS.find(function(c){ return c.id === demoState.campanaId; }) || CAMPANAS[0]; }
+
+/* ── KPIs y header ───────────────────────── */
+function pintarHeader(){
+  var camp = campActiva();
+  document.getElementById('camp-activa-nombre').textContent = camp.nombre;
+  var pend = demoState.cola.length;
+  var kpiPend = document.getElementById('kpi-pend');
+  // Guardia anti-ceros: nunca sobreescribir con 0 si hay error de datos
+  if (pend >= 0) kpiPend.textContent = pend;
+  document.getElementById('kpi-cont').textContent = demoState.contactadasHoy;
+  var totalHoy = PRODUCTIVIDAD.reduce(function(a,o){ return a + o.llamadas; }, 0);
+  var contHoy  = PRODUCTIVIDAD.reduce(function(a,o){ return a + o.contactados + o.comprometidos; }, 0);
+  if (totalHoy > 0) document.getElementById('kpi-tasa').textContent = Math.round(100 * contHoy / totalHoy) + '%';
+  document.getElementById('kpi-reint').textContent = demoState.reintentos;
+}
+
+/* ── Pantalla de operador ────────────────── */
+function pintarContacto(){
+  var camp = campActiva();
+  var c = demoState.cola[0];
+  var btn = document.getElementById('btn-next');
+  if (!c) {
+    detenerTimer();
+    document.getElementById('c-timer').textContent = '00:00';
+    document.getElementById('c-nombre').textContent = 'Cola completada 🎉';
+    document.getElementById('c-tel').textContent = '—';
+    document.getElementById('c-chip').textContent = 'SIN PENDIENTES';
+    document.getElementById('c-seccion').textContent = '—';
+    document.getElementById('c-municipio').textContent = '—';
+    document.getElementById('c-intentos').textContent = '—';
+    document.getElementById('c-consent').textContent = '—';
+    document.getElementById('c-progreso').textContent = 'Todas las llamadas asignadas fueron completadas.';
+    document.getElementById('g-apertura').textContent = 'No hay más contactos en tu cola. Pide al coordinador una nueva asignación.';
+    document.getElementById('g-preguntas').innerHTML = '';
+    btn.disabled = true;
+    return;
+  }
+  document.getElementById('c-nombre').textContent = c.nombre;
+  document.getElementById('c-tel').textContent = c.tel;
+  arrancarTimer();
+  var chip = document.getElementById('c-chip');
+  chip.textContent = camp.tipo === 'encuesta' ? 'ANÓNIMO · CATI' : ('SECCIÓN ' + c.seccion);
+  chip.className = 'chip ' + (camp.tipo === 'encuesta' ? 'acc' : 'ok');
+  document.getElementById('c-seccion').textContent = c.seccion;
+  document.getElementById('c-municipio').textContent = c.municipio;
+  document.getElementById('c-intentos').textContent = c.intentos;
+  var cons = document.getElementById('c-consent');
+  cons.textContent = c.consent ? 'Registrado ✓' : 'SIN CONSENTIMIENTO';
+  cons.style.color = c.consent ? 'var(--ok)' : 'var(--bad)';
+  document.getElementById('c-progreso').textContent =
+    'Llamada ' + (demoState.hechas + 1) + ' · ' + demoState.cola.length + ' pendientes en tu cola';
+
+  document.getElementById('g-apertura').textContent = camp.guion;
+  var wrap = document.getElementById('g-preguntas');
+  wrap.innerHTML = '';
+  respuestas = {};
+  (PREGUNTAS[camp.tipo] || []).forEach(function(p, i){
+    var div = document.createElement('div');
+    div.className = 'preg';
+    var q = document.createElement('div'); q.className = 'q'; q.textContent = (i+1) + '. ' + p.q;
+    var opts = document.createElement('div'); opts.className = 'opts';
+    p.opts.forEach(function(o){
+      var b = document.createElement('button');
+      b.className = 'opt'; b.textContent = o;
+      b.onclick = function(){
+        opts.querySelectorAll('.opt').forEach(function(x){ x.classList.remove('sel'); });
+        b.classList.add('sel');
+        respuestas['p'+i] = o;
+      };
+      opts.appendChild(b);
+    });
+    div.appendChild(q); div.appendChild(opts); wrap.appendChild(div);
+  });
+}
+
+function setDisp(d, btn){
+  dispSel = d;
+  document.querySelectorAll('.disp').forEach(function(b){ b.classList.remove('sel-disp'); });
+  btn.classList.add('sel-disp');
+  document.getElementById('reintento-wrap').style.display = (d === 'volver_llamar') ? 'block' : 'none';
+  document.getElementById('btn-next').disabled = false;
+}
+
+function guardarYSiguiente(){
+  var c = demoState.cola[0];
+  if (!c || !dispSel) return;
+  var dur = detenerTimer();
+  // [SWAP LUIS] UPDATE cola_llamadas SET estado='completada', disposicion=$1,
+  //             notas=$2, reintento_programado=$3, intentos=intentos+1,
+  //             hora_inicio=$4, hora_fin=now(), duracion_segundos=$5,
+  //             fecha_llamada=now() WHERE id=$6 AND licencia_id=LICENCIA_ID
+  // [SWAP LUIS] si campaña tipo='encuesta': INSERT respuestas ANÓNIMAS en tablas
+  //             del módulo de Encuestas (sin ciudadano_id, sin cola_id)
+  var ahora = new Date();
+  demoState.bitacora = demoState.bitacora || [];
+  demoState.bitacora.unshift({
+    hora: ('0'+ahora.getHours()).slice(-2) + ':' + ('0'+ahora.getMinutes()).slice(-2),
+    operador:'María Torres', contacto: c.nombre, dur: dur, disp: dispSel
+  });
+  if (demoState.bitacora.length > 10) demoState.bitacora.pop();
+  if (dispSel === 'contactado' || dispSel === 'comprometido') demoState.contactadasHoy++;
+  if (dispSel === 'volver_llamar') demoState.reintentos++;
+  demoState.cola.shift();
+  demoState.hechas++;
+  try { localStorage.setItem(LS_KEY, JSON.stringify(demoState)); } catch(e){}
+  dispSel = null;
+  document.querySelectorAll('.disp').forEach(function(b){ b.classList.remove('sel-disp'); });
+  document.getElementById('reintento-wrap').style.display = 'none';
+  document.getElementById('notas').value = '';
+  document.getElementById('btn-next').disabled = true;
+  pintarHeader();
+  pintarContacto();
+}
+
+/* ── Vista Campañas ──────────────────────── */
+var TIPO_META = {
+  identificacion:{ label:'Identificación', color:'var(--acc)' },
+  encuesta:{ label:'Encuesta CATI', color:'var(--warn)' },
+  movilizacion:{ label:'Movilización Día E', color:'var(--ok)' }
+};
+function pintarCampanas(){
+  var grid = document.getElementById('camp-grid');
+  grid.innerHTML = '';
+  CAMPANAS.forEach(function(c){
+    var pct = c.total > 0 ? Math.round(100 * c.completadas / c.total) : 0;
+    var m = TIPO_META[c.tipo];
+    var el = document.createElement('div');
+    el.className = 'card camp';
+    el.innerHTML =
+      '<span class="tipo" style="color:' + m.color + '">' + m.label + '</span>' +
+      '<div class="nom">' + c.nombre + '</div>' +
+      '<div class="bar"><i style="width:' + pct + '%;background:' + m.color + '"></i></div>' +
+      '<div class="nums"><span>' + c.completadas.toLocaleString('es-MX') + ' de ' + c.total.toLocaleString('es-MX') + ' llamadas</span><span>' + pct + '%</span></div>' +
+      '<div class="foot"><span class="chip ' + (c.estado === 'activa' ? 'ok' : 'warn') + '">' + c.estado.toUpperCase() + '</span>' +
+      '<span>' + (c.tipo === 'encuesta' ? 'Respuestas anónimas' : 'Vinculada a territorio') + '</span></div>';
+    grid.appendChild(el);
+  });
+}
+
+/* ── Vista Productividad ─────────────────── */
+var chartsListos = false;
+function pintarProductividad(){
+  var tb = document.getElementById('tabla-operadores');
+  tb.innerHTML = '';
+  PRODUCTIVIDAD.forEach(function(o){
+    var tasa = o.llamadas > 0 ? Math.round(100 * (o.contactados + o.comprometidos) / o.llamadas) : 0;
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + o.operador + '</td><td class="num">' + o.llamadas + '</td>' +
+      '<td class="num" style="color:var(--ok)">' + o.contactados + '</td>' +
+      '<td class="num" style="color:var(--acc)">' + o.comprometidos + '</td>' +
+      '<td class="num" style="color:var(--dim)">' + o.sinResp + '</td>' +
+      '<td class="num">' + tasa + '%</td>';
+    tb.appendChild(tr);
+  });
+  if (chartsListos || typeof Chart === 'undefined') return;
+  chartsListos = true;
+  Chart.defaults.color = '#8fa0bd';
+  Chart.defaults.borderColor = '#26314a';
+  new Chart(document.getElementById('ch-operadores'), {
+    type:'bar',
+    data:{ labels: PRODUCTIVIDAD.map(function(o){ return o.operador; }),
+      datasets:[
+        { label:'Contactados', data: PRODUCTIVIDAD.map(function(o){ return o.contactados; }), backgroundColor:'#2ecc8f' },
+        { label:'Comprometidos', data: PRODUCTIVIDAD.map(function(o){ return o.comprometidos; }), backgroundColor:'#3fa7ff' },
+        { label:'Sin respuesta', data: PRODUCTIVIDAD.map(function(o){ return o.sinResp; }), backgroundColor:'#5f7095' }
+      ]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      scales:{ x:{ stacked:true }, y:{ stacked:true } } }
+  });
+  new Chart(document.getElementById('ch-disposiciones'), {
+    type:'doughnut',
+    data:{ labels:['Contactado','Comprometido','No contesta','Buzón','Volver a llamar','Núm. equivocado','Rechazo','No molestar'],
+      datasets:[{ data:Object.keys(DISPOSICIONES_GLOBAL).map(function(k){ return DISPOSICIONES_GLOBAL[k]; }),
+        backgroundColor:['#1f9e6e','#168a5c','#5f7095','#4a5878','#c98f2a','#8a5fb0','#c04a5c','#8c2f3e'], borderWidth:0 }]},
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'right' } } }
+  });
+}
+
+/* ── Vista Supervisión (coordinador/admin) ─
+   [SWAP LUIS] esta vista solo se muestra a roles coordinador,
+   admin y superadmin — ocultar tab según rol de sesión         */
+function flagsOperador(a){
+  var ritmoProm = AUDITORIA.reduce(function(s,o){ return s + o.llamadasHora; }, 0) / AUDITORIA.length;
+  var flags = [];
+  if (a.cortasContactado > 0)
+    flags.push({ t:'roja', txt:'⚠ ' + a.cortasContactado + ' llamadas <' + UMBRAL.DUR_MIN_CONTACTO + 's marcadas "contactado"' });
+  if (a.rachaNC >= UMBRAL.RACHA_NC)
+    flags.push({ t:'roja', txt:'⚠ Racha de ' + a.rachaNC + ' "no contesta" consecutivas' });
+  if (a.llamadasHora > ritmoProm * UMBRAL.RITMO_FACTOR)
+    flags.push({ t:'roja', txt:'⚠ Ritmo anormal: ' + a.llamadasHora + ' llamadas/hr (equipo: ' + Math.round(ritmoProm) + ')' });
+  if (a.inactivoMin >= UMBRAL.INACTIVO_MIN)
+    flags.push({ t:'ambar', txt:'⏸ Inactivo desde hace ' + a.inactivoMin + ' min' });
+  return flags;
+}
+var DISP_LABEL = { contactado:'Contactado', comprometido:'Comprometido', no_contesta:'No contesta',
+  buzon:'Buzón', volver_llamar:'Volver a llamar', numero_equivocado:'Núm. equivocado',
+  rechazo:'Rechazo', no_molestar:'No molestar' };
+
+function pintarSupervision(){
+  var grid = document.getElementById('sup-grid');
+  grid.innerHTML = '';
+  AUDITORIA.forEach(function(a){
+    var flags = flagsOperador(a);
+    var rojas = flags.filter(function(f){ return f.t === 'roja'; }).length;
+    var sem = rojas >= 2 ? 'rojo' : (flags.length > 0 ? 'amarillo' : 'verde');
+    var estado = a.inactivoMin >= UMBRAL.INACTIVO_MIN
+      ? 'Inactivo · ' + a.inactivoMin + ' min sin actividad'
+      : 'Activo · última llamada hace ' + a.inactivoMin + ' min';
+    var html =
+      '<span class="sem-dot sem-' + sem + '"></span>' +
+      '<div class="op-nom">' + a.operador + '</div>' +
+      '<div class="op-est">' + estado + '</div>' +
+      '<div class="op-stats">' +
+        '<span><b>' + fmtDur(a.durProm) + '</b>dur. promedio</span>' +
+        '<span><b>' + a.llamadasHora + '</b>llamadas/hr</span>' +
+      '</div>';
+    if (flags.length === 0) {
+      html += '<span class="flag limpia">✓ Sin señales de alerta</span>';
+    } else {
+      flags.forEach(function(f){ html += '<span class="flag ' + f.t + '">' + f.txt + '</span>'; });
+    }
+    var el = document.createElement('div');
+    el.className = 'card sem-card';
+    el.innerHTML = html;
+    grid.appendChild(el);
+  });
+
+  // Bitácora: llamadas de la sesión demo (vivas) + horneadas
+  var vivas = (demoState.bitacora || []);
+  var todas = vivas.concat(BITACORA_BASE).slice(0, 12);
+  var tb = document.getElementById('tabla-bitacora');
+  tb.innerHTML = '';
+  todas.forEach(function(b){
+    var sospechosa = b.dur < UMBRAL.DUR_MIN_CONTACTO && (b.disp === 'contactado' || b.disp === 'comprometido');
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td class="num">' + b.hora + '</td><td>' + b.operador + '</td><td>' + b.contacto + '</td>' +
+      '<td class="num' + (sospechosa ? ' dur-corta' : '') + '">' + fmtDur(b.dur) + (sospechosa ? ' ⚠' : '') + '</td>' +
+      '<td>' + (DISP_LABEL[b.disp] || b.disp) + '</td>';
+    tb.appendChild(tr);
+  });
+
+  pintarVerificacion();
+}
+
+function pintarVerificacion(){
+  var wrap = document.getElementById('verif-lista');
+  wrap.innerHTML = '';
+  VERIFICACION.forEach(function(v){
+    var row = document.createElement('div');
+    row.className = 'verif-row';
+    var acciones;
+    if (v.resultado === 'confirmada') {
+      acciones = '<span class="verif-res" style="color:var(--ok)">✓ Confirmada</span>';
+    } else if (v.resultado === 'no_coincide') {
+      acciones = '<span class="verif-res" style="color:var(--bad)">✗ No coincide — reportado al coordinador</span>';
+    } else {
+      acciones = '<div class="verif-btns">' +
+        '<button class="vbtn ok" onclick="resolverVerif(\'' + v.id + '\',\'confirmada\')">Confirmada</button>' +
+        '<button class="vbtn bad" onclick="resolverVerif(\'' + v.id + '\',\'no_coincide\')">No coincide</button></div>';
+    }
+    row.innerHTML =
+      '<div class="info"><b>' + v.contacto + ' · ' + v.tel + '</b>' +
+      '<span>Marcada "' + (DISP_LABEL[v.disp] || v.disp) + '" por ' + v.operador + ' · duración ' + fmtDur(v.dur) + '</span></div>' +
+      acciones;
+    wrap.appendChild(row);
+  });
+}
+
+function resolverVerif(id, resultado){
+  // [SWAP LUIS] UPDATE cola_llamadas SET verificado=true, verificado_por=auth.uid(),
+  //             resultado_verificacion=$1 WHERE id=$2 AND licencia_id=LICENCIA_ID
+  var v = VERIFICACION.find(function(x){ return x.id === id; });
+  if (v) v.resultado = resultado;
+  pintarVerificacion();
+}
+
+/* ── Gestión: carga de cola desde Excel externo (coordinador/admin) ─
+   [SWAP LUIS] este tab solo se muestra a roles coordinador/admin/superadmin.
+
+   PRINCIPIO ANTI-DUPLICADOS (2 capas):
+   1) La base externa NUNCA se inserta en `ciudadanos` — va directo a
+      `cola_llamadas`. Así no contamina tu base madre ni rompe el
+      anonimato de encuestas CATI.
+   2) Deduplicación por TELÉFONO normalizado (10 dígitos):
+        a) se quitan repetidos dentro del propio archivo
+        b) se descartan los que ya existen en la cola de la campaña
+      En Fase 4 el chequeo fuerte contra la base es por CURP y luego teléfono:
+      [SWAP LUIS] antes de insertar cada fila válida:
+        SELECT id FROM ciudadanos    WHERE curp=$1;                       -- llave 1
+        SELECT id FROM cola_llamadas WHERE campana_id=$2                  -- llave 2
+               AND regexp_replace(telefono,'\D','','g')=$3
+               AND licencia_id=LICENCIA_ID;
+      Si existe → NO insertar (se conserva el registro previo).            */
+
+let cargaPendiente = null;  // resultado analizado, aún sin confirmar
+
+function normTel(v){
+  var d = String(v == null ? '' : v).replace(/\D/g, '');
+  if (d.length > 10 && d.slice(0, 2) === '52') d = d.slice(-10);
+  return d.length === 10 ? d : '';
+}
+function fmtTel(d){ return d.slice(0, 3) + ' ' + d.slice(3, 6) + ' ' + d.slice(6); }
+function normTxt(s){
+  return String(s == null ? '' : s).toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().replace(/\s+/g, ' ');
+}
+function esConsent(v){
+  var t = normTxt(v);
+  return t === 'si' || t === 's' || t === '1' || t === 'true' || t === 'x' || t === 'verdadero';
+}
+
+// Mapea un encabezado libre del Excel al campo canónico
+function mapearCampo(h){
+  var t = normTxt(h);
+  if (t.indexOf('telefono') >= 0 && t.indexOf('alt') >= 0) return 'telefono_alt';
+  if (t.indexOf('telefono') >= 0 || t.indexOf('celular') >= 0 || t === 'tel') return 'telefono';
+  if (t.indexOf('apellido') >= 0 && t.indexOf('paterno') >= 0) return 'apellido_paterno';
+  if (t.indexOf('apellido') >= 0 && t.indexOf('materno') >= 0) return 'apellido_materno';
+  if (t.indexOf('nombre') >= 0) return 'nombre';
+  if (t.indexOf('seccion') >= 0) return 'seccion';
+  if (t.indexOf('municipio') >= 0) return 'municipio';
+  if (t.indexOf('consent') >= 0) return 'consentimiento';
+  if (t.indexOf('folio') >= 0 || t.indexOf('id externo') >= 0) return 'id_externo';
+  if (t.indexOf('nota') >= 0 || t.indexOf('observ') >= 0) return 'notas';
+  return null;
+}
+
+function leerExcel(file){
+  if (!file) return;
+  document.getElementById('file-name').textContent = file.name;
+  document.getElementById('drop-zone').classList.remove('over');
+  var reader = new FileReader();
+  reader.onload = function(e){
+    try {
+      var wb = XLSX.read(new Uint8Array(e.target.result), { type:'array' });
+      // Prefiere la hoja PLANTILLA_CARGA; si no, la primera del libro
+      var hoja = wb.SheetNames.indexOf('PLANTILLA_CARGA') >= 0 ? 'PLANTILLA_CARGA' : wb.SheetNames[0];
+      var filas = XLSX.utils.sheet_to_json(wb.Sheets[hoja], { header:1, defval:'', raw:false });
+      analizarFilas(filas);
+    } catch(err){
+      alert('No se pudo leer el archivo. Verifica que sea un Excel con la estructura de la plantilla VOTERA.');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function analizarFilas(filas){
+  // Localiza la fila de encabezados: la primera (de las 8 primeras) que mapee 'telefono'
+  var hIdx = -1, mapa = null;
+  for (var i = 0; i < Math.min(filas.length, 8); i++){
+    var m = {};
+    (filas[i] || []).forEach(function(cell, col){ var f = mapearCampo(cell); if (f && m[f] == null) m[f] = col; });
+    if (m.telefono != null){ hIdx = i; mapa = m; break; }
+  }
+  if (hIdx < 0){
+    cargaPendiente = null;
+    document.getElementById('gest-result').style.display = 'none';
+    var em = document.getElementById('gest-empty');
+    em.style.display = 'block';
+    em.textContent = 'No se encontró la columna "Teléfono Principal". Usa la plantilla VOTERA sin cambiar los encabezados.';
+    document.getElementById('btn-cargar').disabled = true;
+    return;
+  }
+
+  // Teléfonos que ya están en la cola (llave de deduplicación contra la cola)
+  var enCola = {};
+  demoState.cola.forEach(function(c){ var d = normTel(c.tel); if (d) enCola[d] = true; });
+
+  var res = { leidos:0, listos:[], sinTel:0, sinConsent:0, dupArchivo:0, dupCola:0 };
+  var vistos = {};
+  for (var r = hIdx + 1; r < filas.length; r++){
+    var fila = filas[r] || [];
+    var val = function(f){ return mapa[f] != null ? fila[mapa[f]] : ''; };
+    var telRaw = val('telefono');
+    // Fila totalmente vacía → se ignora (no cuenta como leída)
+    if (String(telRaw).trim() === '' && String(val('nombre')).trim() === '') continue;
+    res.leidos++;
+    var tel = normTel(telRaw);
+    if (!tel){ res.sinTel++; continue; }
+    if (!esConsent(val('consentimiento'))){ res.sinConsent++; continue; }
+    if (vistos[tel]){ res.dupArchivo++; continue; }
+    vistos[tel] = true;
+    if (enCola[tel]){ res.dupCola++; continue; }
+    var nombre = [val('nombre'), val('apellido_paterno'), val('apellido_materno')]
+      .map(function(x){ return String(x).trim(); }).filter(Boolean).join(' ') || 'Sin nombre';
+    res.listos.push({
+      id:'ext-' + tel, nombre:nombre, tel:fmtTel(tel),
+      seccion:String(val('seccion')).trim() || '—',
+      municipio:String(val('municipio')).trim() || '—',
+      intentos:0, consent:true, origen:'externo'
+    });
+  }
+  cargaPendiente = res;
+  pintarResultado(res);
+}
+
+function pintarResultado(res){
+  document.getElementById('gest-empty').style.display = 'none';
+  document.getElementById('gest-result').style.display = 'block';
+  var desc = res.sinTel + res.sinConsent + res.dupArchivo + res.dupCola;
+  document.getElementById('s-leidos').textContent = res.leidos;
+  document.getElementById('s-listos').textContent = res.listos.length;
+  document.getElementById('s-desc').textContent = desc;
+  document.getElementById('s-desglose').innerHTML =
+    'Descartados por: <b>' + res.sinTel + '</b> sin teléfono válido · ' +
+    '<b>' + res.sinConsent + '</b> sin consentimiento · ' +
+    '<b>' + res.dupArchivo + '</b> repetidos en el archivo · ' +
+    '<b>' + res.dupCola + '</b> ya estaban en la cola.';
+  var tb = document.getElementById('tabla-preview');
+  tb.innerHTML = '';
+  res.listos.slice(0, 8).forEach(function(c){
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + c.nombre + '</td><td class="num">' + c.tel + '</td>' +
+      '<td>' + c.seccion + '</td><td>' + c.municipio + '</td>' +
+      '<td><span class="chip ok">SI</span></td>';
+    tb.appendChild(tr);
+  });
+  document.getElementById('preview-nota').textContent = res.listos.length > 8
+    ? 'Mostrando 8 de ' + res.listos.length + ' contactos listos.'
+    : (res.listos.length + ' contacto(s) listo(s) para cargar.');
+  document.getElementById('btn-cargar').disabled = res.listos.length === 0;
+}
+
+function confirmarCarga(){
+  if (!cargaPendiente || cargaPendiente.listos.length === 0) return;
+  var campId = document.getElementById('sel-camp-destino').value;
+  var camp = CAMPANAS.find(function(x){ return x.id === campId; });
+  // [SWAP LUIS] INSERT INTO cola_llamadas (campana_id, licencia_id, nombre, telefono,
+  //             seccion, municipio, consent, origen, estado)
+  //             VALUES (campId, LICENCIA_ID, ..., 'externo', 'pendiente')
+  //             — una fila por contacto listo. NADA se escribe en `ciudadanos`.
+  var n = cargaPendiente.listos.length;
+  // Demo: se agregan a la cola visible del operador
+  cargaPendiente.listos.forEach(function(c){ demoState.cola.push(Object.assign({}, c)); });
+  try { localStorage.setItem(LS_KEY, JSON.stringify(demoState)); } catch(e){}
+  alert(n + ' contacto(s) cargado(s) a la cola' + (camp ? ' de "' + camp.nombre + '"' : '') +
+        '.\nDuplicados y filas sin consentimiento fueron descartados automáticamente.');
+  // Reset del panel
+  cargaPendiente = null;
+  document.getElementById('file-excel').value = '';
+  document.getElementById('file-name').textContent = '';
+  document.getElementById('gest-result').style.display = 'none';
+  var em = document.getElementById('gest-empty');
+  em.style.display = 'block';
+  em.textContent = 'Sube un archivo para ver el desglose de deduplicación.';
+  document.getElementById('btn-cargar').disabled = true;
+  pintarHeader();
+  pintarContacto();
+}
+
+function llenarCampDestino(){
+  var sel = document.getElementById('sel-camp-destino');
+  if (!sel || sel.options.length) return;
+  CAMPANAS.forEach(function(c){
+    var o = document.createElement('option');
+    o.value = c.id; o.textContent = c.nombre;
+    sel.appendChild(o);
+  });
+}
+
+/* ── Navegación ──────────────────────────── */
+function verTab(id, btn){
+  document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+  btn.classList.add('active');
+  document.querySelectorAll('.view').forEach(function(v){ v.classList.remove('active'); });
+  document.getElementById('view-' + id).classList.add('active');
+  if (id === 'productividad') pintarProductividad();
+  if (id === 'campanas') pintarCampanas();
+  if (id === 'supervision') pintarSupervision();
+  if (id === 'gestion') llenarCampDestino();
+}
+
+/* ── Init ────────────────────────────────── */
+pintarHeader();
+pintarContacto();
+
+// Drag & drop para la carga de Excel (Gestión)
+(function(){
+  var dz = document.getElementById('drop-zone');
+  if (!dz) return;
+  ['dragenter','dragover'].forEach(function(ev){
+    dz.addEventListener(ev, function(e){ e.preventDefault(); dz.classList.add('over'); });
+  });
+  ['dragleave','drop'].forEach(function(ev){
+    dz.addEventListener(ev, function(e){ e.preventDefault(); dz.classList.remove('over'); });
+  });
+  dz.addEventListener('drop', function(e){
+    var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (f) leerExcel(f);
+  });
+})();
+</script>
+</body>
+</html>
