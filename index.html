@@ -176,6 +176,23 @@ iframe{width:100%;height:100%;border:none;display:block;}
   .collapse-btn{display:none;}
   .pb-nums{display:none;}
 }
+
+/* ── [T25.2] Tooltips descriptivos en tarjetas KPI ──────────────────────────
+   Uso: data-tip="texto" en cualquier elemento. Hover en escritorio, tap en
+   móvil. Posicionado con position:fixed por tooltips.js, así que no lo
+   recorta ningún contenedor con overflow ni scroll. */
+[data-tip]{cursor:help;}
+#ie-tip{
+  position:fixed; z-index:9999; max-width:280px; pointer-events:none;
+  background:#0f1729; color:#e2e8f0;
+  border:1px solid rgba(148,163,184,.28); border-radius:8px;
+  padding:9px 12px; font-family:'DM Sans','IBM Plex Sans',system-ui,sans-serif;
+  font-size:12px; line-height:1.45; font-weight:400;
+  box-shadow:0 8px 24px rgba(0,0,0,.55);
+  opacity:0; transform:translateY(-3px); transition:opacity .13s ease, transform .13s ease;
+}
+#ie-tip.on{opacity:1; transform:translateY(0);}
+@media (max-width:820px){ #ie-tip{max-width:min(280px,calc(100vw - 24px)); font-size:12.5px;} }
 </style>
 </head>
 <body>
@@ -370,14 +387,14 @@ iframe{width:100%;height:100%;border:none;display:block;}
     </div>
 
     <div class="kpi-row">
-      <div class="kpi bl"><div class="kv" data-theme="sistema-meta" id="ix-meta-kpi">208,717</div><div class="kl">Meta estatal</div></div>
-      <div class="kpi gr"><div class="kv" id="hub-kpi-total">10,000</div><div class="kl">Capturados</div></div>
-      <div class="kpi gr"><div class="kv" id="hub-kpi-seguro">4,601</div><div class="kl">Voto seguro</div></div>
-      <div class="kpi am"><div class="kv" id="hub-kpi-riesgo">2,203</div><div class="kl">En riesgo</div></div>
-      <div class="kpi re"><div class="kv" id="hub-kpi-dup">408</div><div class="kl">Duplicados</div></div>
-      <div class="kpi cy"><div class="kv">60</div><div class="kl">Operadores</div></div>
-      <div class="kpi cy"><div class="kv">392</div><div class="kl">Secciones</div></div>
-      <div class="kpi re"><div class="kv">219</div><div class="kl">Sec. críticas</div></div>
+      <div class="kpi bl" data-tip="Total de simpatizantes que la candidatura se propuso captar en todo el estado para 2027."><div class="kv" data-theme="sistema-meta" id="ix-meta-kpi">208,717</div><div class="kl">Meta estatal</div></div>
+      <div class="kpi gr" data-tip="Simpatizantes registrados hasta hoy en el padrón de la campaña."><div class="kv" id="hub-kpi-total">10,000</div><div class="kl">Capturados</div></div>
+      <div class="kpi gr" data-tip="Simpatizantes con nivel de compromiso alto (3 o 4): se considera que su voto está asegurado."><div class="kv" id="hub-kpi-seguro">4,601</div><div class="kl">Voto seguro</div></div>
+      <div class="kpi am" data-tip="Simpatizantes marcados como posible fuga de voto. Requieren visita o seguimiento para no perderlos."><div class="kv" id="hub-kpi-riesgo">2,203</div><div class="kl">En riesgo</div></div>
+      <div class="kpi re" data-tip="Registros repetidos en el padrón. Inflan artificialmente el avance y hay que depurarlos."><div class="kv" id="hub-kpi-dup">408</div><div class="kl">Duplicados</div></div>
+      <div class="kpi cy" data-tip="Personas de la estructura de campo dadas de alta en el sistema (capturistas, coordinadores y líderes)."><div class="kv">60</div><div class="kl">Operadores</div></div>
+      <div class="kpi cy" data-tip="Secciones electorales del estado sobre las que se organiza el trabajo territorial."><div class="kv">392</div><div class="kl">Secciones</div></div>
+      <div class="kpi re" data-tip="Secciones con avance menor al 5% de su meta. Son las que más urgen para no perder terreno."><div class="kv">219</div><div class="kl">Sec. críticas</div></div>
     </div>
 
     <div class="mod-title">9 módulos del sistema — clic para abrir</div>
@@ -490,7 +507,7 @@ iframe{width:100%;height:100%;border:none;display:block;}
 <script>
 // APP_BUILD: versin de build para cache-busting de los mdulos en iframe.
 // ⚠️ SUBE este nmero en cada deploy con cambios en los mdulos.
-const APP_BUILD = '20260720h';
+const APP_BUILD = '20260721a';
 
 let collapsed = false;
 
@@ -717,6 +734,7 @@ function cerrarSesion(){
 })();
 </script>
 <script src="ie_metas_casilla_horneado.js"></script>
+<script src="tooltips.js"></script>
 <script src="theme.js"></script>
 <script>
 // [SWAP LUIS] Corrección final de META: corre DESPUÉS de theme.js para que el

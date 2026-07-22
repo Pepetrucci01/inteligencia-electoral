@@ -210,6 +210,24 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
 .f2kpi.bl::before{background:var(--accent);}.f2kpi.bl .fv{color:var(--accent);}
 .f2kpi.cy::before{background:var(--cyan);}  .f2kpi.cy .fv{color:var(--cyan);}
 .f2kpi.pu::before{background:var(--purple);}.f2kpi.pu .fv{color:var(--purple);}
+
+/* ── [T25.2] Tooltips descriptivos en tarjetas KPI ──────────────────────────
+   Uso: añadir data-tip="texto" a cualquier elemento. Hover en escritorio;
+   tap en móvil/tablet (JS añade .tip-open y cierra al tocar fuera).
+   El tooltip se posiciona con position:fixed vía JS para que NO lo recorte
+   el overflow:hidden de .f2kpi ni ningún contenedor con scroll. */
+[data-tip]{cursor:help;}
+#ie-tip{
+  position:fixed; z-index:9999; max-width:280px; pointer-events:none;
+  background:#0f1729; color:#e2e8f0;
+  border:1px solid rgba(148,163,184,.28); border-radius:8px;
+  padding:9px 12px; font-family:'DM Sans','IBM Plex Sans',system-ui,sans-serif;
+  font-size:12px; line-height:1.45; font-weight:400;
+  box-shadow:0 8px 24px rgba(0,0,0,.55);
+  opacity:0; transform:translateY(-3px); transition:opacity .13s ease, transform .13s ease;
+}
+#ie-tip.on{opacity:1; transform:translateY(0);}
+@media (max-width:820px){ #ie-tip{max-width:min(280px,calc(100vw - 24px)); font-size:12.5px;} }
 .fv{font-size:20px;font-weight:700;font-family:var(--mono);line-height:1;margin-bottom:2px;}
 .fl{font-size:9px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.04em;}
 
@@ -541,14 +559,14 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
   <!-- F2 KPIs -->
   <div style="padding:14px 24px;background:var(--bg3);border-bottom:1px solid var(--border)">
     <div class="f2kpi-row">
-      <div class="f2kpi gr"><div class="fl">Casillas abiertas</div><div class="fv" id="k-ab">0</div></div>
-      <div class="f2kpi am"><div class="fl">Sin reporte</div><div class="fv" id="k-sr">0</div></div>
-      <div class="f2kpi re"><div class="fl">Con incidencia</div><div class="fv" id="k-inc">0</div></div>
-      <div class="f2kpi cy"><div class="fl">Cerradas</div><div class="fv" id="k-ce">0</div></div>
-      <div class="f2kpi gr"><div class="fl">Votos confirmados</div><div class="fv" id="k-vt">0</div></div>
-      <div class="f2kpi bl"><div class="fl">Nuevos registros</div><div class="fv" id="k-nv">0</div></div>
-      <div class="f2kpi pu"><div class="fl">% participación lista</div><div class="fv" id="k-pt">0%</div></div>
-      <div class="f2kpi gr"><div class="fl">% casillas activas</div><div class="fv" id="k-ca">0%</div></div>
+      <div class="f2kpi gr" data-tip="Casillas donde el representante ya confirmó que se instaló y está operando."><div class="fl">Casillas abiertas</div><div class="fv" id="k-ab">0</div></div>
+      <div class="f2kpi am" data-tip="Casillas donde no ha llegado ningún reporte del representante. Requieren seguimiento inmediato."><div class="fl">Sin reporte</div><div class="fv" id="k-sr">0</div></div>
+      <div class="f2kpi re" data-tip="Casillas donde el representante reportó algún problema: no dejaron instalar, falta material, sacaron al representante, etc."><div class="fl">Con incidencia</div><div class="fv" id="k-inc">0</div></div>
+      <div class="f2kpi cy" data-tip="Casillas que ya terminaron su jornada y el representante confirmó el cierre y conteo."><div class="fl">Cerradas</div><div class="fv" id="k-ce">0</div></div>
+      <div class="f2kpi gr" data-tip="Suma de votos a favor reportados por los representantes desde las casillas que ya enviaron datos."><div class="fl">Votos confirmados</div><div class="fv" id="k-vt">0</div></div>
+      <div class="f2kpi bl" data-tip="Simpatizantes nuevos captados durante la jornada e incorporados al padrón."><div class="fl">Nuevos registros</div><div class="fv" id="k-nv">0</div></div>
+      <div class="f2kpi pu" data-tip="De los simpatizantes comprometidos (Meta Real), qué porcentaje ya fue confirmado que votó. Mide la efectividad de movilización."><div class="fl">% participación lista</div><div class="fv" id="k-pt">0%</div></div>
+      <div class="f2kpi gr" data-tip="Porcentaje de casillas con al menos un reporte recibido. Mide la cobertura de información en la jornada."><div class="fl">% casillas activas</div><div class="fv" id="k-ca">0%</div></div>
     </div>
   </div>
 
@@ -2903,6 +2921,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 </script>
 <script src="ie_metas_casilla_horneado.js"></script>
+<script src="tooltips.js"></script>
 <script src="dataRefresh.js"></script>
 <script src="theme.js"></script>
 <script>
