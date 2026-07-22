@@ -671,7 +671,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
     <div class="card">
       <div class="card-head"><div class="card-title">Distribución por edad</div></div>
       <div class="chart-wrap" style="height:220px">
-        <canvas id="ch-edad" role="img" aria-label="Distribución por edad: 18-29: 1887, 30-39: 1448, 40-49: 1530, 50-59: 1547, 60-69: 1541, 70+: 2047">Grupos de edad con mayor concentración en 70+.</canvas>
+        <canvas id="ch-edad" role="img" aria-label="Distribución por edad, cada barra dividida por sexo (hombres y mujeres)">Distribución por grupo de edad, apilada por sexo.</canvas>
       </div>
     </div>
     <div class="card">
@@ -2871,6 +2871,8 @@ async function cargarPerfil() {
         seg:   Number(g.seguro||0),
         rie:   Number(g.riesgo||0),
         apo:   Number(g.apoyo||0),
+        hom:   Number(g.hombres||0),   // [T25.1] desglose por sexo real del RPC
+        muj:   Number(g.mujeres||0),
         // La "prioridad" del array viejo estaba inventada. Ahora se DERIVA del
         // dato real: mas riesgo relativo = mas prioridad.
         prioridad: (() => {
@@ -2925,16 +2927,38 @@ async function cargarPerfil() {
       // Distribución por edad: usar los grupos reales
       const elEdad = document.getElementById('ch-edad');
       if (elEdad && window.Chart) {
+        // [T25.1] Barras APILADAS por sexo (hombres/mujeres reales del RPC).
+        // Azul = hombres, morado = mujeres. Tooltip por segmento con el total
+        // de ese sexo en ese rango; leyenda visible arriba.
         window._chPerfilEdad = new Chart(elEdad, {
           type:'bar',
           data:{
             labels: PERFIL_DATA.map(g => g.grupo),
-            datasets:[{ label:'Ciudadanos', data: PERFIL_DATA.map(g => g.total),
-              backgroundColor:'#3b82f6bb', borderRadius:4 }]
+            datasets:[
+              { label:'Hombres', data: PERFIL_DATA.map(g => g.hom),
+                backgroundColor:'#3b82f6', borderRadius:{topLeft:0,topRight:0,bottomLeft:4,bottomRight:4}, stack:'sexo' },
+              { label:'Mujeres', data: PERFIL_DATA.map(g => g.muj),
+                backgroundColor:'#a855f7', borderRadius:{topLeft:4,topRight:4,bottomLeft:0,bottomRight:0}, stack:'sexo' }
+            ]
           },
-          options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-            scales:{x:{ticks:{color:TICK,font:FONT},grid:{color:GRID}},
-                    y:{ticks:{color:TICK,font:FONT},grid:{color:GRID}}}}
+          options:{responsive:true,maintainAspectRatio:false,
+            plugins:{
+              legend:{display:true,position:'top',labels:{color:TICK,font:FONT,boxWidth:12,padding:10}},
+              tooltip:{callbacks:{
+                label:(ctx)=>{
+                  const v = ctx.parsed.y || 0;
+                  return ` ${ctx.dataset.label}: ${v.toLocaleString('es-MX')}`;
+                },
+                footer:(items)=>{
+                  const t = items.reduce((s,i)=>s+(i.parsed.y||0),0);
+                  return 'Total: ' + t.toLocaleString('es-MX');
+                }
+              }}
+            },
+            scales:{
+              x:{stacked:true,ticks:{color:TICK,font:FONT},grid:{color:GRID}},
+              y:{stacked:true,ticks:{color:TICK,font:FONT},grid:{color:GRID}}
+            }}
         });
       }
       // Distribución por sexo: usar hombres/mujeres reales del resumen
