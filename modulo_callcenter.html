@@ -474,6 +474,78 @@ async function guardarLlamadaReal(colaId, datos) {
   });
 }
 
+// ── [SWAP 4] Productividad por operador (vista v_productividad_callcenter) ─
+async function cargarProductividadReal() {
+  const filas = await ccFetch(
+    'v_productividad_callcenter?select=*&licencia_id=eq.' + LICENCIA_ID
+  );
+  // Adaptar al formato que ya usa la UI (sinResp en camelCase).
+  return (filas || []).map(function (o) {
+    return {
+      operador:      o.operador || 'Sin nombre',
+      llamadas:      Number(o.llamadas || 0),
+      contactados:   Number(o.contactados || 0),
+      comprometidos: Number(o.comprometidos || 0),
+      sinResp:       Number(o.sin_respuesta || 0)
+    };
+  });
+}
+
+// ── [SWAP 5] Supervisión (deriva métricas de v_auditoria_callcenter) ──────
+// La vista devuelve llamadas individuales; aquí se agregan por operador para
+// las señales de alerta que la UI ya sabe pintar (duración promedio,
+// llamadas/hora, racha de no-contesta, minutos sin actividad).
+async function cargarAuditoriaReal() {
+  const filas = await ccFetch(
+    'v_auditoria_callcenter?select=*&licencia_id=eq.' + LICENCIA_ID +
+    '&order=fecha_llamada.desc&limit=500'
+  );
+  if (!filas || !filas.length) return [];
+
+  const porOperador = {};
+  filas.forEach(function (f) {
+    const k = f.operador || 'Sin nombre';
+    if (!porOperador[k]) porOperador[k] = { operador: k, llamadas: [] };
+    porOperador[k].llamadas.push(f);
+  });
+
+  const ahora = Date.now();
+  return Object.keys(porOperador).map(function (k) {
+    const lls  = porOperador[k].llamadas;          // ya vienen de más reciente a más antigua
+    const durs = lls.map(function (l) { return Number(l.duracion_segundos || 0); })
+                    .filter(function (d) { return d > 0; });
+    const durProm = durs.length
+      ? Math.round(durs.reduce(function (a, b) { return a + b; }, 0) / durs.length) : 0;
+
+    // Minutos desde la última llamada registrada.
+    const ultima = lls[0] && lls[0].fecha_llamada ? new Date(lls[0].fecha_llamada).getTime() : null;
+    const inactivoMin = ultima ? Math.max(0, Math.round((ahora - ultima) / 60000)) : 999;
+
+    // Llamadas en la última hora (ritmo real, no promedio de toda la jornada).
+    const haceUnaHora = ahora - 3600000;
+    const llamadasHora = lls.filter(function (l) {
+      return l.fecha_llamada && new Date(l.fecha_llamada).getTime() >= haceUnaHora;
+    }).length;
+
+    // Racha actual de "no contesta"/buzón seguidos (señal de marcado en falso).
+    let rachaNC = 0;
+    for (let i = 0; i < lls.length; i++) {
+      if (lls[i].disposicion === 'no_contesto' || lls[i].disposicion === 'buzon') rachaNC++;
+      else break;
+    }
+
+    // Llamadas marcadas "contactado" pero sospechosamente cortas (<20 s).
+    const cortasContactado = lls.filter(function (l) {
+      return (l.disposicion === 'contactado' || l.disposicion === 'comprometido')
+          && Number(l.duracion_segundos || 0) > 0
+          && Number(l.duracion_segundos) < 20;
+    }).length;
+
+    return { operador: k, durProm: durProm, llamadasHora: llamadasHora,
+             rachaNC: rachaNC, cortasContactado: cortasContactado, inactivoMin: inactivoMin };
+  });
+}
+
 // ── Arranque: intenta datos reales; si no hay, se queda en demo ───────────
 async function iniciarDatosReales() {
   try {
@@ -821,6 +893,20 @@ function pintarCampanas(){
 /* ── Vista Productividad ─────────────────── */
 var chartsListos = false;
 function pintarProductividad(){
+  // [T-CC 21 jul] Con datos reales, recarga la vista antes de pintar.
+  if (!CC_DEMO && !window._ccProdCargando) {
+    window._ccProdCargando = true;
+    cargarProductividadReal().then(function(filas){
+      window._ccProdCargando = false;
+      PRODUCTIVIDAD.length = 0;
+      filas.forEach(function(f){ PRODUCTIVIDAD.push(f); });
+      chartsListos = false;   // permitir redibujar la gráfica con datos nuevos
+      pintarProductividad();
+    }).catch(function(e){
+      window._ccProdCargando = false;
+      console.warn('Call Center: no se pudo cargar productividad:', e.message);
+    });
+  }
   var tb = document.getElementById('tabla-operadores');
   tb.innerHTML = '';
   PRODUCTIVIDAD.forEach(function(o){
@@ -837,7 +923,10 @@ function pintarProductividad(){
   chartsListos = true;
   Chart.defaults.color = '#8fa0bd';
   Chart.defaults.borderColor = '#26314a';
-  new Chart(document.getElementById('ch-operadores'), {
+  // [T-CC 21 jul] Al repintar con datos reales hay que destruir la gráfica
+  // anterior: dos Chart sobre el mismo canvas se superponen y parpadean.
+  if (window._chOperadores) { try { window._chOperadores.destroy(); } catch(e){} }
+  window._chOperadores = new Chart(document.getElementById('ch-operadores'), {
     type:'bar',
     data:{ labels: PRODUCTIVIDAD.map(function(o){ return o.operador; }),
       datasets:[
@@ -878,6 +967,19 @@ var DISP_LABEL = { contactado:'Contactado', comprometido:'Comprometido', no_cont
   rechazo:'Rechazo', no_molestar:'No molestar' };
 
 function pintarSupervision(){
+  // [T-CC 21 jul] Con datos reales, recarga la auditoría antes de pintar.
+  if (!CC_DEMO && !window._ccAudCargando) {
+    window._ccAudCargando = true;
+    cargarAuditoriaReal().then(function(filas){
+      window._ccAudCargando = false;
+      AUDITORIA.length = 0;
+      filas.forEach(function(f){ AUDITORIA.push(f); });
+      pintarSupervision();
+    }).catch(function(e){
+      window._ccAudCargando = false;
+      console.warn('Call Center: no se pudo cargar auditoría:', e.message);
+    });
+  }
   var grid = document.getElementById('sup-grid');
   grid.innerHTML = '';
   AUDITORIA.forEach(function(a){
@@ -948,8 +1050,20 @@ function pintarVerificacion(){
 }
 
 function resolverVerif(id, resultado){
-  // [SWAP LUIS] UPDATE cola_llamadas SET verificado=true, verificado_por=auth.uid(),
-  //             resultado_verificacion=$1 WHERE id=$2 AND licencia_id=LICENCIA_ID
+  // [T-CC 21 jul] Escritura REAL de la verificación de calidad.
+  if (!CC_DEMO) {
+    ccFetch('cola_llamadas?id=eq.' + id + '&licencia_id=eq.' + LICENCIA_ID, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify({
+        verificado: true,
+        verificado_por: (window._sesion && window._sesion.id) || null,
+        resultado_verificacion: resultado
+      })
+    }).catch(function(e){
+      console.warn('Call Center: no se pudo guardar la verificación:', e.message);
+    });
+  }
   var v = VERIFICACION.find(function(x){ return x.id === id; });
   if (v) v.resultado = resultado;
   pintarVerificacion();
@@ -1106,14 +1220,40 @@ function confirmarCarga(){
   if (!cargaPendiente || cargaPendiente.listos.length === 0) return;
   var campId = document.getElementById('sel-camp-destino').value;
   var camp = CAMPANAS.find(function(x){ return x.id === campId; });
-  // [SWAP LUIS] INSERT INTO cola_llamadas (campana_id, licencia_id, nombre, telefono,
-  //             seccion, municipio, consent, origen, estado)
-  //             VALUES (campId, LICENCIA_ID, ..., 'externo', 'pendiente')
-  //             — una fila por contacto listo. NADA se escribe en `ciudadanos`.
   var n = cargaPendiente.listos.length;
-  // Demo: se agregan a la cola visible del operador
-  cargaPendiente.listos.forEach(function(c){ demoState.cola.push(Object.assign({}, c)); });
-  try { localStorage.setItem(LS_KEY, JSON.stringify(demoState)); } catch(e){}
+
+  // [T-CC 21 jul] INSERT REAL en cola_llamadas. NADA se escribe en `ciudadanos`:
+  // los contactos externos viven solo en la cola (el padrón no se contamina).
+  // El índice único (campana_id, telefono) del SQL 30 descarta duplicados en BD
+  // aunque se cuelen en el archivo.
+  if (!CC_DEMO && campId) {
+    var filas = cargaPendiente.listos.map(function(c){
+      return {
+        campana_id: campId, licencia_id: LICENCIA_ID,
+        nombre: c.nombre || null, telefono: c.tel,
+        seccion: c.seccion || null, municipio: c.municipio || null,
+        consent: true, origen: 'externo', estado: 'pendiente'
+      };
+    });
+    ccFetch('cola_llamadas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json',
+                 'Prefer': 'return=minimal,resolution=ignore-duplicates' },
+      body: JSON.stringify(filas)
+    }).then(function(){
+      console.log('✅ Call Center: ' + n + ' contacto(s) cargado(s) a la cola real.');
+      if (typeof pintarCampanas === 'function') cargarCampanasReales().then(function(cs){
+        CAMPANAS.length = 0; cs.forEach(function(c){ CAMPANAS.push(c); }); pintarCampanas();
+      });
+    }).catch(function(e){
+      console.warn('Call Center: falló la carga masiva:', e.message);
+      alert('No se pudo cargar a la base: ' + e.message);
+    });
+  } else {
+    // Demo: se agregan a la cola visible del operador
+    cargaPendiente.listos.forEach(function(c){ demoState.cola.push(Object.assign({}, c)); });
+    try { localStorage.setItem(LS_KEY, JSON.stringify(demoState)); } catch(e){}
+  }
   alert(n + ' contacto(s) cargado(s) a la cola' + (camp ? ' de "' + camp.nombre + '"' : '') +
         '.\nDuplicados y filas sin consentimiento fueron descartados automáticamente.');
   // Reset del panel
