@@ -65,6 +65,22 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 .form-input.error{border-color:var(--red);}
 .form-select{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:var(--sans);font-size:15px;padding:12px 14px;outline:none;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235a6a85' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;}
 .form-select:focus{border-color:var(--accent);}
+/* Escáner INE */
+.ine-scan-btn{width:100%;background:linear-gradient(135deg,#1d4ed8,#3b82f6);border:none;border-radius:10px;color:#fff;font-family:var(--sans);font-size:15px;font-weight:600;padding:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:6px;}
+.ine-scan-btn:active{transform:scale(.98);}
+.ine-modal{position:fixed;inset:0;background:rgba(5,8,20,.96);z-index:5000;display:none;flex-direction:column;align-items:center;justify-content:center;padding:16px;}
+.ine-modal.abierto{display:flex;}
+.ine-video-wrap{position:relative;width:100%;max-width:480px;border-radius:12px;overflow:hidden;border:2px solid rgba(59,130,246,.5);}
+.ine-video-wrap video{width:100%;display:block;}
+.ine-guia{position:absolute;inset:10% 6%;border:2px dashed rgba(255,255,255,.55);border-radius:10px;pointer-events:none;}
+.ine-hint{font-size:12px;font-family:var(--mono);color:#9fb0cc;margin:12px 0;text-align:center;}
+.ine-acciones{display:flex;gap:10px;width:100%;max-width:480px;}
+.ine-btn{flex:1;border:none;border-radius:10px;padding:14px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--sans);}
+.ine-btn.capturar{background:#22c55e;color:#04140a;}
+.ine-btn.cancelar{background:rgba(255,255,255,.08);color:#cbd5e1;border:1px solid rgba(255,255,255,.15);}
+.ine-procesando{display:none;flex-direction:column;align-items:center;gap:12px;color:#cbd5e1;font-family:var(--mono);font-size:13px;}
+.ine-spinner{width:36px;height:36px;border:3px solid rgba(59,130,246,.25);border-top-color:#3b82f6;border-radius:50%;animation:inespin .8s linear infinite;}
+@keyframes inespin{to{transform:rotate(360deg)}}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .form-error{font-size:11px;color:var(--red);margin-top:4px;font-family:var(--mono);}
 
@@ -311,6 +327,11 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
       </label>
     </div>
 
+
+    <div class="form-section">
+      <button type="button" class="ine-scan-btn" onclick="abrirEscanerINE()">📷 Escanear credencial INE</button>
+      <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-align:center;margin-bottom:4px">Toma la foto y los campos se llenan solos · La imagen NO se almacena</div>
+    </div>
 
     <div class="form-section">
       <div class="form-section-title">Datos personales</div>
@@ -575,6 +596,24 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 <!-- FAB -->
 <button class="fab" onclick="showTab('captura');nuevoRegistro()" title="Nuevo registro">+</button>
 
+<!-- MODAL ESCÁNER INE -->
+<div class="ine-modal" id="ine-modal">
+  <div class="ine-video-wrap" id="ine-video-wrap">
+    <video id="ine-video" autoplay playsinline muted></video>
+    <div class="ine-guia"></div>
+  </div>
+  <div class="ine-hint">Encuadra el FRENTE de la credencial dentro del recuadro,<br>con buena luz y sin reflejos</div>
+  <div class="ine-acciones" id="ine-acciones">
+    <button class="ine-btn cancelar" onclick="cerrarEscanerINE()">Cancelar</button>
+    <button class="ine-btn capturar" onclick="capturarINE()">📸 Tomar foto</button>
+  </div>
+  <div class="ine-procesando" id="ine-procesando">
+    <div class="ine-spinner"></div>
+    <div>Leyendo credencial...</div>
+  </div>
+  <canvas id="ine-canvas" style="display:none"></canvas>
+</div>
+
 <script>
 // ─── DATOS SIMULADOS ───────────────────────────────────────────────────────
 // Datos del capturista desde sesión real
@@ -609,6 +648,77 @@ let CIUDADANOS = [
 // ─── STATE ─────────────────────────────────────────────────────────────────
 let compSel = 0, origenSel = '', toggles = {riesgo:false, apoyo:false, influencia:false};
 let filtroActivo = 'todos', fichaAbierta = null;
+
+// ─── ESCÁNER INE ───────────────────────────────────────────────────────────
+// La cámara es REAL (getUserMedia). La extracción en main es DEMO (simulada).
+// [SWAP LUIS] En desarrollo: DEMO_MODE_INE=false y extraerDatosINE() envía la foto
+// (base64, máx 5MB) a la Edge Function 'scan-ine' de Supabase, que llama a la API
+// de visión con la llave del lado servidor y devuelve JSON con los campos.
+// La imagen NUNCA se guarda: se lee y se desecha (ni en Storage ni en tablas).
+const DEMO_MODE_INE = true;
+let ineStream = null;
+
+function abrirEscanerINE(){
+  const modal=document.getElementById('ine-modal');
+  modal.classList.add('abierto');
+  document.getElementById('ine-acciones').style.display='flex';
+  document.getElementById('ine-procesando').style.display='none';
+  document.getElementById('ine-video-wrap').style.display='block';
+  navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1920}},audio:false})
+    .then(function(stream){ ineStream=stream; document.getElementById('ine-video').srcObject=stream; })
+    .catch(function(){ alert('No se pudo acceder a la cámara. Revisa los permisos del navegador.'); cerrarEscanerINE(); });
+}
+
+function cerrarEscanerINE(){
+  if(ineStream){ ineStream.getTracks().forEach(function(t){t.stop();}); ineStream=null; }
+  document.getElementById('ine-modal').classList.remove('abierto');
+}
+
+function capturarINE(){
+  const video=document.getElementById('ine-video');
+  const canvas=document.getElementById('ine-canvas');
+  canvas.width=video.videoWidth; canvas.height=video.videoHeight;
+  canvas.getContext('2d').drawImage(video,0,0);
+  const fotoBase64=canvas.toDataURL('image/jpeg',0.85).split(',')[1];
+  // Detener cámara y mostrar 'leyendo...'
+  if(ineStream){ ineStream.getTracks().forEach(function(t){t.stop();}); ineStream=null; }
+  document.getElementById('ine-video-wrap').style.display='none';
+  document.getElementById('ine-acciones').style.display='none';
+  document.getElementById('ine-procesando').style.display='flex';
+  extraerDatosINE(fotoBase64);
+}
+
+function extraerDatosINE(fotoBase64){
+  if(DEMO_MODE_INE){
+    // DEMO: simula la lectura con datos de ejemplo tras una pausa realista
+    setTimeout(function(){ aplicarDatosINE({
+      nombre:'MARÍA ELENA', paterno:'GARCÍA', materno:'LÓPEZ',
+      edad:34, sexo:'MUJER', curp:'GALM910415MCMRPR08',
+      clave_elector:'GRLPMR91041506M100', seccion:138,
+      municipio:'VILLA DE ALVAREZ', domicilio:'AV CONSTITUCIÓN 245, COL CENTRO'
+    }); },1800);
+    return;
+  }
+  // [SWAP LUIS] Llamada real (desarrollo):
+  // fetch(SUPABASE_URL+'/functions/v1/scan-ine',{method:'POST',
+  //   headers:{'Content-Type':'application/json','Authorization':'Bearer '+access_token},
+  //   body:JSON.stringify({image_base64:fotoBase64,media_type:'image/jpeg'})})
+  // .then(r=>r.json()).then(d=>{ if(d.success) aplicarDatosINE(d.data); else {alert(d.error); cerrarEscanerINE();} })
+  // .catch(()=>{ alert('Error de conexión. Captura manualmente.'); cerrarEscanerINE(); });
+}
+
+function aplicarDatosINE(d){
+  cerrarEscanerINE();
+  const set=function(id,v){ const el=document.getElementById(id); if(el&&v!==undefined&&v!==null&&v!=='') el.value=v; };
+  set('f-nombre',d.nombre); set('f-paterno',d.paterno); set('f-materno',d.materno);
+  set('f-edad',d.edad); set('f-sexo',d.sexo); set('f-curp',d.curp);
+  set('f-clave',d.clave_elector); set('f-domicilio',d.domicilio);
+  set('f-municipio',d.municipio);
+  if(typeof actualizarSecciones==='function') actualizarSecciones();
+  set('f-seccion',d.seccion);
+  if(typeof verificarAsignacion==='function') verificarAsignacion();
+  alert('✓ Credencial leída. Verifica los datos antes de guardar'+(DEMO_MODE_INE?' (modo demo)':'')+'.');
+}
 
 // ─── TABS ──────────────────────────────────────────────────────────────────
 function showTab(tab) {
