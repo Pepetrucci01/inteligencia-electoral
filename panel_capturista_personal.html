@@ -210,7 +210,13 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
     if (!s || !s.ts) { window.location.replace('login.html'); return; }
     const horas = (Date.now() - s.ts) / 3600000;
     if (horas >= 8) { localStorage.removeItem('electoral_sesion'); window.location.replace('login.html'); return; }
-    const rolesPermitidos = ["capturista","jefe_seccion","coordinador","admin","super_admin"];
+    // [FIX 21 jul · auditoría de guards] Alineado con el gating del hub
+    // (super_admin,capturista). Antes el guard era más permisivo que el hub:
+    // jefe_seccion/coordinador/admin no veían el módulo en el menú pero SÍ
+    // podían entrar por URL directa. Es un panel PERSONAL del capturista (su
+    // avance, sus registros); para supervisar existe panel_capturistas.
+    // super_admin se conserva para diagnóstico.
+    const rolesPermitidos = ["capturista","super_admin"];
     if (!rolesPermitidos.includes(s.rol)) { window.location.replace('login.html'); return; }
     window._sesion = s;
   } catch(e) { window.location.replace('login.html'); }

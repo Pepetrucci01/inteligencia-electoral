@@ -8,7 +8,7 @@
 //     evita servir versiones obsoletas.
 // ============================================================
 
-const CACHE_VERSION = 'sie-captura-v58';
+const CACHE_VERSION = 'sie-captura-v59';
 
 // Archivos propios: se sirven "network-first" (fresco si hay red).
 const ARCHIVOS_APP = [
