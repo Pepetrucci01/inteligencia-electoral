@@ -54,6 +54,10 @@ select:focus,input[type=text]:focus{outline:none;border-color:var(--accent);}
 .kpi.red::before{background:var(--red);}
 .kpi.purple::before{background:var(--purple);}
 .kpi-label{font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;}
+/* --- Tooltips informativos (v2.2) --- */
+[data-tip]{cursor:help;}
+#vt-tooltip{position:fixed;z-index:9999;max-width:260px;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;padding:8px 11px;font-size:11px;line-height:1.5;color:var(--text);font-family:var(--sans);pointer-events:none;opacity:0;transition:opacity .12s;box-shadow:0 6px 18px rgba(0,0,0,.5);}
+#vt-tooltip.show{opacity:1;}
 .kpi-val{font-size:22px;font-weight:600;line-height:1;margin-bottom:4px;}
 .kpi.blue .kpi-val{color:var(--accent);}
 .kpi.green .kpi-val{color:var(--green);}
@@ -221,27 +225,27 @@ table.cap-table tr.selected{background:rgba(59,130,246,0.1);}
 
 <div class="main">
   <div class="kpi-row">
-    <div class="kpi blue">
+    <div class="kpi blue" data-tip="Capturistas registrados en tu estructura de campo.">
       <div class="kpi-label">Total operadores</div>
       <div class="kpi-val" id="kpi-total">60</div>
       <div class="kpi-sub">estructura activa</div>
     </div>
-    <div class="kpi green">
+    <div class="kpi green" data-tip="Operadores que ya lograron 50 o más capturas.">
       <div class="kpi-label">Superaron meta</div>
       <div class="kpi-val" id="kpi-superaron">—</div>
       <div class="kpi-sub">≥ 50 capturas</div>
     </div>
-    <div class="kpi amber">
+    <div class="kpi amber" data-tip="Operadores entre 25 y 49 capturas. Van a buen paso.">
       <div class="kpi-label">En proceso</div>
       <div class="kpi-val" id="kpi-proceso">—</div>
       <div class="kpi-sub">25–49 capturas</div>
     </div>
-    <div class="kpi red">
+    <div class="kpi red" data-tip="Operadores con menos de 25 capturas. Requieren seguimiento.">
       <div class="kpi-label">Bajo avance</div>
       <div class="kpi-val" id="kpi-bajo">—</div>
       <div class="kpi-sub">&lt; 25 capturas</div>
     </div>
-    <div class="kpi purple">
+    <div class="kpi purple" data-tip="Qué tan completos y confiables son los datos de tu equipo (0 a 100).">
       <div class="kpi-label">Score promedio</div>
       <div class="kpi-val" id="kpi-score-prom">—</div>
       <div class="kpi-sub">calidad de captura</div>
@@ -252,7 +256,7 @@ table.cap-table tr.selected{background:rgba(59,130,246,0.1);}
     <!-- TABLA -->
     <div class="card">
       <div class="card-header">
-        <span class="card-title">Todos los capturistas</span>
+        <span class="card-title" data-tip="Todos los operadores ordenados por desempeño. Clic en una fila para su ficha completa.">Todos los capturistas</span>
         <span style="font-size:10px;font-family:var(--mono);color:var(--text3)">clic en fila para ver detalle</span>
       </div>
       <div style="overflow-x:auto;">
@@ -262,13 +266,13 @@ table.cap-table tr.selected{background:rgba(59,130,246,0.1);}
               <th style="text-align:center">#</th>
               <th onclick="sortPanel('CAPTURADO_POR')" style="cursor:pointer;user-select:none;text-align:center">Capturista <span id="sort-p-CAPTURADO_POR" style="color:var(--text3)">↕</span></th>
               <th onclick="sortPanel('MUNICIPIO')" style="cursor:pointer;user-select:none;text-align:center">Municipio <span id="sort-p-MUNICIPIO" style="color:var(--text3)">↕</span></th>
-              <th onclick="sortPanel('total')" style="cursor:pointer;user-select:none;text-align:center">Capturas <span id="sort-p-total" style="color:var(--text3)">↕</span></th>
-              <th style="text-align:center">Avance</th>
-              <th onclick="sortPanel('pct_meta')" style="cursor:pointer;user-select:none;text-align:center">% Meta <span id="sort-p-pct_meta" style="color:var(--text3)">↕</span></th>
-              <th onclick="sortPanel('pct_val')" style="cursor:pointer;user-select:none;text-align:center">Validados <span id="sort-p-pct_val" style="color:var(--text3)">↕</span></th>
-              <th onclick="sortPanel('seguros')" style="cursor:pointer;user-select:none;text-align:center">Seg. vota <span id="sort-p-seguros" style="color:var(--text3)">↕</span></th>
-              <th onclick="sortPanel('score')" style="cursor:pointer;user-select:none;text-align:center">Score <span id="sort-p-score" style="color:var(--text3)">↕</span></th>
-              <th onclick="sortPanel('ultima_str')" style="cursor:pointer;user-select:none;text-align:center">Última cap. <span id="sort-p-ultima_str" style="color:var(--text3)">↕</span></th>
+              <th onclick="sortPanel('total')" style="cursor:pointer;user-select:none;text-align:center" data-tip="Ciudadanos que ha registrado en campo hasta hoy.">Capturas <span id="sort-p-total" style="color:var(--text3)">↕</span></th>
+              <th style="text-align:center" data-tip="Progreso visual contra su meta individual de 50 capturas.">Avance</th>
+              <th onclick="sortPanel('pct_meta')" style="cursor:pointer;user-select:none;text-align:center" data-tip="Porcentaje cumplido de su meta individual (50 capturas).">% Meta <span id="sort-p-pct_meta" style="color:var(--text3)">↕</span></th>
+              <th onclick="sortPanel('pct_val')" style="cursor:pointer;user-select:none;text-align:center" data-tip="De sus capturas, cuántas ya están completas y verificadas.">Validados <span id="sort-p-pct_val" style="color:var(--text3)">↕</span></th>
+              <th onclick="sortPanel('seguros')" style="cursor:pointer;user-select:none;text-align:center" data-tip="Ciudadanos que capturó con compromiso alto de voto (nivel 3 y 4).">Seg. vota <span id="sort-p-seguros" style="color:var(--text3)">↕</span></th>
+              <th onclick="sortPanel('score')" style="cursor:pointer;user-select:none;text-align:center" data-tip="Calidad de sus datos: teléfono, dirección y validación completos (0 a 100).">Score <span id="sort-p-score" style="color:var(--text3)">↕</span></th>
+              <th onclick="sortPanel('ultima_str')" style="cursor:pointer;user-select:none;text-align:center" data-tip="Fecha de su captura más reciente. Detecta operadores inactivos.">Última cap. <span id="sort-p-ultima_str" style="color:var(--text3)">↕</span></th>
             </tr>
           </thead>
           <tbody id="cap-tbody"></tbody>
@@ -701,5 +705,28 @@ setInterval(cargarDatosSupabase, 120000);
 })();
 </script>
 <script src="theme.js"></script>
+<script>
+/* --- Tooltips informativos (v2.2) --- */
+(function(){
+  var tip=document.createElement('div');tip.id='vt-tooltip';document.body.appendChild(tip);
+  function move(x,y){var w=tip.offsetWidth,h=tip.offsetHeight;var px=x+14,py=y+16;
+    if(px+w>window.innerWidth-8)px=x-w-10;if(py+h>window.innerHeight-8)py=y-h-10;
+    if(px<4)px=4;if(py<4)py=4;tip.style.left=px+'px';tip.style.top=py+'px';}
+  function show(el,x,y){tip.textContent=el.getAttribute('data-tip');tip.classList.add('show');move(x,y);}
+  function hide(){tip.classList.remove('show');}
+  document.addEventListener('mouseover',function(e){
+    var el=e.target.closest?e.target.closest('[data-tip]'):null;
+    if(el)show(el,e.clientX,e.clientY);else hide();});
+  document.addEventListener('mousemove',function(e){
+    if(!tip.classList.contains('show'))return;
+    var el=e.target.closest?e.target.closest('[data-tip]'):null;
+    if(el)move(e.clientX,e.clientY);else hide();});
+  var tmo=null;
+  document.addEventListener('touchstart',function(e){
+    var el=e.target.closest?e.target.closest('[data-tip]'):null;
+    if(el){var t=e.touches[0];show(el,t.clientX,t.clientY);clearTimeout(tmo);tmo=setTimeout(hide,2500);}
+    else hide();},{passive:true});
+})();
+</script>
 </body>
 </html>
