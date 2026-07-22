@@ -76,12 +76,16 @@ function applyTheme(theme) {
   const root = document.documentElement;
 
   // Colores CSS
-  root.style.setProperty('--accent',   theme.colorPrimario);
-  root.style.setProperty('--accent-text', ensureVisibleColor(theme.colorPrimario)); // legible sobre fondo oscuro
-  root.style.setProperty('--cyan',     theme.colorSecundario);
-  root.style.setProperty('--red',      theme.colorAlerta);
-  root.style.setProperty('--green',    theme.colorExito);
-  root.style.setProperty('--amber',    theme.colorAdvertencia);
+  // REGLA: --accent (y toda la paleta) SIEMPRE en versión legible sobre fondo
+  // oscuro, porque los módulos los usan para TEXTO (.kv, .pb-pct, etc.).
+  // El color crudo del partido vive en --accent-solid (fondos, botones, logo).
+  root.style.setProperty('--accent',       ensureVisibleColor(theme.colorPrimario));
+  root.style.setProperty('--accent-solid', theme.colorPrimario);
+  root.style.setProperty('--accent-text',  ensureVisibleColor(theme.colorPrimario)); // compat: se conserva
+  root.style.setProperty('--cyan',   ensureVisibleColor(theme.colorSecundario));
+  root.style.setProperty('--red',    ensureVisibleColor(theme.colorAlerta));
+  root.style.setProperty('--green',  ensureVisibleColor(theme.colorExito));
+  root.style.setProperty('--amber',  ensureVisibleColor(theme.colorAdvertencia));
 
   // Fondos
   root.style.setProperty('--bg',  theme.bgBase);
@@ -102,7 +106,9 @@ function applyTheme(theme) {
     // Poner iniciales como primer texto
     const ini = theme.logoInicial || 'IE';
     el.insertAdjacentText('afterbegin', ini);
-    el.style.background = theme.logoUrl ? 'transparent' : theme.colorPrimario;
+    // Si el primario es muy oscuro, el cuadro del logo usa la versión aclarada
+    // para no fundirse con el sidebar (las iniciales van en blanco encima).
+    el.style.background = theme.logoUrl ? 'transparent' : ensureVisibleColor(theme.colorPrimario);
   });
 
   // Nombre del partido/software
@@ -172,12 +178,27 @@ function adjustColor(hex, amount) {
  */
 function ensureVisibleColor(hex) {
   try {
-    const num = parseInt(hex.replace('#',''), 16);
+    let h = String(hex || '').trim().replace('#','');
+    if (h.length === 3) h = h[0]+h[0]+h[1]+h[1]+h[2]+h[2];   // soporta #abc
+    if (!/^[0-9a-fA-F]{6}$/.test(h)) return DEFAULT_THEME.colorPrimario; // inválido → azul default
+    const num = parseInt(h, 16);
     const r = (num >> 16) & 0xff, g = (num >> 8) & 0xff, b = num & 0xff;
     const lum = (0.2126*r + 0.7152*g + 0.0722*b) / 255; // luminancia relativa
-    if (lum >= 0.28) return hex;                          // ya es legible
-    return adjustColor(hex, Math.round((0.42 - lum) * 400)); // aclarar
-  } catch(e) { return hex; }
+    if (lum >= 0.28) return '#' + h.toLowerCase();       // ya es legible
+    return adjustColor('#' + h, Math.round((0.42 - lum) * 400)); // aclarar
+  } catch(e) { return DEFAULT_THEME.colorPrimario; }
+}
+
+/**
+ * Regresar al tema default (azul / fondos originales).
+ * Borra el tema guardado y re-aplica DEFAULT_THEME en el DOM.
+ * El admin puede llamar resetTheme() en su botón "Restaurar default".
+ */
+function resetTheme() {
+  try { localStorage.removeItem(THEME_KEY); } catch(e) {}
+  const theme = Object.assign({}, DEFAULT_THEME);
+  applyTheme(theme);
+  return theme;
 }
 
 // Auto-aplicar al cargar
