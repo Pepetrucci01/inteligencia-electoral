@@ -338,12 +338,18 @@ async function cargarDatosSupabase() {
     // por rol (estatal/municipal) sin el bug del municipio NULL.
     // Usa supaFetch (de theme.js): refresca el token si expiró y
     // reintenta, evitando los 401 que tiraban a datos simulados.
+    // [FIX 21 jul] NO pasar 'Authorization' aquí: en supaFetch los headers
+    // del caller se aplican DESPUÉS del suyo (spread), así que un token
+    // crudo pisaba el token fresco — y al reintentar tras un 401 lo volvía
+    // a pisar, dejando el reintento inservible. Este panel recarga cada
+    // 2 min de forma indefinida, así que al expirar la sesión (~1 h) caía
+    // a datos simulados en silencio. Dejando que supaFetch ponga el
+    // Authorization, el refresh funciona como se diseñó.
     const _fetch = window.supaFetch || fetch;
     const res = await _fetch(`${SUPA_URL}/rest/v1/rpc/get_capturistas_stats`, {
       method: 'POST',
       headers: {
         'apikey': SUPA_KEY,
-        'Authorization': `Bearer ${window._sesion?.access_token || SUPA_KEY}`,
         'Content-Type': 'application/json',
       },
       body: '{}',
