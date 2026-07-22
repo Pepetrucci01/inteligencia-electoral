@@ -129,6 +129,17 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 .comp-btn.sel-2{border-color:var(--accent);background:rgba(59,130,246,.15);}
 .comp-btn.sel-3{border-color:var(--green);background:rgba(34,197,94,.15);}
 .comp-btn.sel-4{border-color:var(--purple);background:rgba(168,85,247,.15);}
+.comp-btn.sel-pend{border-color:var(--amber);background:rgba(245,158,11,.15);}
+.comp-btn.sel-ok{border-color:var(--green);background:rgba(34,197,94,.15);}
+.comp-btn.sel-inc{border-color:var(--red);background:rgba(239,68,68,.15);}
+.est-chip{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-family:var(--mono);border-radius:999px;padding:2px 10px;border:1px solid;}
+.est-chip.pend{color:var(--amber);border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.1);}
+.est-chip.ok{color:var(--green);border-color:rgba(34,197,94,.4);background:rgba(34,197,94,.1);}
+.est-chip.inc{color:var(--red);border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.1);}
+.est-mini{font-size:9px;font-family:var(--mono);border-radius:6px;padding:3px 8px;cursor:pointer;border:1px solid var(--border2);background:var(--bg3);color:var(--text3);transition:all .2s;}
+.est-mini.act-pend{border-color:var(--amber);color:var(--amber);background:rgba(245,158,11,.12);}
+.est-mini.act-ok{border-color:var(--green);color:var(--green);background:rgba(34,197,94,.12);}
+.est-mini.act-inc{border-color:var(--red);color:var(--red);background:rgba(239,68,68,.12);}
 
 /* ── BUTTONS ── */
 .btn-primary{width:100%;background:var(--accent);color:#fff;border:none;border-radius:10px;padding:15px;font-size:15px;font-weight:600;cursor:pointer;margin-top:8px;font-family:var(--sans);}
@@ -460,8 +471,19 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
       <input class="form-input" id="cas-hora" type="time" value="08:00">
     </div>
 
+    <!-- Estatus de instalación (semáforo) -->
+    <div style="margin-bottom:14px">
+      <div style="font-size:11px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Estatus de instalación <span style="color:var(--red)">*</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+        <div class="comp-btn sel-pend" id="est-pendiente" onclick="selEstatus('pendiente')"><div style="font-size:16px;margin-bottom:3px">🟡</div><div class="comp-lbl" style="font-size:11px">Pendiente</div></div>
+        <div class="comp-btn" id="est-instalada_ok" onclick="selEstatus('instalada_ok')"><div style="font-size:16px;margin-bottom:3px">🟢</div><div class="comp-lbl" style="font-size:11px">Instalada sin inconvenientes</div></div>
+        <div class="comp-btn" id="est-instalada_incidencia" onclick="selEstatus('instalada_incidencia')"><div style="font-size:16px;margin-bottom:3px">🔴</div><div class="comp-lbl" style="font-size:11px">Instalada con incidencias</div></div>
+      </div>
+      <div id="est-hint" style="font-size:10px;font-family:var(--mono);color:var(--text3);margin-top:6px">Toda casilla inicia en PENDIENTE hasta que reportes su instalación</div>
+    </div>
+
     <div class="form-group">
-      <label class="form-label">Observaciones</label>
+      <label class="form-label" id="lbl-obs">Observaciones</label>
       <textarea class="form-input" id="cas-obs" rows="2" placeholder="Notas sobre la casilla, acceso, condiciones..." style="resize:none"></textarea>
     </div>
 
@@ -481,6 +503,13 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
         <div style="font-size:11px;font-family:var(--mono);color:var(--text3)" id="reloj-jornada">--:--:--</div>
       </div>
       <div id="casilla-info-banner" style="font-size:11px;font-family:var(--mono);color:var(--text2);line-height:1.8"></div>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap">
+        <span id="est-chip-jornada" class="est-chip pend">🟡 PENDIENTE</span>
+        <span style="font-size:9px;font-family:var(--mono);color:var(--text3)">Actualizar:</span>
+        <button class="est-mini" id="estj-pendiente" onclick="actualizarEstatus('pendiente')">🟡 Pendiente</button>
+        <button class="est-mini" id="estj-instalada_ok" onclick="actualizarEstatus('instalada_ok')">🟢 Sin inconv.</button>
+        <button class="est-mini" id="estj-instalada_incidencia" onclick="actualizarEstatus('instalada_incidencia')">🔴 Incidencias</button>
+      </div>
       <button onclick="verDetalleCasilla()" style="font-size:10px;font-family:var(--mono);color:var(--accent);background:none;border:none;cursor:pointer;margin-top:4px;padding:0">Ver detalle completo →</button>
     </div>
 
@@ -956,6 +985,56 @@ renderLista();
 // ── CASILLA ───────────────────────────────────────────────────────────────
 let tipoCasilla = '';
 let casillaRegistrada = null;
+let estatusInstalacion = 'pendiente'; // pendiente | instalada_ok | instalada_incidencia
+const EST_META = {
+  pendiente:            {label:'PENDIENTE',                   chip:'pend', mini:'act-pend', emoji:'🟡', color:'var(--amber)'},
+  instalada_ok:         {label:'INSTALADA SIN INCONVENIENTES',chip:'ok',   mini:'act-ok',   emoji:'🟢', color:'var(--green)'},
+  instalada_incidencia: {label:'INSTALADA CON INCIDENCIAS',   chip:'inc',  mini:'act-inc',  emoji:'🔴', color:'var(--red)'}
+};
+
+function selEstatus(e){
+  estatusInstalacion = e;
+  const selCls = {pendiente:'sel-pend', instalada_ok:'sel-ok', instalada_incidencia:'sel-inc'};
+  ['pendiente','instalada_ok','instalada_incidencia'].forEach(x=>{
+    document.getElementById('est-'+x).className = 'comp-btn' + (x===e?' '+selCls[x]:'');
+  });
+  // Si hay incidencias, las observaciones se vuelven obligatorias
+  const lbl = document.getElementById('lbl-obs');
+  const hint = document.getElementById('est-hint');
+  if(e==='instalada_incidencia'){
+    lbl.innerHTML = 'Observaciones <span style="color:var(--red)">*</span>';
+    hint.textContent = 'Con incidencias: describe qué pasó en Observaciones (obligatorio)';
+    hint.style.color = 'var(--red)';
+  } else {
+    lbl.textContent = 'Observaciones';
+    hint.textContent = e==='pendiente' ? 'Toda casilla inicia en PENDIENTE hasta que reportes su instalación' : 'Casilla instalada correctamente — se reflejará en verde en el mapa';
+    hint.style.color = e==='pendiente' ? 'var(--text3)' : 'var(--green)';
+  }
+}
+
+function pintarEstatusJornada(){
+  const m = EST_META[estatusInstalacion];
+  const chip = document.getElementById('est-chip-jornada');
+  chip.className = 'est-chip ' + m.chip;
+  chip.textContent = m.emoji + ' ' + m.label;
+  ['pendiente','instalada_ok','instalada_incidencia'].forEach(x=>{
+    document.getElementById('estj-'+x).className = 'est-mini' + (x===estatusInstalacion?' '+EST_META[x].mini:'');
+  });
+}
+
+function actualizarEstatus(e){
+  if(e==='instalada_incidencia' && casillaRegistrada && !casillaRegistrada.obs){
+    const desc = prompt('Describe brevemente la incidencia:');
+    if(!desc || !desc.trim()) return;
+    casillaRegistrada.obs = desc.trim();
+  }
+  estatusInstalacion = e;
+  if(casillaRegistrada){ casillaRegistrada.estatus = e; casillaRegistrada.estatusLabel = EST_META[e].label; }
+  pintarEstatusJornada();
+  // [SWAP LUIS] Actualizar estatus en Supabase (desarrollo):
+  // UPDATE casillas SET estatus_instalacion = e WHERE numero/seccion + licencia_id
+  // El visor territorial lee esta columna para colorear los marcadores en vivo.
+}
 let relojInterval = null;
 
 function selTipo(t){
@@ -979,6 +1058,9 @@ function registrarCasilla(){
   if(!seccion)     { err.textContent='La sección electoral es requerida'; err.style.display='block'; return; }
   if(!mun)         { err.textContent='El municipio es requerido'; err.style.display='block'; return; }
   if(!dom)         { err.textContent='El domicilio es requerido'; err.style.display='block'; return; }
+  if(estatusInstalacion==='instalada_incidencia' && !document.getElementById('cas-obs').value.trim()){
+    err.textContent='Con incidencias es obligatorio describirlas en Observaciones'; err.style.display='block'; return;
+  }
   err.style.display='none';
 
   const tipoLabel = {basica:'Básica',contigua:'Contigua',especial:'Especial',extraordinaria:'Extraordinaria'}[tipoCasilla];
@@ -993,6 +1075,8 @@ function registrarCasilla(){
     colonia:   document.getElementById('cas-colonia').value.trim(),
     lugar:     document.getElementById('cas-lugar').value.trim(),
     horaApertura: hora,
+    estatus:      estatusInstalacion,
+    estatusLabel: EST_META[estatusInstalacion].label,
     obs:       document.getElementById('cas-obs').value.trim(),
     horaRegistro: new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}),
     representante: 'CAP-017',
@@ -1003,6 +1087,13 @@ function registrarCasilla(){
     `Casilla ${tipoLabel} #${numero}  ·  Secc. ${seccion}  ·  ${mun}\n` +
     `${dom}${casillaRegistrada.colonia ? ', '+casillaRegistrada.colonia : ''}\n` +
     `Apertura: ${hora}  ·  Registrada: ${casillaRegistrada.horaRegistro}`;
+
+  // Semáforo de instalación en el banner
+  pintarEstatusJornada();
+
+  // [SWAP LUIS] Registrar casilla en Supabase (desarrollo):
+  // UPSERT en tabla casillas con estatus_instalacion + licencia_id.
+  // Columna aditiva: ALTER TABLE casillas ADD COLUMN IF NOT EXISTS estatus_instalacion TEXT DEFAULT 'pendiente';
 
   // Cambiar sub-pantalla
   document.getElementById('sub-casilla').style.display  = 'none';
@@ -1038,6 +1129,7 @@ function verDetalleCasilla(){
       ${c.colonia?`<div class="ficha-row"><span class="ficha-label">Colonia</span><span class="ficha-val">${c.colonia}</span></div>`:''}
       ${c.lugar?`<div class="ficha-row"><span class="ficha-label">Lugar</span><span class="ficha-val">${c.lugar}</span></div>`:''}
       <div class="ficha-row"><span class="ficha-label">Hora de apertura</span><span class="ficha-val" style="color:var(--green)">${c.horaApertura}</span></div>
+      <div class="ficha-row"><span class="ficha-label">Estatus instalación</span><span class="ficha-val" style="color:${EST_META[c.estatus].color}">${EST_META[c.estatus].emoji} ${c.estatusLabel}</span></div>
       <div class="ficha-row"><span class="ficha-label">Representante</span><span class="ficha-val">${c.representante}</span></div>
       ${c.obs?`<div class="ficha-row"><span class="ficha-label">Observaciones</span><span class="ficha-val" style="font-size:11px;text-align:right;max-width:60%">${c.obs}</span></div>`:''}
     </div>
@@ -1087,6 +1179,7 @@ function nuevaCasilla(){
   });
   document.getElementById('cas-municipio').value='';
   document.getElementById('cas-hora').value='08:00';
+  selEstatus('pendiente');
   document.getElementById('sub-cierre').style.display  = 'none';
   document.getElementById('sub-casilla').style.display = 'block';
   window.scrollTo(0,0);
