@@ -1244,6 +1244,42 @@ marcarVoto = function(id, desdeficha){
 };
 
 // ── SISTEMA DE ALERTAS DEL COORDINADOR ──────────────────────────────────────
+/* ══════════════════════════════════════════════════════════════════════════
+   [FIX 21 jul] pcpFetch — helper propio del módulo con refresh de token.
+   ANTES: las alertas usaban `window._sesion?.access_token` directo, que es el
+   token GUARDADO AL LOGIN y nunca se renueva. Como verificarAlertasCoordinador
+   corre cada 30 s indefinidamente, al expirar el token (≈1 h) TODAS las
+   consultas empezaban a fallar en silencio (el `if(!res.ok) return` las
+   descartaba) y el capturista dejaba de recibir alertas de su coordinador sin
+   que nadie se enterara. En jornada larga (día E) eso es perder avisos críticos.
+   AHORA: prefijo propio (no colisiona con el supaFetch global de theme.js),
+   lee el token fresco del SDK cuando está disponible y reintenta UNA vez
+   refrescando ante 401/403.
+   ══════════════════════════════════════════════════════════════════════════ */
+async function pcpFetch(url, options) {
+  options = options || {};
+  const tokenFresco = async () => {
+    // Preferir el token vivo del SDK; si no hay SDK aún, caer al de sesión.
+    try {
+      if (window.supabase?.auth?.getSession) {
+        const { data } = await window.supabase.auth.getSession();
+        if (data?.session?.access_token) return data.session.access_token;
+      }
+    } catch (e) {}
+    return window._sesion?.access_token || SUPA_KEY;
+  };
+  const armar = async () => Object.assign({
+    'apikey': SUPA_KEY,
+    'Authorization': 'Bearer ' + (await tokenFresco())
+  }, options.headers || {});
+  let res = await fetch(url, Object.assign({}, options, { headers: await armar() }));
+  if ((res.status === 401 || res.status === 403) && window.refrescarTokenSupabase) {
+    const ok = await window.refrescarTokenSupabase();
+    if (ok) res = await fetch(url, Object.assign({}, options, { headers: await armar() }));
+  }
+  return res;
+}
+
 async function verificarAlertasCoordinador(){
   try{
     // ── T17 FASE 4: lectura real desde Supabase, filtrada por la sección del capturista ──
@@ -1268,14 +1304,20 @@ async function verificarAlertasCoordinador(){
       + `&leida=eq.false`
       + `&order=created_at.desc`
       + `&limit=1`;
-    const res = await fetch(url, {
-      headers: {
-        'apikey': SUPA_KEY,
-        'Authorization': `Bearer ${window._sesion?.access_token || SUPA_KEY}`
-      }
-    });
+    const res = await pcpFetch(url);
     // CRÍTICO: si RLS o la red fallan, NO tocamos la UI: conservamos el estado y salimos.
-    if(!res.ok){ console.warn('Alertas: consulta bloqueada o sin red', res.status); return; }
+    // [FIX 21 jul] Antes esto era un fallo TOTALMENTE mudo. Ahora se cuentan los
+    // fallos seguidos y se avisa una vez al llegar a 3, para que un problema de
+    // permisos o de token no pase inadvertido durante toda una jornada.
+    if(!res.ok){
+      window._pcpFallos = (window._pcpFallos || 0) + 1;
+      if (window._pcpFallos === 3) {
+        console.warn('Alertas: 3 consultas seguidas fallidas (HTTP ' + res.status +
+                     '). El capturista podría no estar recibiendo avisos.');
+      }
+      return;
+    }
+    window._pcpFallos = 0;
     const data = await res.json();
     if(!Array.isArray(data) || !data.length) return;
     const ultima=data[0];
@@ -1297,11 +1339,9 @@ async function marcarAlertaLeida(){
     const id=banner.dataset.alertaId; // uuid (string) — NO usar parseInt
     if(!id) return;
     // ── T17 FASE 4: marcar leída en Supabase (PATCH) ──
-    const res = await fetch(`${SUPA_URL}/rest/v1/alertas?id=eq.${encodeURIComponent(id)}`, {
+    const res = await pcpFetch(`${SUPA_URL}/rest/v1/alertas?id=eq.${encodeURIComponent(id)}`, {
       method: 'PATCH',
       headers: {
-        'apikey': SUPA_KEY,
-        'Authorization': `Bearer ${window._sesion?.access_token || SUPA_KEY}`,
         'Content-Type': 'application/json',
         'Prefer': 'return=minimal'
       },
