@@ -140,6 +140,10 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 .est-mini.act-pend{border-color:var(--amber);color:var(--amber);background:rgba(245,158,11,.12);}
 .est-mini.act-ok{border-color:var(--green);color:var(--green);background:rgba(34,197,94,.12);}
 .est-mini.act-inc{border-color:var(--red);color:var(--red);background:rgba(239,68,68,.12);}
+.mic-btn{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:var(--bg3);border:1px solid var(--border2);border-radius:8px;width:38px;height:38px;font-size:17px;cursor:pointer;transition:all .2s;z-index:2;}
+.mic-btn:hover{border-color:var(--accent);}
+.mic-btn.escuchando{border-color:var(--red);background:rgba(239,68,68,.15);animation:micpulse 1s infinite;}
+@keyframes micpulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.4)}50%{box-shadow:0 0 0 8px rgba(239,68,68,0)}}
 
 /* ── BUTTONS ── */
 .btn-primary{width:100%;background:var(--accent);color:#fff;border:none;border-radius:10px;padding:15px;font-size:15px;font-weight:600;cursor:pointer;margin-top:8px;font-family:var(--sans);}
@@ -544,8 +548,9 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
     <div class="eleccion-search" style="position:relative;margin-bottom:12px">
       <div class="eleccion-search-icon">🔍</div>
       <input class="eleccion-input" id="eleccion-q" type="search"
-        placeholder="Nombre completo del votante..."
-        oninput="buscarEleccion()" autocomplete="off">
+        placeholder="Nombre del votante (o usa el micrófono)..."
+        oninput="buscarEleccion()" autocomplete="off" style="padding-right:52px">
+      <button class="mic-btn" id="mic-btn" onclick="buscarPorVoz()" title="Buscar por voz">🎤</button>
     </div>
 
     <div id="eleccion-results">
@@ -901,25 +906,61 @@ function volverFicha(){
 }
 
 // ── FASE 2: DÍA DE LA ELECCIÓN ────────────────────────────────────────────
+// Normaliza: minúsculas, sin acentos, ñ→n, sin signos, espacios simples
+function normTexto(s){
+  return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim();
+}
+// ¿Distancia de edición <= 1? (un error de dedo permitido)
+function dist1(a,b){
+  if(a===b) return true;
+  const la=a.length, lb=b.length;
+  if(Math.abs(la-lb)>1) return false;
+  let i=0,j=0,dif=0;
+  while(i<la&&j<lb){
+    if(a[i]===b[j]){i++;j++;continue;}
+    if(++dif>1) return false;
+    if(la>lb){i++;} else if(lb>la){j++;} else {i++;j++;}
+  }
+  return dif+(la-i)+(lb-j)<=1;
+}
+// Cada palabra buscada debe aparecer en el nombre (en cualquier orden).
+// fuzzy=true además tolera 1 error por palabra (solo palabras de 4+ letras).
+function coincideNombre(nombreNorm, tokens, fuzzy){
+  const palabras=nombreNorm.split(' ');
+  return tokens.every(function(t){
+    if(nombreNorm.includes(t)) return true;
+    if(!fuzzy||t.length<4) return false;
+    return palabras.some(function(p){
+      return dist1(t,p)||(p.length>t.length&&dist1(t,p.slice(0,t.length+1)));
+    });
+  });
+}
+
 function buscarEleccion(){
-  const q=(document.getElementById('eleccion-q').value||'').trim().toLowerCase();
+  const rawQ=(document.getElementById('eleccion-q').value||'').trim();
+  const q=normTexto(rawQ);
   const cont=document.getElementById('eleccion-results');
   if(q.length<2){
-    cont.innerHTML='<div class="no-result"><div class="no-result-icon">🗳</div>Escribe el nombre del votante<br>para buscarlo en tu lista</div>';
+    cont.innerHTML='<div class="no-result"><div class="no-result-icon">🗳</div>Escribe o dicta el nombre del votante<br>para buscarlo en tu lista</div>';
     return;
   }
-  const found=SIMPATIZANTES.filter(s=>s.nombre.toLowerCase().includes(q));
+  const tokens=q.split(' ').filter(Boolean);
+  // Nivel 1: sin acentos, cualquier orden. Nivel 2 (si no hay nada): tolera 1 error de dedo.
+  let found=SIMPATIZANTES.filter(s=>coincideNombre(normTexto(s.nombre),tokens,false));
+  if(!found.length) found=SIMPATIZANTES.filter(s=>coincideNombre(normTexto(s.nombre),tokens,true));
   if(!found.length){
     cont.innerHTML=`<div class="no-result">
       <div class="no-result-icon">❌</div>
-      <div style="margin-bottom:16px"><strong style="color:var(--text)">"${q}"</strong><br>No está en tu lista capturada</div>
+      <div style="margin-bottom:16px"><strong style="color:var(--text)">"${rawQ}"</strong><br>No está en tu lista capturada</div>
     </div>
     <div class="registro-rapido">
       <div class="registro-rapido-title">⚡ Registro rápido — votante no capturado</div>
       <div class="form-group" style="margin-bottom:10px">
-        <input class="form-input" id="rr-nombre" placeholder="Nombre completo" style="font-size:14px;padding:10px 12px">
+        <input class="form-input" id="rr-nombre" placeholder="Nombre completo" style="font-size:14px;padding:10px 12px" value="${rawQ.replace(/"/g,'&quot;').toUpperCase()}">
       </div>
-      <button class="btn-primary" style="margin:0;padding:12px;font-size:14px" onclick="registroRapido()">📝 Registrar solo nombre</button>
+      <button class="btn-primary" style="margin:0;padding:12px;font-size:14px" onclick="registroRapido()">📝 Registrar nuevo elector (solo nombre)</button>
+      <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-align:center;margin-top:6px">Se registra aunque no sepamos por quién votó</div>
     </div>`;
     return;
   }
@@ -967,6 +1008,8 @@ function marcarVoto(id, desdeficha){
 function registroRapido(){
   const nombre=document.getElementById('rr-nombre').value.trim();
   if(!nombre){ alert('Escribe el nombre completo'); return; }
+  // [SWAP LUIS] Insertar registro mínimo en ciudadanos (nombre, seccion de la casilla,
+  // origen='registro_rapido_dia_e', licencia_id). Sin preferencia de voto — solo evidencia de contacto.
   nuevosCount++;
   document.getElementById('nuevos-dia').textContent=nuevosCount;
   document.getElementById('eleccion-q').value='';
@@ -977,6 +1020,29 @@ function registroRapido(){
     <span style="color:var(--text3);font-size:11px;margin-top:8px;display:block">Solo nombre — sin datos adicionales</span>
   </div>`;
   setTimeout(()=>{ document.getElementById('eleccion-q').focus(); },1000);
+}
+
+// ── BÚSQUEDA POR VOZ (Web Speech API — 100% en el navegador, sin backend) ──
+let recVoz=null;
+function buscarPorVoz(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){ alert('Tu navegador no soporta búsqueda por voz. Usa Chrome o Edge.'); return; }
+  const btn=document.getElementById('mic-btn');
+  if(recVoz){ try{recVoz.stop();}catch(e){} return; }
+  recVoz=new SR();
+  recVoz.lang='es-MX';
+  recVoz.interimResults=false;
+  recVoz.maxAlternatives=1;
+  recVoz.onstart=function(){ btn.classList.add('escuchando'); btn.textContent='🔴'; };
+  recVoz.onresult=function(e){
+    const texto=(e.results[0][0].transcript||'').trim();
+    if(texto){ document.getElementById('eleccion-q').value=texto; buscarEleccion(); }
+  };
+  recVoz.onerror=function(e){
+    if(e.error==='not-allowed'||e.error==='service-not-allowed') alert('Permite el acceso al micrófono para buscar por voz.');
+  };
+  recVoz.onend=function(){ btn.classList.remove('escuchando'); btn.textContent='🎤'; recVoz=null; };
+  recVoz.start();
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────
