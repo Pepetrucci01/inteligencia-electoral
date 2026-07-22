@@ -34,6 +34,8 @@
   } catch(e) { window.location.replace('login.html'); }
 })();
 </script>
+<script src="supabase_client.js"></script>
+<script src="theme.js"></script>
 <style>
   :root{
     --bg:#0d1321; --panel:#151d2e; --panel2:#1b2438; --border:#26314a;
@@ -337,6 +339,183 @@
 // [SWAP LUIS] licencia de sesión — en Fase 4 viene de auth
 const LICENCIA_ID = (window._sesion && window._sesion.licencia_id) || 'a1b2c3d4-0001-0000-0000-000000000001';
 
+/* ══════════════════════════════════════════════════════════════════════════
+   [T-CC 21 jul] CAPA DE DATOS REAL — conecta con el esquema del SQL 30
+   (campanas_llamadas · cola_llamadas · siguiente_llamada · vistas).
+
+   Patrón del proyecto:
+     ▸ esperarSupabase(): NO basta con que exista window.supabase; hay que
+       garantizar que la SESIÓN esté aplicada en el SDK, o los RPC salen con
+       auth.uid() null → 401/permission denied (bug ya vivido en panel_cliente).
+     ▸ ccFetch: prefijo PROPIO del módulo. theme.js define un supaFetch global
+       que pisa los locales; cada módulo usa su prefijo (wrFetch, pcFetch...).
+     ▸ Si la BD no responde, se conserva el MODO DEMO como respaldo visible.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+// Cuando hay datos reales, esto pasa a false y se oculta el cartel de demo.
+var CC_DEMO = true;
+
+async function esperarSupabase(ms) {
+  const tokensGuardados = () => {
+    try {
+      const s = JSON.parse(localStorage.getItem('electoral_sesion') || 'null');
+      return (s && s.access_token && s.refresh_token) ? s : null;
+    } catch (e) { return null; }
+  };
+  const sdkTieneSesion = async () => {
+    try {
+      const { data } = await window.supabase.auth.getSession();
+      return !!data?.session?.access_token;
+    } catch (e) { return false; }
+  };
+  const asegurar = async () => {
+    if (!window.supabase) return false;
+    if (await sdkTieneSesion()) return true;
+    const s = tokensGuardados();
+    if (s && window.supabase.auth?.setSession) {
+      try {
+        await window.supabase.auth.setSession({
+          access_token: s.access_token, refresh_token: s.refresh_token,
+        });
+        return await sdkTieneSesion();
+      } catch (e) { /* sigue esperando */ }
+    }
+    return false;
+  };
+  if (await asegurar()) return true;
+  return await new Promise(resolve => {
+    let listo = false;
+    const ok = async () => { if (listo) return; await asegurar(); listo = true; resolve(true); };
+    document.addEventListener('supabase-ready', ok, { once: true });
+    const iv = setInterval(async () => { if (await asegurar()) { clearInterval(iv); ok(); } }, 100);
+    setTimeout(() => {
+      clearInterval(iv);
+      if (!listo) { listo = true; resolve(false); }
+    }, ms || 8000);
+  });
+}
+
+// Fetch propio del módulo: apikey + Authorization con el token del usuario.
+async function ccFetch(path, options) {
+  options = options || {};
+  const token = (await window.supabase.auth.getSession()).data.session?.access_token;
+  const headers = Object.assign(
+    { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + (token || SUPA_KEY) },
+    options.headers || {}
+  );
+  const res = await fetch(SUPA_URL + '/rest/v1/' + path, Object.assign({}, options, { headers }));
+  if (!res.ok) throw new Error('HTTP ' + res.status + ' en ' + path);
+  return res.json();
+}
+
+// ── [SWAP 1] Campañas activas de la licencia ──────────────────────────────
+async function cargarCampanasReales() {
+  const filas = await ccFetch(
+    'campanas_llamadas?select=id,nombre,tipo,estado,guion,encuesta_id' +
+    '&licencia_id=eq.' + LICENCIA_ID + '&estado=eq.activa&order=creado_en.desc'
+  );
+  // Conteos por campaña para la barra de progreso (total y completadas).
+  for (const c of filas) {
+    try {
+      const tot = await ccFetch('cola_llamadas?select=id&campana_id=eq.' + c.id + '&limit=1', 
+        { headers: { 'Prefer': 'count=exact' } });
+      c.total = Array.isArray(tot) ? tot.length : 0;
+    } catch (e) { c.total = 0; }
+    c.completadas = 0;
+  }
+  return filas;
+}
+
+// ── [SWAP 2] Siguiente contacto de la cola (con reserva atómica) ───────────
+// Llama al RPC del SQL 30: reserva el registro 15 min para este operador.
+// Dos operadores concurrentes NUNCA reciben el mismo (FOR UPDATE SKIP LOCKED).
+async function siguienteLlamadaReal(campanaId) {
+  const filas = await ccFetch('rpc/siguiente_llamada', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ p_campana_id: campanaId, p_minutos: 15 })
+  });
+  return (Array.isArray(filas) && filas.length) ? filas[0] : null;
+}
+
+// ── [SWAP 3] Guardar el resultado de la llamada ───────────────────────────
+// disposicion + notas + duración + intentos. Si es "volver a llamar",
+// programa el reintento (por defecto en 2 h).
+async function guardarLlamadaReal(colaId, datos) {
+  const cuerpo = {
+    estado: 'completada',
+    disposicion: datos.disposicion,
+    notas: datos.notas || null,
+    intentos: (datos.intentos || 0) + 1,
+    hora_fin: new Date().toISOString(),
+    fecha_llamada: new Date().toISOString(),
+    duracion_segundos: datos.duracion || null
+  };
+  if (datos.disposicion === 'no_contesto' || datos.disposicion === 'buzon') {
+    // Reintento programado: no se pierde el contacto, se reagenda.
+    cuerpo.estado = 'pendiente';
+    cuerpo.operador_id = null;
+    cuerpo.reservado_hasta = null;
+    cuerpo.reintento_programado = new Date(Date.now() + 2 * 3600 * 1000).toISOString();
+  }
+  await ccFetch('cola_llamadas?id=eq.' + colaId + '&licencia_id=eq.' + LICENCIA_ID, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+    body: JSON.stringify(cuerpo)
+  });
+}
+
+// ── Arranque: intenta datos reales; si no hay, se queda en demo ───────────
+async function iniciarDatosReales() {
+  try {
+    if (!await esperarSupabase(8000)) {
+      console.warn('Call Center: sin sesión Supabase — se mantiene MODO DEMO.');
+      return;
+    }
+    const camps = await cargarCampanasReales();
+    if (!camps.length) {
+      console.warn('Call Center: no hay campañas activas en la BD — MODO DEMO. ' +
+                   'Crea una en campanas_llamadas para operar con datos reales.');
+      return;
+    }
+    // Hay datos reales: sustituir las campañas demo y salir del modo demo.
+    CAMPANAS.length = 0;
+    camps.forEach(function(c){ CAMPANAS.push(c); });
+    CC_DEMO = false;
+    const tag = document.querySelector('.demo-tag');
+    if (tag) tag.style.display = 'none';
+    console.log('✅ Call Center: ' + camps.length + ' campaña(s) activa(s) desde la BD.');
+    if (typeof pintarCampanas === 'function') pintarCampanas();
+    await cargarSiguienteReal();
+  } catch (e) {
+    console.warn('Call Center: fallo al cargar datos reales, se mantiene MODO DEMO:', e.message);
+  }
+}
+
+// Pide el siguiente contacto real y lo pinta en la pantalla de operador.
+async function cargarSiguienteReal() {
+  if (CC_DEMO) return;
+  try {
+    const camp = CAMPANAS[0];
+    if (!camp) return;
+    const c = await siguienteLlamadaReal(camp.id);
+    if (!c) {
+      console.log('Call Center: no hay contactos pendientes en la cola.');
+      return;
+    }
+    // Adaptar al formato que ya usa la UI del módulo.
+    demoState.cola = [{
+      id: c.id, nombre: c.nombre || 'Sin nombre', tel: c.telefono,
+      seccion: c.seccion || '—', municipio: c.municipio || '—',
+      intentos: c.intentos || 0, consent: c.consent
+    }];
+    if (typeof pintarContacto === 'function') pintarContacto();
+  } catch (e) {
+    console.warn('Call Center: no se pudo pedir el siguiente contacto:', e.message);
+  }
+}
+
+
 // [SWAP LUIS] SELECT * FROM campanas_llamadas WHERE licencia_id = ... AND estado='activa'
 const CAMPANAS = [
   { id:'camp-001', nombre:'Identificación Zona Norte', tipo:'identificacion', estado:'activa',
@@ -548,10 +727,22 @@ function guardarYSiguiente(){
   var c = demoState.cola[0];
   if (!c || !dispSel) return;
   var dur = detenerTimer();
-  // [SWAP LUIS] UPDATE cola_llamadas SET estado='completada', disposicion=$1,
-  //             notas=$2, reintento_programado=$3, intentos=intentos+1,
-  //             hora_inicio=$4, hora_fin=now(), duracion_segundos=$5,
-  //             fecha_llamada=now() WHERE id=$6 AND licencia_id=LICENCIA_ID
+  // [T-CC 21 jul] Escritura REAL: si estamos conectados a la BD, se guarda la
+  // disposición en cola_llamadas y se pide el siguiente contacto con reserva.
+  // Si es no_contesto/buzón, guardarLlamadaReal reagenda el reintento en 2 h
+  // en vez de descartar el contacto.
+  if (!CC_DEMO) {
+    guardarLlamadaReal(c.id, {
+      disposicion: dispSel === 'volver_llamar' ? 'no_contesto' : dispSel,
+      notas: (document.getElementById('notas') || {}).value || '',
+      intentos: c.intentos || 0,
+      duracion: dur
+    }).then(function(){
+      cargarSiguienteReal();
+    }).catch(function(e){
+      console.warn('Call Center: no se pudo guardar la llamada:', e.message);
+    });
+  }
   // [SWAP LUIS] si campaña tipo='encuesta': INSERT respuestas ANÓNIMAS en tablas
   //             del módulo de Encuestas (sin ciudadano_id, sin cola_id)
   var ahora = new Date();
@@ -954,6 +1145,10 @@ if (!ES_MANDO) {
 /* ── Init ────────────────────────────────── */
 pintarHeader();
 pintarContacto();
+
+// [T-CC 21 jul] Intenta conectar con la BD (SQL 30). Si hay campañas activas,
+// sustituye el demo; si no, el módulo sigue operando en MODO DEMO.
+iniciarDatosReales();
 
 // Drag & drop para la carga de Excel (Gestión)
 (function(){
