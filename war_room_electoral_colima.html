@@ -2522,11 +2522,23 @@ async function cargarDatosReales() {
     });
 
     // ── 2. Capturados por municipio desde ciudadanos ──
-    const rCap = await fetch(
-      `${SUPA_URL}/rest/v1/ciudadanos?select=municipio&licencia_id=eq.${LICENCIA_ID}`,
-      { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` } }
-    );
-    const ciudadanos = await rCap.json();
+    // [FIX 21 jul · auditoría de paginación] ANTES traía ciudadanos SIN paginar
+    // y los contaba con un forEach en el cliente: con db-max-rows=1000 el
+    // servidor cortaba en 1,000 de 14,275 SIN ERROR, así que los capturados por
+    // municipio salían truncados (el mismo bug del "10,092"). Ahora se pagina
+    // con limit/offset (los headers Range disparan preflight CORS, por eso
+    // limit/offset como en modulo_reportes) y se ordena por id para que la
+    // paginación sea estable y no repita ni salte filas.
+    const baseCiu = `${SUPA_URL}/rest/v1/ciudadanos?select=municipio&licencia_id=eq.${LICENCIA_ID}&order=id`;
+    let ciudadanos = [];
+    for (let p = 0; p < 30; p++) {
+      const rp = await wrFetch(`${baseCiu}&limit=1000&offset=${p * 1000}`);
+      if (!rp.ok) { console.warn('Municipios: página ' + p + ' status ' + rp.status); break; }
+      const pag = await rp.json();
+      if (!Array.isArray(pag)) break;
+      ciudadanos = ciudadanos.concat(pag);
+      if (pag.length < 1000) break;   // última página
+    }
 
     const capPorMun = {};
     ciudadanos.forEach(c => {
