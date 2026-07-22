@@ -77,6 +77,7 @@ function applyTheme(theme) {
 
   // Colores CSS
   root.style.setProperty('--accent',   theme.colorPrimario);
+  root.style.setProperty('--accent-text', ensureVisibleColor(theme.colorPrimario)); // legible sobre fondo oscuro
   root.style.setProperty('--cyan',     theme.colorSecundario);
   root.style.setProperty('--red',      theme.colorAlerta);
   root.style.setProperty('--green',    theme.colorExito);
@@ -142,10 +143,11 @@ function applyTheme(theme) {
     });
   } catch(e) {}
 
-  // Gradiente barras de progreso
-  const darker = adjustColor(theme.colorPrimario, -40);
+  // Gradiente barras de progreso (versión visible si el primario es muy oscuro)
+  const pbColor = ensureVisibleColor(theme.colorPrimario);
+  const darker = adjustColor(pbColor, -40);
   document.querySelectorAll('.pb-fill').forEach(el => {
-    el.style.background = `linear-gradient(90deg, ${darker}, ${theme.colorPrimario})`;
+    el.style.background = `linear-gradient(90deg, ${darker}, ${pbColor})`;
   });
 
   // Actualizar <title> de la página si tiene data-theme-title
@@ -161,6 +163,21 @@ function adjustColor(hex, amount) {
   const g = Math.min(255, Math.max(0, ((num >> 8) & 0xff) + amount));
   const b = Math.min(255, Math.max(0, (num & 0xff) + amount));
   return '#' + ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
+}
+
+/**
+ * Versión LEGIBLE del color primario para textos/bordes sobre fondo oscuro.
+ * Si el color es muy oscuro (ej. negro, guinda), se aclara automáticamente.
+ * Los fondos de botones siguen usando --accent puro (texto blanco encima).
+ */
+function ensureVisibleColor(hex) {
+  try {
+    const num = parseInt(hex.replace('#',''), 16);
+    const r = (num >> 16) & 0xff, g = (num >> 8) & 0xff, b = num & 0xff;
+    const lum = (0.2126*r + 0.7152*g + 0.0722*b) / 255; // luminancia relativa
+    if (lum >= 0.28) return hex;                          // ya es legible
+    return adjustColor(hex, Math.round((0.42 - lum) * 400)); // aclarar
+  } catch(e) { return hex; }
 }
 
 // Auto-aplicar al cargar
