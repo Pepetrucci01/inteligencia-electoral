@@ -439,7 +439,7 @@ function setHoraDiaE(v){
   HORA_DIA_E=+v;
   const hh=String(Math.floor(HORA_DIA_E/60)).padStart(2,'0'),mm=String(HORA_DIA_E%60).padStart(2,'0');
   document.getElementById('dia-e-hora').textContent=hh+':'+mm;
-  if(currentLayer==='dia_e'){renderSecciones('dia_e');actualizarResumenDiaE();}
+  if(currentLayer==='dia_e'){renderSecciones('dia_e');actualizarResumenDiaE();if(document.getElementById('chkCasillas').checked)refrescarCasillas();}
 }
 function actualizarResumenDiaE(){
   if(typeof IE_METAS_CASILLA==='undefined'||!IE_METAS_CASILLA.secciones)return;
@@ -450,7 +450,26 @@ function actualizarResumenDiaE(){
     votos+=votosCasillaDiaE(sim,h);
   });});
   const pctMeta=Math.round(votos/(IE_METAS_CASILLA.meta_estatal||1)*100);
-  document.getElementById('dia-e-resumen').textContent='Casillas instaladas: '+inst+'/'+tot+' · Votos: '+votos.toLocaleString()+' ('+pctMeta+'% de la meta)';
+  let pend=0,ok=0,inc=0;
+  if(typeof CASILLAS!=='undefined')CASILLAS.forEach(function(c){const e=getEstatusInstalacion(c);if(e==='pendiente')pend++;else if(e==='instalada_ok')ok++;else inc++;});
+  document.getElementById('dia-e-resumen').innerHTML='Casillas instaladas: '+inst+'/'+tot+' · Votos: '+votos.toLocaleString()+' ('+pctMeta+'% de la meta)'+
+    '<br><span style="color:#f59e0b">🟡 '+pend+' pendientes</span> · <span style="color:#00cc66">🟢 '+ok+' sin inconvenientes</span> · <span style="color:#ff4466">🔴 '+inc+' con incidencias</span>';
+}
+// ── ESTATUS DE INSTALACIÓN DE CASILLAS (semáforo reportado por activistas) ──
+// [SWAP LUIS] En desarrollo: leer casillas.estatus_instalacion desde Supabase
+// (columna aditiva: ALTER TABLE casillas ADD COLUMN IF NOT EXISTS estatus_instalacion TEXT DEFAULT 'pendiente';)
+// reportada en Panel Activista → Día elección, y refrescar vía Realtime o polling.
+// En main/demo se deriva de la simulación horneada para mantener coherencia con el slider.
+const EST_INST_COLORS={pendiente:'#f59e0b',instalada_ok:'#00cc66',instalada_incidencia:'#ff4466'};
+const EST_INST_LABELS={pendiente:'🟡 Pendiente',instalada_ok:'🟢 Instalada sin inconvenientes',instalada_incidencia:'🔴 Instalada con incidencias'};
+function getEstatusInstalacion(c){
+  const sim=simularCasillaDiaE((c.seccion||'')+'-'+(c.casilla||c.id),c.meta||0,c.meta_real||0);
+  if(HORA_DIA_E<sim.instMin) return 'pendiente';
+  return seedRandDiaE('inc-'+c.id)()<0.06 ? 'instalada_incidencia' : 'instalada_ok';
+}
+function refrescarCasillas(){
+  const mun=document.getElementById('filtMunicipio').value;
+  renderCasillas(mun?CASILLAS.filter(c=>c.municipio===mun):CASILLAS);
 }
 // ================== FIN DÍA E ==================
 
@@ -512,6 +531,10 @@ function buildLegend(layer){
       <div class="leg-item"><div class="leg-col" style="background:#ff4466"></div>Instalación parcial</div>
       <div class="leg-item"><div class="leg-col" style="background:#444"></div>Sin instalar</div>`;
     }
+    html+=`<div style="font-size:9px;color:#888;margin:6px 0 4px;">CASILLAS · ESTATUS INSTALACIÓN</div>
+    <div class="leg-item"><div class="leg-col" style="background:#f59e0b;border-radius:50%"></div>Pendiente</div>
+    <div class="leg-item"><div class="leg-col" style="background:#00cc66;border-radius:50%"></div>Instalada sin inconvenientes</div>
+    <div class="leg-item"><div class="leg-col" style="background:#ff4466;border-radius:50%"></div>Instalada con incidencias</div>`;
   }
   document.getElementById('leg-items').innerHTML=html;
 }
@@ -608,6 +631,7 @@ function setLayer(layer,el){
   document.getElementById('dia-e-ctrl').style.display = layer==='dia_e' ? 'block' : 'none';
   if(layer==='dia_e') actualizarResumenDiaE();
   renderSecciones(layer);
+  if(document.getElementById('chkCasillas').checked)refrescarCasillas();
 }
 
 function colorTipo(t){
@@ -622,7 +646,10 @@ function colorTipo(t){
 function renderCasillas(data){
   casillasLayer.clearLayers();
   data.forEach(c=>{
-    const m=L.circleMarker([c.lat,c.lon],{radius:4,fillColor:colorTipo(c.tipo),color:'#fff',weight:0.8,fillOpacity:0.9});
+    const enDiaE = currentLayer==='dia_e';
+    const est = enDiaE ? getEstatusInstalacion(c) : null;
+    const m=L.circleMarker([c.lat,c.lon],{radius:enDiaE?5:4,fillColor:enDiaE?EST_INST_COLORS[est]:colorTipo(c.tipo),color:'#fff',weight:0.8,fillOpacity:0.9});
+    if(enDiaE) m.bindTooltip(`<b>${c.casilla}</b> · Secc. ${c.seccion}<br>${EST_INST_LABELS[est]}`,{sticky:true});
     m.on('click',e=>{
       L.DomEvent.stopPropagation(e);
       // Find section props
