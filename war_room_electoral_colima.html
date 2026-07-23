@@ -1882,6 +1882,116 @@ function setFase(f){
 // TABLA DE CASILLAS — FASE 2
 // En producción estos datos vienen de Supabase
 // ══════════════════════════════════════════════════
+/* ══════════════════════════════════════════════════════════════════════════
+   [T-F2 23 jul] CONEXIÓN DE FASE 2 A LA BASE
+   ──────────────────────────────────────────────────────────────────────────
+   Hasta ahora la Fase 2 pintaba SOLO desde CASILLAS_F2 (array horneado de
+   arriba). Los representantes reportaban en el Día E, los datos se guardaban
+   en `casillas`… y el War Room seguía mostrando las 15 casillas de ejemplo.
+   El 6 de junio eso significaría un panel de mando ciego toda la jornada.
+
+   DESAJUSTE DE COLUMNAS QUE HABÍA QUE RESOLVER:
+     · El Día E escribe `estatus_casilla`: instalada | no_instalada | suspendida
+     · La tabla tiene ADEMÁS `estatus` (default 'sinreporte'), que es lo que
+       leían los contadores de la Fase 2 (abierta/cerrada/incidencia/sinreporte)
+     · Y el array horneado usaba 'sin_reporte' CON guion bajo
+   Se unifica AL VOCABULARIO DEL DÍA E (que es quien escribe el dato real) y se
+   deriva el estado de jornada de los hechos, no de una columna ambigua:
+   si hay hora_cierre → cerrada; si está instalada → abierta; etc.
+
+   CASILLAS_F2 se conserva como fallback: si la BD falla, el panel sigue
+   mostrando algo y lo AVISA (no datos falsos en silencio).
+   ══════════════════════════════════════════════════════════════════════════ */
+var F2_DATOS_REALES = false;
+
+// Traduce lo que hay en la BD al vocabulario que ya pinta la tabla y los
+// contadores de Fase 2. La verdad está en los hechos: la hora de cierre manda
+// sobre el estatus declarado.
+function mapearEstatusCasilla(c) {
+  if (c.hora_cierre) return 'cerrada';
+  const ec = (c.estatus_casilla || '').toLowerCase();
+  if (ec === 'suspendida')   return 'suspendida';
+  if (ec === 'no_instalada') return 'no_instalada';
+  if (ec === 'instalada' || c.hora_apertura) return 'instalada';
+  return 'sin_reporte';
+}
+
+function horaLegible(ts) {
+  if (!ts) return '—';
+  try {
+    return new Date(ts).toLocaleTimeString('es-MX',
+      { hour: '2-digit', minute: '2-digit', hour12: false });
+  } catch (e) { return '—'; }
+}
+
+async function cargarCasillasF2Reales() {
+  try {
+    // Paginado: son 1,033 casillas y db-max-rows corta en 1000 SIN ERROR.
+    // limit/offset (no Range: dispara preflight CORS) + order estable.
+    const base = `${SUPA_URL}/rest/v1/casillas` +
+      `?select=id,numero_seccion,numero_casilla,tipo_casilla,municipio,` +
+      `estatus_casilla,hora_apertura,hora_cierre,votos_nuestro_partido,` +
+      `presidente_casilla,incidencias_apertura,incidencias_cierre` +
+      `&order=numero_seccion,numero_casilla`;
+    let filas = [];
+    for (let p = 0; p < 10; p++) {
+      const r = await wrFetch(`${base}&limit=1000&offset=${p * 1000}`);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const pag = await r.json();
+      if (!Array.isArray(pag)) break;
+      filas = filas.concat(pag);
+      if (pag.length < 1000) break;
+    }
+    if (!filas.length) throw new Error('sin casillas en la licencia');
+
+    // Adaptar al formato que la tabla de Fase 2 ya sabe pintar.
+    const adaptadas = filas.map(function (c) {
+      const inc = c.incidencias_cierre || c.incidencias_apertura || null;
+      let est = mapearEstatusCasilla(c);
+      if (inc && est !== 'cerrada') est = 'incidencia';
+      return {
+        id:        'S' + c.numero_seccion + '-' + (c.tipo_casilla || '?').charAt(0).toUpperCase() + (c.numero_casilla || 1),
+        seccion:   Number(c.numero_seccion),
+        municipio: c.municipio || '—',
+        tipo:      c.tipo_casilla || '—',
+        estatus:   est,
+        hora:      horaLegible(c.hora_apertura),
+        rep:       c.presidente_casilla || '—',
+        votos:     Number(c.votos_nuestro_partido || 0),
+      };
+    });
+
+    CASILLAS_F2.length = 0;
+    adaptadas.forEach(function (c) { CASILLAS_F2.push(c); });
+    F2_DATOS_REALES = true;
+
+    const av = document.getElementById('f2-aviso-simulados');
+    if (av) av.style.display = 'none';
+    console.log('✅ Fase 2: ' + adaptadas.length + ' casillas reales desde la BD.');
+
+    if (typeof renderCasillas === 'function') renderCasillas();
+    if (typeof renderCuadF2 === 'function') renderCuadF2();
+    if (typeof renderMunF2  === 'function') renderMunF2();
+  } catch (e) {
+    console.warn('⚠️ Fase 2: no se pudieron cargar casillas reales, se usan las de ejemplo:', e.message);
+    // Aviso VISIBLE: un panel de mando con datos de ejemplo debe decirlo.
+    let av = document.getElementById('f2-aviso-simulados');
+    if (!av) {
+      av = document.createElement('div');
+      av.id = 'f2-aviso-simulados';
+      av.style.cssText = 'margin:10px 16px;padding:10px 14px;' +
+        'background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35);' +
+        'border-radius:8px;color:#fca5a5;font-family:var(--mono,monospace);' +
+        'font-size:12px;line-height:1.5';
+      av.innerHTML = '⚠️ <b>FASE 2 CON DATOS DE EJEMPLO</b> — no se pudieron cargar ' +
+        'las casillas reales. Lo que ves <b>no es información de la jornada</b>.';
+      const cont = document.getElementById('cuad-f2') || document.body;
+      cont.parentNode.insertBefore(av, cont);
+    }
+    av.style.display = 'block';
+  }
+}
+
 const CASILLAS_F2 = [
   {id:'CAS-001',seccion:1,  municipio:'Colima',          tipo:'Básica',        estatus:'instalada',    hora:'08:02',rep:'Juan Pérez',votos:142},
   {id:'CAS-002',seccion:5,  municipio:'Colima',          tipo:'Básica',        estatus:'instalada',    hora:'08:05',rep:'Ana López',votos:138},
@@ -2213,6 +2323,8 @@ function limpiarFiltrosF2(){
   filtrosF2={mun:'',sec:'',est:''};
   drillF2('candidato',null);
   renderSemaforoF2();
+  // [T-F2 23 jul] Traer las casillas reales de la BD y sustituir las de ejemplo.
+  cargarCasillasF2Reales();
 }
 
 function renderSemaforoF2(){
@@ -2945,7 +3057,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   // KPIs/barra/MUNS/tablas; al refrescar F2 también renderTablaActF2().
   if (typeof createRefresher === 'function') {
     window.wrRefresher = createRefresher({
-      fn: async () => { await cargarDesdeRPC(); if (typeof renderTablaActF2 === 'function') renderTablaActF2(); },
+      fn: async () => { await cargarDesdeRPC(); if (typeof renderTablaActF2 === 'function') renderTablaActF2(); if (typeof cargarCasillasF2Reales === 'function') await cargarCasillasF2Reales(); },
       intervalMs: window.WR_REFRESH_MS || 30000,
       label: 'war-room',
     });
