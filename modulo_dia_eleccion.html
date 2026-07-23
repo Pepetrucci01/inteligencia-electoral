@@ -1436,6 +1436,16 @@ async function guardarCierreEnBD(cierre) {
 }
 
 function confirmarInstalacion() {
+  // [FIX 22 jul · auditoría de concurrencia] Candado contra doble envío.
+  // El botón NO se deshabilitaba durante el guardado (el único `disabled` del
+  // módulo es el del botón de GPS). En una conexión lenta —el escenario normal
+  // del día E en zona rural— el representante pulsa, no ve respuesta y vuelve
+  // a pulsar: dos guardados concurrentes de la misma casilla. El upsert por
+  // clave los reconcilia, pero se duplican peticiones y el log muestra la
+  // instalación dos veces. Se libera en cuanto termina la validación o al
+  // completar el guardado.
+  if (window._instEnviando) return;
+
   const errEl = document.getElementById('inst-error-msg');
   errEl.style.display = 'none';
 
@@ -1480,7 +1490,13 @@ function confirmarInstalacion() {
   // dispositivo. Escribe en reportes_casilla_eleccion. Si falla (red/sesión),
   // queda en localStorage y se puede reintentar; NO bloquea la confirmación al
   // operador (su registro local ya está a salvo).
-  guardarInstalacionEnBD(INSTALACION);
+  // [FIX 22 jul] Candado activo a partir de aquí: pasadas las validaciones,
+  // el envío ya va en camino. Se libera cuando la escritura termina (bien o
+  // mal) para permitir un reintento manual si hiciera falta.
+  window._instEnviando = true;
+  guardarInstalacionEnBD(INSTALACION)
+    .catch(function(){ /* ya se registra dentro y queda marcado como pendiente */ })
+    .finally(function(){ window._instEnviando = false; });
 
   const tipoLabels = {basica:'Básica',contigua:'Contigua',extraordinaria:'Extraordinaria',especial:'Especial'};
   const estLabels  = {instalada:'✅ Instalada',no_instalada:'❌ No instalada',suspendida:'⚠️ Suspendida'};
@@ -1521,6 +1537,10 @@ function calcTotalVotos() {
 
 // ── Confirmar cierre ──
 function confirmarCierre() {
+  // [FIX 22 jul · auditoría de concurrencia] Mismo candado que en la
+  // instalación: sin él, un doble clic en conexión lenta dispara dos
+  // guardados concurrentes del mismo cierre.
+  if (window._cierreEnviando) return;
   const errEl = document.getElementById('cierre-error-msg');
   errEl.style.display = 'none';
 
@@ -1549,7 +1569,10 @@ function confirmarCierre() {
 
   // [DÍA E 16 jul] Persistir el cierre en la tabla casillas (UPDATE a la misma
   // casilla instalada, vía upsert por la key). Antes vivía solo en localStorage.
-  guardarCierreEnBD(CIERRE);
+  window._cierreEnviando = true;
+  guardarCierreEnBD(CIERRE)
+    .catch(function(){ /* se registra dentro y queda marcado como pendiente */ })
+    .finally(function(){ window._cierreEnviando = false; });
 
   const votosHtml = Object.entries(CIERRE.votos).map(([p,v]) =>
     `<div class="inst-confirmado-row"><span class="inst-key">${p}</span><span class="inst-val">${v}</span></div>`
