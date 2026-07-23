@@ -1403,6 +1403,13 @@ async function guardarCierreEnBD(cierre) {
       numero_seccion:        INSTALACION.seccion,
       tipo_casilla:          INSTALACION.tipo,
       numero_casilla:        INSTALACION.numero_casilla || 1,
+      // [FIX 22 jul] municipio es NOT NULL en `casillas`. El cierre no lo
+      // mandaba y el upsert fallaba con 400 "null value in column municipio
+      // violates not-null constraint": en un upsert PostgREST manda la fila
+      // COMPLETA (por si tuviera que insertar), así que toda columna NOT NULL
+      // debe viajar aunque solo se pretenda actualizar. Se toma de
+      // INSTALACION, igual que sección/tipo/número, con respaldo a la sesión.
+      municipio:             INSTALACION.municipio || sesion.municipio || null,
       hora_cierre:           horaCierreTs,
       votos_nuestro_partido: v['Nuestro partido'] || 0,
       votos_partido_a:       v['Partido A'] || 0,
