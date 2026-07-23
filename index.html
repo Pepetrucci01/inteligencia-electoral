@@ -514,7 +514,7 @@ iframe{width:100%;height:100%;border:none;display:block;}
 <script>
 // APP_BUILD: versin de build para cache-busting de los mdulos en iframe.
 // ⚠️ SUBE este nmero en cada deploy con cambios en los mdulos.
-const APP_BUILD = '20260722f';
+const APP_BUILD = '20260722g';
 
 let collapsed = false;
 
@@ -574,6 +574,19 @@ function showHub(){
   document.getElementById('nav-hub').classList.add('active');
   document.getElementById('fr').src = '';
 }
+
+// [FIX 22 jul] Puente hub ↔ módulos en iframe.
+// El iframe está en sandbox SIN 'allow-top-navigation', así que un módulo no
+// puede navegar la ventana superior por sí mismo (el navegador lanza
+// SecurityError). En vez de debilitar el sandbox para todos los módulos, el
+// módulo PIDE volver al hub y el hub —que sí manda sobre su propia ventana—
+// lo hace con showHub(), sin recargar la página.
+window.addEventListener('message', function(e){
+  // Mismo origen únicamente: no aceptamos órdenes de terceros.
+  if (e.origin !== window.location.origin) return;
+  var d = e.data;
+  if (d && d.tipo === 'ie:volver-al-hub') showHub();
+});
 
 document.addEventListener('keydown', e=>{
   if(e.key==='Escape') showHub();

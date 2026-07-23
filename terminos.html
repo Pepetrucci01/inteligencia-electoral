@@ -309,6 +309,22 @@ function rechazar() {
   }
 })();
 </script>
-<button id="btn-back-menu" onclick="(window.top||window).location.href='index.html'">☰ Menú Principal</button>
+<button id="btn-back-menu" onclick="ieVolverAlHub()">☰ Menú Principal</button>
+
+<script>
+// [FIX 22 jul] Volver al hub funcionando en los DOS contextos:
+//  · dentro del iframe del hub → postMessage (el sandbox impide navegar la
+//    ventana superior directamente; el hub recibe y llama showHub()).
+//  · abierto directo en su propia pestaña → navegación normal.
+function ieVolverAlHub(){
+  try {
+    if (window.self !== window.top) {
+      window.parent.postMessage({ tipo: 'ie:volver-al-hub' }, window.location.origin);
+      return;
+    }
+  } catch(e) { /* si ni siquiera podemos comparar, caemos a navegar */ }
+  window.location.href = 'index.html';
+}
+</script>
 </body>
 </html>
