@@ -726,7 +726,7 @@ cargarMetasCasillaSupabase();   // T18: metas por casilla (fallback = horneado)
 })();
 
 </script>
-<button id="btn-back-menu" onclick="window.location.href='index.html'">☰ Menú Principal</button>
+<button id="btn-back-menu" onclick="(window.top||window).location.href='index.html'">☰ Menú Principal</button>
 
 <script>
 // Mostrar botón de menú solo si NO está en iframe
