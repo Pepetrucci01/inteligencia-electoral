@@ -551,7 +551,7 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
   <div class="jornada-bar">
     <div>
       <div class="j-title">🗳 JORNADA ELECTORAL EN CURSO — 1 JUNIO 2027</div>
-      <div class="j-sub">1,023 casillas · 08:00–18:00 hrs · Colima</div>
+      <div class="j-sub"><span id="j-total-casillas">—</span> casillas · 08:00–18:00 hrs · Colima</div>
     </div>
     <div class="j-reloj" id="f2-reloj">--:--:--</div>
     <button class="sim-btn" onclick="simActualizar()">⟳ Simular actualización</button>
@@ -1964,6 +1964,12 @@ async function cargarCasillasF2Reales() {
     CASILLAS_F2.length = 0;
     adaptadas.forEach(function (c) { CASILLAS_F2.push(c); });
     F2_DATOS_REALES = true;
+
+    // [FIX 23 jul] El encabezado tenía "1,023 casillas" HORNEADO a mano, que no
+    // coincidía con la base (939 reales). Un total falso en un panel de mando
+    // hace desconfiar de todo lo demás; ahora muestra el conteo verdadero.
+    const elTot = document.getElementById('j-total-casillas');
+    if (elTot) elTot.textContent = adaptadas.length.toLocaleString('es-MX');
 
     const av = document.getElementById('f2-aviso-simulados');
     if (av) av.style.display = 'none';
