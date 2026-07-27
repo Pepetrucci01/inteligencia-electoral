@@ -438,16 +438,34 @@ function statsSeccionDiaE(sec){
   return {n:sm.casillas.length,inst:inst,rep:rep,votos:votos,metaP:sm.meta_proyectada||0};
 }
 function getDiaEColorSeccion(sec){
-  const st=statsSeccionDiaE(sec);
-  if(!st) return '#2a2a4a';
-  if(HORA_DIA_E>=1110){ // 18:30+ → semáforo de cumplimiento vs meta proyectada
-    const pct=st.metaP>0?Math.round(st.votos/st.metaP*100):0;
-    return getMetaColor(pct);
-  }
-  if(st.inst===0) return '#444';
-  if(st.inst<st.n) return '#ff4466';
-  if(st.rep<st.n) return '#ffaa00';
-  return '#00cc66';
+  // [SWAP LUIS · T29] En desarrollo colorea por estatus_instalacion REAL de la BD.
+  // Agrega el estatus de las casillas de la sección: si alguna tiene incidencia
+  // → rojo; si todas instaladas_ok → verde; si hay pendientes → ámbar.
+  const real = estatusInstRealSeccion(sec);
+  if (real) return real;
+  // Sin datos reales aún (diccionario vacío): neutro, sin inventar simulación.
+  return '#2a2a4a';
+}
+
+// Deriva el color de una sección a partir del estatus real de sus casillas.
+// Devuelve null si no hay ninguna casilla real de esa sección cargada todavía.
+function estatusInstRealSeccion(sec){
+  const claves = Object.keys(ESTATUS_INST_REAL);
+  if (!claves.length) return null;
+  let pend=0, ok=0, inc=0, n=0;
+  claves.forEach(function(k){
+    if (k.indexOf(String(sec)+'-') === 0) {
+      n++;
+      const e = ESTATUS_INST_REAL[k];
+      if (e==='instalada_incidencia') inc++;
+      else if (e==='instalada_ok') ok++;
+      else pend++;
+    }
+  });
+  if (!n) return null;
+  if (inc>0)   return '#ff4466';   // alguna con incidencia
+  if (pend>0)  return '#ffaa00';   // aún hay pendientes
+  return '#00cc66';                // todas instaladas sin inconvenientes
 }
 function setHoraDiaE(v){
   HORA_DIA_E=+v;
@@ -456,16 +474,89 @@ function setHoraDiaE(v){
   if(currentLayer==='dia_e'){renderSecciones('dia_e');actualizarResumenDiaE();}
 }
 function actualizarResumenDiaE(){
-  if(typeof IE_METAS_CASILLA==='undefined'||!IE_METAS_CASILLA.secciones)return;
-  let inst=0,tot=0,votos=0;const h=HORA_DIA_E;
-  Object.values(IE_METAS_CASILLA.secciones).forEach(function(sm){(sm.casillas||[]).forEach(function(c){
-    tot++;const sim=simularCasillaDiaE(c.cc,c.mp,c.mr);
-    if(estadoCasillaDiaE(sim,h)!=='sin_instalar')inst++;
-    votos+=votosCasillaDiaE(sim,h);
-  });});
-  const pctMeta=Math.round(votos/(IE_METAS_CASILLA.meta_estatal||1)*100);
-  document.getElementById('dia-e-resumen').textContent='Casillas instaladas: '+inst+'/'+tot+' · Votos: '+votos.toLocaleString()+' ('+pctMeta+'% de la meta)';
+  // [SWAP LUIS · T29] Resumen con conteos REALES de estatus_instalacion.
+  const claves = Object.keys(ESTATUS_INST_REAL);
+  const el = document.getElementById('dia-e-resumen');
+  if (!el) return;
+  if (!claves.length) {
+    el.textContent = 'Esperando reportes de instalación…';
+    return;
+  }
+  let pend=0, ok=0, inc=0;
+  claves.forEach(function(k){
+    const e = ESTATUS_INST_REAL[k];
+    if (e==='instalada_incidencia') inc++;
+    else if (e==='instalada_ok') ok++;
+    else pend++;
+  });
+  const tot = claves.length, inst = ok + inc;
+  el.innerHTML = 'Casillas instaladas: ' + inst + '/' + tot +
+    ' · <span style="color:#f59e0b">🟡 ' + pend + ' pendientes</span>' +
+    ' · <span style="color:#00cc66">🟢 ' + ok + ' sin inconvenientes</span>' +
+    ' · <span style="color:#ff4466">🔴 ' + inc + ' con incidencias</span>';
 }
+// ── ESTATUS DE INSTALACIÓN DE CASILLAS (semáforo real desde Supabase) ──
+// [SWAP LUIS · T29] Lee casillas.estatus_instalacion de la BD. El diccionario
+// { 'seccion-casilla': estatus } se llena con cargarEstatusInstalacion() y se
+// refresca por polling cada 45 s. Si aún no cargó, cae a 'pendiente' (neutro).
+const EST_INST_COLORS={pendiente:'#f59e0b',instalada_ok:'#00cc66',instalada_incidencia:'#ff4466'};
+const EST_INST_LABELS={pendiente:'🟡 Pendiente',instalada_ok:'🟢 Instalada sin inconvenientes',instalada_incidencia:'🔴 Instalada con incidencias'};
+let ESTATUS_INST_REAL = {};   // { 'seccion-numero': 'pendiente'|'instalada_ok'|'instalada_incidencia' }
+
+function claveCasilla(c){ return (c.seccion||'')+'-'+(c.casilla||c.numero||c.id||''); }
+
+function getEstatusInstalacion(c){
+  const k = claveCasilla(c);
+  return ESTATUS_INST_REAL[k] || 'pendiente';
+}
+
+async function cargarEstatusInstalacion(){
+  try {
+    const _ses = JSON.parse(localStorage.getItem('electoral_sesion') || 'null');
+    const lic = (_ses && _ses.licencia_id) ? _ses.licencia_id : null;
+    const token = (window._sesion && window._sesion.access_token) || (_ses && _ses.access_token) || SUPABASE_KEY;
+    const _fetch = window.supaFetch || fetch;
+    let url = SUPABASE_URL + '/rest/v1/casillas?select=numero_seccion,numero_casilla,estatus_instalacion';
+    if (lic) url += '&licencia_id=eq.' + lic;
+    // Paginado defensivo (db-max-rows corta en 1000 sin error).
+    let filas = [];
+    for (let pg = 0; pg < 5; pg++) {
+      const res = await _fetch(url + '&limit=1000&offset=' + (pg*1000), {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token }
+      });
+      if (!res.ok) { console.warn('⚠️ estatus_instalacion status ' + res.status); break; }
+      const pagFilas = await res.json();
+      if (!Array.isArray(pagFilas)) break;
+      filas = filas.concat(pagFilas);
+      if (pagFilas.length < 1000) break;
+    }
+    const dic = {};
+    filas.forEach(function(f){
+      dic[(f.numero_seccion||'')+'-'+(f.numero_casilla||'')] = f.estatus_instalacion || 'pendiente';
+    });
+    ESTATUS_INST_REAL = dic;
+    // Repintar la vista activa: si es la capa Día E, refrescar secciones y resumen.
+    if (typeof currentLayer !== 'undefined' && currentLayer === 'dia_e') {
+      if (typeof renderSecciones === 'function') renderSecciones('dia_e');
+      if (typeof actualizarResumenDiaE === 'function') actualizarResumenDiaE();
+    } else if (typeof refrescarCasillas === 'function') {
+      refrescarCasillas();
+    }
+    console.log('✅ T29 visor: ' + filas.length + ' estatus de instalación cargados.');
+  } catch (e) {
+    console.warn('T29 visor: no se pudo cargar estatus_instalacion:', e.message);
+  }
+}
+
+function refrescarCasillas(){
+  const mun=document.getElementById('filtMunicipio').value;
+  renderCasillas(mun?CASILLAS.filter(c=>c.municipio===mun):CASILLAS);
+}
+
+// Arranque + refresco cada 45 s (solo si hay algo que colorear).
+cargarEstatusInstalacion();
+setInterval(cargarEstatusInstalacion, 45000);
+
 // ================== FIN DÍA E ==================
 
 function getColor(props, layer){
@@ -620,7 +711,9 @@ function setLayer(layer,el){
   document.getElementById('badge').textContent=names[layer]||layer;
   document.getElementById('sLayer').textContent=names[layer]||layer;
   document.getElementById('dia-e-ctrl').style.display = layer==='dia_e' ? 'block' : 'none';
-  if(layer==='dia_e') actualizarResumenDiaE(); if(typeof window.refrescarDiaE==='function') window.refrescarDiaE();
+  // [SWAP LUIS · T29] Al entrar a Día E, traer estatus real fresco de la BD.
+  if(layer==='dia_e'){ cargarEstatusInstalacion(); actualizarResumenDiaE(); }
+  if(typeof window.refrescarDiaE==='function') window.refrescarDiaE();
   renderSecciones(layer);
 }
 
