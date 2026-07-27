@@ -1082,6 +1082,13 @@ function marcarVoto(id, desdeficha){
 function registroRapido(){
   const nombre=document.getElementById('rr-nombre').value.trim();
   if(!nombre){ alert('Escribe el nombre completo'); return; }
+
+  // [SWAP LUIS · T29-2] Persistir en `ciudadanos` como evidencia de contacto.
+  // Solo el nombre y la sección de la casilla; SIN preferencia de voto.
+  // origen='registro_rapido_dia_e'. Respeta el endurecimiento del SQL 31
+  // (INSERT exige rol de captura — el capturista lo es). pcpFetch por el token.
+  guardarRegistroRapidoEnBD(nombre);
+
   nuevosCount++;
   document.getElementById('nuevos-dia').textContent=nuevosCount;
   document.getElementById('eleccion-q').value='';
@@ -1092,6 +1099,35 @@ function registroRapido(){
     <span style="color:var(--text3);font-size:11px;margin-top:8px;display:block">Solo nombre — sin datos adicionales</span>
   </div>`;
   setTimeout(()=>{ document.getElementById('eleccion-q').focus(); },1000);
+}
+
+// [SWAP LUIS · T29-2] Escritura real del registro rápido en `ciudadanos`.
+async function guardarRegistroRapidoEnBD(nombre){
+  const s = window._sesion || {};
+  const lic = s.licencia_id || 'a1b2c3d4-0001-0000-0000-000000000001';
+  // Sección de la casilla que registró el activista; si no hay, la de su sesión.
+  const secc = (casillaRegistrada && casillaRegistrada.seccion) || s.seccion || null;
+  const fila = {
+    nombre:      nombre,
+    seccion_electoral: secc ? parseInt(secc, 10) : null,
+    municipio:   (casillaRegistrada && casillaRegistrada.municipio) || s.municipio || null,
+    origen:      'registro_rapido_dia_e',
+    licencia_id: lic
+  };
+  try {
+    const res = await pcpFetch(`${SUPA_URL}/rest/v1/ciudadanos`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify(fila)
+    });
+    if (!res.ok) {
+      console.warn('T29: no se pudo guardar el registro rápido (HTTP ' + res.status + ').');
+    } else {
+      console.log('✅ T29: registro rápido guardado en ciudadanos.');
+    }
+  } catch (e) {
+    console.warn('T29: error en registro rápido:', e.message);
+  }
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────
@@ -1152,6 +1188,17 @@ function registrarCasilla(){
   document.getElementById('sub-casilla').style.display  = 'none';
   document.getElementById('sub-jornada').style.display  = 'block';
 
+  // [SWAP LUIS · T29-1A] Persistir la casilla en Supabase (UPSERT).
+  // UPSERT (no UPDATE puro) por el redistritado INE de marzo 2027: casillas
+  // nuevas deben poder insertarse al vuelo. Llave de conflicto:
+  // (numero_seccion, tipo_casilla, numero_casilla, licencia_id) — la misma
+  // restricción única del SQL 34 que ya usa el Día E, para que ambos flujos
+  // (repr en Día E y activista aquí) escriban sobre la MISMA fila sin duplicar.
+  // Se usa pcpFetch (refresca token; no pisar su Authorization) heredando el
+  // fix de sesión. estatus_instalacion arranca en 'pendiente'; el semáforo
+  // (T29-1B) lo actualizará cuando se defina su UI con José.
+  guardarCasillaEnBD();
+
   // Iniciar reloj
   relojInterval = setInterval(()=>{
     document.getElementById('reloj-jornada').textContent =
@@ -1160,6 +1207,41 @@ function registrarCasilla(){
 
   // Scroll top
   window.scrollTo(0,0);
+}
+
+// [SWAP LUIS · T29-1A] Escritura real de la casilla en `casillas`.
+async function guardarCasillaEnBD(){
+  if (!casillaRegistrada) return;
+  const s = window._sesion || {};
+  const lic = s.licencia_id || 'a1b2c3d4-0001-0000-0000-000000000001';
+  const fila = {
+    licencia_id:    lic,
+    numero_seccion: parseInt(casillaRegistrada.seccion, 10),
+    tipo_casilla:   casillaRegistrada.tipo,
+    numero_casilla: parseInt(casillaRegistrada.numero, 10) || 1,
+    municipio:      casillaRegistrada.municipio,   // NOT NULL en casillas
+    estatus_instalacion: casillaRegistrada.estatus || 'pendiente'
+  };
+  try {
+    const res = await pcpFetch(
+      `${SUPA_URL}/rest/v1/casillas?on_conflict=numero_seccion,tipo_casilla,numero_casilla,licencia_id`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=merge-duplicates,return=minimal'
+        },
+        body: JSON.stringify(fila)
+      }
+    );
+    if (!res.ok) {
+      console.warn('T29: no se pudo guardar la casilla (HTTP ' + res.status + ').');
+    } else {
+      console.log('✅ T29: casilla guardada/actualizada en la BD.');
+    }
+  } catch (e) {
+    console.warn('T29: error guardando la casilla:', e.message);
+  }
 }
 
 function verDetalleCasilla(){
