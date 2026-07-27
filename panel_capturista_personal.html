@@ -1188,17 +1188,6 @@ function registrarCasilla(){
   document.getElementById('sub-casilla').style.display  = 'none';
   document.getElementById('sub-jornada').style.display  = 'block';
 
-  // [SWAP LUIS · T29-1A] Persistir la casilla en Supabase (UPSERT).
-  // UPSERT (no UPDATE puro) por el redistritado INE de marzo 2027: casillas
-  // nuevas deben poder insertarse al vuelo. Llave de conflicto:
-  // (numero_seccion, tipo_casilla, numero_casilla, licencia_id) — la misma
-  // restricción única del SQL 34 que ya usa el Día E, para que ambos flujos
-  // (repr en Día E y activista aquí) escriban sobre la MISMA fila sin duplicar.
-  // Se usa pcpFetch (refresca token; no pisar su Authorization) heredando el
-  // fix de sesión. estatus_instalacion arranca en 'pendiente'; el semáforo
-  // (T29-1B) lo actualizará cuando se defina su UI con José.
-  guardarCasillaEnBD();
-
   // Iniciar reloj
   relojInterval = setInterval(()=>{
     document.getElementById('reloj-jornada').textContent =
@@ -1207,41 +1196,6 @@ function registrarCasilla(){
 
   // Scroll top
   window.scrollTo(0,0);
-}
-
-// [SWAP LUIS · T29-1A] Escritura real de la casilla en `casillas`.
-async function guardarCasillaEnBD(){
-  if (!casillaRegistrada) return;
-  const s = window._sesion || {};
-  const lic = s.licencia_id || 'a1b2c3d4-0001-0000-0000-000000000001';
-  const fila = {
-    licencia_id:    lic,
-    numero_seccion: parseInt(casillaRegistrada.seccion, 10),
-    tipo_casilla:   casillaRegistrada.tipo,
-    numero_casilla: parseInt(casillaRegistrada.numero, 10) || 1,
-    municipio:      casillaRegistrada.municipio,   // NOT NULL en casillas
-    estatus_instalacion: casillaRegistrada.estatus || 'pendiente'
-  };
-  try {
-    const res = await pcpFetch(
-      `${SUPA_URL}/rest/v1/casillas?on_conflict=numero_seccion,tipo_casilla,numero_casilla,licencia_id`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Prefer': 'resolution=merge-duplicates,return=minimal'
-        },
-        body: JSON.stringify(fila)
-      }
-    );
-    if (!res.ok) {
-      console.warn('T29: no se pudo guardar la casilla (HTTP ' + res.status + ').');
-    } else {
-      console.log('✅ T29: casilla guardada/actualizada en la BD.');
-    }
-  } catch (e) {
-    console.warn('T29: error guardando la casilla:', e.message);
-  }
 }
 
 function verDetalleCasilla(){
