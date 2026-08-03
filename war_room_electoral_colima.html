@@ -3062,12 +3062,48 @@ document.addEventListener('DOMContentLoaded',()=>{
   // [T11-14 20 jul] Refresco en vivo (dataRefresh.js). cargarDesdeRPC repuebla
   // KPIs/barra/MUNS/tablas; al refrescar F2 también renderTablaActF2().
   if (typeof createRefresher === 'function') {
+    // [MODO JORNADA 27 jul] Polling ADAPTATIVO — el patrón profesional en
+    // sistemas electorales (PREP, conteos paralelos): sondeo por intervalos,
+    // no WebSocket persistente. Es anti-frágil en redes malas de zona rural
+    // (cada ciclo es un intento independiente; si uno falla, el siguiente lo
+    // recupera). El día de la jornada baja a 10s para casi-tiempo-real; el
+    // resto del tiempo 30s basta y no castiga la batería ni la red.
+    //
+    // FECHA_JORNADA: día de la elección (YYYY-MM-DD). Ajustar cuando el INE
+    // confirme la fecha oficial. Palanca manual override: window.WR_REFRESH_MS.
+    const FECHA_JORNADA = '2027-06-06';
+    const MS_JORNADA = 10000, MS_NORMAL = 30000;
+
+    function intervaloRefresco(){
+      if (window.WR_REFRESH_MS) return window.WR_REFRESH_MS;  // override manual
+      try {
+        const hoy = new Date().toISOString().slice(0,10);      // YYYY-MM-DD local UTC
+        if (hoy === FECHA_JORNADA) return MS_JORNADA;
+      } catch(e){}
+      return MS_NORMAL;
+    }
+
+    const msInicial = intervaloRefresco();
+    if (msInicial === MS_JORNADA) console.log('⚡ War Room en MODO JORNADA: refresco cada 10s.');
+
     window.wrRefresher = createRefresher({
       fn: async () => { await cargarDesdeRPC(); if (typeof renderTablaActF2 === 'function') renderTablaActF2(); if (typeof cargarCasillasF2Reales === 'function') await cargarCasillasF2Reales(); },
-      intervalMs: window.WR_REFRESH_MS || 30000,
+      intervalMs: msInicial,
       label: 'war-room',
     });
     window.wrRefresher.start();
+
+    // Reevalúa el intervalo cada 5 min: si la app queda abierta cruzando la
+    // medianoche hacia el día de la jornada, entra en modo jornada solo.
+    window.wrJornadaWatch = setInterval(function(){
+      const ms = intervaloRefresco();
+      if (ms !== window.wrRefresher._msActual && typeof window.wrRefresher.setInterval === 'function') {
+        window.wrRefresher.setInterval(ms);
+        window.wrRefresher._msActual = ms;
+        if (ms === MS_JORNADA) console.log('⚡ War Room entró en MODO JORNADA (refresco 10s).');
+      }
+    }, 300000);
+    window.wrRefresher._msActual = msInicial;
   }
 });
 </script>

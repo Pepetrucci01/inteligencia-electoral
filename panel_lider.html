@@ -1181,12 +1181,32 @@ window.addEventListener('DOMContentLoaded', () => {
   // un fallo puntual no rompe el ciclo. Default 60s; palanca en vivo
   // window.PL_REFRESH_MS. cargarDatos ya usa plFetch/plRpc con asegurarToken.
   if (typeof createRefresher === 'function') {
+    // [MODO JORNADA 27 jul] Polling adaptativo, igual criterio que el War Room:
+    // el día de la elección el líder de sección quiere ver reportes casi al
+    // instante. 60s normal → 15s en jornada. Override manual: PL_REFRESH_MS.
+    const FECHA_JORNADA_PL = '2027-06-06';
+    function intervaloPL(){
+      if (window.PL_REFRESH_MS) return window.PL_REFRESH_MS;
+      try { if (new Date().toISOString().slice(0,10) === FECHA_JORNADA_PL) return 15000; } catch(e){}
+      return 60000;
+    }
+    const msPL = intervaloPL();
+    if (msPL === 15000) console.log('⚡ Panel líder en MODO JORNADA: refresco cada 15s.');
     window.plRefresher = createRefresher({
       fn: cargarDatos,
-      intervalMs: window.PL_REFRESH_MS || 60000,
+      intervalMs: msPL,
       label: 'panel-lider',
     });
     window.plRefresher.start();
+    window.plRefresher._msActual = msPL;
+    window.plJornadaWatch = setInterval(function(){
+      const ms = intervaloPL();
+      if (ms !== window.plRefresher._msActual && typeof window.plRefresher.setInterval === 'function') {
+        window.plRefresher.setInterval(ms);
+        window.plRefresher._msActual = ms;
+        if (ms === 15000) console.log('⚡ Panel líder entró en MODO JORNADA (15s).');
+      }
+    }, 300000);
   } else {
     // Respaldo si dataRefresh.js no cargó: refresco crudo como antes.
     setInterval(cargarDatos, 120000);
