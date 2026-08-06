@@ -40,7 +40,7 @@ BEGIN
 
   -- ── 2. Decidir alcance territorial según rol ───────────────
   v_es_estatal :=
-        v_rol IN ('super_admin','admin')
+        v_rol IN ('super_admin','admin','coordinador_estatal')
      OR (v_rol = 'coordinador' AND v_municipio IS NULL);
 
   IF v_es_estatal THEN

@@ -1,0 +1,84 @@
+-- ═══════════════════════════════════════════════════════════════════════════
+-- VOTERA — PARTE 42: TAREA 28 · T2 — usuario demo coordinador_estatal
+-- Proyecto staging: dyirhwwmykskpuvzcafx · 4 ago 2026 · rama desarrollo
+--
+-- Crea la cuenta demo del coordinador estatal. Receta de la hoja USUARIOS del
+-- Excel de la Tarea 28 (crear un usuario NO es un simple INSERT en usuarios:
+-- Supabase Auth exige auth.users + auth.identities, y un trigger crea el perfil).
+--
+-- ⚠️ REQUIERE LA T1 YA APLICADA (SQL 41): el constraint debe aceptar
+--    'coordinador_estatal' o el UPDATE final del rol falla.
+-- ⚠️ Toca auth.* en staging compartido → avisar a José. apply_migration.
+--
+-- Email/clave demo (alineado al patrón de las otras cuentas del Excel):
+--   coord.estatal@demo.mx  /  CoordEst2027!
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- ── PASO 1 · DIAGNÓSTICO: ¿ya existe? (idempotencia) ───────────────────────
+SELECT id, email FROM auth.users WHERE email = 'coord.estatal@demo.mx';
+-- Si devuelve una fila, el usuario ya se creó — no correr el PASO 2, saltar al 3.
+
+
+-- ── PASO 2 · CREAR (solo si el PASO 1 no devolvió nada) ────────────────────
+-- La contraseña va cifrada con bcrypt (crypt + gen_salt('bf')), como el resto.
+-- El trigger on_auth_user_created crea public.usuarios con rol por defecto;
+-- el UPDATE del PASO 2.3 lo corrige a coordinador_estatal.
+
+-- BEGIN;
+--
+-- -- 2.1 auth.users
+-- WITH nuevo AS (
+--   INSERT INTO auth.users (
+--     instance_id, id, aud, role, email,
+--     encrypted_password, email_confirmed_at,
+--     created_at, updated_at,
+--     raw_app_meta_data, raw_user_meta_data
+--   ) VALUES (
+--     '00000000-0000-0000-0000-000000000000',
+--     gen_random_uuid(),
+--     'authenticated', 'authenticated',
+--     'coord.estatal@demo.mx',
+--     crypt('CoordEst2027!', gen_salt('bf')),
+--     now(), now(), now(),
+--     '{"provider":"email","providers":["email"]}'::jsonb,
+--     '{}'::jsonb
+--   )
+--   RETURNING id
+-- )
+-- -- 2.2 auth.identities (Supabase exige la identidad ligada al provider email)
+-- INSERT INTO auth.identities (
+--   provider_id, user_id, identity_data, provider,
+--   last_sign_in_at, created_at, updated_at
+-- )
+-- SELECT
+--   id, id,
+--   json_build_object('sub', id::text, 'email', 'coord.estatal@demo.mx')::jsonb,
+--   'email', now(), now(), now()
+-- FROM nuevo;
+--
+-- -- 2.3 Corregir el perfil que creó el trigger:
+-- --     rol = coordinador_estatal, nombre, y la licencia demo A.
+-- UPDATE public.usuarios
+--    SET rol = 'coordinador_estatal',
+--        nombre = 'Coordinador Estatal (demo)',
+--        licencia_id = 'a1b2c3d4-0001-0000-0000-000000000001'
+--  WHERE id = (SELECT id FROM auth.users WHERE email = 'coord.estatal@demo.mx');
+--
+-- COMMIT;
+
+
+-- ── PASO 3 · VERIFICACIÓN ──────────────────────────────────────────────────
+-- Debe devolver una fila con rol='coordinador_estatal' y su licencia:
+--   SELECT u.email, pu.rol, pu.nombre, pu.licencia_id
+--   FROM auth.users u JOIN public.usuarios pu ON pu.id = u.id
+--   WHERE u.email = 'coord.estatal@demo.mx';
+--
+-- NOTA: el coordinador_estatal NO necesita municipio/seccion (su alcance es
+-- estatal, ve toda la licencia). Dejar esas columnas en null es correcto para
+-- este rol — a diferencia de coordinador/jefe_seccion/repr_casilla, donde son
+-- obligatorias (regla R6).
+--
+-- LOGIN: recuerda que el botón de coordinador_estatal en login.html lo agrega
+-- José en main (tarea suya). Hasta entonces, este usuario existe pero no tiene
+-- botón para entrar por la pantalla de login (se puede probar la RLS por API).
+-- ═══════════════════════════════════════════════════════════════════════════
