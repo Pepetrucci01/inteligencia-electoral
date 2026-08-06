@@ -2533,16 +2533,28 @@ async function cargarDesdeRPC() {
       body: '{}',
     });
 
+    // [FALLBACK · cond. 3 de José] Qué cuenta como FALLA: error HTTP (timeout,
+    // 5xx, 401) SÍ. Una respuesta 200 con total=0 NO — con RLS y auth.uid()
+    // legítimamente sin alcance, el RPC devuelve 0 y eso es un dato válido, no
+    // una falla. Si el fallback se disparara por vacío, nos brincaríamos el
+    // candado de seguridad (el método viejo pagina sin el filtro del RPC).
     if (!r.ok) {
       console.warn(`⚠ RPC get_war_room_kpis status ${r.status}, cayendo a paginación`);
+      marcarModoFallback(true, 'RPC status ' + r.status);
       return cargarDatosReales();   // fallback al método anterior
     }
 
     const data = await r.json();
-    if (!data || typeof data !== 'object' || data.total === undefined) {
-      console.warn('⚠ RPC devolvió respuesta inesperada, cayendo a paginación:', data);
+    // Falla solo si la ESTRUCTURA es inválida (no un objeto, o sin el campo
+    // total). total === 0 con estructura válida NO es falla: se acepta.
+    if (!data || typeof data !== 'object' || typeof data.total !== 'number') {
+      console.warn('⚠ RPC devolvió respuesta inesperada (estructura), cayendo a paginación:', data);
+      marcarModoFallback(true, 'estructura inesperada');
       return cargarDatosReales();
     }
+
+    // Llegó una respuesta válida (aunque total sea 0): estamos en la ruta buena.
+    marcarModoFallback(false);
 
     console.log(`✅ RPC War Room [${data.alcance}]: ${data.total} ciudadanos (generado ${data.generado})`);
 
@@ -2615,8 +2627,40 @@ async function cargarDesdeRPC() {
 
     console.log('✅ War Room cargado vía RPC (sin paginación)');
   } catch (e) {
+    // Excepción o timeout SÍ es falla (cond. 3 de José).
     console.warn('⚠ Error en cargarDesdeRPC, cayendo a paginación:', e);
+    marcarModoFallback(true, 'excepción/timeout');
     return cargarDatosReales();
+  }
+}
+
+// [FALLBACK · cond. 2 de José] Indicador VISIBLE de que el tablero corre en
+// modo reserva. "Un fallback silencioso me miente": si el War Room está usando
+// la ruta de paginación (plan B) en vez del RPC, tiene que notarse. Discreto
+// pero presente — un chip ámbar junto al título. Cuando vuelve el RPC, se quita.
+function marcarModoFallback(activo, motivo){
+  window._wrEnFallback = !!activo;
+  let chip = document.getElementById('wr-fallback-chip');
+  if (activo) {
+    if (!chip) {
+      chip = document.createElement('span');
+      chip.id = 'wr-fallback-chip';
+      chip.title = 'El tablero usa la ruta de respaldo (paginación) porque el ' +
+        'cálculo optimizado no respondió. Los números siguen siendo reales. Motivo: ' + (motivo || '');
+      chip.style.cssText = 'display:inline-flex;align-items:center;gap:4px;' +
+        'margin-left:10px;padding:2px 8px;border-radius:99px;font-size:10px;' +
+        'font-family:var(--mono,monospace);background:rgba(245,158,11,.15);' +
+        'color:#f59e0b;border:1px solid rgba(245,158,11,.4);vertical-align:middle';
+      chip.textContent = '⚠ modo reserva';
+      // Anclarlo junto al título del War Room.
+      const titulo = document.querySelector('.wr-title, .j-title, h1, h2');
+      if (titulo && titulo.parentNode) titulo.parentNode.insertBefore(chip, titulo.nextSibling);
+      else document.body.appendChild(chip);
+    }
+    chip.style.display = 'inline-flex';
+    if (motivo) chip.title = chip.title.replace(/Motivo:.*$/, 'Motivo: ' + motivo);
+  } else if (chip) {
+    chip.style.display = 'none';   // volvió el RPC: ocultar
   }
 }
 
@@ -2704,6 +2748,25 @@ async function cargarDatosReales() {
     renderMunF1();
     renderTablaCapturistas();
     cargarKPIsReales();
+
+    // [FALLBACK · cond. 1 de José] Paridad de rutas: el total que calcula la
+    // paginación debe COINCIDIR con el que dio el RPC. Si divergen, es un bug
+    // real que hay que cazar (un día un total, otro día otro). Se compara
+    // contra el último total del RPC guardado; si no coinciden, se avisa fuerte.
+    try {
+      const totalPag = ciudadanos.length;
+      const totalRPC = (window._kpisRPC && typeof window._kpisRPC.total === 'number')
+        ? window._kpisRPC.total : null;
+      if (totalRPC !== null) {
+        if (totalRPC === totalPag) {
+          console.log('✅ Paridad OK: RPC y paginación coinciden (' + totalPag + ').');
+        } else {
+          console.error('❌ DISCREPANCIA de rutas War Room: RPC=' + totalRPC +
+            ' vs paginación=' + totalPag + '. Las dos rutas deben dar el mismo ' +
+            'número — revisar antes de confiar en el fallback.');
+        }
+      }
+    } catch (_e) { /* la verificación nunca rompe la carga */ }
 
     console.log('✅ Datos reales cargados desde Supabase');
     var _avWr = document.getElementById('wr-aviso-simulados');
