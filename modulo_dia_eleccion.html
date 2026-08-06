@@ -187,7 +187,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
     // [18 jul · Fase 4] repr_casilla es el rol titular del Día D (aterriza aquí
     // directo, sin hub). admin/super_admin entran para supervisar. capturista
     // SALE del Día D según el nuevo modelo de roles (ver 24_rls_repr_casilla).
-    const rolesPermitidos = ["repr_casilla", "jefe_seccion", "coordinador", "admin", "super_admin"];
+    const rolesPermitidos = ["repr_casilla", "jefe_seccion", "coordinador_estatal", "coordinador", "admin", "super_admin"];
     if (!rolesPermitidos.includes(s.rol)) { window.location.replace('login.html'); return; }
     window._sesion = s;
   } catch(e) { window.location.replace('login.html'); }

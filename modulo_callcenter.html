@@ -29,7 +29,7 @@
     const horas = (Date.now() - s.ts) / 3600000;
     if (horas >= 8) { localStorage.removeItem('electoral_sesion'); window.location.replace('login.html'); return; }
     // operador_cc es el dueño del módulo; el mando entra a supervisar.
-    const rolesPermitidos = ["operador_cc", "coordinador", "admin", "super_admin"];
+    const rolesPermitidos = ["operador_cc", "coordinador_estatal", "coordinador", "admin", "super_admin"];
     if (!rolesPermitidos.includes(s.rol)) { window.location.replace('login.html'); return; }
     window._sesion = s;
   } catch(e) { window.location.replace('login.html'); }

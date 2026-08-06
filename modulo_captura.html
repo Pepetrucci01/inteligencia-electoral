@@ -257,7 +257,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
     // [18 jul · Tarea 4 José] jefe_seccion agregado: usa este módulo embebido en
     // la 4ª pestaña "Capturar" del panel líder (líder adaptable). La RLS de
     // ciudadanos ya lo cubre (captura en su sección).
-    const rolesPermitidos = ["capturista","coordinador","admin","super_admin","jefe_seccion"];
+    const rolesPermitidos = ["capturista","coordinador_estatal", "coordinador","admin","super_admin","jefe_seccion"];
     if (!rolesPermitidos.includes(s.rol)) { window.location.replace('login.html'); return; }
     window._sesion = s;
   } catch(e) { window.location.replace('login.html'); }
