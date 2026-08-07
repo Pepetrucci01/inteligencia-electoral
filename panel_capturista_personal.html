@@ -32,6 +32,24 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 .tab.active-f1{color:var(--accent);border-bottom-color:var(--accent);}
 .tab.active-f2{color:var(--red);border-bottom-color:var(--red);}
 .tab-icon{font-size:15px;display:block;margin-bottom:2px;}
+/* [T12 · TAREA 28] Gating de pestañas de Mi Panel por rol (matriz del Excel).
+   theme.js pone body.rol-<rol>. Se OCULTA cada pestaña para los roles que la
+   matriz NO autoriza — así, si mañana entra un rol nuevo, por defecto la ve
+   (fail-open a solo lectura, no fail-closed que dejaría al usuario sin panel).
+     · Mi avance (tab-inicio) y Simpatizantes (tab-lista): solo super_admin,
+       coordinador_estatal, coordinador. Ocultas para el resto.
+     · Día elección (tab-eleccion): + admin, jefe_seccion, repr_casilla.
+       Oculta solo para capturista, operador_cc, consulta. */
+.rol-admin       #tab-inicio, .rol-admin       #tab-lista,
+.rol-jefe_seccion #tab-inicio, .rol-jefe_seccion #tab-lista,
+.rol-capturista  #tab-inicio, .rol-capturista  #tab-lista,
+.rol-operador_cc #tab-inicio, .rol-operador_cc #tab-lista,
+.rol-repr_casilla #tab-inicio, .rol-repr_casilla #tab-lista,
+.rol-consulta    #tab-inicio, .rol-consulta    #tab-lista { display:none; }
+
+.rol-capturista  #tab-eleccion,
+.rol-operador_cc #tab-eleccion,
+.rol-consulta    #tab-eleccion { display:none; }
 
 /* ── SCREENS ── */
 .screen{display:none;padding:14px 16px 100px;}
@@ -752,6 +770,21 @@ function setFase(f){
 }
 
 // ── TABS ──────────────────────────────────────────────────────────────────
+// [T12] Al cargar, seleccionar la primera pestaña VISIBLE para el rol (algunas
+// se ocultan por CSS según la matriz). Evita que un rol arranque sin panel si
+// su pestaña por defecto (Mi avance) está oculta para él.
+function seleccionarPrimeraPestanaVisible(){
+  const orden = ['inicio','lista','eleccion'];
+  for (const id of orden){
+    const el = document.getElementById('tab-'+id);
+    if (el && getComputedStyle(el).display !== 'none'){
+      showTab(id);
+      return;
+    }
+  }
+  // Si ninguna es visible (rol sin acceso al panel), no forzar nada.
+}
+
 function showTab(t){
   ['inicio','lista','ficha','editar','eleccion'].forEach(s=>{
     document.getElementById('sc-'+s).classList.remove('active');
@@ -1400,6 +1433,18 @@ async function marcarAlertaLeida(){
 // Verificar al cargar y cada 30 segundos
 verificarAlertasCoordinador();
 setInterval(verificarAlertasCoordinador, 30000);
+
+// [T12] Seleccionar la primera pestaña visible una vez que theme.js haya
+// puesto body.rol-<rol> (carga después de este script). Se sondea brevemente
+// hasta que la clase aparezca; si no llega en ~2s, se corre igual (fail-open).
+(function esperarRolYSeleccionar(intentos){
+  const tieneRol = /\brol-\w+/.test(document.body.className);
+  if (tieneRol || intentos <= 0){
+    if (typeof seleccionarPrimeraPestanaVisible === 'function') seleccionarPrimeraPestanaVisible();
+  } else {
+    setTimeout(()=>esperarRolYSeleccionar(intentos-1), 100);
+  }
+})(20);
 
 </script>
 <script src="theme.js">
