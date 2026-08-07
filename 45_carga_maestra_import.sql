@@ -189,15 +189,21 @@ BEGIN
     RAISE EXCEPTION 'Validación de cierre FALLÓ: SUM estructura_real=% (esperado 500.00 ±0.01). ROLLBACK.', v_estruct;
   END IF;
 
-  -- 5. Registrar en audit_log (best-effort; si la tabla difiere, no rompe).
+  -- 5. Registrar en audit_log (esquema real: id, licencia_id, usuario_id,
+  --    usuario_nombre, accion, tabla, registro_id, detalle, ip_address, created_at).
   BEGIN
-    INSERT INTO public.audit_log (licencia_id, usuario_id, accion, detalle, created_at)
-    VALUES (v_lic, auth.uid(), 'import_carga_maestra',
-            jsonb_build_object('casillas', v_total, 'meta', v_meta,
-                               'estructura', v_estruct, 'filas_procesadas', v_n),
-            now());
+    INSERT INTO public.audit_log
+      (licencia_id, usuario_id, usuario_nombre, accion, tabla, detalle, created_at)
+    VALUES (
+      v_lic, auth.uid(),
+      (SELECT nombre FROM public.usuarios WHERE id = auth.uid()),
+      'import_carga_maestra', 'casillas',
+      jsonb_build_object('casillas', v_total, 'meta', v_meta,
+                         'estructura', v_estruct, 'filas_procesadas', v_n),
+      now()
+    );
   EXCEPTION WHEN undefined_table OR undefined_column THEN
-    NULL;  -- si audit_log no tiene ese esquema, no abortar el import por el log
+    NULL;  -- si el esquema difiere, no abortar el import por el log
   END;
 
   RETURN jsonb_build_object(
@@ -223,9 +229,9 @@ GRANT EXECUTE ON FUNCTION public.importar_carga_maestra(jsonb) TO authenticated;
 -- las 1,033 filas en JSON). Al terminar, la función devuelve el resumen o
 -- lanza la excepción de cierre (y revierte todo).
 --
--- NOTA audit_log: el bloque del paso 5 asume columnas (licencia_id, usuario_id,
--- accion, detalle, created_at). Si el esquema real difiere, el import NO falla
--- (captura undefined_table/column), pero conviene confirmar el esquema de
--- audit_log y ajustar para que el registro quede. Verificar con:
---   SELECT column_name FROM information_schema.columns WHERE table_name='audit_log';
+-- NOTA audit_log: el paso 5 usa el esquema REAL confirmado (id, licencia_id,
+-- usuario_id, usuario_nombre, accion, tabla, registro_id, detalle, ip_address,
+-- created_at). El registro del import queda con accion='import_carga_maestra',
+-- tabla='casillas' y el resumen en detalle. ip_address queda NULL (no la tiene
+-- la función; si se quiere, se pasa desde el frontend como parámetro extra).
 -- ═══════════════════════════════════════════════════════════════════════════
