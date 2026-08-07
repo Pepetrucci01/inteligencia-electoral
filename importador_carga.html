@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Importador de Carga Maestra · VOTERA</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📥</text></svg>">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#0a0e1a;--bg2:#0f1526;--bg3:#141b2e;--bg4:#1a2238;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.14);
+  --text:#e8edf5;--text2:#8a9ab5;--text3:#5a6a85;
+  --accent:#3b82f6;--green:#22c55e;--red:#ef4444;--amber:#f59e0b;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);}
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border2);padding:0 24px;height:52px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;}
+.logo-mark{width:30px;height:30px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.topbar-title{font-size:14px;font-weight:600;}
+.topbar-sub{font-size:11px;color:var(--text3);font-family:var(--mono);}
+.wrap{max-width:820px;margin:0 auto;padding:28px 20px;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:22px;margin-bottom:18px;}
+.card h2{font-size:15px;margin-bottom:6px;}
+.card p{font-size:13px;color:var(--text2);line-height:1.5;}
+.drop{border:2px dashed var(--border2);border-radius:12px;padding:34px;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg3);}
+.drop:hover{border-color:var(--accent);background:var(--bg4);}
+.drop input{display:none;}
+.drop-icon{font-size:38px;margin-bottom:8px;}
+.drop-hint{font-size:12px;color:var(--text3);margin-top:6px;font-family:var(--mono);}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0;}
+.kpi{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;}
+.kpi-val{font-size:24px;font-weight:700;font-family:var(--mono);}
+.kpi-lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-top:4px;}
+.kpi.ok .kpi-val{color:var(--green);}
+.kpi.bad .kpi-val{color:var(--red);}
+.tipos{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0;font-family:var(--mono);font-size:12px;}
+.chip{background:var(--bg4);border:1px solid var(--border);border-radius:99px;padding:4px 12px;}
+.btn{border:none;border-radius:9px;padding:12px 20px;font-size:13px;font-weight:600;font-family:var(--sans);cursor:pointer;transition:all .2s;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{filter:brightness(1.1);}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed;}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border2);}
+.msg{border-radius:10px;padding:14px 16px;font-size:13px;margin:14px 0;line-height:1.5;}
+.msg-ok{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3);color:#86efac;}
+.msg-err{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:#fca5a5;}
+.msg-warn{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:#fcd34d;}
+.hidden{display:none;}
+.spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;display:inline-block;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.actions{display:flex;gap:10px;margin-top:8px;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo-mark">📥</div>
+  <div>
+    <div class="topbar-title">Importador de Carga Maestra</div>
+    <div class="topbar-sub">CARGA-01 · casillas + metas seccionales</div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="card">
+    <h2>1 · Seleccionar el archivo</h2>
+    <p>Sube el Excel de carga plana (una hoja <b>CARGA</b>, llave <b>CASILLA_COMPLETA</b>).
+       El importador valida los totales antes de escribir nada — no se guarda hasta que confirmes.</p>
+    <label class="drop" style="margin-top:14px;display:block">
+      <input type="file" id="file" accept=".xlsx,.xls">
+      <div class="drop-icon">📄</div>
+      <div><b>Haz clic para elegir</b> o arrastra el .xlsx aquí</div>
+      <div class="drop-hint">COLIMA_CARGA_PLANA_v1.xlsx</div>
+    </label>
+  </div>
+
+  <div class="card hidden" id="preview">
+    <h2>2 · Revisión previa</h2>
+    <p>Estos son los totales leídos del archivo. Deben cuadrar con la validación de cierre
+       antes de importar.</p>
+    <div class="kpis">
+      <div class="kpi" id="k-casillas"><div class="kpi-val">–</div><div class="kpi-lbl">Casillas</div></div>
+      <div class="kpi" id="k-meta"><div class="kpi-val">–</div><div class="kpi-lbl">Meta proyectada</div></div>
+      <div class="kpi" id="k-estruct"><div class="kpi-val">–</div><div class="kpi-lbl">Estructura real</div></div>
+    </div>
+    <div class="tipos" id="tipos"></div>
+    <div id="preview-msg"></div>
+    <div class="actions">
+      <button class="btn btn-primary" id="btn-import" disabled onclick="importar()">Importar a la base</button>
+      <button class="btn btn-ghost" onclick="location.reload()">Cancelar</button>
+    </div>
+  </div>
+
+  <div class="card hidden" id="result">
+    <h2>3 · Resultado</h2>
+    <div id="result-msg"></div>
+  </div>
+
+</div>
+
+<script src="supabase_client.js"></script>
+<script>
+// ── Guard de sesión: solo mando importa ──────────────────────────────────
+(function(){
+  try{
+    const s = JSON.parse(localStorage.getItem('electoral_sesion')||'null');
+    if(!s||!s.ts){ location.replace('login.html'); return; }
+    if((Date.now()-s.ts)/3600000 >= 8){ localStorage.removeItem('electoral_sesion'); location.replace('login.html'); return; }
+    if(!['admin','super_admin'].includes(s.rol)){ location.replace('login.html'); return; }
+    window._sesion = s;
+  }catch(e){ location.replace('login.html'); }
+})();
+
+// Mapeo de columnas Excel → campos que espera la función. El tipo se manda como
+// LETRA (tipo_letra); la función lo traduce y truena si no mapea.
+let FILAS = null;   // array listo para la función
+const ESPERADO = { casillas:1033, meta:208748, estruct:500.00 };
+
+function num(v){ const n = parseFloat(v); return isNaN(n)?null:n; }
+
+document.getElementById('file').addEventListener('change', function(e){
+  const f = e.target.files[0];
+  if(!f) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try{
+      const wb = XLSX.read(ev.target.result, { type:'array' });
+      const hoja = wb.Sheets['CARGA'] || wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(hoja, { defval:null });
+      procesar(rows);
+    }catch(err){
+      mostrarPreviewMsg('err', 'No se pudo leer el Excel: ' + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(f);
+});
+
+function procesar(rows){
+  FILAS = [];
+  const tipos = { B:0, C:0, E:0, S:0, '?':0 };
+  let sumMeta = 0, sumEstruct = 0;
+  for(const r of rows){
+    const comp = (r['CASILLA_COMPLETA']||'').toString().trim();
+    if(!comp) continue;                       // fila sin llave → no es casilla
+    const letra = (r['TIPO_CASILLA']||'').toString().trim().toUpperCase();
+    tipos[letra] !== undefined ? tipos[letra]++ : tipos['?']++;
+    const mp = num(r['META PROYECTADA']);
+    const es = num(r['ESTRUCTURA REAL']);
+    if(mp!=null) sumMeta += mp;
+    if(es!=null) sumEstruct += es;
+    FILAS.push({
+      casilla_completa: comp,
+      numero_seccion:   num(r['SECCION']),
+      numero_casilla:   num(r['ID_CASILLA']),
+      tipo_letra:       letra,
+      municipio:        (r['MUNICIPIO']||'').toString().trim(),
+      lista_nominal:    num(r['LISTA_NOMINAL']),
+      meta_proyectada:  mp,
+      meta_real:        num(r['META REAL']),
+      estructura_real:  es,
+      lat:              num(r['LAT_CENTROIDE_SECCION']),
+      lng:              num(r['LON_CENTROIDE_SECCION']),
+      lugar:            (r['NOMBRE_INMUEBLE']||'').toString().trim() || null,
+      direccion:        (r['UBICACION_CASILLA']||'').toString().trim() || null
+    });
+  }
+
+  // Pintar KPIs
+  const n = FILAS.length;
+  setKpi('k-casillas', n, n===ESPERADO.casillas);
+  setKpi('k-meta', Math.round(sumMeta).toLocaleString('es-MX'), Math.abs(sumMeta-ESPERADO.meta)<=2);
+  setKpi('k-estruct', sumEstruct.toFixed(2), Math.abs(sumEstruct-ESPERADO.estruct)<=0.01);
+
+  document.getElementById('tipos').innerHTML =
+    ['B','C','E','S'].map(t=>`<span class="chip">${t}: <b>${tipos[t]}</b></span>`).join('') +
+    (tipos['?']>0 ? `<span class="chip" style="color:var(--red)">Sin mapear: <b>${tipos['?']}</b></span>` : '');
+
+  const cuadra = n===ESPERADO.casillas
+    && Math.abs(sumMeta-ESPERADO.meta)<=2
+    && Math.abs(sumEstruct-ESPERADO.estruct)<=0.01
+    && tipos['?']===0;
+
+  if(cuadra){
+    mostrarPreviewMsg('ok', '✅ Todo cuadra con la validación de cierre. Puedes importar.');
+    document.getElementById('btn-import').disabled = false;
+  } else if(tipos['?']>0){
+    mostrarPreviewMsg('err', '❌ Hay '+tipos['?']+' casilla(s) con TIPO_CASILLA no reconocido (no es B/C/E/S). '
+      + 'Corrige el archivo — el importador no aceptará letras sin mapear.');
+  } else {
+    mostrarPreviewMsg('warn', '⚠️ Los totales no cuadran con lo esperado ('+ESPERADO.casillas
+      +' / '+ESPERADO.meta.toLocaleString('es-MX')+' / '+ESPERADO.estruct.toFixed(2)
+      +'). Revisa el archivo. La base rechazará el import si no cuadra, así que no se escribirá nada a medias.');
+    // Se deja habilitado para que el usuario pueda intentar: la función valida y hace ROLLBACK si falla.
+    document.getElementById('btn-import').disabled = false;
+  }
+  document.getElementById('preview').classList.remove('hidden');
+}
+
+function setKpi(id, val, ok){
+  const el = document.getElementById(id);
+  el.querySelector('.kpi-val').textContent = val;
+  el.classList.toggle('ok', ok);
+  el.classList.toggle('bad', !ok);
+}
+function mostrarPreviewMsg(tipo, txt){
+  document.getElementById('preview-msg').innerHTML =
+    '<div class="msg msg-'+(tipo==='err'?'err':tipo==='warn'?'warn':'ok')+'">'+txt+'</div>';
+}
+
+async function importar(){
+  if(!FILAS || !FILAS.length) return;
+  const btn = document.getElementById('btn-import');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Importando…';
+  try{
+    const token = (await window.supabase.auth.getSession()).data.session?.access_token || SUPA_KEY;
+    const res = await fetch(`${SUPA_URL}/rest/v1/rpc/importar_carga_maestra`, {
+      method:'POST',
+      headers:{
+        'apikey': SUPA_KEY,
+        'Authorization': 'Bearer '+token,
+        'Content-Type':'application/json'
+      },
+      body: JSON.stringify({ p_filas: FILAS })
+    });
+    const data = await res.json();
+    document.getElementById('result').classList.remove('hidden');
+    if(res.ok && data && data.ok){
+      document.getElementById('result-msg').innerHTML =
+        '<div class="msg msg-ok">✅ Importación exitosa.<br>'
+        + 'Casillas: <b>'+data.casillas+'</b> · '
+        + 'Meta proyectada: <b>'+Number(data.meta_proyectada).toLocaleString('es-MX')+'</b> · '
+        + 'Estructura real: <b>'+Number(data.estructura_real).toFixed(2)+'</b><br>'
+        + 'Metas seccionales regeneradas. La validación de cierre pasó.</div>';
+      btn.classList.add('hidden');
+    } else {
+      const err = (data && (data.message||data.error||data.hint)) || ('HTTP '+res.status);
+      document.getElementById('result-msg').innerHTML =
+        '<div class="msg msg-err">❌ El import no se aplicó (ROLLBACK total, la base quedó intacta).<br>'
+        + 'Motivo: '+err+'</div>';
+      btn.disabled = false;
+      btn.innerHTML = 'Reintentar';
+    }
+  }catch(e){
+    document.getElementById('result').classList.remove('hidden');
+    document.getElementById('result-msg').innerHTML =
+      '<div class="msg msg-err">❌ Error de conexión: '+e.message+'. Nada se escribió.</div>';
+    btn.disabled = false;
+    btn.innerHTML = 'Reintentar';
+  }
+}
+</script>
+</body>
+</html>
