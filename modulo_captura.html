@@ -885,6 +885,13 @@ function extraerDatosINE(fotoBase64){
   }
   // [SWAP LUIS · T29] Llamada REAL a la Edge Function scan-ine (server-side).
   // La imagen viaja, se lee y se desecha; NUNCA se persiste (LFPDPPP).
+  // Límite defensivo 5MB: el resize a 1000px ya deja las fotos muy por debajo,
+  // pero validamos explícito antes de mandar (base64 infla ~33%, 5MB≈6.99M car).
+  if (fotoBase64 && fotoBase64.length > 6990000) {
+    alert('La imagen es demasiado grande (máx 5MB). Vuelve a tomar la foto o captura manualmente.');
+    cerrarEscanerINE();
+    return;
+  }
   var _tok = (window._sesion && window._sesion.access_token) || (typeof SUPA_KEY!=='undefined'?SUPA_KEY:'');
   fetch(SUPA_URL + '/functions/v1/scan-ine', {
     method: 'POST',
