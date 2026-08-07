@@ -120,9 +120,14 @@ const ESPERADO = { casillas:1033, meta:208748, estruct:500.00 };
 
 function num(v){ const n = parseFloat(v); return isNaN(n)?null:n; }
 
-document.getElementById('file').addEventListener('change', function(e){
-  const f = e.target.files[0];
+// Lectura del Excel — reutilizada por el clic (input change) y el arrastre (drop).
+function leerArchivo(f){
   if(!f) return;
+  if(!/\.(xlsx|xls)$/i.test(f.name)){
+    mostrarPreviewMsg('err', 'El archivo debe ser .xlsx o .xls');
+    document.getElementById('preview').classList.remove('hidden');
+    return;
+  }
   const reader = new FileReader();
   reader.onload = ev => {
     try{
@@ -132,10 +137,33 @@ document.getElementById('file').addEventListener('change', function(e){
       procesar(rows);
     }catch(err){
       mostrarPreviewMsg('err', 'No se pudo leer el Excel: ' + err.message);
+      document.getElementById('preview').classList.remove('hidden');
     }
   };
   reader.readAsArrayBuffer(f);
+}
+
+// Clic → selector de archivo
+document.getElementById('file').addEventListener('change', function(e){
+  leerArchivo(e.target.files[0]);
 });
+
+// Arrastrar y soltar sobre la zona. Sin preventDefault en dragover, el
+// navegador abre el archivo en una pestaña en vez de recibirlo — ese era el bug.
+(function(){
+  const zona = document.querySelector('.drop');
+  if(!zona) return;
+  ['dragenter','dragover'].forEach(ev =>
+    zona.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation();
+      zona.style.borderColor = 'var(--accent)'; zona.style.background = 'var(--bg4)'; }));
+  ['dragleave','drop'].forEach(ev =>
+    zona.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation();
+      zona.style.borderColor = ''; zona.style.background = ''; }));
+  zona.addEventListener('drop', e => {
+    const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    leerArchivo(f);
+  });
+})();
 
 function procesar(rows){
   FILAS = [];
