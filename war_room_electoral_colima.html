@@ -2145,7 +2145,18 @@ function renderTablaCapturistas(){
   // Obtener todos los capturistas
   let todos = Object.values(CAPS).flat();
 
-  // Filtrar
+  // [AISLAMIENTO TERRITORIAL] Un coordinador municipal solo ve activistas de su
+  // municipio (mismo criterio que la tabla de municipios). Roles estatales ven
+  // todos. Se aplica ANTES del filtro manual del dropdown.
+  const _rolA = (window._sesion && window._sesion.rol) || '';
+  const _munA = (window._sesion && window._sesion.municipio) || '';
+  const _estatalA = ['super_admin','admin','coordinador_estatal'].includes(_rolA);
+  const _normA = s => (s||'').toString().trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  if(!_estatalA && _munA){
+    todos = todos.filter(c => _normA(c.munNombre) === _normA(_munA) || _normA(c.mun) === _normA(_munA));
+  }
+
+  // Filtrar (dropdown manual)
   if(munFiltro) todos = todos.filter(c=>c.mun===munFiltro);
   if(secFiltro) todos = todos.filter(c=>c.seccion===secFiltro);
   if(semFiltro) todos = todos.filter(c=>{

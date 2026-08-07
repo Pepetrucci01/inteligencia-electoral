@@ -115,6 +115,15 @@ iframe{width:100%;height:100%;border:none;display:block;}
 .pb-nums{font-family:var(--mono);font-size:11px;color:var(--text2);text-align:right;flex-shrink:0;}
 
 .kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:9px;margin-bottom:18px;}
+/* [AISLAMIENTO] Ocultar KPIs estatales (meta estatal, operadores, secciones,
+   sec. críticas) a roles que no son de alcance estatal. theme.js pone body.rol-X.
+   Los roles estatales (super_admin, admin, coordinador_estatal) SÍ los ven. */
+body.rol-coordinador  .kpi-estatal,
+body.rol-jefe_seccion .kpi-estatal,
+body.rol-capturista   .kpi-estatal,
+body.rol-operador_cc  .kpi-estatal,
+body.rol-repr_casilla .kpi-estatal,
+body.rol-consulta     .kpi-estatal { display:none; }
 .kpi{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;position:relative;overflow:hidden;}
 .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
 .kpi.bl::before{background:var(--accent);}  .kpi.bl .kv{color:var(--accent);}
@@ -399,14 +408,14 @@ iframe{width:100%;height:100%;border:none;display:block;}
     </div>
 
     <div class="kpi-row">
-      <div class="kpi bl" data-tip="Total de simpatizantes que la candidatura se propuso captar en todo el estado para 2027."><div class="kv" data-theme="sistema-meta" id="ix-meta-kpi">208,717</div><div class="kl">Meta estatal</div></div>
+      <div class="kpi bl kpi-estatal" data-tip="Total de simpatizantes que la candidatura se propuso captar en todo el estado para 2027."><div class="kv" data-theme="sistema-meta" id="ix-meta-kpi">208,717</div><div class="kl">Meta estatal</div></div>
       <div class="kpi gr" data-tip="Simpatizantes registrados hasta hoy en el padrón de la campaña."><div class="kv" id="hub-kpi-total">10,000</div><div class="kl">Capturados</div></div>
       <div class="kpi gr" data-tip="Simpatizantes con nivel de compromiso alto (3 o 4): se considera que su voto está asegurado."><div class="kv" id="hub-kpi-seguro">4,601</div><div class="kl">Voto seguro</div></div>
       <div class="kpi am" data-tip="Simpatizantes marcados como posible fuga de voto. Requieren visita o seguimiento para no perderlos."><div class="kv" id="hub-kpi-riesgo">2,203</div><div class="kl">En riesgo</div></div>
       <div class="kpi re" data-tip="Registros repetidos en el padrón. Inflan artificialmente el avance y hay que depurarlos."><div class="kv" id="hub-kpi-dup">408</div><div class="kl">Duplicados</div></div>
-      <div class="kpi cy" data-tip="Personas de la estructura de campo dadas de alta en el sistema (capturistas, coordinadores y líderes)."><div class="kv">60</div><div class="kl">Operadores</div></div>
-      <div class="kpi cy" data-tip="Secciones electorales del estado sobre las que se organiza el trabajo territorial."><div class="kv">392</div><div class="kl">Secciones</div></div>
-      <div class="kpi re" data-tip="Secciones con avance menor al 5% de su meta. Son las que más urgen para no perder terreno."><div class="kv">219</div><div class="kl">Sec. críticas</div></div>
+      <div class="kpi cy kpi-estatal" data-tip="Personas de la estructura de campo dadas de alta en el sistema (capturistas, coordinadores y líderes)."><div class="kv">60</div><div class="kl">Operadores</div></div>
+      <div class="kpi cy kpi-estatal" data-tip="Secciones electorales del estado sobre las que se organiza el trabajo territorial."><div class="kv">392</div><div class="kl">Secciones</div></div>
+      <div class="kpi re kpi-estatal" data-tip="Secciones con avance menor al 5% de su meta. Son las que más urgen para no perder terreno."><div class="kv">219</div><div class="kl">Sec. críticas</div></div>
     </div>
 
     <div class="mod-title">9 módulos del sistema — clic para abrir</div>
@@ -480,7 +489,7 @@ iframe{width:100%;height:100%;border:none;display:block;}
     </div>
 
     <!-- ALERTAS -->
-    <div class="alerts">
+    <div class="alerts kpi-estatal">
       <div class="al-head">
         <span class="al-title">Alertas activas</span>
         <span class="tb-badge" style="background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.2)">3 críticas · 2 avisos</span>
@@ -519,7 +528,7 @@ iframe{width:100%;height:100%;border:none;display:block;}
 <script>
 // APP_BUILD: versin de build para cache-busting de los mdulos en iframe.
 // ⚠️ SUBE este nmero en cada deploy con cambios en los mdulos.
-const APP_BUILD = '20260727i';
+const APP_BUILD = '20260727j';
 
 let collapsed = false;
 
