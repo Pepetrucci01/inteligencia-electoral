@@ -289,6 +289,11 @@ iframe{width:100%;height:100%;border:none;display:block;}
       <span class="nav-label">Meta / Config</span>
       <div class="nav-tip">Configurador de meta</div>
     </div>
+    <div class="nav-item" id="nav-carga" data-rol="super_admin,admin" onclick="load('carga','importador_carga.html','Importador de Carga Maestra','Casillas + metas seccionales desde Excel')">
+      <div class="nav-icon" style="background:rgba(59,130,246,.12);color:var(--accent)">📥</div>
+      <span class="nav-label">Carga Maestra</span>
+      <div class="nav-tip">Importador de Carga Maestra</div>
+    </div>
     <div class="nav-item" data-rol="super_admin,admin,coordinador,consulta" id="nav-rep" onclick="load('rep','modulo_reportes.html','Reportes y análisis','Datos reales · PDF y Excel')">
       <div class="nav-icon" style="background:rgba(168,85,247,.12);color:var(--purple)">📈</div>
       <span class="nav-label">Reportes</span>
@@ -514,7 +519,7 @@ iframe{width:100%;height:100%;border:none;display:block;}
 <script>
 // APP_BUILD: versin de build para cache-busting de los mdulos en iframe.
 // ⚠️ SUBE este nmero en cada deploy con cambios en los mdulos.
-const APP_BUILD = '20260727e';
+const APP_BUILD = '20260727f';
 
 let collapsed = false;
 
