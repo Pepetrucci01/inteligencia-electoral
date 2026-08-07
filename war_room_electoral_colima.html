@@ -918,17 +918,31 @@ function renderMunF1(){
   const findSec = (id) => Object.values(window.SECS_REAL||{}).flat().find(s=>s.id===id)
     || Object.values(SECS).flat().find(s=>s.id===id);
 
+  // [AISLAMIENTO TERRITORIAL] Un coordinador MUNICIPAL solo debe ver su propio
+  // municipio en el desglose, no los 10. Los roles estatales (super_admin, admin,
+  // coordinador_estatal) ven todos. Se filtra la lista base MUNS por el municipio
+  // del usuario. Comparación laxa (mayúsculas/acentos) porque los datos tienen
+  // inconsistencias (COLIMA, TECOMAN vs TECOMÁN).
+  const _rolU = (window._sesion && window._sesion.rol) || '';
+  const _munU = (window._sesion && window._sesion.municipio) || '';
+  const _esEstatal = ['super_admin','admin','coordinador_estatal'].includes(_rolU);
+  const _norm = s => (s||'').toString().trim().toUpperCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'');   // quita acentos
+  const _munsPermitidos = (_esEstatal || !_munU)
+    ? MUNS.slice()
+    : MUNS.filter(m => _norm(m.n) === _norm(_munU) || _norm(m.nombre) === _norm(_munU));
+
   // ── Nivel de la tabla ───────────────────────────────────────────
   // sin filtro → municipios · municipio → sus secciones · sección → esa sección
   let nivelTabla='mun', rows=[];
   if(secFiltro){
     const sec=findSec(secFiltro);
     if(sec){ nivelTabla='sec'; rows=[sec]; }
-    else   { nivelTabla='mun'; rows=MUNS.slice(); }
+    else   { nivelTabla='mun'; rows=_munsPermitidos.slice(); }
   } else if(munFiltro){
     nivelTabla='sec'; rows=secsDeMun(munFiltro);
   } else {
-    nivelTabla='mun'; rows=MUNS.slice();
+    nivelTabla='mun'; rows=_munsPermitidos.slice();
   }
 
   // Filtro por semáforo (aplica a ambos niveles)
