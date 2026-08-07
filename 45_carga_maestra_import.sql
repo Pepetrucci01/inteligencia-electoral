@@ -23,11 +23,13 @@
 
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- PARTE A · Restricción única para el UPSERT por casilla_completa
+-- PARTE A · Restricción única sobre casilla_completa (integridad)
 -- ───────────────────────────────────────────────────────────────────────────
--- El UPSERT necesita una constraint sobre (licencia_id, casilla_completa).
--- Parcial (WHERE casilla_completa IS NOT NULL) para no chocar con las filas
--- viejas del Día E que puedan no tener ese valor.
+-- Garantiza que no haya dos casillas con el mismo casilla_completa por licencia.
+-- NOTA: el UPSERT del import NO usa esta constraint (usa la llave natural
+-- sección/tipo/número, ver la función abajo) — esta queda como salvaguarda de
+-- integridad del formato nuevo. Parcial (WHERE NOT NULL) por si quedan filas
+-- viejas sin ese campo.
 CREATE UNIQUE INDEX IF NOT EXISTS ux_casillas_completa_licencia
   ON public.casillas (licencia_id, casilla_completa)
   WHERE casilla_completa IS NOT NULL;
@@ -137,6 +139,13 @@ BEGIN
       v_fila->>'lugar',
       v_fila->>'direccion'
     )
+    -- Conflicto por casilla_completa: es la IDENTIDAD REAL de una casilla.
+    -- Las extraordinarias (tipo E) comparten (seccion,tipo,numero_casilla) y se
+    -- distinguen por la extensión del casilla_completa (60-E1-0, 60-E1-1, ...).
+    -- Por eso NO se puede usar la tripleta como llave — hacerlo fue el bug que
+    -- perdió 154 extraordinarias antes. Requiere ELIMINAR la constraint vieja
+    -- casillas_seccion_tipo_num_lic_uk (ver el DROP en la Parte A) que es
+    -- conceptualmente errónea para las tipo E.
     ON CONFLICT (licencia_id, casilla_completa) WHERE casilla_completa IS NOT NULL
     DO UPDATE SET
       numero_seccion  = EXCLUDED.numero_seccion,
@@ -182,8 +191,12 @@ BEGIN
   IF v_total <> 1033 THEN
     RAISE EXCEPTION 'Validación de cierre FALLÓ: % casillas (esperado 1033). ROLLBACK.', v_total;
   END IF;
-  IF abs(v_meta - 208748) > 2 THEN
-    RAISE EXCEPTION 'Validación de cierre FALLÓ: SUM meta_proyectada=% (esperado 208748 ±2). ROLLBACK.', v_meta;
+  -- Tolerancia ±15: sumar 1,033 metas redondeadas por fila (ROUND, como pide el
+  -- instructivo) desvía el total unos enteros del 208,748 "limpio" (la suma sin
+  -- redondear da 208748.31). El ±2 del instructivo fue optimista; ±15 absorbe el
+  -- redondeo sin esconder un error real (que sería de cientos/miles, no de ~6).
+  IF abs(v_meta - 208748) > 15 THEN
+    RAISE EXCEPTION 'Validación de cierre FALLÓ: SUM meta_proyectada=% (esperado 208748 ±15). ROLLBACK.', v_meta;
   END IF;
   IF abs(v_estruct - 500.00) > 0.01 THEN
     RAISE EXCEPTION 'Validación de cierre FALLÓ: SUM estructura_real=% (esperado 500.00 ±0.01). ROLLBACK.', v_estruct;
