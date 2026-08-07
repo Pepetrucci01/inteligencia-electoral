@@ -495,7 +495,7 @@ async function cargarDatos() {
     const pageSize = 1000;
     while (true) {
       const chunk = await plFetch(
-        `ciudadanos?select=id,nombre,apellido_paterno,apellido_materno,compromiso,es_riesgo,capturista_id,colonia,fecha_nacimiento,licencia_id,telefono,municipio,seccion_electoral,origen,sexo,curp,validado,duplicado,es_apoyo,es_influencia&seccion_electoral=eq.${SECCION_LIDER}&licencia_id=eq.${LICENCIA_ID}&limit=${pageSize}&offset=${from}`
+        `ciudadanos?select=id,nombre,apellido_paterno,apellido_materno,compromiso,es_riesgo,capturista_id,edad,domicilio,licencia_id,telefono,municipio,seccion_electoral,origen,sexo,curp,validado,duplicado,es_apoyo,es_influencia&seccion_electoral=eq.${SECCION_LIDER}&licencia_id=eq.${LICENCIA_ID}&limit=${pageSize}&offset=${from}`
       );
       if (!Array.isArray(chunk) || chunk.length === 0) break;
       todos = todos.concat(chunk);
@@ -516,8 +516,8 @@ async function cargarDatos() {
       apoyo:           c.es_apoyo  || false,
       influencia:      c.es_influencia || false,
       capturista_id:   c.capturista_id || '—',
-      colonia:         c.colonia || '—',
-      fecha_nacimiento: c.fecha_nacimiento || null,
+      colonia:         c.domicilio || '—',
+      edad:            c.edad || null,
       telefono:        c.telefono || '—',
       municipio:       c.municipio || '—',
       seccion_electoral: c.seccion_electoral,
@@ -991,7 +991,7 @@ function renderSimps() {
     const cl = compLabel(comp);
     const nombre = c.nombre_completo || 'Sin nombre';
     const ini = nombre.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
-    const edad = calcEdad(c.fecha_nacimiento);
+    const edad = c.edad || '—';
     const colonia = c.colonia || '—';
     const curp = c.curp || '—';
     const cap = c.capturista_id || 'N/A';
@@ -1064,7 +1064,7 @@ function abrirFichaCiudadano(cid) {
   const cap_por  = c.capturista_id || c.cap_por || '—';
   const origen   = c.origen || 'Sistema';
   const sexo     = c.sexo || '—';
-  const edad     = calcEdadL(c.fecha_nacimiento || c.fecha_nac);
+  const edad     = c.edad || '—';
   const cc       = compColor(comp);
 
   const modal = document.getElementById('modal-ficha');
