@@ -904,6 +904,43 @@ function munSecIds(munId){
 // ══════════════════════════════════════════════════
 let f1s={nivel:'candidato',df:null,mun:null,dl:null,sec:null,cap:null};
 
+// [AISLAMIENTO] Reetiqueta el encabezado de KPIs y la meta según el alcance.
+// Coordinador municipal: "Meta de mi municipio" + la meta de su municipio.
+// Roles estatales: se deja "Meta estatal" + meta estatal (no toca nada).
+function ajustarEncabezadoAlcance(esEstatal, munsPermitidos){
+  try{
+    if(esEstatal) return;                     // estatales: sin cambios
+    if(!munsPermitidos || munsPermitidos.length !== 1) return;  // solo si es 1 municipio
+    const mun = munsPermitidos[0];
+    const metaMun = Number(mun.meta || 0);
+    const nom = mun.n || mun.nombre || 'mi municipio';
+    const fmt = n => Number(n||0).toLocaleString('es-MX');
+
+    // Etiquetas: cambiar "estatal" por el municipio.
+    const lblBanner = document.querySelector('.prog-banner .pb-lbl');
+    if(lblBanner) lblBanner.textContent = 'AVANCE DE ' + nom.toUpperCase() + ' VS META 2027';
+    const lblMeta = document.querySelector('#kpi-meta')?.closest('.kpi')?.querySelector('.kl');
+    if(lblMeta) lblMeta.innerHTML = 'Meta de ' + nom + ' <span data-theme="sistema-anio">2027</span>';
+
+    // Cifras de meta: KPI, barra de progreso y subtítulo.
+    const setTxt = (id,v)=>{ const e=document.getElementById(id); if(e) e.textContent=v; };
+    if(metaMun>0){
+      setTxt('kpi-meta', fmt(metaMun));
+      setTxt('wr-meta-pb', fmt(metaMun));
+      setTxt('wr-meta-sub', fmt(metaMun));
+      // Recalcular el % de avance de la barra con la meta municipal.
+      const cap = Number((window._kpisRPC && window._kpisRPC.total) || 0);
+      const pct = metaMun>0 ? Math.min(100, (cap/metaMun*100)) : 0;
+      const fill = document.getElementById('pb-fill');
+      const pctEl = document.getElementById('pb-pct');
+      const nums = document.getElementById('pb-nums');
+      if(fill) fill.style.width = pct.toFixed(1)+'%';
+      if(pctEl) pctEl.textContent = pct.toFixed(1)+'%';
+      if(nums) nums.innerHTML = fmt(cap)+' / <span id="wr-meta-pb">'+fmt(metaMun)+'</span> capturados';
+    }
+  }catch(_e){ /* si algo falla, deja el encabezado como está */ }
+}
+
 function renderMunF1(){
   const p=parseFloat(document.getElementById('cfg-pct').value)||6;
   const munFiltro = filtros ? filtros.mun : '';
@@ -931,6 +968,11 @@ function renderMunF1(){
   const _munsPermitidos = (_esEstatal || !_munU)
     ? MUNS.slice()
     : MUNS.filter(m => _norm(m.n) === _norm(_munU) || _norm(m.nombre) === _norm(_munU));
+
+  // [AISLAMIENTO] Ajustar el encabezado de KPIs al alcance del usuario: un
+  // coordinador municipal ve "de mi municipio" y la meta de SU municipio, no
+  // la estatal. Roles estatales conservan las etiquetas y meta estatales.
+  ajustarEncabezadoAlcance(_esEstatal, _munsPermitidos);
 
   // ── Nivel de la tabla ───────────────────────────────────────────
   // sin filtro → municipios · municipio → sus secciones · sección → esa sección
