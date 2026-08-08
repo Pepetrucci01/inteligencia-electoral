@@ -377,6 +377,10 @@ html, body {
           <div class="rol-icon">📍</div>
           <span class="rol-label">Coordinador</span>
         </div>
+        <div class="rol-btn" id="rol-coordinador_estatal" style="--rol-color:#0ea5e9" onclick="selRol('coordinador_estatal')">
+          <div class="rol-icon">🗺️</div>
+          <span class="rol-label">Coord. Estatal</span>
+        </div>
         <div class="rol-btn" id="rol-jefe_seccion" style="--rol-color:#a855f7" onclick="selRol('jefe_seccion')">
           <div class="rol-icon">⭐</div>
           <span class="rol-label">Líder de Sección</span>
@@ -384,6 +388,18 @@ html, body {
         <div class="rol-btn active" id="rol-capturista" style="--rol-color:#22c55e" onclick="selRol('capturista')">
           <div class="rol-icon">✏️</div>
           <span class="rol-label">Capturista</span>
+        </div>
+        <div class="rol-btn" id="rol-repr_casilla" style="--rol-color:#f59e0b" onclick="selRol('repr_casilla')">
+          <div class="rol-icon">🗳️</div>
+          <span class="rol-label">Rep. de Casilla</span>
+        </div>
+        <div class="rol-btn" id="rol-operador_cc" style="--rol-color:#ec4899" onclick="selRol('operador_cc')">
+          <div class="rol-icon">📞</div>
+          <span class="rol-label">Call Center</span>
+        </div>
+        <div class="rol-btn" id="rol-consulta" style="--rol-color:#94a3b8" onclick="selRol('consulta')">
+          <div class="rol-icon">👁️</div>
+          <span class="rol-label">Consulta</span>
         </div>
       </div>
 
@@ -462,8 +478,12 @@ function selRol(rol) {
     super_admin:    '#ef4444',
     admin:         '#3b82f6',
     coordinador:   '#06b6d4',
+    coordinador_estatal: '#0ea5e9',
     jefe_seccion: '#a855f7',
     capturista:    '#22c55e',
+    repr_casilla:  '#f59e0b',
+    operador_cc:   '#ec4899',
+    consulta:      '#94a3b8',
   };
   document.getElementById('btn-login').style.background = colores[rol] || '#3b82f6';
 
@@ -501,6 +521,7 @@ const DESTINOS_ROL = {
   // panel_cliente queda accesible desde el hub como 'Panel Ejecutivo'.
   admin:         'index.html',
   coordinador:   'index.html',
+  coordinador_estatal: 'index.html',   // alcance estatal, hub completo como admin
   jefe_seccion: 'panel_lider.html',
   capturista:    'panel_capturista_personal.html',
   // [18 jul · Tarea 8 José · routing por rol]
@@ -629,7 +650,7 @@ function mostrarError(msg) {
 }
 
 function labelRol(rol) {
-  return { super_admin:'Super Admin', admin:'Admin Estatal', coordinador:'Coordinador', jefe_seccion:'Líder de Sección', capturista:'Capturista', consulta:'Consulta', repr_casilla:'Rep. de Casilla', operador_cc:'Call Center' }[rol] || rol;
+  return { super_admin:'Super Admin', admin:'Admin Estatal', coordinador:'Coordinador', coordinador_estatal:'Coord. Estatal', jefe_seccion:'Líder de Sección', capturista:'Capturista', consulta:'Consulta', repr_casilla:'Rep. de Casilla', operador_cc:'Call Center' }[rol] || rol;
 }
 
 // ══════════════════════════════════════════════════════
@@ -666,6 +687,7 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
           super_admin:    'modulo_admin.html',
           admin:         'index.html',
           coordinador:   'index.html',
+          coordinador_estatal: 'index.html',
           jefe_seccion: 'panel_lider.html',
           capturista:    'panel_capturista_personal.html',
           consulta:      'index.html',
