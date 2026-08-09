@@ -185,6 +185,8 @@
     <div class="kpi ok"><div class="v" id="kpi-cont">—</div><div class="l">Contactados hoy</div></div>
     <div class="kpi warn"><div class="v" id="kpi-tasa">—</div><div class="l">Tasa de contacto</div></div>
     <div class="kpi"><div class="v" id="kpi-reint">—</div><div class="l">Reintentos prog.</div></div>
+    <button onclick="cerrarSesionCC()" title="Cerrar sesión"
+      style="align-self:center;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);color:#ef4444;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;margin-left:6px;">⏻ Salir</button>
   </div>
 </div>
 
@@ -339,6 +341,14 @@
 
 // [SWAP LUIS] licencia de sesión — en Fase 4 viene de auth
 const LICENCIA_ID = (window._sesion && window._sesion.licencia_id) || 'a1b2c3d4-0001-0000-0000-000000000001';
+
+// Salir del Call Center → login. El operador_cc aterriza directo aquí (no ve
+// hub ni otros módulos), mismo patrón que el kiosco del Día E.
+function cerrarSesionCC() {
+  if (!confirm('¿Cerrar sesión?')) return;
+  localStorage.removeItem('electoral_sesion');
+  window.location.replace('login.html');
+}
 
 /* ══════════════════════════════════════════════════════════════════════════
    [T-CC 21 jul] CAPA DE DATOS REAL — conecta con el esquema del SQL 30
