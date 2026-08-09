@@ -344,6 +344,14 @@ const LICENCIA_ID = (window._sesion && window._sesion.licencia_id) || 'a1b2c3d4-
 
 // Salir del Call Center → login. El operador_cc aterriza directo aquí (no ve
 // hub ni otros módulos), mismo patrón que el kiosco del Día E.
+// Escapa texto para insertar seguro en innerHTML (evita XSS si un nombre/dato
+// trae caracteres HTML). Usar en toda interpolación de datos en innerHTML.
+function escHtml(v){
+  return String(v == null ? '' : v)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
 function cerrarSesionCC() {
   if (!confirm('¿Cerrar sesión?')) return;
   localStorage.removeItem('electoral_sesion');
@@ -1250,8 +1258,8 @@ function pintarResultado(res){
   tb.innerHTML = '';
   res.listos.slice(0, 8).forEach(function(c){
     var tr = document.createElement('tr');
-    tr.innerHTML = '<td>' + c.nombre + '</td><td class="num">' + c.tel + '</td>' +
-      '<td>' + c.seccion + '</td><td>' + c.municipio + '</td>' +
+    tr.innerHTML = '<td>' + escHtml(c.nombre) + '</td><td class="num">' + escHtml(c.tel) + '</td>' +
+      '<td>' + escHtml(c.seccion) + '</td><td>' + escHtml(c.municipio) + '</td>' +
       '<td><span class="chip ok">SI</span></td>';
     tb.appendChild(tr);
   });

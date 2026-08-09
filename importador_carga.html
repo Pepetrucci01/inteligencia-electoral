@@ -210,12 +210,20 @@ function procesar(rows){
     && Math.abs(sumEstruct-ESPERADO.estruct)<=0.01
     && tipos['?']===0;
 
-  if(cuadra){
+  if(n===0){
+    // 0 filas con CASILLA_COMPLETA → hoja equivocada o columnas mal nombradas.
+    // No dejar intentar el import (evita un ROLLBACK innecesario y confuso).
+    mostrarPreviewMsg('err', '❌ No se encontró ninguna casilla en el archivo. '
+      + 'Revisa que sea el Excel correcto, que la hoja se llame CARGA y que exista '
+      + 'la columna CASILLA_COMPLETA.');
+    document.getElementById('btn-import').disabled = true;
+  } else if(cuadra){
     mostrarPreviewMsg('ok', '✅ Todo cuadra con la validación de cierre. Puedes importar.');
     document.getElementById('btn-import').disabled = false;
   } else if(tipos['?']>0){
     mostrarPreviewMsg('err', '❌ Hay '+tipos['?']+' casilla(s) con TIPO_CASILLA no reconocido (no es B/C/E/S). '
       + 'Corrige el archivo — el importador no aceptará letras sin mapear.');
+    document.getElementById('btn-import').disabled = true;
   } else {
     mostrarPreviewMsg('warn', '⚠️ Los totales no cuadran con lo esperado ('+ESPERADO.casillas
       +' / '+ESPERADO.meta.toLocaleString('es-MX')+' / '+ESPERADO.estruct.toFixed(2)

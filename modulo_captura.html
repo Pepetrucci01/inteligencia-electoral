@@ -1566,7 +1566,8 @@ function mostrarEstadoCURP(curp) {
   // Check duplicates in existing list
   var dup = CIUDADANOS ? CIUDADANOS.find(function(c){return c.curp&&c.curp===curp;}) : null;
   if(dup) {
-    el.innerHTML = '<span style="color:#ef4444;font-size:11px;">ø DUPLICADO: ya existe como '+dup.nombre+'</span>';
+    var _nombreEsc = String(dup.nombre==null?'':dup.nombre).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    el.innerHTML = '<span style="color:#ef4444;font-size:11px;">ø DUPLICADO: ya existe como '+_nombreEsc+'</span>';
   } else {
     el.innerHTML = '<span style="color:#22c55e;font-size:11px;">✅ CURP válida · '+sexo+' · Nac. '+yearFull+'</span>';
   }
