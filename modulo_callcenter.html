@@ -837,24 +837,38 @@ function guardarYSiguiente(){
   var c = demoState.cola[0];
   if (!c || !dispSel) return;
   var dur = detenerTimer();
-  // [T-CC 21 jul] Escritura REAL: si estamos conectados a la BD, se guarda la
-  // disposición en cola_llamadas y se pide el siguiente contacto con reserva.
-  // Si es no_contesto/buzón, guardarLlamadaReal reagenda el reintento en 2 h
-  // en vez de descartar el contacto.
+  // [FIX auditoría 9 ago] Antes: la UI avanzaba (shift + hechas++) PASE LO QUE
+  // PASE, aunque guardarLlamadaReal fallara → el resultado de la llamada se
+  // perdía en silencio (mismo bug que tenía el Día E). Ahora en modo real la UI
+  // solo avanza TRAS confirmar la escritura; si falla, avisa al operador y NO
+  // consume el contacto (se puede reintentar).
   if (!CC_DEMO) {
+    var btnNext = document.getElementById('btn-next');
+    if (btnNext) btnNext.disabled = true;               // candado anti-doble-clic
     guardarLlamadaReal(c.id, {
       disposicion: dispSel === 'volver_llamar' ? 'no_contesto' : dispSel,
       notas: (document.getElementById('notas') || {}).value || '',
       intentos: c.intentos || 0,
       duracion: dur
     }).then(function(){
+      _ccAvanzarUI(c, dur);        // éxito → ahora sí avanzar
       cargarSiguienteReal();
     }).catch(function(e){
       console.warn('Call Center: no se pudo guardar la llamada:', e.message);
+      alert('⚠️ No se pudo guardar el resultado de la llamada (revisa tu conexión). '
+          + 'El contacto sigue en tu cola — vuelve a intentarlo.');
+      if (btnNext) btnNext.disabled = false;             // permitir reintento
     });
+    return;                        // en modo real, la UI espera al .then/.catch
   }
-  // [SWAP LUIS] si campaña tipo='encuesta': INSERT respuestas ANÓNIMAS en tablas
-  //             del módulo de Encuestas (sin ciudadano_id, sin cola_id)
+  // Modo demo (sin BD): avanza directo.
+  _ccAvanzarUI(c, dur);
+}
+
+// Avanza la UI tras una llamada procesada: bitácora, contadores, saca el
+// contacto de la cola y limpia el formulario. Solo se llama cuando la llamada
+// quedó registrada (o en modo demo).
+function _ccAvanzarUI(c, dur){
   var ahora = new Date();
   demoState.bitacora = demoState.bitacora || [];
   demoState.bitacora.unshift({
@@ -1073,6 +1087,8 @@ function pintarVerificacion(){
 
 function resolverVerif(id, resultado){
   // [T-CC 21 jul] Escritura REAL de la verificación de calidad.
+  // [FIX auditoría 9 ago] Igual que guardarYSiguiente: la UI solo se actualiza
+  // TRAS confirmar la escritura; si falla, avisa y no marca como verificada.
   if (!CC_DEMO) {
     ccFetch('cola_llamadas?id=eq.' + id + '&licencia_id=eq.' + LICENCIA_ID, {
       method: 'PATCH',
@@ -1082,10 +1098,17 @@ function resolverVerif(id, resultado){
         verificado_por: (window._sesion && window._sesion.id) || null,
         resultado_verificacion: resultado
       })
+    }).then(function(){
+      var v = VERIFICACION.find(function(x){ return x.id === id; });
+      if (v) v.resultado = resultado;
+      pintarVerificacion();
     }).catch(function(e){
       console.warn('Call Center: no se pudo guardar la verificación:', e.message);
+      alert('⚠️ No se pudo guardar la verificación (revisa tu conexión). Inténtalo de nuevo.');
     });
+    return;
   }
+  // Modo demo: actualiza directo.
   var v = VERIFICACION.find(function(x){ return x.id === id; });
   if (v) v.resultado = resultado;
   pintarVerificacion();
