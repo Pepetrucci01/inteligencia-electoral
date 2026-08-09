@@ -258,25 +258,25 @@ body.rol-consulta     .kpi-estatal { display:none; }
     </div>
 
     <div class="nav-section">Módulos</div>
-    <div class="nav-item" data-rol="super_admin,admin,coordinador,jefe_seccion,consulta" id="nav-war" onclick="load('war','war_room_electoral_colima.html','War Room','Control de avance estatal')">
+    <div class="nav-item" data-rol="super_admin,admin,coordinador,coordinador_estatal,jefe_seccion,consulta" id="nav-war" onclick="load('war','war_room_electoral_colima.html','War Room','Control de avance estatal')">
       <div class="nav-icon" style="background:rgba(59,130,246,.12);color:var(--accent)">⚡</div>
       <span class="nav-label">War Room</span>
       <span class="nav-badge" style="background:rgba(239,68,68,.12);color:var(--red)">VIVO</span>
       <div class="nav-tip">War Room</div>
     </div>
-    <div class="nav-item" data-rol="super_admin,admin,coordinador" id="nav-cap" onclick="load('cap','panel_capturistas.html','Activistas','Gestión de estructura de campo')">
+    <div class="nav-item" data-rol="super_admin,admin,coordinador,coordinador_estatal" id="nav-cap" onclick="load('cap','panel_capturistas.html','Activistas','Gestión de estructura de campo')">
       <div class="nav-icon" style="background:rgba(168,85,247,.12);color:var(--purple)">👥</div>
       <span class="nav-label">Activistas</span>
       <span class="nav-badge" style="background:rgba(168,85,247,.12);color:var(--purple)">60</span>
       <div class="nav-tip">Activistas</div>
     </div>
-    <div class="nav-item" data-rol="super_admin,admin,coordinador,jefe_seccion,consulta" id="nav-map" onclick="load('map','visor_electoral_colima_v4.html','Mapa Electoral','Inteligencia por sección')">
+    <div class="nav-item" data-rol="super_admin,admin,coordinador,coordinador_estatal,jefe_seccion,consulta" id="nav-map" onclick="load('map','visor_electoral_colima_v4.html','Mapa Electoral','Inteligencia por sección')">
       <div class="nav-icon" style="background:rgba(6,182,212,.12);color:var(--cyan)">🗺️</div>
       <span class="nav-label">Mapa</span>
       <span class="nav-badge" style="background:rgba(6,182,212,.12);color:var(--cyan)">392</span>
       <div class="nav-tip">Mapa territorial</div>
     </div>
-    <div class="nav-item" id="nav-captura" data-rol="super_admin,admin,coordinador,jefe_seccion,capturista" onclick="load('captura','modulo_captura.html','Captura ciudadana','Registro y búsqueda de ciudadanos')">
+    <div class="nav-item" id="nav-captura" data-rol="super_admin,admin,coordinador,coordinador_estatal,jefe_seccion,capturista" onclick="load('captura','modulo_captura.html','Captura ciudadana','Registro y búsqueda de ciudadanos')">
       <div class="nav-icon" style="background:rgba(34,197,94,.12);color:var(--green)">✏</div>
       <span class="nav-label">Captura</span>
       <span class="nav-badge" style="background:rgba(34,197,94,.12);color:var(--green)">+</span>
@@ -303,19 +303,19 @@ body.rol-consulta     .kpi-estatal { display:none; }
       <span class="nav-label">Carga Maestra</span>
       <div class="nav-tip">Importador de Carga Maestra</div>
     </div>
-    <div class="nav-item" data-rol="super_admin,admin,coordinador,consulta" id="nav-rep" onclick="load('rep','modulo_reportes.html','Reportes y análisis','Datos reales · PDF y Excel')">
+    <div class="nav-item" data-rol="super_admin,admin,coordinador,coordinador_estatal,consulta" id="nav-rep" onclick="load('rep','modulo_reportes.html','Reportes y análisis','Datos reales · PDF y Excel')">
       <div class="nav-icon" style="background:rgba(168,85,247,.12);color:var(--purple)">📈</div>
       <span class="nav-label">Reportes</span>
       <div class="nav-tip">Reportes</div>
     </div>
-    <div class="nav-item" id="nav-enc" data-rol="super_admin,admin,coordinador" onclick="load('enc','modulo_encuestas.html','Encuestas','Estudios de opinión y cruce territorial')">
+    <div class="nav-item" id="nav-enc" data-rol="super_admin,admin,coordinador,coordinador_estatal" onclick="load('enc','modulo_encuestas.html','Encuestas','Estudios de opinión y cruce territorial')">
       <div class="nav-icon" style="background:rgba(20,184,166,.12);color:#2dd4bf">📋</div>
       <span class="nav-label">Encuestas</span>
       <span style="margin-left:auto;font-size:8px;font-weight:700;color:#2dd4bf;background:rgba(20,184,166,.15);padding:1px 5px;border-radius:6px;letter-spacing:.5px;">NUEVO</span>
       <div class="nav-tip">Encuestas</div>
     </div>
 
-    <div class="nav-item" id="nav-cc" data-rol="super_admin,admin,coordinador,operador_cc" onclick="load('cc','modulo_callcenter.html','Centro de Llamadas','Campañas telefónicas y CATI')">
+    <div class="nav-item" id="nav-cc" data-rol="super_admin,admin,coordinador,coordinador_estatal,operador_cc" onclick="load('cc','modulo_callcenter.html','Centro de Llamadas','Campañas telefónicas y CATI')">
       <div class="nav-icon" style="background:rgba(63,167,255,.12);color:#3fa7ff">📞</div>
       <span class="nav-label">Call Center</span>
       <span style="margin-left:auto;font-size:8px;font-weight:700;color:#3fa7ff;background:rgba(63,167,255,.15);padding:1px 5px;border-radius:6px;letter-spacing:.5px;">NUEVO</span>
@@ -421,25 +421,25 @@ body.rol-consulta     .kpi-estatal { display:none; }
     <div class="mod-title">9 módulos del sistema — clic para abrir</div>
     <div class="modules-grid">
 
-      <div class="mc war" data-rol="super_admin,admin,coordinador,jefe_seccion,consulta" onclick="load('war','war_room_electoral_colima.html','War Room','Control de avance estatal')">
+      <div class="mc war" data-rol="super_admin,admin,coordinador,coordinador_estatal,jefe_seccion,consulta" onclick="load('war','war_room_electoral_colima.html','War Room','Control de avance estatal')">
         <div class="mc-head"><div class="mc-icon" style="background:rgba(239,68,68,.15)">⚔</div><div><div class="mc-name">War Room Electoral</div><div class="mc-sub">Fase 1 campaña · Fase 2 elección</div></div></div>
         <div class="mc-desc">Panel de mando completo. Resumen con KPIs y tabla municipal + cuadrantes jerárquicos navegables: DF → Municipio → DL → Sección → Casilla. Funciona en ambas fases.</div>
         <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(239,68,68,.1);color:var(--red)">Fase 1 y 2</span><span class="tag" style="background:rgba(239,68,68,.1);color:var(--red)">6 niveles</span></div><span class="arr">→</span></div>
       </div>
 
-      <div class="mc cap" data-rol="super_admin,admin,coordinador" onclick="load('cap','panel_capturistas.html','Activistas','Gestión de estructura de campo')">
+      <div class="mc cap" data-rol="super_admin,admin,coordinador,coordinador_estatal" onclick="load('cap','panel_capturistas.html','Activistas','Gestión de estructura de campo')">
         <div class="mc-head"><div class="mc-icon" style="background:rgba(168,85,247,.15)">👥</div><div><div class="mc-name">Activistas</div><div class="mc-sub">Gestión de estructura</div></div></div>
         <div class="mc-desc">60 operadores con score de calidad, avance individual vs meta y ficha detallada con nivel de compromiso.</div>
         <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(168,85,247,.1);color:var(--purple)">60 operadores</span><span class="tag" style="background:rgba(168,85,247,.1);color:var(--purple)">Score</span></div><span class="arr">→</span></div>
       </div>
 
-      <div class="mc map" data-rol="super_admin,admin,coordinador,jefe_seccion,consulta" onclick="load('map','visor_electoral_colima_v4.html','Mapa territorial','Inteligencia por sección electoral')">
+      <div class="mc map" data-rol="super_admin,admin,coordinador,coordinador_estatal,jefe_seccion,consulta" onclick="load('map','visor_electoral_colima_v4.html','Mapa territorial','Inteligencia por sección electoral')">
         <div class="mc-head"><div class="mc-icon" style="background:rgba(6,182,212,.15)">🗺️</div><div><div class="mc-name">Mapa territorial</div><div class="mc-sub">Inteligencia por sección</div></div></div>
         <div class="mc-desc">392 secciones coloreadas por avance, ganador 2024 o dificultad. Zoom, filtros y ficha completa por sección.</div>
         <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(6,182,212,.1);color:var(--cyan)">3 vistas</span><span class="tag" style="background:rgba(6,182,212,.1);color:var(--cyan)">Sin internet</span></div><span class="arr">→</span></div>
       </div>
 
-      <div class="mc c2" data-rol="super_admin,admin,coordinador,jefe_seccion,capturista" onclick="load('captura','modulo_captura.html','Captura ciudadana','Registro y búsqueda de ciudadanos')">
+      <div class="mc c2" data-rol="super_admin,admin,coordinador,coordinador_estatal,jefe_seccion,capturista" onclick="load('captura','modulo_captura.html','Captura ciudadana','Registro y búsqueda de ciudadanos')">
         <div class="mc-head"><div class="mc-icon" style="background:rgba(34,197,94,.15)">✏</div><div><div class="mc-name">Captura ciudadana</div><div class="mc-sub">Campo · mobile first</div></div></div>
         <div class="mc-desc">Formulario en 2 pasos, buscador con ficha individual, lista por sección y asignación automática al responsable territorial.</div>
         <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(34,197,94,.1);color:var(--green)">Mobile first</span><span class="tag" style="background:rgba(34,197,94,.1);color:var(--green)">Auto-asignación</span></div><span class="arr">→</span></div>
@@ -463,12 +463,12 @@ body.rol-consulta     .kpi-estatal { display:none; }
         <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(245,158,11,.1);color:var(--amber)">32 estados</span><span class="tag" style="background:rgba(245,158,11,.1);color:var(--amber)">Exporta .xlsx</span></div><span class="arr">→</span></div>
       </div>
 
-      <div class="mc rep" data-rol="super_admin,admin,coordinador,consulta" onclick="load('rep','modulo_reportes.html','Reportes y análisis','Datos reales · PDF y Excel')">
+      <div class="mc rep" data-rol="super_admin,admin,coordinador,coordinador_estatal,consulta" onclick="load('rep','modulo_reportes.html','Reportes y análisis','Datos reales · PDF y Excel')">
         <div class="mc-head"><div class="mc-icon" style="background:rgba(168,85,247,.15)">📈</div><div><div class="mc-name">Reportes y análisis</div><div class="mc-sub">6 reportes con datos reales</div></div></div>
         <div class="mc-desc">Resumen ejecutivo, avance y ritmo, calidad del padrón, por municipio, estructura de campo y perfil del votante.</div>
         <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(168,85,247,.1);color:var(--purple)">6 secciones</span><span class="tag" style="background:rgba(168,85,247,.1);color:var(--purple)">PDF + Excel</span></div><span class="arr">→</span></div>
       </div>
-      <div class="mc enc" data-rol="super_admin,admin,coordinador" onclick="load('enc','modulo_encuestas.html','Encuestas','Estudios de opinión y cruce territorial')">
+      <div class="mc enc" data-rol="super_admin,admin,coordinador,coordinador_estatal" onclick="load('enc','modulo_encuestas.html','Encuestas','Estudios de opinión y cruce territorial')">
         <div class="mc-head"><div class="mc-icon" style="background:rgba(20,184,166,.15)">📋</div><div><div class="mc-name">Encuestas <span style="font-size:9px;font-weight:700;color:#2dd4bf;background:rgba(20,184,166,.15);padding:1px 6px;border-radius:6px;vertical-align:middle;">NUEVO</span></div><div class="mc-sub">Estudios de opinión</div></div></div>
         <div class="mc-desc">Fábrica de encuestas: crea estudios con su propio cuestionario, levanta entrevistas en campo y cruza intención de voto contra tu estructura territorial.</div>
         <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(20,184,166,.1);color:#2dd4bf">Anónimas</span><span class="tag" style="background:rgba(20,184,166,.1);color:#2dd4bf">Territorio vs Opinión</span></div><span class="arr">→</span></div>
@@ -528,7 +528,7 @@ body.rol-consulta     .kpi-estatal { display:none; }
 <script>
 // APP_BUILD: versin de build para cache-busting de los mdulos en iframe.
 // ⚠️ SUBE este nmero en cada deploy con cambios en los mdulos.
-const APP_BUILD = '20260727m';
+const APP_BUILD = '20260727n';
 
 let collapsed = false;
 
