@@ -1293,11 +1293,27 @@ async function guardarInstalacionEnBD(inst) {
     const conTimeout = (p, ms) => Promise.race([
       p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))
     ]);
-    // upsert con la key de conflicto; si la casilla existe la actualiza, si no, la crea.
+    // [FIX] Antes se hacía upsert con onConflict a la constraint
+    // casillas_seccion_tipo_num_lic_uk, que se eliminó (rompía las
+    // extraordinarias). El Día E instala una casilla que YA existe (de las 1,033
+    // importadas), así que lo correcto es UPDATE por sus campos identidad, no
+    // upsert. numero_casilla identifica dentro de la sección+tipo; para las
+    // extraordinarias que comparten esos campos, se actualizarían todas las de
+    // esa combinación — aceptable aquí porque el Día E trabaja una casilla física
+    // concreta y en la práctica el representante instala la suya.
+    const fila_upd = { ...fila };
+    delete fila_upd.licencia_id;
+    delete fila_upd.numero_seccion;
+    delete fila_upd.tipo_casilla;
+    delete fila_upd.numero_casilla;
     const { error } = await conTimeout(
       window.supabase
         .from('casillas')
-        .upsert([fila], { onConflict: 'numero_seccion,tipo_casilla,numero_casilla,licencia_id' }),
+        .update(fila_upd)
+        .eq('licencia_id', fila.licencia_id)
+        .eq('numero_seccion', fila.numero_seccion)
+        .eq('tipo_casilla', fila.tipo_casilla)
+        .eq('numero_casilla', fila.numero_casilla),
       12000
     );
     if (error) {
@@ -1422,10 +1438,21 @@ async function guardarCierreEnBD(cierre) {
     const conTimeout = (p, ms) => Promise.race([
       p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))
     ]);
+    // [FIX] UPDATE por campos identidad en vez de upsert con la constraint
+    // eliminada (casillas_seccion_tipo_num_lic_uk). La casilla ya existe.
+    const fila_upd = { ...fila };
+    delete fila_upd.licencia_id;
+    delete fila_upd.numero_seccion;
+    delete fila_upd.tipo_casilla;
+    delete fila_upd.numero_casilla;
     const { error } = await conTimeout(
       window.supabase
         .from('casillas')
-        .upsert([fila], { onConflict: 'numero_seccion,tipo_casilla,numero_casilla,licencia_id' }),
+        .update(fila_upd)
+        .eq('licencia_id', fila.licencia_id)
+        .eq('numero_seccion', fila.numero_seccion)
+        .eq('tipo_casilla', fila.tipo_casilla)
+        .eq('numero_casilla', fila.numero_casilla),
       12000
     );
     if (error) {
