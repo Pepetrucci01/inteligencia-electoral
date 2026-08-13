@@ -385,20 +385,24 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 
     <div class="form-section">
       <div class="form-section-title">Ubicación electoral</div>
-      <div class="form-group">
-        <div class="form-label">Municipio <span class="req">*</span></div>
-        <select class="form-select" id="f-municipio" onchange="actualizarSecciones()">
-          <option value="">Seleccionar...</option>
-          <option>ARMERIA</option><option>COLIMA</option><option>COMALA</option>
-          <option>COQUIMATLAN</option><option>CUAUHTEMOC</option><option>IXTLAHUACAN</option>
-          <option>MANZANILLO</option><option>MINATITLAN</option><option>TECOMAN</option>
-          <option>VILLA DE ALVAREZ</option>
-        </select>
-      </div>
+      <!-- [v90 11 ago] La SECCION va primero y MANDA sobre el municipio.
+           Antes era al reves (municipio -> secciones) y el municipio se
+           elegia a mano, asi que se guardaban secciones de un municipio
+           etiquetadas con otro. Una seccion pertenece a UN solo municipio. -->
       <div class="form-group">
         <div class="form-label">Sección electoral donde VOTA <span class="req">*</span></div>
-        <input class="form-input" id="f-seccion" type="number" placeholder="Ej. 138" min="1" max="400" oninput="verificarAsignacion()">
+        <input class="form-input" id="f-seccion" type="number" placeholder="Ej. 138" min="1" max="400" oninput="alCambiarSeccion()">
         <div class="form-error" id="sec-error" style="display:none">Sección no encontrada en este municipio</div>
+      </div>
+      <div class="form-group">
+        <div class="form-label">Municipio <span class="req">*</span></div>
+        <!-- [v90] Dejo de ser <select>: ahora se DERIVA de la seccion.
+             Ademas las opciones venian SIN acento (ARMERIA) y la BD guarda
+             CON acento (ARMERIA con tilde), asi que asignar select.value
+             con el dato real fallaba en silencio dejando el campo vacio. -->
+        <input class="form-input" id="f-municipio" readonly
+               placeholder="Se llena solo al escribir la sección"
+               style="background:var(--bg-subtle,#f1f5f9);cursor:not-allowed">
       </div>
     </div>
 
@@ -912,10 +916,11 @@ function aplicarDatosINE(d){
   set('f-nombre',d.nombre); set('f-paterno',d.paterno); set('f-materno',d.materno);
   set('f-edad',d.edad); set('f-sexo',d.sexo); set('f-curp',d.curp);
   set('f-clave',d.clave_elector); set('f-domicilio',d.domicilio);
-  set('f-municipio',d.municipio);
-  if(typeof actualizarSecciones==='function') actualizarSecciones();
+  // [v90] La seccion PRIMERO: el municipio ya no se toma de la credencial,
+  // se deriva de la seccion contra `casillas`. El municipio impreso en la INE
+  // puede venir abreviado o sin acentos y no empata con el catalogo.
   set('f-seccion',d.seccion);
-  if(typeof verificarAsignacion==='function') verificarAsignacion();
+  if(typeof alCambiarSeccion==='function') alCambiarSeccion();
   alert('✓ Credencial leída. Verifica los datos antes de guardar'+(DEMO_MODE_INE?' (modo demo)':'')+'.');
 }
 
@@ -960,7 +965,78 @@ function verificarAsignacion() {
   }
 }
 
-function actualizarSecciones() {}
+// ─── SECCIÓN → MUNICIPIO ───────────────────────────────────────────────────
+// [v90 11 ago] Esta funcion ESTABA VACIA. El onchange del <select> de
+// municipio la llamaba, el div #sec-error existia con el texto "Seccion no
+// encontrada en este municipio"... y nadie validaba nada. Resultado: se
+// guardaban ciudadanos de la seccion 138 (Villa de Alvarez) etiquetados como
+// COLIMA, segun el municipio que el capturista eligiera a mano.
+// Ahora la SECCION manda: el municipio se deriva de `casillas` (carga maestra
+// oficial, CARGA-01) y el campo es de solo lectura.
+//
+// Se consulta POR SECCION (1 fila) y NO se baja el mapa completo a proposito:
+// casillas tiene 1033 filas y el servidor corta en 1000 SIN avisar; bajarlo
+// entero repetiria el bug del "10,092" y dejaria secciones sin municipio en
+// silencio. El cache evita repetir la consulta en la misma jornada.
+const CACHE_SEC_MUN = {};
+
+async function alCambiarSeccion() {
+  verificarAsignacion();          // aviso de responsable territorial
+  await actualizarSecciones();    // resolver municipio desde la seccion
+}
+
+async function actualizarSecciones() {
+  const secEl = document.getElementById('f-seccion');
+  const munEl = document.getElementById('f-municipio');
+  const errEl = document.getElementById('sec-error');
+  const sec   = parseInt(secEl && secEl.value);
+
+  if (errEl) errEl.style.display = 'none';
+  if (!sec) { if (munEl) munEl.value = ''; return; }
+
+  if (CACHE_SEC_MUN[sec] !== undefined) { _pintarMunicipio(sec, CACHE_SEC_MUN[sec]); return; }
+
+  // Sin conexion no se puede resolver. NO bloqueamos la captura: se pone el
+  // municipio de la sesion como PROVISIONAL y el trigger de la BD
+  // (trg_ciudadanos_municipio) lo corrige al sincronizar.
+  if (!navigator.onLine) { _municipioProvisional(); return; }
+
+  try {
+    const { data, error } = await SDB.municipioDeSeccion(sec);
+    if (error) throw new Error(error.message);
+    const mun = (data && data.municipio) || null;
+    CACHE_SEC_MUN[sec] = mun;      // solo se cachean respuestas reales
+    _pintarMunicipio(sec, mun);
+  } catch (e) {
+    console.warn('No se pudo resolver el municipio de la sección', sec, e.message);
+    _municipioProvisional();
+  }
+}
+
+function _pintarMunicipio(sec, mun) {
+  const munEl = document.getElementById('f-municipio');
+  const errEl = document.getElementById('sec-error');
+  if (mun) {
+    if (munEl) munEl.value = mun;
+    if (errEl) errEl.style.display = 'none';
+  } else {
+    if (munEl) munEl.value = '';
+    if (errEl) {
+      errEl.textContent = 'Sección ' + sec + ' no existe en la carga maestra. Verifica el número.';
+      errEl.style.display = 'block';
+    }
+  }
+}
+
+function _municipioProvisional() {
+  const munEl = document.getElementById('f-municipio');
+  const errEl = document.getElementById('sec-error');
+  if (munEl && !munEl.value) munEl.value = CAPTURISTA.municipio || '';
+  if (errEl) {
+    errEl.textContent = 'Sin conexión: municipio provisional, se corregirá al sincronizar.';
+    errEl.style.display = 'block';
+  }
+}
 
 // ─── PASO 1 → 2 ────────────────────────────────────────────────────────────
 function irPaso2() {
@@ -992,7 +1068,10 @@ function irPaso2() {
   if(!document.getElementById('f-paterno').value.trim()) errs.push('Apellido paterno requerido');
   if(!document.getElementById('f-edad').value) errs.push('Edad requerida');
   if(!document.getElementById('f-sexo').value) errs.push('Sexo requerido');
-  if(!document.getElementById('f-municipio').value) errs.push('Municipio requerido');
+  // [v90] Ya no se teclea: si esta vacio es que la seccion no existe en la
+  // carga maestra o no se pudo resolver. El mensaje lo dice para que el
+  // capturista corrija el numero en vez de buscar un campo que ya no existe.
+  if(!document.getElementById('f-municipio').value) errs.push('Municipio sin resolver — verifica el número de sección');
   if(!document.getElementById('f-seccion').value) errs.push('Sección requerida');
   document.getElementById('paso1-errors').textContent = errs.join(' · ');
   if(errs.length) return;

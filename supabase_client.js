@@ -127,6 +127,26 @@ const SDB = {
     return { data, error };
   },
 
+  // [v90 11 ago] La SECCION determina el municipio: una seccion pertenece a un
+  // solo municipio. Fuente de verdad: `casillas`, cargada del padron oficial
+  // (CARGA-01). Se consulta POR SECCION (1 fila) en vez de bajar el mapa
+  // completo A PROPOSITO: casillas tiene 1033 filas y el servidor corta en
+  // 1000 SIN avisar — bajarlo entero repetiria el bug del "10,092" y dejaria
+  // secciones sin municipio en silencio.
+  // Lectura pura: los 9 roles tienen SELECT sobre casillas (verificado por el
+  // SQL 50 v2.1), asi que ningun rol se queda sin poder resolver el municipio.
+  async municipioDeSeccion(seccion) {
+    await this.waitReady();
+    const { data, error } = await window.supabase
+      .from('casillas')
+      .select('municipio')
+      .eq('numero_seccion', seccion)
+      .not('municipio', 'is', null)
+      .limit(1)
+      .maybeSingle();
+    return { data, error };
+  },
+
   // [FIX 15 jul] Garantiza que el SDK tenga la sesion aplicada ANTES de escribir.
   // Causa raiz del 403 intermitente en ciudadanos: el INSERT salia antes de que
   // setSession() terminara (o con token vencido), auth.uid() llegaba null a la BD,
@@ -204,7 +224,11 @@ const SDB = {
           accion,
           tabla:       tabla || null,
           registro_id: registroId || null,
-          detalle:     datosNuevo ? JSON.stringify(datosNuevo) : null,
+          // [v90] audit_log.detalle es JSONB, no text. Con JSON.stringify se
+          // guardaba una CADENA json dentro del jsonb (doble encodado), asi que
+          // consultas tipo detalle->>'campo' devolvian null y el log era
+          // inservible para filtrar. Se manda el objeto tal cual.
+          detalle:     datosNuevo || null,
           usuario_id:  user?.id || null,
         }]);
     } catch(e) {
