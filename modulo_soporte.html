@@ -76,8 +76,16 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 .err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.35);color:#fca5a5;border-radius:7px;padding:10px 12px;font-size:12px;margin-bottom:12px;display:none;line-height:1.5;}
 .ok{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.35);color:#86efac;border-radius:7px;padding:10px 12px;font-size:12px;margin-bottom:12px;display:none;line-height:1.5;}
 
-.tk{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:13px;margin-bottom:10px;cursor:pointer;transition:border-color .15s;}
+.tk{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--border);border-radius:10px;padding:13px;margin-bottom:10px;cursor:pointer;transition:border-color .15s;}
 .tk:hover{border-color:var(--border2);}
+/* Franja de prioridad. Solo se colorea alta y critica A PROPOSITO: si las
+   cuatro tuvieran color, ninguna resaltaria. Y va en el borde izquierdo, no
+   en otra pastilla, para no competir con el color del estado. */
+.tk.p-critica{border-left-color:var(--red);}
+.tk.p-alta{border-left-color:var(--amber);}
+.urg{font-family:var(--mono);font-size:10px;font-weight:600;margin-right:7px;}
+.urg.critica{color:var(--red);}
+.urg.alta{color:var(--amber);}
 .tk-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;}
 .tk-folio{font-family:var(--mono);font-size:11px;color:var(--text3);}
 .tk-asunto{font-size:14px;font-weight:500;margin-bottom:4px;}
@@ -309,6 +317,9 @@ const ETIQ_ESTADO = {
   cerrado:'Cerrado', reabierto:'Reabierto'
 };
 
+// Solo las dos urgentes llevan etiqueta. Baja y media no necesitan gritar.
+const ETIQ_URGENCIA = { critica:'● URGENTE', alta:'● ALTA' };
+
 /* ── Llamadas a la API (siempre via supaFetch de theme.js: es la
       fuente unica de token y quien reintenta tras un 401) ───── */
 async function rpc(nombre, cuerpo){
@@ -432,14 +443,19 @@ async function cargarTickets(){
       return;
     }
     cont.innerHTML = filas.map(t =>
-      '<div class="tk" onclick="verDetalle(\'' + t.id + '\')">' +
+      '<div class="tk p-' + escHtml(t.prioridad) + '" onclick="verDetalle(\'' + t.id + '\')">' +
         '<div class="tk-top">' +
           '<span class="tk-folio">' + escHtml(t.folio) + '</span>' +
           '<span class="pill e-' + escHtml(t.estado) + '">' + escHtml(ETIQ_ESTADO[t.estado] || t.estado) + '</span>' +
         '</div>' +
         '<div class="tk-asunto">' + escHtml(t.asunto) + '</div>' +
-        '<div class="tk-meta">' + new Date(t.created_at).toLocaleString('es-MX') +
-          ' · ' + escHtml(t.categoria) + ' · prioridad ' + escHtml(t.prioridad) + '</div>' +
+        '<div class="tk-meta">' +
+          // La etiqueta de texto acompaña al color: quien no distingue rojo de
+          // ambar tambien tiene que poder ordenar sus tickets.
+          (ETIQ_URGENCIA[t.prioridad]
+            ? '<span class="urg ' + escHtml(t.prioridad) + '">' + ETIQ_URGENCIA[t.prioridad] + '</span>' : '') +
+          new Date(t.created_at).toLocaleString('es-MX') +
+          ' · ' + escHtml(t.categoria) + '</div>' +
       '</div>'
     ).join('');
   } catch(e) {
