@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<!--
+============================================================
+  VOTERA(TM) - Inteligencia Electoral
+  (c) 2026 MEFT Consulting - RFC: CUOJ7808208Z2
+  Villa de Alvarez, Colima, Mexico - votera.mx
+  Todos los derechos reservados.
+============================================================
+
+  CONSOLA DE SOPORTE  ·  MEFT  ·  22 ago 2026
+
+  Aplicacion APARTE del hub del cliente, a proposito.
+
+  El staff de soporte no tiene fila en public.usuarios, asi que
+  get_mi_rol() le devuelve NULL y el login del hub no sabria a
+  donde mandarlo. Eso, que parece un estorbo, es la garantia:
+  un agente NO PUEDE entrar al sistema del cliente ni leer el
+  padron. "Soporte nunca ve los datos de campaña" queda
+  asegurado por estructura, no por una politica que alguien
+  pueda aflojar en seis meses.
+
+  Por lo mismo esta consola NO usa login.html ni theme.js:
+  hace su propia autenticacion contra GoTrue y valida contra
+  es_soporte(). No depende de nada del lado del cliente.
+============================================================
+-->
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Consola de Soporte · VOTERA</title>
+<link rel="icon" href="data:,">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0e1a;--bg2:#0f1526;--bg3:#141b2e;--bg4:#1a2238;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.14);
+  --text:#e8edf5;--text2:#8a9ab5;--text3:#5a6a85;
+  --accent:#3b82f6;--green:#22c55e;--red:#ef4444;
+  --amber:#f59e0b;--cyan:#06b6d4;--purple:#a855f7;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;}
+
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border2);padding:0 16px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;}
+.tb-left{display:flex;align-items:center;gap:10px;}
+.tb-av{width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:600;background:rgba(168,85,247,.15);color:var(--purple);}
+.tb-name{font-size:13px;font-weight:600;}
+.tb-id{font-size:10px;font-family:var(--mono);color:var(--text3);}
+.btn-salir{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;font-family:monospace;}
+
+.wrap{padding:16px;max-width:1100px;margin:0 auto;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px;}
+.lbl{font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:5px;display:block;}
+.inp,.sel,.txt{width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:7px;padding:10px 11px;color:var(--text);font-family:var(--sans);font-size:14px;}
+.txt{min-height:90px;resize:vertical;line-height:1.5;}
+.inp:focus,.sel:focus,.txt:focus{outline:none;border-color:var(--purple);}
+.btn{background:var(--bg4);border:1px solid var(--border2);color:var(--text);border-radius:7px;padding:9px 13px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+.btn.primary{background:var(--purple);border-color:var(--purple);color:#1a0b2e;font-weight:600;}
+.btn.ghost{background:transparent;}
+.btn.full{width:100%;justify-content:center;}
+.btn.sm{padding:6px 10px;font-size:12px;}
+
+.err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.35);color:#fca5a5;border-radius:7px;padding:10px 12px;font-size:12px;margin-bottom:12px;display:none;line-height:1.5;}
+.ok{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.35);color:#86efac;border-radius:7px;padding:10px 12px;font-size:12px;margin-bottom:12px;display:none;line-height:1.5;}
+
+/* login */
+.login-box{max-width:340px;margin:14vh auto;}
+.brand{text-align:center;margin-bottom:20px;}
+.brand-t{font-family:var(--mono);font-size:15px;letter-spacing:.14em;color:var(--purple);}
+.brand-s{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:3px;}
+
+/* filtros */
+.filtros{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin-bottom:14px;}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:9px;margin-bottom:14px;}
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:11px 13px;}
+.kpi .n{font-family:var(--mono);font-size:20px;font-weight:600;}
+.kpi .l{font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-top:2px;}
+
+/* lista */
+.tk{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--border);border-radius:10px;padding:13px;margin-bottom:9px;cursor:pointer;}
+.tk:hover{border-color:var(--border2);}
+.tk.p-critica{border-left-color:var(--red);}
+.tk.p-alta{border-left-color:var(--amber);}
+.tk.sin-clasificar{border-left-color:var(--purple);border-left-style:dashed;}
+.tk-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px;flex-wrap:wrap;}
+.tk-folio{font-family:var(--mono);font-size:11px;color:var(--text3);}
+.tk-asunto{font-size:14px;font-weight:500;margin-bottom:4px;}
+.tk-meta{font-family:var(--mono);font-size:10px;color:var(--text3);line-height:1.6;}
+.pill{font-family:var(--mono);font-size:10px;padding:3px 9px;border-radius:99px;font-weight:600;white-space:nowrap;}
+.e-nuevo{background:rgba(59,130,246,.15);color:#93c5fd;}
+.e-asignado,.e-en_proceso{background:rgba(245,158,11,.15);color:#fcd34d;}
+.e-esperando_cliente{background:rgba(168,85,247,.15);color:#d8b4fe;}
+.e-resuelto{background:rgba(34,197,94,.15);color:#86efac;}
+.e-cerrado{background:rgba(255,255,255,.07);color:var(--text3);}
+.e-reabierto{background:rgba(239,68,68,.15);color:#fca5a5;}
+.plaza{font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:5px;background:rgba(6,182,212,.12);color:#67e8f9;}
+.warn-lic{font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:5px;background:rgba(239,68,68,.12);color:#fca5a5;}
+.desfase{color:var(--amber);}
+
+.msg{border-radius:9px;padding:11px 13px;margin-bottom:9px;font-size:14px;line-height:1.55;white-space:pre-wrap;word-break:break-word;}
+.msg.cliente{background:var(--bg3);border:1px solid var(--border);}
+.msg.soporte{background:rgba(168,85,247,.08);border:1px solid rgba(168,85,247,.25);}
+.msg.interno{background:rgba(245,158,11,.06);border:1px dashed rgba(245,158,11,.35);}
+.msg-head{font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:5px;}
+
+.ctx{font-family:var(--mono);font-size:10.5px;color:var(--text2);background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:11px;line-height:1.7;white-space:pre-wrap;word-break:break-all;}
+.vacio{text-align:center;padding:40px 16px;color:var(--text3);font-size:13px;}
+.cargando{text-align:center;padding:26px;color:var(--text3);font-family:var(--mono);font-size:12px;}
+.oculto{display:none;}
+.acciones{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px;}
+</style>
+</head>
+<body>
+
+<!-- ─────────────── LOGIN PROPIO ─────────────── -->
+<div id="v-login">
+  <div class="login-box">
+    <div class="brand">
+      <div class="brand-t">V O T E R A</div>
+      <div class="brand-s">CONSOLA DE SOPORTE · MEFT</div>
+    </div>
+    <div class="card">
+      <div class="err" id="lg-err"></div>
+      <div style="margin-bottom:11px;">
+        <label class="lbl">Correo</label>
+        <input class="inp" id="lg-mail" type="email" autocomplete="username">
+      </div>
+      <div style="margin-bottom:14px;">
+        <label class="lbl">Contraseña</label>
+        <input class="inp" id="lg-pass" type="password" autocomplete="current-password"
+               onkeydown="if(event.key==='Enter')entrar()">
+      </div>
+      <button class="btn primary full" id="btn-entrar" onclick="entrar()">Entrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────────── BANDEJA ─────────────── -->
+<div id="v-app" class="oculto">
+  <div class="topbar">
+    <div class="tb-left">
+      <div class="tb-av" id="tb-av">··</div>
+      <div>
+        <div class="tb-name">Consola de Soporte</div>
+        <div class="tb-id" id="tb-id">—</div>
+      </div>
+    </div>
+    <button class="btn-salir" onclick="salir()">⏻ Salir</button>
+  </div>
+
+  <div class="wrap" id="v-bandeja">
+    <div class="err" id="bd-err"></div>
+
+    <div class="kpis" id="bd-kpis"></div>
+
+    <div class="filtros">
+      <div>
+        <label class="lbl">Estado</label>
+        <select class="sel" id="f-estado" onchange="cargarBandeja()">
+          <option value="abiertos" selected>Abiertos (todo menos cerrado)</option>
+          <option value="nuevo">Nuevos</option>
+          <option value="asignado">Asignados</option>
+          <option value="en_proceso">En proceso</option>
+          <option value="esperando_cliente">Esperando cliente</option>
+          <option value="resuelto">Resueltos</option>
+          <option value="cerrado">Cerrados</option>
+          <option value="">Todos</option>
+        </select>
+      </div>
+      <div>
+        <label class="lbl">Plaza</label>
+        <select class="sel" id="f-plaza" onchange="cargarBandeja()">
+          <option value="">Todas</option>
+        </select>
+      </div>
+      <div>
+        <label class="lbl">Prioridad (nuestra)</label>
+        <select class="sel" id="f-prioridad" onchange="cargarBandeja()">
+          <option value="">Todas</option>
+          <option value="sin">Sin clasificar</option>
+          <option value="critica">Crítica</option>
+          <option value="alta">Alta</option>
+          <option value="media">Media</option>
+          <option value="baja">Baja</option>
+        </select>
+      </div>
+      <div>
+        <label class="lbl">&nbsp;</label>
+        <button class="btn full" onclick="cargarBandeja()">↻ Actualizar</button>
+      </div>
+    </div>
+
+    <div id="bd-lista"><div class="cargando">Cargando bandeja…</div></div>
+  </div>
+
+  <!-- ─────────────── DETALLE ─────────────── -->
+  <div class="wrap oculto" id="v-detalle">
+    <button class="btn ghost" onclick="volver()" style="margin-bottom:12px;">← Volver a la bandeja</button>
+    <div class="err" id="dt-err"></div>
+    <div class="ok"  id="dt-ok"></div>
+    <div class="card" id="dt-cab"></div>
+
+    <div class="card">
+      <label class="lbl">Información técnica que envió el sistema</label>
+      <div class="ctx" id="dt-ctx">—</div>
+    </div>
+
+    <div id="dt-hilo"></div>
+
+    <div class="card">
+      <label class="lbl">Responder al cliente</label>
+      <textarea class="txt" id="f-resp" placeholder="Tu respuesta la verá el cliente en su módulo."></textarea>
+      <div class="acciones">
+        <button class="btn primary sm" id="btn-resp" onclick="responder(false)">Enviar al cliente</button>
+        <button class="btn sm" onclick="responder(true)">🔒 Guardar como nota interna</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   Sin theme.js ni supabase_client.js: esta consola es
+   independiente del lado del cliente. Solo la anon key, que es
+   publica por diseño — todo el acceso lo decide la RLS.
+   ════════════════════════════════════════════════════════════ */
+const SUPA_URL = 'https://dyirhwwmykskpuvzcafx.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5aXJod3dteWtza3B1dnpjYWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NTk3ODgsImV4cCI6MjA5NTEzNTc4OH0.2xe4cHqORGng1hnYPJ9ZiyT0r87fMijbUEJqBy3-xoI';
+const SESION_KEY = 'votera_soporte_sesion';
+
+let _ses = null;
+let _ticketActual = null;
+
+const ETIQ_ESTADO = {
+  nuevo:'Nuevo', asignado:'Asignado', en_proceso:'En proceso',
+  esperando_cliente:'Esperando cliente', resuelto:'Resuelto',
+  cerrado:'Cerrado', reabierto:'REABIERTO'
+};
+
+function escHtml(s){
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function mostrar(id, txt, ms){
+  const el=document.getElementById(id); if(!el) return;
+  el.textContent=txt; el.style.display='block';
+  if(ms) setTimeout(()=>{el.style.display='none';}, ms);
+}
+function ocultar(id){ const el=document.getElementById(id); if(el) el.style.display='none'; }
+
+/* ── Sesión y token ─────────────────────────────────────── */
+function guardarSesion(s){ _ses = s; localStorage.setItem(SESION_KEY, JSON.stringify(s)); }
+function leerSesion(){
+  try { return JSON.parse(localStorage.getItem(SESION_KEY) || 'null'); } catch(e){ return null; }
+}
+function salir(){ localStorage.removeItem(SESION_KEY); location.reload(); }
+
+// Refresco reactivo tras un 401, mismo criterio que supaFetch del cliente:
+// el token de GoTrue vive una hora y una guardia de soporte dura mas.
+async function refrescar(){
+  if (!_ses || !_ses.refresh_token) return false;
+  try {
+    const r = await fetch(SUPA_URL + '/auth/v1/token?grant_type=refresh_token', {
+      method:'POST',
+      headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},
+      body: JSON.stringify({ refresh_token: _ses.refresh_token })
+    });
+    if (!r.ok) return false;
+    const d = await r.json();
+    if (!d.access_token) return false;
+    _ses.access_token = d.access_token;
+    _ses.refresh_token = d.refresh_token || _ses.refresh_token;
+    guardarSesion(_ses);
+    return true;
+  } catch(e){ return false; }
+}
+
+async function sFetch(url, options){
+  options = options || {};
+  const armar = () => Object.assign({
+    'apikey': SUPA_KEY,
+    'Authorization': 'Bearer ' + (_ses && _ses.access_token ? _ses.access_token : SUPA_KEY)
+  }, options.headers || {});
+
+  let r = await fetch(url, Object.assign({}, options, { headers: armar() }));
+  if (r.status === 401) {
+    const ok = await refrescar();
+    if (ok) r = await fetch(url, Object.assign({}, options, { headers: armar() }));
+  }
+  return r;
+}
+
+async function api(ruta){
+  const r = await sFetch(SUPA_URL + '/rest/v1/' + ruta);
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return await r.json();
+}
+async function rpc(nombre, cuerpo){
+  const r = await sFetch(SUPA_URL + '/rest/v1/rpc/' + nombre, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(cuerpo || {})
+  });
+  const txt = await r.text();
+  if (!r.ok) {
+    let m = txt; try { m = JSON.parse(txt).message || txt; } catch(e){}
+    throw new Error(m);
+  }
+  try { return JSON.parse(txt); } catch(e){ return null; }
+}
+
+/* ── Login ──────────────────────────────────────────────── */
+async function entrar(){
+  ocultar('lg-err');
+  const mail = document.getElementById('lg-mail').value.trim();
+  const pass = document.getElementById('lg-pass').value;
+  if (!mail || !pass) { mostrar('lg-err','Escribe tu correo y contraseña.'); return; }
+
+  const btn = document.getElementById('btn-entrar');
+  if (btn.disabled) return;
+  btn.disabled = true; btn.textContent = 'Entrando…';
+  try {
+    const r = await fetch(SUPA_URL + '/auth/v1/token?grant_type=password', {
+      method:'POST',
+      headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},
+      body: JSON.stringify({ email: mail, password: pass })
+    });
+    const d = await r.json();
+    if (!r.ok || !d.access_token) throw new Error(d.error_description || d.msg || 'credenciales inválidas');
+
+    _ses = { access_token:d.access_token, refresh_token:d.refresh_token, email:mail, ts:Date.now() };
+
+    // La cuenta existe, pero ¿es de soporte? Lo decide la BASE, no el cliente.
+    const esSop = await rpc('es_soporte');
+    if (esSop !== true) {
+      _ses = null;
+      throw new Error('esta cuenta no pertenece al equipo de soporte');
+    }
+    guardarSesion(_ses);
+    await arrancarApp();
+  } catch(e) {
+    mostrar('lg-err','No se pudo entrar: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Entrar';
+  }
+}
+
+async function arrancarApp(){
+  document.getElementById('v-login').classList.add('oculto');
+  document.getElementById('v-app').classList.remove('oculto');
+  try {
+    const yo = await api('soporte_staff?select=nombre,nivel');
+    const n = (yo && yo[0]) ? yo[0] : { nombre:_ses.email, nivel:'agente' };
+    document.getElementById('tb-av').textContent =
+      (n.nombre||'??').split(' ').map(p=>p[0]||'').join('').slice(0,2).toUpperCase();
+    document.getElementById('tb-id').textContent = n.nombre + ' · ' + n.nivel;
+  } catch(e){
+    document.getElementById('tb-id').textContent = _ses.email;
+  }
+  await llenarPlazas();
+  await cargarBandeja();
+}
+
+/* ── Bandeja ────────────────────────────────────────────── */
+async function llenarPlazas(){
+  try {
+    const filas = await api('tickets?select=estado_republica');
+    const set = Array.from(new Set(filas.map(f=>f.estado_republica).filter(Boolean))).sort();
+    const sel = document.getElementById('f-plaza');
+    sel.innerHTML = '<option value="">Todas</option>' +
+      set.map(p=>'<option value="'+escHtml(p)+'">'+escHtml(p)+'</option>').join('');
+  } catch(e) { /* si falla, el filtro se queda en "Todas" */ }
+}
+
+async function cargarBandeja(){
+  ocultar('bd-err');
+  const lista = document.getElementById('bd-lista');
+  lista.innerHTML = '<div class="cargando">Cargando bandeja…</div>';
+
+  const est   = document.getElementById('f-estado').value;
+  const plaza = document.getElementById('f-plaza').value;
+  const prio  = document.getElementById('f-prioridad').value;
+
+  let q = 'tickets?select=*&limit=200';
+  if (est === 'abiertos')      q += '&estado=neq.cerrado';
+  else if (est)                q += '&estado=eq.' + encodeURIComponent(est);
+  if (plaza)                   q += '&estado_republica=eq.' + encodeURIComponent(plaza);
+  if (prio === 'sin')          q += '&prioridad_soporte=is.null';
+  else if (prio)               q += '&prioridad_soporte=eq.' + encodeURIComponent(prio);
+  // nullsfirst: lo sin clasificar es lo que primero hay que mirar.
+  q += '&order=prioridad_soporte.asc.nullsfirst,created_at.asc';
+
+  try {
+    const filas = await api(q);
+    pintarKpis(filas);
+    if (!filas.length) { lista.innerHTML = '<div class="vacio">No hay tickets con esos filtros.</div>'; return; }
+    lista.innerHTML = filas.map(t => tarjeta(t)).join('');
+  } catch(e) {
+    lista.innerHTML = '';
+    mostrar('bd-err','No se pudo cargar la bandeja: ' + e.message);
+  }
+}
+
+function pintarKpis(filas){
+  const sinClas = filas.filter(t=>!t.prioridad_soporte).length;
+  const nuevos  = filas.filter(t=>t.estado==='nuevo').length;
+  const criticos= filas.filter(t=>t.prioridad_soporte==='critica').length;
+  const espera  = filas.filter(t=>t.estado==='esperando_cliente').length;
+  document.getElementById('bd-kpis').innerHTML =
+    kpi(filas.length,'en la vista','') +
+    kpi(sinClas,'sin clasificar', sinClas ? 'var(--purple)' : '') +
+    kpi(nuevos,'nuevos', nuevos ? 'var(--accent)' : '') +
+    kpi(criticos,'críticos', criticos ? 'var(--red)' : '') +
+    kpi(espera,'esperando cliente','');
+}
+function kpi(n, l, color){
+  return '<div class="kpi"><div class="n"' + (color?' style="color:'+color+'"':'') + '>' + n + '</div>' +
+         '<div class="l">' + l + '</div></div>';
+}
+
+function tarjeta(t){
+  const snap = t.licencia_snapshot || {};
+  const plaza = [t.estado_republica, snap.municipio].filter(Boolean).join(' · ') || 'sin plaza';
+  const sinClas = !t.prioridad_soporte;
+  // El desfase entre lo que declaro el cliente y lo que clasificamos es
+  // informacion util: se marca en vez de esconderse.
+  const desfase = t.prioridad_soporte && t.prioridad_soporte !== t.prioridad;
+  const licMala = (snap.activa === false);
+
+  return '<div class="tk ' + (sinClas ? 'sin-clasificar' : 'p-' + escHtml(t.prioridad_soporte)) +
+              '" onclick="verDetalle(\'' + t.id + '\')">' +
+    '<div class="tk-top">' +
+      '<span class="tk-folio">' + escHtml(t.folio) + '</span>' +
+      '<span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">' +
+        '<span class="plaza">' + escHtml(plaza) + '</span>' +
+        (licMala ? '<span class="warn-lic">LICENCIA INACTIVA</span>' : '') +
+        '<span class="pill e-' + escHtml(t.estado) + '">' + escHtml(ETIQ_ESTADO[t.estado]||t.estado) + '</span>' +
+      '</span>' +
+    '</div>' +
+    '<div class="tk-asunto">' + escHtml(t.asunto) + '</div>' +
+    '<div class="tk-meta">' +
+      (sinClas ? '<span style="color:var(--purple)">◆ SIN CLASIFICAR</span> · '
+               : '<strong>' + escHtml(t.prioridad_soporte).toUpperCase() + '</strong> · ') +
+      'cliente dice: ' + '<span' + (desfase?' class="desfase"':'') + '>' + escHtml(t.prioridad) + '</span>' +
+      ' · ' + escHtml(t.creador_rol || '—') +
+      ' · ' + escHtml(t.categoria) +
+      ' · ' + new Date(t.created_at).toLocaleString('es-MX') +
+    '</div>' +
+  '</div>';
+}
+
+/* ── Detalle ────────────────────────────────────────────── */
+function volver(){
+  document.getElementById('v-detalle').classList.add('oculto');
+  document.getElementById('v-bandeja').classList.remove('oculto');
+  cargarBandeja();
+}
+
+async function verDetalle(id){
+  ocultar('dt-err'); ocultar('dt-ok');
+  _ticketActual = id;
+  document.getElementById('v-bandeja').classList.add('oculto');
+  document.getElementById('v-detalle').classList.remove('oculto');
+  document.getElementById('dt-cab').innerHTML = '<div class="cargando">Cargando…</div>';
+  document.getElementById('dt-hilo').innerHTML = '';
+
+  try {
+    const t = (await api('tickets?id=eq.' + id + '&select=*'))[0];
+    if (!t) throw new Error('ticket no encontrado');
+    const snap = t.licencia_snapshot || {};
+    const plaza = [t.estado_republica, snap.municipio].filter(Boolean).join(' · ') || 'sin plaza';
+
+    document.getElementById('dt-cab').innerHTML =
+      '<div class="tk-top">' +
+        '<span class="tk-folio">' + escHtml(t.folio) + '</span>' +
+        '<span class="pill e-' + escHtml(t.estado) + '">' + escHtml(ETIQ_ESTADO[t.estado]||t.estado) + '</span>' +
+      '</div>' +
+      '<div class="tk-asunto">' + escHtml(t.asunto) + '</div>' +
+      '<div class="tk-meta">' +
+        escHtml(plaza) + ' · licencia ' + escHtml(snap.clave || '—') +
+        (snap.activa === false ? ' · <span style="color:var(--red)">INACTIVA</span>' : '') +
+        (snap.fecha_vencimiento ? ' · vence ' + escHtml(snap.fecha_vencimiento) : '') +
+        '<br>' + escHtml(t.creador_nombre || '—') + ' (' + escHtml(t.creador_rol || '—') + ')' +
+        (t.creador_municipio ? ' · ' + escHtml(t.creador_municipio) : '') +
+        (t.creador_seccion ? ' · secc. ' + escHtml(t.creador_seccion) : '') +
+        '<br>Abierto ' + new Date(t.created_at).toLocaleString('es-MX') +
+        (t.primera_respuesta_at
+          ? ' · 1ª respuesta ' + new Date(t.primera_respuesta_at).toLocaleString('es-MX')
+          : ' · <span style="color:var(--amber)">sin primera respuesta</span>') +
+      '</div>' +
+      '<div class="acciones">' +
+        '<select class="sel" id="f-clasif" style="width:auto;padding:6px 9px;font-size:12px">' +
+          ['critica','alta','media','baja'].map(p =>
+            '<option value="'+p+'"' + (t.prioridad_soporte===p?' selected':'') + '>' +
+            'Clasificar: ' + p + '</option>').join('') +
+        '</select>' +
+        '<button class="btn sm" onclick="clasificar()">Guardar prioridad</button>' +
+        '<select class="sel" id="f-estado-nuevo" style="width:auto;padding:6px 9px;font-size:12px">' +
+          ['asignado','en_proceso','esperando_cliente','resuelto','cerrado'].map(e =>
+            '<option value="'+e+'"' + (t.estado===e?' selected':'') + '>' +
+            (ETIQ_ESTADO[e]||e) + '</option>').join('') +
+        '</select>' +
+        '<button class="btn sm" onclick="cambiarEstado()">Cambiar estado</button>' +
+      '</div>' +
+      (t.prioridad_soporte && t.prioridad_soporte !== t.prioridad
+        ? '<div class="tk-meta" style="margin-top:9px;color:var(--amber)">⚠ El cliente lo declaró como ' +
+          escHtml(t.prioridad) + '; nosotros lo clasificamos como ' + escHtml(t.prioridad_soporte) + '.</div>'
+        : '');
+
+    // Contexto tecnico: es lo primero que mira quien diagnostica.
+    const c = t.contexto || {};
+    document.getElementById('dt-ctx').textContent =
+      'build: ' + (c.build||'—') + '\n' +
+      'rol: ' + (c.rol||'—') + ' · municipio: ' + (c.municipio||'—') + ' · sección: ' + (c.seccion||'—') + '\n' +
+      'conexión: ' + (c.online === false ? 'SIN CONEXIÓN al momento del reporte' : 'con conexión') + '\n' +
+      'módulo: ' + (c.modulo_origen||'—') + ' · pantalla: ' + (c.pantalla||'—') + '\n' +
+      'navegador: ' + (c.user_agent||'—') + '\n' +
+      'hora del cliente: ' + (c.ts_cliente||'—') + '\n' +
+      'errores técnicos recientes:\n' +
+      ((c.errores && c.errores.length) ? c.errores.map(e=>'  · '+e).join('\n') : '  (ninguno)');
+
+    const msgs = await api('ticket_mensajes?ticket_id=eq.' + id + '&select=*&order=created_at.asc');
+    document.getElementById('dt-hilo').innerHTML = msgs.map(m =>
+      '<div class="msg ' + (m.interno ? 'interno' : (m.autor_tipo==='soporte'?'soporte':'cliente')) + '">' +
+        '<div class="msg-head">' +
+          (m.interno ? '🔒 NOTA INTERNA · ' : '') +
+          (m.autor_tipo==='soporte' ? '🛠 ' : '👤 ') + escHtml(m.autor_nombre||'—') +
+          ' · ' + new Date(m.created_at).toLocaleString('es-MX') +
+        '</div>' + escHtml(m.cuerpo) +
+      '</div>'
+    ).join('');
+
+    const adj = await api('ticket_adjuntos?ticket_id=eq.' + id + '&select=nombre_archivo,storage_path');
+    if (adj.length) {
+      document.getElementById('dt-hilo').insertAdjacentHTML('beforeend',
+        '<div class="card"><label class="lbl">Adjuntos</label>' +
+        adj.map(a => '<div style="margin-top:5px"><button class="btn sm" onclick="abrirAdjunto(\'' +
+          escHtml(a.storage_path) + '\')">📎 ' + escHtml(a.nombre_archivo) + '</button></div>').join('') +
+        '</div>');
+    }
+  } catch(e) {
+    document.getElementById('dt-cab').innerHTML = '';
+    mostrar('dt-err','No se pudo abrir el ticket: ' + e.message);
+  }
+}
+
+// El bucket es privado: no hay URL publica. Se pide una firmada, valida 60 s.
+async function abrirAdjunto(ruta){
+  try {
+    const r = await sFetch(SUPA_URL + '/storage/v1/object/sign/ticket-adjuntos/' + ruta, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ expiresIn: 60 })
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const d = await r.json();
+    window.open(SUPA_URL + '/storage/v1' + d.signedURL, '_blank');
+  } catch(e) {
+    mostrar('dt-err','No se pudo abrir el adjunto: ' + e.message);
+  }
+}
+
+async function clasificar(){
+  ocultar('dt-err');
+  const p = document.getElementById('f-clasif').value;
+  try {
+    await rpc('clasificar_ticket', { p_ticket_id:_ticketActual, p_prioridad:p });
+    mostrar('dt-ok','Clasificado como ' + p + '.', 2500);
+    await verDetalle(_ticketActual);
+  } catch(e) { mostrar('dt-err','No se pudo clasificar: ' + e.message); }
+}
+
+async function cambiarEstado(){
+  ocultar('dt-err');
+  const e = document.getElementById('f-estado-nuevo').value;
+  try {
+    await rpc('cambiar_estado_ticket', { p_ticket_id:_ticketActual, p_estado:e });
+    mostrar('dt-ok','Estado actualizado.', 2500);
+    await verDetalle(_ticketActual);
+  } catch(err) { mostrar('dt-err','No se pudo cambiar el estado: ' + err.message); }
+}
+
+async function responder(interno){
+  ocultar('dt-err');
+  const txt = document.getElementById('f-resp').value.trim();
+  if (txt.length < 2) { mostrar('dt-err','Escribe la respuesta antes de enviarla.'); return; }
+  const btn = document.getElementById('btn-resp');
+  if (btn.disabled) return;
+  btn.disabled = true;
+  try {
+    await rpc('agregar_mensaje_ticket', { p_ticket_id:_ticketActual, p_cuerpo:txt, p_interno:!!interno });
+    document.getElementById('f-resp').value = '';   // solo tras el exito
+    await verDetalle(_ticketActual);
+  } catch(e) {
+    mostrar('dt-err','No se pudo enviar: ' + e.message);
+  } finally { btn.disabled = false; }
+}
+
+/* ── Arranque: si ya hay sesión guardada, entrar directo ── */
+(async function init(){
+  const s = leerSesion();
+  if (!s || !s.access_token) return;
+  _ses = s;
+  try {
+    const esSop = await rpc('es_soporte');
+    if (esSop === true) { await arrancarApp(); return; }
+  } catch(e) {}
+  // Sesión vencida o cuenta ya sin permiso: de vuelta al login, sin ruido.
+  localStorage.removeItem(SESION_KEY);
+  _ses = null;
+})();
+</script>
+</body>
+</html>
