@@ -257,7 +257,11 @@ const _errBuffer = [];
 function armarContexto(){
   const s = window._sesion || {};
   return {
-    build:        (window.parent && window.parent.APP_BUILD) || 'desconocido',
+    // El hub carga los modulos como iframe con ?v=<APP_BUILD>, asi que el
+    // build viaja en la propia URL. NO se lee window.parent.APP_BUILD: alla
+    // esta declarado con `const` en el ambito del script, y un const de nivel
+    // superior NO se convierte en propiedad de window — daba "desconocido".
+    build:        new URLSearchParams(location.search).get('v') || 'desconocido',
     modulo_origen: (function(){ try { return window.parent.location.hash || 'hub'; } catch(e){ return 'iframe'; } })(),
     rol:          s.rol || null,
     licencia_id:  s.licencia_id || null,
