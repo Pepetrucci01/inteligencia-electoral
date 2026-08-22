@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<!--
+============================================================
+  VOTERA(TM) - Inteligencia Electoral
+  (c) 2026 MEFT Consulting - RFC: CUOJ7808208Z2
+  Villa de Alvarez, Colima, Mexico - votera.mx
+  Todos los derechos reservados.
+
+  Software propietario bajo licencia. Su uso, copia,
+  modificacion, distribucion o ingenieria inversa sin
+  autorizacion expresa de MEFT Consulting esta prohibido.
+============================================================
+
+  MODULO DE SOPORTE TECNICO  ·  v90  ·  22 ago 2026
+
+  Los 9 roles pueden levantar un ticket. El ticket viaja con
+  un CONTEXTO automatico (build, modulo, rol, red, errores de
+  consola) que es lo que convierte "no me deja guardar" en
+  "capturista v90, offline, RLS 42501 en ciudadanos".
+
+  TODA escritura pasa por las RPC del SQL 60 (crear_ticket,
+  agregar_mensaje_ticket, reabrir_ticket). El modulo NUNCA
+  escribe directo a las tablas: asi, si manana el almacen se
+  mueve a otro proyecto o a una herramienta externa, se cambia
+  el cuerpo de las RPC y esto no se entera.
+============================================================
+-->
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Soporte técnico · VOTERA</title>
+<link rel="icon" href="data:,">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0e1a;--bg2:#0f1526;--bg3:#141b2e;--bg4:#1a2238;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.14);
+  --text:#e8edf5;--text2:#8a9ab5;--text3:#5a6a85;
+  --accent:#3b82f6;--green:#22c55e;--red:#ef4444;
+  --amber:#f59e0b;--cyan:#06b6d4;--purple:#a855f7;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;}
+
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border2);padding:0 16px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;}
+.tb-left{display:flex;align-items:center;gap:10px;}
+.tb-av{width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:600;flex-shrink:0;background:rgba(6,182,212,.15);color:var(--cyan);}
+.tb-name{font-size:13px;font-weight:600;}
+.tb-id{font-size:10px;font-family:var(--mono);color:var(--text3);}
+
+.tabs{display:flex;background:var(--bg3);border-bottom:1px solid var(--border);position:sticky;top:52px;z-index:199;}
+.tab{flex:1;padding:11px 4px;text-align:center;font-size:11px;font-family:var(--mono);color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;}
+.tab.active{color:var(--cyan);border-bottom-color:var(--cyan);}
+
+.wrap{padding:16px;max-width:860px;margin:0 auto;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px;}
+.card h3{font-size:13px;font-weight:600;margin-bottom:4px;}
+.hint{font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:12px;line-height:1.5;}
+
+.fg{margin-bottom:12px;}
+.lbl{font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:5px;display:block;}
+.req{color:var(--red);}
+.inp,.sel,.txt{width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:7px;padding:10px 11px;color:var(--text);font-family:var(--sans);font-size:14px;}
+.txt{min-height:110px;resize:vertical;line-height:1.5;}
+.inp:focus,.sel:focus,.txt:focus{outline:none;border-color:var(--cyan);}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+.btn{background:var(--bg4);border:1px solid var(--border2);color:var(--text);border-radius:7px;padding:10px 14px;font-size:13px;font-family:var(--sans);cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+.btn.primary{background:var(--cyan);border-color:var(--cyan);color:#04202a;font-weight:600;}
+.btn.ghost{background:transparent;}
+.btn.full{width:100%;justify-content:center;}
+
+.err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.35);color:#fca5a5;border-radius:7px;padding:10px 12px;font-size:12px;margin-bottom:12px;display:none;line-height:1.5;}
+.ok{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.35);color:#86efac;border-radius:7px;padding:10px 12px;font-size:12px;margin-bottom:12px;display:none;line-height:1.5;}
+
+.tk{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:13px;margin-bottom:10px;cursor:pointer;transition:border-color .15s;}
+.tk:hover{border-color:var(--border2);}
+.tk-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;}
+.tk-folio{font-family:var(--mono);font-size:11px;color:var(--text3);}
+.tk-asunto{font-size:14px;font-weight:500;margin-bottom:4px;}
+.tk-meta{font-family:var(--mono);font-size:10px;color:var(--text3);}
+.pill{font-family:var(--mono);font-size:10px;padding:3px 9px;border-radius:99px;font-weight:600;white-space:nowrap;}
+.e-nuevo{background:rgba(59,130,246,.15);color:#93c5fd;}
+.e-asignado,.e-en_proceso{background:rgba(245,158,11,.15);color:#fcd34d;}
+.e-esperando_cliente{background:rgba(168,85,247,.15);color:#d8b4fe;}
+.e-resuelto{background:rgba(34,197,94,.15);color:#86efac;}
+.e-cerrado{background:rgba(255,255,255,.07);color:var(--text3);}
+.e-reabierto{background:rgba(239,68,68,.15);color:#fca5a5;}
+
+.msg{border-radius:9px;padding:11px 13px;margin-bottom:9px;font-size:14px;line-height:1.55;white-space:pre-wrap;word-break:break-word;}
+.msg.cliente{background:var(--bg3);border:1px solid var(--border);}
+.msg.soporte{background:rgba(6,182,212,.08);border:1px solid rgba(6,182,212,.25);}
+.msg-head{font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:5px;}
+
+.vacio{text-align:center;padding:40px 16px;color:var(--text3);font-size:13px;}
+.cargando{text-align:center;padding:26px;color:var(--text3);font-family:var(--mono);font-size:12px;}
+.oculto{display:none;}
+.ctx{font-family:var(--mono);font-size:10px;color:var(--text3);background:var(--bg);border:1px dashed var(--border2);border-radius:7px;padding:9px 11px;line-height:1.6;word-break:break-all;}
+.adj{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11px;color:var(--cyan);margin-top:4px;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="tb-left">
+    <div class="tb-av" id="tb-av">··</div>
+    <div>
+      <div class="tb-name">Soporte técnico</div>
+      <div class="tb-id" id="tb-id">—</div>
+    </div>
+  </div>
+  <button onclick="cerrarSesion()" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;font-family:monospace;margin-left:6px;" title="Cerrar sesión">⏻ Salir</button>
+</div>
+
+<div class="tabs">
+  <div class="tab active" id="tab-nuevo" onclick="verTab('nuevo')">＋ Levantar ticket</div>
+  <div class="tab" id="tab-mis" onclick="verTab('mis')">📋 Mis tickets</div>
+</div>
+
+<!-- ─────────────── LEVANTAR TICKET ─────────────── -->
+<div class="wrap" id="v-nuevo">
+  <div class="err" id="nv-err"></div>
+  <div class="ok"  id="nv-ok"></div>
+
+  <div class="card">
+    <h3>Reportar un problema</h3>
+    <div class="hint">Se envía automáticamente la versión del sistema, tu rol y los errores técnicos recientes. No hace falta que los describas.</div>
+
+    <div class="fg">
+      <label class="lbl">Asunto <span class="req">*</span></label>
+      <input class="inp" id="f-asunto" maxlength="120" placeholder="Ej. No puedo guardar un simpatizante">
+    </div>
+
+    <div class="row2">
+      <div class="fg">
+        <label class="lbl">¿De qué se trata? <span class="req">*</span></label>
+        <select class="sel" id="f-categoria">
+          <option value="acceso">No puedo entrar / permisos</option>
+          <option value="captura">Captura de simpatizantes</option>
+          <option value="dia_eleccion">Día de la elección</option>
+          <option value="datos">Datos incorrectos o faltantes</option>
+          <option value="rendimiento">Lento o se traba</option>
+          <option value="bug">Algo no funciona</option>
+          <option value="duda">Duda de uso</option>
+          <option value="otro" selected>Otro</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label class="lbl">¿Qué tanto te bloquea?</label>
+        <select class="sel" id="f-prioridad">
+          <option value="baja">Puedo seguir trabajando</option>
+          <option value="media" selected>Me estorba</option>
+          <option value="alta">No puedo avanzar</option>
+          <option value="critica">Urgente, es hoy</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="fg">
+      <label class="lbl">Cuéntanos qué pasó <span class="req">*</span></label>
+      <textarea class="txt" id="f-descripcion" maxlength="4000" placeholder="Qué estabas haciendo, qué esperabas que pasara y qué pasó en su lugar."></textarea>
+    </div>
+
+    <div class="fg">
+      <label class="lbl">Captura de pantalla (opcional, máx 5 MB)</label>
+      <input class="inp" id="f-archivo" type="file" accept="image/png,image/jpeg,image/webp,application/pdf,text/plain">
+    </div>
+
+    <div class="fg">
+      <label class="lbl">Información técnica que se enviará</label>
+      <div class="ctx" id="f-ctx">—</div>
+    </div>
+
+    <button class="btn primary full" id="btn-enviar" onclick="enviarTicket()">Enviar ticket</button>
+  </div>
+</div>
+
+<!-- ─────────────── MIS TICKETS ─────────────── -->
+<div class="wrap oculto" id="v-mis">
+  <div class="err" id="ls-err"></div>
+  <div id="ls-cont"><div class="cargando">Cargando tickets…</div></div>
+</div>
+
+<!-- ─────────────── DETALLE / HILO ─────────────── -->
+<div class="wrap oculto" id="v-detalle">
+  <button class="btn ghost" onclick="verTab('mis')" style="margin-bottom:12px;">← Volver</button>
+  <div class="err" id="dt-err"></div>
+  <div class="card" id="dt-cab"></div>
+  <div id="dt-hilo"></div>
+  <div class="card" id="dt-responder">
+    <label class="lbl">Responder</label>
+    <textarea class="txt" id="f-respuesta" maxlength="4000" placeholder="Escribe tu respuesta…"></textarea>
+    <button class="btn primary full" id="btn-responder" onclick="responder()" style="margin-top:10px;">Enviar respuesta</button>
+  </div>
+</div>
+
+<script src="theme.js"></script>
+<script>
+/* ════════════════════════════════════════════════════════════
+   GUARD — defensa en profundidad ademas del ocultado del hub.
+   A diferencia de otros modulos, aqui entran LOS 9 ROLES: si
+   alguien no puede usar el sistema, tiene que poder decirlo.
+   ════════════════════════════════════════════════════════════ */
+(function guardSoporte(){
+  try {
+    const s = JSON.parse(localStorage.getItem('electoral_sesion') || 'null');
+    if (!s || !s.ts) { window.location.replace('login.html'); return; }
+    if ((Date.now() - s.ts) / 3600000 >= 8) { localStorage.removeItem('electoral_sesion'); window.location.replace('login.html'); return; }
+    const rolesPermitidos = ['super_admin','admin','coordinador_estatal','coordinador',
+                             'jefe_seccion','capturista','operador_cc','repr_casilla','consulta'];
+    if (!rolesPermitidos.includes(s.rol)) { window.location.replace('login.html'); return; }
+    window._sesion = s;
+  } catch(e) { window.location.replace('login.html'); }
+})();
+
+const SUPA_URL = 'https://dyirhwwmykskpuvzcafx.supabase.co';
+
+/* ════════════════════════════════════════════════════════════
+   BUFFER DE ERRORES DE CONSOLA
+   Se envuelve console.error para quedarnos con los ultimos 8.
+   Es lo que hace util un ticket: sin esto, el reporte dice
+   "no funciona" y el diagnostico son dos dias de ida y vuelta.
+   Va aqui y NO en theme.js a proposito: theme.js lo cargan los
+   9 modulos y no quiero tocar un archivo compartido por esto.
+   El precio es que solo captura los errores de ESTE modulo; los
+   del modulo donde ocurrio el problema no viajan. Se resuelve
+   despues moviendolo a theme.js, si se decide que vale la pena.
+   ════════════════════════════════════════════════════════════ */
+const _errBuffer = [];
+(function capturarErrores(){
+  const orig = console.error;
+  console.error = function(){
+    try {
+      _errBuffer.push(Array.from(arguments).map(a =>
+        (a && a.message) ? a.message : String(a)).join(' ').slice(0,240));
+      if (_errBuffer.length > 8) _errBuffer.shift();
+    } catch(e) {}
+    orig.apply(console, arguments);
+  };
+  window.addEventListener('error', ev => {
+    try {
+      _errBuffer.push('window.onerror: ' + (ev.message||'') + ' @' + (ev.filename||'').split('/').pop() + ':' + (ev.lineno||''));
+      if (_errBuffer.length > 8) _errBuffer.shift();
+    } catch(e) {}
+  });
+  window.addEventListener('unhandledrejection', ev => {
+    try {
+      _errBuffer.push('promesa sin catch: ' + String(ev.reason && ev.reason.message || ev.reason).slice(0,200));
+      if (_errBuffer.length > 8) _errBuffer.shift();
+    } catch(e) {}
+  });
+})();
+
+function armarContexto(){
+  const s = window._sesion || {};
+  return {
+    build:        (window.parent && window.parent.APP_BUILD) || 'desconocido',
+    modulo_origen: (function(){ try { return window.parent.location.hash || 'hub'; } catch(e){ return 'iframe'; } })(),
+    rol:          s.rol || null,
+    licencia_id:  s.licencia_id || null,
+    municipio:    s.municipio || null,
+    seccion:      s.seccion || null,
+    online:       navigator.onLine,
+    user_agent:   navigator.userAgent.slice(0,220),
+    pantalla:     window.screen.width + 'x' + window.screen.height,
+    idioma:       navigator.language,
+    ts_cliente:   new Date().toISOString(),
+    errores:      _errBuffer.slice()
+  };
+}
+
+function pintarContexto(){
+  const c = armarContexto();
+  const el = document.getElementById('f-ctx');
+  el.textContent =
+    'build ' + c.build + ' · rol ' + (c.rol||'—') +
+    ' · ' + (c.online ? 'con conexión' : 'SIN CONEXIÓN') +
+    ' · pantalla ' + c.pantalla +
+    (c.errores.length ? ' · ' + c.errores.length + ' error(es) técnico(s) recientes'
+                      : ' · sin errores recientes');
+}
+
+/* ── Utilidades ─────────────────────────────────────────── */
+function escHtml(s){
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function mostrar(id, texto, ms){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.textContent = texto;
+  el.style.display = 'block';
+  if (ms) setTimeout(()=>{ el.style.display='none'; }, ms);
+}
+function ocultar(id){ const el=document.getElementById(id); if(el) el.style.display='none'; }
+function cerrarSesion(){ localStorage.removeItem('electoral_sesion'); window.location.href='login.html'; }
+
+const ETIQ_ESTADO = {
+  nuevo:'Nuevo', asignado:'Asignado', en_proceso:'En proceso',
+  esperando_cliente:'Esperando tu respuesta', resuelto:'Resuelto',
+  cerrado:'Cerrado', reabierto:'Reabierto'
+};
+
+/* ── Llamadas a la API (siempre via supaFetch de theme.js: es la
+      fuente unica de token y quien reintenta tras un 401) ───── */
+async function rpc(nombre, cuerpo){
+  const r = await supaFetch(SUPA_URL + '/rest/v1/rpc/' + nombre, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(cuerpo || {})
+  });
+  const txt = await r.text();
+  if (!r.ok) {
+    let msg = txt;
+    try { msg = JSON.parse(txt).message || txt; } catch(e){}
+    throw new Error(msg);
+  }
+  try { return JSON.parse(txt); } catch(e){ return null; }
+}
+
+async function api(ruta){
+  const r = await supaFetch(SUPA_URL + '/rest/v1/' + ruta);
+  if (!r.ok) throw new Error('HTTP ' + r.status + ' al leer ' + ruta.split('?')[0]);
+  return await r.json();
+}
+
+/* ── Navegación ─────────────────────────────────────────── */
+function verTab(cual){
+  document.getElementById('v-nuevo').classList.toggle('oculto', cual!=='nuevo');
+  document.getElementById('v-mis').classList.toggle('oculto', cual!=='mis');
+  document.getElementById('v-detalle').classList.add('oculto');
+  document.getElementById('tab-nuevo').classList.toggle('active', cual==='nuevo');
+  document.getElementById('tab-mis').classList.toggle('active', cual==='mis');
+  if (cual==='nuevo') pintarContexto();
+  if (cual==='mis')   cargarTickets();
+}
+
+/* ── Crear ticket ───────────────────────────────────────── */
+async function enviarTicket(){
+  ocultar('nv-err'); ocultar('nv-ok');
+  const asunto = document.getElementById('f-asunto').value.trim();
+  const desc   = document.getElementById('f-descripcion').value.trim();
+
+  if (asunto.length < 5)  { mostrar('nv-err','El asunto necesita al menos 5 caracteres.'); return; }
+  if (desc.length   < 10) { mostrar('nv-err','Cuéntanos un poco más de lo que pasó (mínimo 10 caracteres).'); return; }
+
+  const archivo = document.getElementById('f-archivo').files[0] || null;
+  if (archivo && archivo.size > 5242880) {
+    mostrar('nv-err','El archivo pesa más de 5 MB. Recorta la captura e inténtalo de nuevo.');
+    return;
+  }
+
+  const btn = document.getElementById('btn-enviar');
+  if (btn.disabled) return;                 // candado anti-doble-clic
+  btn.disabled = true; btn.textContent = 'Enviando…';
+
+  try {
+    const res = await rpc('crear_ticket', {
+      p_asunto: asunto,
+      p_descripcion: desc,
+      p_categoria: document.getElementById('f-categoria').value,
+      p_prioridad: document.getElementById('f-prioridad').value,
+      p_contexto: armarContexto()
+    });
+
+    // El adjunto es SECUNDARIO: si falla, el ticket ya existe y no se pierde.
+    let avisoAdj = '';
+    if (archivo && res && res.id) {
+      try { await subirAdjunto(res.id, archivo); }
+      catch(e) {
+        console.error('adjunto:', e.message);
+        avisoAdj = ' (la captura no se pudo subir; puedes adjuntarla respondiendo al ticket)';
+      }
+    }
+
+    // La UI solo avanza DESPUES del exito confirmado.
+    document.getElementById('f-asunto').value = '';
+    document.getElementById('f-descripcion').value = '';
+    document.getElementById('f-archivo').value = '';
+    mostrar('nv-ok','Ticket ' + (res && res.folio ? res.folio : '') +
+                    ' registrado. Te responderemos en este mismo módulo.' + avisoAdj);
+  } catch(e) {
+    mostrar('nv-err','No se pudo registrar el ticket: ' + e.message +
+                     '. Si no hay conexión, inténtalo cuando vuelva la señal.');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Enviar ticket';
+  }
+}
+
+/* La ruta {ticket_id}/{archivo} NO es cosmetica: de ahi sale el permiso
+   en la politica del bucket. Con otra forma, Storage lo rechaza. */
+async function subirAdjunto(ticketId, archivo){
+  const limpio = archivo.name.replace(/[^\w.\-]/g,'_').slice(-80);
+  const ruta   = ticketId + '/' + Date.now() + '-' + limpio;
+
+  const r = await supaFetch(SUPA_URL + '/storage/v1/object/ticket-adjuntos/' + ruta, {
+    method:'POST',
+    headers:{'Content-Type': archivo.type || 'application/octet-stream'},
+    body: archivo
+  });
+  if (!r.ok) throw new Error('Storage HTTP ' + r.status);
+
+  const r2 = await supaFetch(SUPA_URL + '/rest/v1/ticket_adjuntos', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','Prefer':'return=minimal'},
+    body: JSON.stringify({
+      ticket_id: ticketId, storage_path: ruta, nombre_archivo: archivo.name,
+      mime: archivo.type || null, tamano_bytes: archivo.size,
+      subido_por: window._sesion.id
+    })
+  });
+  if (!r2.ok) throw new Error('registro del adjunto HTTP ' + r2.status);
+}
+
+/* ── Lista ──────────────────────────────────────────────── */
+async function cargarTickets(){
+  ocultar('ls-err');
+  const cont = document.getElementById('ls-cont');
+  cont.innerHTML = '<div class="cargando">Cargando tickets…</div>';
+  try {
+    const filas = await api('tickets?select=id,folio,asunto,estado,prioridad,categoria,created_at,actualizado_at&order=created_at.desc&limit=100');
+    if (!filas.length) {
+      cont.innerHTML = '<div class="vacio">Todavía no has levantado ningún ticket.</div>';
+      return;
+    }
+    cont.innerHTML = filas.map(t =>
+      '<div class="tk" onclick="verDetalle(\'' + t.id + '\')">' +
+        '<div class="tk-top">' +
+          '<span class="tk-folio">' + escHtml(t.folio) + '</span>' +
+          '<span class="pill e-' + escHtml(t.estado) + '">' + escHtml(ETIQ_ESTADO[t.estado] || t.estado) + '</span>' +
+        '</div>' +
+        '<div class="tk-asunto">' + escHtml(t.asunto) + '</div>' +
+        '<div class="tk-meta">' + new Date(t.created_at).toLocaleString('es-MX') +
+          ' · ' + escHtml(t.categoria) + ' · prioridad ' + escHtml(t.prioridad) + '</div>' +
+      '</div>'
+    ).join('');
+  } catch(e) {
+    cont.innerHTML = '';
+    mostrar('ls-err','No se pudieron cargar tus tickets: ' + e.message);
+  }
+}
+
+/* ── Detalle / hilo ─────────────────────────────────────── */
+let _ticketActual = null;
+
+async function verDetalle(id){
+  ocultar('dt-err');
+  document.getElementById('v-nuevo').classList.add('oculto');
+  document.getElementById('v-mis').classList.add('oculto');
+  document.getElementById('v-detalle').classList.remove('oculto');
+  document.getElementById('dt-cab').innerHTML = '<div class="cargando">Cargando…</div>';
+  document.getElementById('dt-hilo').innerHTML = '';
+  _ticketActual = id;
+
+  try {
+    const t = (await api('tickets?id=eq.' + id + '&select=*'))[0];
+    if (!t) throw new Error('ticket no encontrado');
+
+    const reabrible = (t.estado === 'resuelto' || t.estado === 'cerrado');
+    document.getElementById('dt-cab').innerHTML =
+      '<div class="tk-top">' +
+        '<span class="tk-folio">' + escHtml(t.folio) + '</span>' +
+        '<span class="pill e-' + escHtml(t.estado) + '">' + escHtml(ETIQ_ESTADO[t.estado] || t.estado) + '</span>' +
+      '</div>' +
+      '<div class="tk-asunto">' + escHtml(t.asunto) + '</div>' +
+      '<div class="tk-meta">Abierto el ' + new Date(t.created_at).toLocaleString('es-MX') +
+        ' · ' + escHtml(t.categoria) + ' · prioridad ' + escHtml(t.prioridad) + '</div>' +
+      (reabrible ? '<button class="btn ghost" style="margin-top:11px;" onclick="reabrir()">↻ Reabrir ticket</button>' : '');
+
+    // Si esta cerrado o resuelto, no se responde: se reabre.
+    document.getElementById('dt-responder').classList.toggle('oculto', reabrible);
+
+    const msgs = await api('ticket_mensajes?ticket_id=eq.' + id + '&select=*&order=created_at.asc');
+    document.getElementById('dt-hilo').innerHTML = msgs.map(m =>
+      '<div class="msg ' + (m.autor_tipo === 'soporte' ? 'soporte' : 'cliente') + '">' +
+        '<div class="msg-head">' +
+          (m.autor_tipo === 'soporte' ? '🛠 Soporte' : '👤 ' + escHtml(m.autor_nombre || 'Tú')) +
+          ' · ' + new Date(m.created_at).toLocaleString('es-MX') +
+        '</div>' + escHtml(m.cuerpo) +
+      '</div>'
+    ).join('');
+
+    const adj = await api('ticket_adjuntos?ticket_id=eq.' + id + '&select=nombre_archivo,storage_path');
+    if (adj.length) {
+      document.getElementById('dt-hilo').insertAdjacentHTML('beforeend',
+        '<div class="card"><label class="lbl">Adjuntos</label>' +
+        adj.map(a => '<div class="adj">📎 ' + escHtml(a.nombre_archivo) + '</div>').join('') +
+        '</div>');
+    }
+  } catch(e) {
+    document.getElementById('dt-cab').innerHTML = '';
+    mostrar('dt-err','No se pudo abrir el ticket: ' + e.message);
+  }
+}
+
+async function responder(){
+  ocultar('dt-err');
+  const txt = document.getElementById('f-respuesta').value.trim();
+  if (txt.length < 2) { mostrar('dt-err','Escribe tu respuesta antes de enviarla.'); return; }
+
+  const btn = document.getElementById('btn-responder');
+  if (btn.disabled) return;
+  btn.disabled = true; btn.textContent = 'Enviando…';
+  try {
+    await rpc('agregar_mensaje_ticket', { p_ticket_id: _ticketActual, p_cuerpo: txt, p_interno: false });
+    document.getElementById('f-respuesta').value = '';   // solo tras el exito
+    await verDetalle(_ticketActual);
+  } catch(e) {
+    mostrar('dt-err','No se pudo enviar tu respuesta: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Enviar respuesta';
+  }
+}
+
+async function reabrir(){
+  const motivo = prompt('¿Por qué necesitas reabrirlo? El equipo lo verá como primer mensaje.');
+  if (!motivo || !motivo.trim()) return;
+  try {
+    await rpc('reabrir_ticket', { p_ticket_id: _ticketActual, p_motivo: motivo.trim() });
+    await verDetalle(_ticketActual);
+  } catch(e) {
+    mostrar('dt-err','No se pudo reabrir: ' + e.message);
+  }
+}
+
+/* ── Arranque ───────────────────────────────────────────── */
+(function init(){
+  const s = window._sesion || {};
+  const ini = (s.nombre || '??').split(' ').map(p=>p[0]||'').join('').slice(0,2).toUpperCase();
+  document.getElementById('tb-av').textContent = ini || '··';
+  document.getElementById('tb-id').textContent =
+    (s.nombre || 'Usuario') + ' · ' + (s.rol || '—') +
+    (s.municipio ? ' · ' + s.municipio : '');
+  pintarContexto();
+})();
+</script>
+</body>
+</html>

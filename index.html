@@ -329,6 +329,15 @@ body.rol-consulta     .kpi-estatal { display:none; }
       <span class="nav-badge" style="background:rgba(239,68,68,.12);color:var(--red)">ADMIN</span>
       <div class="nav-tip">Administración</div>
     </div>
+    <!-- [v91] Soporte tecnico. SIN data-rol a proposito: la logica de este
+         hub trata "sin data-rol" como abierto, y aqui entran LOS 9 ROLES —
+         si alguien no puede usar el sistema, tiene que poder decirlo.
+         Mismo criterio que Ayuda. -->
+    <div class="nav-item" id="nav-soporte" onclick="load('soporte','modulo_soporte.html','Soporte técnico','Levanta un ticket con el equipo')">
+      <div class="nav-icon" style="background:rgba(6,182,212,.12);color:var(--cyan)">🛟</div>
+      <span class="nav-label">Soporte técnico</span>
+      <div class="nav-tip">Soporte técnico</div>
+    </div>
     <div class="nav-item" id="nav-ayuda" onclick="load('ayuda','ayuda_configurador.html','Guía del configurador','Cómo usar el sistema')">
       <div class="nav-icon" style="background:rgba(59,130,246,.12);color:var(--accent)">?</div>
       <span class="nav-label">Ayuda</span>
@@ -480,6 +489,12 @@ body.rol-consulta     .kpi-estatal { display:none; }
         <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(239,68,68,.1);color:var(--red)">Restringido</span><span class="tag" style="background:rgba(239,68,68,.1);color:var(--red)">6 licencias</span></div><span class="arr">→</span></div>
       </div>
 
+      <div class="mc" style="border-color:rgba(6,182,212,.2)" onclick="load('soporte','modulo_soporte.html','Soporte técnico','Levanta un ticket con el equipo')">
+        <div class="mc-head"><div class="mc-icon" style="background:rgba(6,182,212,.15);font-size:16px">🛟</div><div><div class="mc-name">Soporte técnico</div><div class="mc-sub">Ayuda del equipo VOTERA</div></div></div>
+        <div class="mc-desc">¿Algo no funciona? Levanta un ticket y sigue la respuesta aquí mismo. Se envía sola la información técnica que el equipo necesita para resolverlo.</div>
+        <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(6,182,212,.1);color:var(--cyan)">Todos los roles</span><span class="tag" style="background:rgba(6,182,212,.1);color:var(--cyan)">Con seguimiento</span></div><span class="arr">→</span></div>
+      </div>
+
       <div class="mc" style="border-color:rgba(59,130,246,.2)" onclick="load('ayuda','ayuda_configurador.html','Guía del configurador','Cómo usar el sistema')">
         <div class="mc-head"><div class="mc-icon" style="background:rgba(59,130,246,.15);font-size:16px">?</div><div><div class="mc-name">Ayuda</div><div class="mc-sub">Guía del configurador</div></div></div>
         <div class="mc-desc">Aprende qué Excel subir, qué parámetros configurar y qué resultados obtendrás. Todo sin revelar la metodología propietaria.</div>
@@ -528,7 +543,7 @@ body.rol-consulta     .kpi-estatal { display:none; }
 <script>
 // APP_BUILD: versin de build para cache-busting de los mdulos en iframe.
 // ⚠️ SUBE este nmero en cada deploy con cambios en los mdulos.
-const APP_BUILD = '20260727s';
+const APP_BUILD = '20260727t';
 
 let collapsed = false;
 
