@@ -113,9 +113,62 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 .cargando{text-align:center;padding:26px;color:var(--text3);font-family:var(--mono);font-size:12px;}
 .oculto{display:none;}
 .acciones{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px;}
+
+/* Franja de ambiente. Solo aparece fuera de produccion, y es deliberadamente
+   imposible de ignorar: atender un ticket contra la base equivocada es peor
+   que no atenderlo, y el console.log no lo mira nadie. */
+.franja-env{background:repeating-linear-gradient(45deg,#f59e0b,#f59e0b 12px,#b45309 12px,#b45309 24px);
+  color:#1a1205;font-family:var(--mono);font-size:11px;font-weight:600;text-align:center;
+  padding:6px 12px;letter-spacing:.06em;position:sticky;top:0;z-index:300;}
+
+/* Segundo factor */
+.codigo{font-family:var(--mono);font-size:22px;letter-spacing:.3em;text-align:center;}
+.qr{background:#fff;border-radius:9px;padding:12px;display:flex;justify-content:center;margin-bottom:12px;}
+.qr img{width:190px;height:190px;}
+.secreto{font-family:var(--mono);font-size:12px;word-break:break-all;background:var(--bg);border:1px solid var(--border2);border-radius:7px;padding:9px;color:var(--text2);}
+.pasos{font-size:12px;color:var(--text2);line-height:1.65;margin-bottom:12px;}
 </style>
 </head>
 <body>
+
+<div id="franja-env"></div>
+
+<!-- ─────────────── SEGUNDO FACTOR ─────────────── -->
+<div id="v-mfa" class="oculto">
+  <div class="login-box">
+    <div class="brand">
+      <div class="brand-t">V O T E R A</div>
+      <div class="brand-s">VERIFICACIÓN EN DOS PASOS</div>
+    </div>
+    <div class="card">
+      <div class="err" id="mf-err"></div>
+
+      <!-- Alta del factor: solo la primera vez -->
+      <div id="mf-alta" class="oculto">
+        <div class="pasos">
+          Esta cuenta ve tickets de <strong>todos</strong> los clientes, así que
+          necesita un segundo factor.<br><br>
+          1. Abre tu app de autenticación (Google Authenticator, Authy, 1Password…).<br>
+          2. Escanea el código.<br>
+          3. Escribe abajo los 6 dígitos que te muestre.
+        </div>
+        <div class="qr" id="mf-qr"></div>
+        <label class="lbl">¿No puedes escanear? Captura esta clave a mano</label>
+        <div class="secreto" id="mf-secreto">—</div>
+      </div>
+
+      <!-- Verificación de cada entrada -->
+      <div style="margin:14px 0 12px;">
+        <label class="lbl">Código de 6 dígitos</label>
+        <input class="inp codigo" id="mf-code" inputmode="numeric" maxlength="6"
+               autocomplete="one-time-code" placeholder="······"
+               onkeydown="if(event.key==='Enter')verificarMfa()">
+      </div>
+      <button class="btn primary full" id="btn-mfa" onclick="verificarMfa()">Verificar</button>
+      <button class="btn ghost full" style="margin-top:8px;" onclick="salir()">Cancelar</button>
+    </div>
+  </div>
+</div>
 
 <!-- ─────────────── LOGIN PROPIO ─────────────── -->
 <div id="v-login">
@@ -346,6 +399,110 @@ async function rpc(nombre, cuerpo){
   try { return JSON.parse(txt); } catch(e){ return null; }
 }
 
+/* ════════════════════════════════════════════════════════════
+   SEGUNDO FACTOR (TOTP)
+   La validacion de verdad NO vive aqui: `es_soporte()` en la base
+   exige que el token traiga aal2, asi que sin verificar el codigo
+   la RLS no devuelve un solo ticket aunque alguien llame la API
+   directo saltandose estas pantallas. Esto es solo la interfaz.
+   ════════════════════════════════════════════════════════════ */
+let _factorId = null;
+
+function claim(token, k){
+  try {
+    const p = token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
+    return JSON.parse(decodeURIComponent(escape(atob(p))))[k];
+  } catch(e) { return null; }
+}
+
+async function factoresDelUsuario(){
+  const r = await sFetch(SUPA_URL + '/auth/v1/user');
+  if (!r.ok) throw new Error('HTTP ' + r.status + ' al leer la cuenta');
+  const u = await r.json();
+  const fs = (u.factors || []).filter(f => f.status === 'verified');
+  return fs;
+}
+
+// Devuelve true si ya quedo con aal2; false si hay que mostrar la pantalla.
+async function resolverMfa(){
+  if (claim(_ses.access_token, 'aal') === 'aal2') return true;
+
+  const verificados = await factoresDelUsuario();
+  document.getElementById('v-login').classList.add('oculto');
+  document.getElementById('v-mfa').classList.remove('oculto');
+
+  if (verificados.length) {
+    // Ya tiene factor: solo pedir el codigo.
+    _factorId = verificados[0].id;
+    document.getElementById('mf-alta').classList.add('oculto');
+  } else {
+    // Primera vez: dar de alta el factor y mostrar el QR.
+    const r = await sFetch(SUPA_URL + '/auth/v1/factors', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ friendly_name:'Consola VOTERA', factor_type:'totp' })
+    });
+    const d = await r.json();
+    if (!r.ok || !d.id) {
+      throw new Error((d.msg || d.error_description || 'no se pudo dar de alta el segundo factor') +
+        '. Si dice que MFA no está habilitado, actívalo en el dashboard de Supabase.');
+    }
+    _factorId = d.id;
+    const qr = (d.totp && d.totp.qr_code) || '';
+    document.getElementById('mf-qr').innerHTML =
+      qr ? '<img alt="Código QR" src="' + (qr.startsWith('data:') ? qr : 'data:image/svg+xml;utf8,' + encodeURIComponent(qr)) + '">'
+         : '<div style="color:#333;font-size:12px">Usa la clave de abajo</div>';
+    document.getElementById('mf-secreto').textContent = (d.totp && d.totp.secret) || '—';
+    document.getElementById('mf-alta').classList.remove('oculto');
+  }
+  document.getElementById('mf-code').focus();
+  return false;
+}
+
+async function verificarMfa(){
+  ocultar('mf-err');
+  const code = (document.getElementById('mf-code').value || '').replace(/\D/g,'');
+  if (code.length !== 6) { mostrar('mf-err','El código es de 6 dígitos.'); return; }
+
+  const btn = document.getElementById('btn-mfa');
+  if (btn.disabled) return;
+  btn.disabled = true; btn.textContent = 'Verificando…';
+  try {
+    const rc = await sFetch(SUPA_URL + '/auth/v1/factors/' + _factorId + '/challenge', { method:'POST' });
+    const dc = await rc.json();
+    if (!rc.ok || !dc.id) throw new Error(dc.msg || 'no se pudo iniciar la verificación');
+
+    const rv = await sFetch(SUPA_URL + '/auth/v1/factors/' + _factorId + '/verify', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ challenge_id: dc.id, code: code })
+    });
+    const dv = await rv.json();
+    if (!rv.ok || !dv.access_token) throw new Error(dv.msg || 'código incorrecto o vencido');
+
+    // El token nuevo ya trae aal2: con este si responde la RLS.
+    _ses.access_token  = dv.access_token;
+    _ses.refresh_token = dv.refresh_token || _ses.refresh_token;
+    guardarSesion(_ses);
+
+    document.getElementById('mf-code').value = '';
+    document.getElementById('v-mfa').classList.add('oculto');
+    await trasAutenticar();
+  } catch(e) {
+    mostrar('mf-err','No se pudo verificar: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Verificar';
+  }
+}
+
+/* Ya con aal2: ¿es realmente del equipo? Lo decide la BASE. */
+async function trasAutenticar(){
+  const esSop = await rpc('es_soporte');
+  if (esSop !== true) {
+    salir();
+    throw new Error('esta cuenta no pertenece al equipo de soporte');
+  }
+  await arrancarApp();
+}
+
 /* ── Login ──────────────────────────────────────────────── */
 async function entrar(){
   ocultar('lg-err');
@@ -366,15 +523,12 @@ async function entrar(){
     if (!r.ok || !d.access_token) throw new Error(d.error_description || d.msg || 'credenciales inválidas');
 
     _ses = { access_token:d.access_token, refresh_token:d.refresh_token, email:mail, ts:Date.now() };
-
-    // La cuenta existe, pero ¿es de soporte? Lo decide la BASE, no el cliente.
-    const esSop = await rpc('es_soporte');
-    if (esSop !== true) {
-      _ses = null;
-      throw new Error('esta cuenta no pertenece al equipo de soporte');
-    }
     guardarSesion(_ses);
-    await arrancarApp();
+
+    // El segundo factor va ANTES de preguntar si es soporte: con aal1,
+    // es_soporte() responde false y no podriamos distinguir "no es del
+    // equipo" de "aun no ha verificado el codigo".
+    if (await resolverMfa()) await trasAutenticar();
   } catch(e) {
     mostrar('lg-err','No se pudo entrar: ' + e.message);
   } finally {
@@ -632,16 +786,27 @@ async function responder(interno){
   } finally { btn.disabled = false; }
 }
 
-/* ── Arranque: si ya hay sesión guardada, entrar directo ── */
+/* ── Arranque ───────────────────────────────────────────── */
 (async function init(){
+  // Franja de ambiente, antes que nada.
+  if (ENV !== 'production') {
+    document.getElementById('franja-env').className = 'franja-env';
+    document.getElementById('franja-env').textContent =
+      '⚠ AMBIENTE DE PRUEBAS (' + ENV.toUpperCase() + ') — estos tickets NO son de clientes reales';
+  }
+
   const s = leerSesion();
   if (!s || !s.access_token) return;
   _ses = s;
   try {
-    const esSop = await rpc('es_soporte');
-    if (esSop === true) { await arrancarApp(); return; }
+    // Si el token guardado ya trae aal2, se entra directo; si no, se pide el
+    // codigo otra vez. Nunca se salta el segundo factor por venir de cache.
+    if (await resolverMfa()) await trasAutenticar();
+    return;
   } catch(e) {}
   // Sesión vencida o cuenta ya sin permiso: de vuelta al login, sin ruido.
+  document.getElementById('v-mfa').classList.add('oculto');
+  document.getElementById('v-login').classList.remove('oculto');
   localStorage.removeItem(SESION_KEY);
   _ses = null;
 })();
