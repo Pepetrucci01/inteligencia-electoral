@@ -534,11 +534,26 @@ async function entrar(){
     if (!r.ok || !d.access_token) throw new Error(d.error_description || d.msg || 'credenciales inválidas');
 
     _ses = { access_token:d.access_token, refresh_token:d.refresh_token, email:mail, ts:Date.now() };
+
+    // [FIX] Filtro de pertenencia ANTES de tocar el segundo factor.
+    // Sin esto, cualquier cuenta valida del sistema (un super_admin, por
+    // ejemplo) llegaba hasta la pantalla del QR y podia enrolar un factor
+    // aqui — que fue justo lo que paso al entrar con admin@sistema.mx por
+    // autocompletado del navegador: el factor termino en la cuenta
+    // equivocada y el enrolamiento parecia roto sin estarlo.
+    // Se usa es_staff_registrado(), que NO exige aal2: es_soporte() daria
+    // false con un token recien nacido y no podriamos distinguir "no eres
+    // del equipo" de "aun no verificas el codigo".
+    let pertenece = false;
+    try { pertenece = await rpc('es_staff_registrado'); } catch(e) { pertenece = false; }
+    if (pertenece !== true) {
+      _ses = null;
+      throw new Error('esta cuenta no pertenece al equipo de soporte');
+    }
+
     guardarSesion(_ses);
 
-    // El segundo factor va ANTES de preguntar si es soporte: con aal1,
-    // es_soporte() responde false y no podriamos distinguir "no es del
-    // equipo" de "aun no ha verificado el codigo".
+    // El segundo factor va despues: ya sabemos que es del equipo.
     if (await resolverMfa()) await trasAutenticar();
   } catch(e) {
     mostrar('lg-err','No se pudo entrar: ' + e.message);
