@@ -28,6 +28,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- Superficie interna: no debe acabar en resultados de busqueda. -->
+<meta name="robots" content="noindex,nofollow,noarchive">
 <title>Consola de Soporte · VOTERA</title>
 <link rel="icon" href="data:,">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -226,10 +228,42 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
    Sin theme.js ni supabase_client.js: esta consola es
    independiente del lado del cliente. Solo la anon key, que es
    publica por diseño — todo el acceso lo decide la RLS.
+
+   AMBIENTE: se detecta por dominio con el MISMO criterio que
+   supabase_client.js (production SOLO si el host es exactamente
+   uno de produccion; cualquier otra cosa cae a staging, que es
+   el default seguro). Antes esto estaba escrito a mano apuntando
+   a staging: el dia del despliegue a produccion, la consola
+   habria seguido leyendo tickets de staging SIN AVISAR, y nadie
+   lo habria notado hasta que un cliente reclamara que su ticket
+   nunca fue atendido.
+   ⚠️ Al dar de alta soporte.votera.mx hay que añadirlo A LAS DOS
+      listas: aqui y en supabase_client.js.
    ════════════════════════════════════════════════════════════ */
-const SUPA_URL = 'https://dyirhwwmykskpuvzcafx.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5aXJod3dteWtza3B1dnpjYWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NTk3ODgsImV4cCI6MjA5NTEzNTc4OH0.2xe4cHqORGng1hnYPJ9ZiyT0r87fMijbUEJqBy3-xoI';
-const SESION_KEY = 'votera_soporte_sesion';
+const DOMINIOS_PRODUCCION = [
+  'inteligencia-electoral.vercel.app',
+  // 'votera.mx',
+  // 'www.votera.mx',
+  // 'soporte.votera.mx',
+];
+const _ES_PROD = DOMINIOS_PRODUCCION.includes(window.location.hostname);
+const _CFG = {
+  staging: {
+    url: 'https://dyirhwwmykskpuvzcafx.supabase.co',
+    key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5aXJod3dteWtza3B1dnpjYWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NTk3ODgsImV4cCI6MjA5NTEzNTc4OH0.2xe4cHqORGng1hnYPJ9ZiyT0r87fMijbUEJqBy3-xoI'
+  },
+  production: {
+    url: 'https://jawymbrpglddhhlizifk.supabase.co',
+    key: 'sb_publishable_sFoiB-_SwBEONPhxg9-LnQ_0k2f2zzY'
+  }
+};
+const ENV      = _ES_PROD ? 'production' : 'staging';
+const SUPA_URL = _CFG[ENV].url;
+const SUPA_KEY = _CFG[ENV].key;
+// Que el agente SEPA a que base esta conectado: atender un ticket contra el
+// ambiente equivocado es peor que no atenderlo.
+console.log('Consola de soporte · ambiente: ' + ENV.toUpperCase() + ' · ' + SUPA_URL);
+const SESION_KEY = 'votera_soporte_sesion_' + ENV;
 
 let _ses = null;
 let _ticketActual = null;

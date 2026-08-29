@@ -1,0 +1,13 @@
+{
+  "rewrites": [
+    { "source": "/soporte", "destination": "/consola_soporte.html" }
+  ],
+  "headers": [
+    {
+      "source": "/consola_soporte.html",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow" }
+      ]
+    }
+  ]
+}
