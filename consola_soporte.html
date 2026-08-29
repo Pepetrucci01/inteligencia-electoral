@@ -419,15 +419,16 @@ async function factoresDelUsuario(){
   const r = await sFetch(SUPA_URL + '/auth/v1/user');
   if (!r.ok) throw new Error('HTTP ' + r.status + ' al leer la cuenta');
   const u = await r.json();
-  const fs = (u.factors || []).filter(f => f.status === 'verified');
-  return fs;
+  return u.factors || [];
 }
 
 // Devuelve true si ya quedo con aal2; false si hay que mostrar la pantalla.
 async function resolverMfa(){
   if (claim(_ses.access_token, 'aal') === 'aal2') return true;
 
-  const verificados = await factoresDelUsuario();
+  const todos       = await factoresDelUsuario();
+  const verificados = todos.filter(f => f.status === 'verified');
+
   document.getElementById('v-login').classList.add('oculto');
   document.getElementById('v-mfa').classList.remove('oculto');
 
@@ -436,15 +437,25 @@ async function resolverMfa(){
     _factorId = verificados[0].id;
     document.getElementById('mf-alta').classList.add('oculto');
   } else {
-    // Primera vez: dar de alta el factor y mostrar el QR.
+    // [FIX] Antes solo se miraban los factores VERIFICADOS, asi que un factor
+    // a medio enrolar (alta hecha, codigo nunca confirmado) quedaba invisible:
+    // se intentaba dar de alta otro, GoTrue rechazaba el duplicado, el error
+    // saltaba al catch, se borraba la sesion y se volvia al login. Un bucle
+    // donde cada intento creaba el problema del siguiente.
+    // Ahora se limpian los pendientes y se empieza de cero, con un QR nuevo.
+    for (const f of todos.filter(x => x.status !== 'verified')) {
+      try { await sFetch(SUPA_URL + '/auth/v1/factors/' + f.id, { method:'DELETE' }); }
+      catch(e) { console.warn('no se pudo limpiar el factor pendiente', f.id); }
+    }
+
     const r = await sFetch(SUPA_URL + '/auth/v1/factors', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ friendly_name:'Consola VOTERA', factor_type:'totp' })
+      // Nombre unico: si quedara algun resto, no choca por nombre repetido.
+      body: JSON.stringify({ friendly_name:'Consola VOTERA ' + Date.now(), factor_type:'totp' })
     });
     const d = await r.json();
     if (!r.ok || !d.id) {
-      throw new Error((d.msg || d.error_description || 'no se pudo dar de alta el segundo factor') +
-        '. Si dice que MFA no está habilitado, actívalo en el dashboard de Supabase.');
+      throw new Error(d.msg || d.error_description || d.error || 'no se pudo dar de alta el segundo factor');
     }
     _factorId = d.id;
     const qr = (d.totp && d.totp.qr_code) || '';
@@ -803,8 +814,18 @@ async function responder(interno){
     // codigo otra vez. Nunca se salta el segundo factor por venir de cache.
     if (await resolverMfa()) await trasAutenticar();
     return;
-  } catch(e) {}
-  // Sesión vencida o cuenta ya sin permiso: de vuelta al login, sin ruido.
+  } catch(e) {
+    // [FIX] Antes cualquier fallo aqui borraba la sesion y devolvia al login
+    // SIN DECIR POR QUE, que es como se veia el bucle del factor a medias.
+    // Ahora el error se muestra y la sesion solo se descarta si de verdad
+    // esta vencida (401), no ante cualquier tropiezo.
+    const vencida = /401|JWT|expired|invalid/i.test(e.message || '');
+    if (!vencida) {
+      document.getElementById('v-mfa').classList.remove('oculto');
+      mostrar('mf-err', 'No se pudo preparar la verificación: ' + e.message);
+      return;
+    }
+  }
   document.getElementById('v-mfa').classList.add('oculto');
   document.getElementById('v-login').classList.remove('oculto');
   localStorage.removeItem(SESION_KEY);
