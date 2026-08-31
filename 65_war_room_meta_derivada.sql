@@ -1,29 +1,34 @@
--- ============================================================
---  C7 — RPC War Room KPIs  ·  SIE Colima 2027
+-- ═══════════════════════════════════════════════════════════════════════════
+-- VOTERA — 65: War Room KPIs con META DERIVADA (no quemada)
+-- Proyecto staging: dyirhwwmykskpuvzcafx
 --
---  ⚠ ACTUALIZADO 31/08/2026 — ESTE ARCHIVO ESTABA DOBLEMENTE ATRASADO.
+-- Parte del SQL 49 (que ya incluía a 'consulta' como alcance estatal) y
+-- corrige tres cosas:
 --
---    La versión original:
---      1. Traía META_ESTATAL constant integer := 197297 (meta quemada).
---      2. Era ANTERIOR al SQL 49, o sea que tampoco incluía a 'consulta'
---         en los roles estatales.
---    Correrlo revertía las dos cosas a la vez.
+--   A) META QUEMADA. META_ESTATAL := 197297 era una constante dentro de la
+--      función. Nunca leía la base. Por eso ningún UPDATE a licencias.meta_estatal
+--      cambiaba nada en el War Room. Ahora la meta se DERIVA de la suma de
+--      casillas.meta_proyectada.
 --
---    El cuerpo de abajo es el del archivo 65_war_room_meta_derivada.sql,
---    que es la versión VIGENTE. Correr este archivo ya es seguro.
+--   B) DENOMINADOR SIN FILTRO TERRITORIAL. El filtro de municipio se aplicaba a
+--      los ciudadanos pero la meta se quedaba estatal. Un coordinador de Comala
+--      veía su total municipal dividido entre la meta de TODO el estado, así que
+--      su barra de avance no significaba nada. Ahora la meta usa el mismo filtro
+--      que la base.
 --
---  Función SECURITY DEFINER: calcula agregados del War Room saltando RLS de
---  forma controlada, pero devolviendo SOLO números (cero filas de ciudadanos
---  = cero PII expuesta).
+--   C) AISLAMIENTO MULTI-TENANT. La condición (v_licencia IS NULL OR
+--      c.licencia_id = v_licencia) abría TODAS las licencias cuando el usuario
+--      tenía licencia_id en NULL. La función es SECURITY DEFINER, o sea que se
+--      salta el RLS: esa línea era el único aislamiento que había. Ahora si no
+--      hay licencia, se deniega.
 --
---  Alcance por rol (decidido DENTRO de la función, no confiable desde el
---  frontend):
---    super_admin / admin / coordinador_estatal / consulta -> todo el estado
---    coordinador con municipio IS NULL                    -> todo el estado
---    coordinador con municipio asignado                   -> solo su municipio
---    cualquier otro rol                                   -> acceso denegado
---    sin licencia_id                                      -> acceso denegado
--- ============================================================
+-- Se agrega la llave 'meta_fuente' al jsonb para que la UI pueda mostrar un
+-- indicador visible cuando la meta viene del respaldo y no de las casillas.
+--
+-- ✅ APLICADO EN STAGING EL 31/08/2026. Validado antes del swap con la versión
+--   _v2 desde el preview: super_admin -> 208754 estatal, coord.a@demo.mx -> 48664
+--   municipio:COLIMA, y el total de ciudadanos idéntico en ambas versiones.
+-- ═══════════════════════════════════════════════════════════════════════════
 
 CREATE OR REPLACE FUNCTION public.get_war_room_kpis()
 RETURNS jsonb
@@ -189,9 +194,62 @@ $$;
 REVOKE ALL ON FUNCTION public.get_war_room_kpis() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.get_war_room_kpis() TO authenticated;
 
+
 -- ═══════════════════════════════════════════════════════════════════════════
--- VERIFICACIÓN RÁPIDA (desde el frontend, logueado — NO desde el SQL Editor)
---   super_admin      -> meta 208754,  alcance 'estatal'
---   coord.a@demo.mx  -> meta  48664,  alcance 'municipio:COLIMA'
---   consulta@demo.mx -> meta 208754,  alcance 'estatal', sin HTTP 400
+-- VALIDACIÓN — correr ANTES de hacer el swap
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- 1) La meta esperada por alcance. Estatal debe dar 208,754.
+--    Los 10 municipios deben SUMAR exactamente ese estatal.
+SELECT COALESCE(municipio,'** ESTATAL **') AS alcance,
+       SUM(meta_proyectada)               AS meta_esperada
+FROM   public.casillas
+WHERE  licencia_id = 'a1b2c3d4-0001-0000-0000-000000000001'
+  AND  activo
+GROUP  BY ROLLUP(municipio)
+ORDER  BY 1;
+
+-- 2) Comparar vieja contra nueva, logueado desde el FRONTEND con cada usuario.
+--    El SQL Editor corre como service_role y auth.uid() no se comporta igual,
+--    así que esta prueba NO sirve desde el editor.
+--
+--    super_admin      -> meta 208754, alcance 'estatal'
+--    coord.a@demo.mx  -> meta la de COLIMA,           alcance 'municipio:COLIMA'
+--    coord.b@demo.mx  -> meta la de VILLA DE ALVAREZ, alcance 'municipio:VILLA DE ALVAREZ'
+--    consulta@demo.mx -> meta 208754, alcance 'estatal' (no debe dar HTTP 400)
+--
+--    En la consola del navegador:
+--      await supabase.rpc('get_war_room_kpis')      // vieja
+--      await supabase.rpc('get_war_room_kpis')   // nueva
+--    Todas las llaves deben ser IDÉNTICAS excepto meta, pct_avance y meta_fuente.
+
+-- 3) Que ningún rol se haya quedado fuera sin querer.
+--    Estos siguen dando 'Rol no autorizado': jefe_seccion, capturista,
+--    operador_cc, repr_casilla. Si alguno ve algo del War Room en el hub,
+--    le va a salir HTTP 400 — revisar contra la matriz de roles.
+
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- ESTADO: APLICADO — 31/08/2026
+-- ═══════════════════════════════════════════════════════════════════════════
+--
+--  Hecho:
+--    ✔ Validado con get_war_room_kpis_v2 antes del swap (frontend, no SQL Editor)
+--    ✔ Swap aplicado sobre la función real
+--    ✔ get_war_room_kpis_v2 eliminada
+--    ✔ 49_consulta_war_room_kpis.sql y get_war_room_kpis.sql actualizados para
+--      que no reviertan este cambio si alguien los vuelve a correr
+--
+--  Resultados de la validación:
+--    super_admin       meta 208754  total 14275  pct 6.84  estatal
+--    coord.a@demo.mx   meta  48664  total  3571  pct 7.34  municipio:COLIMA
+--    El total de ciudadanos NO cambió respecto a la versión anterior.
+--
+--  PENDIENTE (frontend, no base): theme.js sigue horneando 208,748 y recalcula
+--  el porcentaje por su cuenta, así que la barra del hub todavía ignora el
+--  'meta' que manda esta RPC. También existe cargarMetaEstatalSupabase() como
+--  tercera ruta para la meta, y ie_metas_casilla_horneado.js dice 208,717.
+--
+--  Este archivo es la versión VIGENTE de get_war_room_kpis. Cualquier cambio
+--  futuro se hace aquí y se replica en los otros dos.
 -- ═══════════════════════════════════════════════════════════════════════════

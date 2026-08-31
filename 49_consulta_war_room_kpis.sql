@@ -2,23 +2,31 @@
 -- VOTERA — 49: permitir al rol 'consulta' leer get_war_room_kpis
 -- Proyecto staging: dyirhwwmykskpuvzcafx
 --
--- El rol consulta ve War Room/Mapa/Reportes en SOLO LECTURA (matriz de roles),
--- pero get_war_room_kpis lo mandaba al RAISE 'Rol no autorizado' → HTTP 400 →
--- el panel de inicio del consulta no cargaba KPIs. Fix: tratar 'consulta' como
--- alcance ESTATAL (observador global de solo lectura, ve todo el estado sin
--- filtro territorial). Solo se toca la rama de decisión de alcance; el cálculo
--- de KPIs no cambia. consulta no escribe nada (esto es una función de lectura).
+-- ⚠ ACTUALIZADO 31/08/2026 — ESTE ARCHIVO YA NO TRAE LA META QUEMADA.
 --
--- Es un CREATE OR REPLACE de la función existente con la sola diferencia de
--- añadir 'consulta' a la lista de roles estatales.
+--   La versión original de este archivo declaraba META_ESTATAL constant
+--   integer := 197297 dentro de la función. Si se volvía a correr, revertía
+--   la meta a esa cifra y rompía el War Room otra vez.
+--
+--   El cuerpo de abajo es ahora el del archivo 65_war_room_meta_derivada.sql,
+--   que es la versión VIGENTE. Correr este archivo ya es seguro: deja la
+--   función igual que el 65.
+--
+--   Cualquier cambio futuro a get_war_room_kpis se hace en el 65 y se replica
+--   aquí, no al revés.
+--
+-- Lo que aportó originalmente el 49 y se conserva:
+--   'consulta' cuenta como alcance ESTATAL (observador global de solo lectura).
+--   Antes caía en el RAISE 'Rol no autorizado' → HTTP 400 → el panel de inicio
+--   del rol consulta no cargaba KPIs.
 -- ═══════════════════════════════════════════════════════════════════════════
 
 CREATE OR REPLACE FUNCTION public.get_war_room_kpis()
- RETURNS jsonb
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public          -- evita secuestro de search_path
+AS $$
 DECLARE
   v_rol         text;
   v_municipio   text;
@@ -26,7 +34,8 @@ DECLARE
   v_es_estatal  boolean;
   v_filtro_mun  text;             -- NULL = sin filtro (estatal)
   v_resultado   jsonb;
-  META_ESTATAL  constant integer := 197297;
+  v_meta        integer;          -- [A] antes era: META_ESTATAL constant := 197297
+  v_meta_fuente text;
 BEGIN
   -- ── 1. Identificar al usuario que llama (vía su token) ──────
   SELECT rol, municipio, licencia_id
@@ -39,9 +48,14 @@ BEGIN
     RAISE EXCEPTION 'Usuario sin perfil o no autenticado';
   END IF;
 
+  -- ── 1b. [C] Candado de aislamiento multi-tenant ────────────
+  --    SECURITY DEFINER se salta el RLS. Sin licencia no hay a qué acotar,
+  --    así que se deniega en vez de abrir todas las licencias.
+  IF v_licencia IS NULL THEN
+    RAISE EXCEPTION 'Usuario % sin licencia asignada: acceso denegado al War Room', v_rol;
+  END IF;
+
   -- ── 2. Decidir alcance territorial según rol ───────────────
-  --    'consulta' se añade como estatal: observador global de solo lectura
-  --    (ve todo el estado, no escribe nada — esto es una función de lectura).
   v_es_estatal :=
         v_rol IN ('super_admin','admin','coordinador_estatal','consulta')
      OR (v_rol = 'coordinador' AND v_municipio IS NULL);
@@ -54,11 +68,36 @@ BEGIN
     RAISE EXCEPTION 'Rol % no autorizado para War Room', v_rol;
   END IF;
 
+  -- ── 2b. [A][B] META DERIVADA, con el MISMO filtro territorial ──
+  --    Fuente de verdad: suma de casillas.meta_proyectada activas.
+  --    Referencia canónica del archivo dorado: 208,748.31 (CONFIGURACIÓN D4).
+  --    La suma de enteros da 208,754 — los 6 de diferencia son el redondeo por
+  --    casilla, y ya están contemplados en la tolerancia ±15 de
+  --    importar_carga_maestra.
+  SELECT COALESCE(SUM(k.meta_proyectada), 0)
+    INTO v_meta
+  FROM public.casillas k
+  WHERE k.licencia_id = v_licencia
+    AND k.activo
+    AND (v_filtro_mun IS NULL OR k.municipio = v_filtro_mun);
+
+  v_meta_fuente := 'casillas';
+
+  -- Respaldo: si no hay casillas cargadas, cae a la cifra de la licencia.
+  IF COALESCE(v_meta, 0) = 0 THEN
+    SELECT l.meta_estatal INTO v_meta
+    FROM public.licencias l
+    WHERE l.id = v_licencia;
+
+    v_meta        := COALESCE(v_meta, 0);
+    v_meta_fuente := CASE WHEN v_meta > 0 THEN 'licencia' ELSE 'sin_meta' END;
+  END IF;
+
   -- ── 3. Calcular todos los KPIs en una sola pasada ──────────
   WITH base AS (
     SELECT *
     FROM public.ciudadanos c
-    WHERE (v_licencia IS NULL OR c.licencia_id = v_licencia)
+    WHERE c.licencia_id = v_licencia              -- [C] sin la fuga del OR NULL
       AND (v_filtro_mun IS NULL OR c.municipio = v_filtro_mun)
   ),
   totales AS (
@@ -115,9 +154,12 @@ BEGIN
     ) s
   )
   SELECT jsonb_build_object(
-    'meta',          META_ESTATAL,
+    'meta',          v_meta,
+    'meta_fuente',   v_meta_fuente,          -- casillas | licencia | sin_meta
     'total',         t.total,
-    'pct_avance',    ROUND( (t.total::numeric / META_ESTATAL) * 100, 2),
+    'pct_avance',    CASE WHEN v_meta > 0    -- [A] guarda contra división entre cero
+                          THEN ROUND( (t.total::numeric / v_meta) * 100, 2)
+                          ELSE 0 END,
     'seguro',        t.seguro,
     'apoyos',        t.apoyos,
     'influencia',    t.influencia,
@@ -137,8 +179,15 @@ BEGIN
 
   RETURN v_resultado;
 END;
-$function$;
+$$;
 
--- ── VERIFICACIÓN: entrar como consulta@demo.mx y ver que el panel de inicio
---    carga los KPIs (14,275 capturados) sin el error HTTP 400 en consola.
+-- ── Permisos (venían del archivo get_war_room_kpis, el SQL 49 los omitía) ──
+REVOKE ALL ON FUNCTION public.get_war_room_kpis() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_war_room_kpis() TO authenticated;
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- VERIFICACIÓN RÁPIDA (desde el frontend, logueado — NO desde el SQL Editor)
+--   super_admin      -> meta 208754,  alcance 'estatal'
+--   coord.a@demo.mx  -> meta  48664,  alcance 'municipio:COLIMA'
+--   consulta@demo.mx -> meta 208754,  alcance 'estatal', sin HTTP 400
 -- ═══════════════════════════════════════════════════════════════════════════
