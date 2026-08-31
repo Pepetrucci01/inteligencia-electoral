@@ -245,7 +245,7 @@ body.rol-consulta     .kpi-estatal { display:none; }
     <div class="estado-card">
       <div class="estado-lbl">Estado activo</div>
       <div class="estado-nom" data-theme="sistema-titulo">Colima 2027</div>
-      <div class="estado-meta"><span data-theme="sistema-meta" id="ix-meta-side">208,717</span> meta</div>
+      <div class="estado-meta"><span data-theme="sistema-meta" id="ix-meta-side">208,754</span> meta</div>
     </div>
   </div>
 
@@ -413,11 +413,11 @@ body.rol-consulta     .kpi-estatal { display:none; }
       <div class="pb-label">Avance vs meta <span data-theme="sistema-anio">2027</span></div>
       <div class="pb-track"><div class="pb-fill" id="hub-pb-fill" style="width:5.1%"></div></div>
       <div class="pb-pct" id="hub-pb-pct">5.1%</div>
-      <div class="pb-nums" id="hub-pb-nums"><span id="hub-pb-cap">10,000</span> / <span data-theme="sistema-meta">208,717</span></div>
+      <div class="pb-nums" id="hub-pb-nums"><span id="hub-pb-cap">10,000</span> / <span data-theme="sistema-meta">208,754</span></div>
     </div>
 
     <div class="kpi-row">
-      <div class="kpi bl kpi-estatal" data-tip="Total de simpatizantes que la candidatura se propuso captar en todo el estado para 2027."><div class="kv" data-theme="sistema-meta" id="ix-meta-kpi">208,717</div><div class="kl">Meta estatal</div></div>
+      <div class="kpi bl kpi-estatal" data-tip="Total de simpatizantes que la candidatura se propuso captar en todo el estado para 2027."><div class="kv" data-theme="sistema-meta" id="ix-meta-kpi">208,754</div><div class="kl">Meta estatal</div></div>
       <div class="kpi gr" data-tip="Simpatizantes registrados hasta hoy en el padrón de la campaña."><div class="kv" id="hub-kpi-total">10,000</div><div class="kl">Capturados</div></div>
       <div class="kpi gr" data-tip="Simpatizantes con nivel de compromiso alto (3 o 4): se considera que su voto está asegurado."><div class="kv" id="hub-kpi-seguro">4,601</div><div class="kl">Voto seguro</div></div>
       <div class="kpi am" data-tip="Simpatizantes marcados como posible fuga de voto. Requieren visita o seguimiento para no perderlos."><div class="kv" id="hub-kpi-riesgo">2,203</div><div class="kl">En riesgo</div></div>
@@ -712,9 +712,9 @@ function cerrarSesion(){
     const SUPA_URL = 'https://dyirhwwmykskpuvzcafx.supabase.co';
     const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5aXJod3dteWtza3B1dnpjYWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NTk3ODgsImV4cCI6MjA5NTEzNTc4OH0.2xe4cHqORGng1hnYPJ9ZiyT0r87fMijbUEJqBy3-xoI';
     const LICENCIA = (window._sesion?.licencia_id) || 'a1b2c3d4-0001-0000-0000-000000000001';
-    // [SWAP LUIS] meta desde IE_METAS_CASILLA (208,717); fallback demo-safe
+    // [SWAP LUIS] meta desde IE_METAS_CASILLA (208,754); fallback demo-safe
     const META = (typeof window.SISTEMA_META==='number' && window.SISTEMA_META>0) ? window.SISTEMA_META
-                 : ((typeof IE_METAS_CASILLA!=='undefined' && IE_METAS_CASILLA.meta_estatal) ? IE_METAS_CASILLA.meta_estatal : 208717);
+                 : ((typeof IE_METAS_CASILLA!=='undefined' && IE_METAS_CASILLA.meta_estatal) ? IE_METAS_CASILLA.meta_estatal : 208754);
     const fmt = n => Math.round(n).toLocaleString('es-MX');
     // [SWAP LUIS] Sincroniza tarjetas de META visibles con el valor horneado (demo sin sesión)
     (function(){ const mtxt=fmt(META);
@@ -774,6 +774,9 @@ function cerrarSesion(){
       set('hub-kpi-total',  fmt(total));
       set('hub-kpi-seguro', fmt(seguro));
       set('hub-kpi-riesgo', fmt(riesgo));
+      // [FIX 31/08] Duplicados nunca se leia de la RPC: la tarjeta se quedaba
+      // con el 408 horneado del HTML, identico para todos los roles.
+      set('hub-kpi-dup', fmt(Number(kpis.depurar) || 0));
       set('hub-pb-pct',  pct + '%');
       // [v90] Antes: set('hub-pb-nums', total+' / '+meta) reemplazaba el nodo
       // completo y destruia el span [data-theme="sistema-meta"]. Despues,
@@ -788,6 +791,11 @@ function cerrarSesion(){
       // impone otra meta — asi el porcentaje siempre corresponde al
       // denominador que se ve en pantalla.
       window.__hubTotal = total;
+      // [FIX 31/08] La meta de la RPC ya viene acotada al alcance del usuario
+      // (estatal o municipal). Se publica para que aplicarMeta() no la pise
+      // con la meta estatal.
+      window.__hubMeta    = METAk;
+      window.__hubAlcance = kpis.alcance || '';
       const fill = document.getElementById('hub-pb-fill');
       if(fill) fill.style.width = pct + '%';
       console.log(`✅ Hub KPIs: ${total} capturados (RPC)`);
@@ -804,15 +812,19 @@ function cerrarSesion(){
 <script src="theme.js"></script>
 <script>
 // [SWAP LUIS] Corrección final de META: corre DESPUÉS de theme.js para que el
-// valor horneado (208,717) tenga la última palabra sobre las tarjetas que
+// valor horneado (208,754) tenga la última palabra sobre las tarjetas que
 // theme.js rellena desde config. En Fase 4, theme.js leerá sistema_meta de
 // Supabase y este bloque se puede retirar.
 (function(){
-  // [T20/21] Fuente única de meta: Supabase viva (window.SISTEMA_META) -> horneado -> 208717.
+  // [T20/21] Fuente única de meta: Supabase viva (window.SISTEMA_META) -> horneado -> 208754.
   function metaActual(){
+    // [FIX 31/08] La meta de la RPC manda: es la unica que respeta el alcance
+    // territorial del usuario. Un coordinador municipal debe ver SU meta, no
+    // la del estado. Las de abajo son respaldo por si la RPC no respondio.
+    if(typeof window.__hubMeta==='number' && window.__hubMeta>0) return window.__hubMeta;
     if(typeof window.SISTEMA_META==='number' && window.SISTEMA_META>0) return window.SISTEMA_META;
     if(typeof IE_METAS_CASILLA!=='undefined' && IE_METAS_CASILLA.meta_estatal) return IE_METAS_CASILLA.meta_estatal;
-    return 208717;
+    return 208754;
   }
   function fmtMeta(n){ return Math.round(n).toLocaleString('es-MX'); }
   function aplicarMeta(){

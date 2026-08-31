@@ -34,7 +34,7 @@ const DEFAULT_THEME = {
 
   // Datos operativos del cliente
   sistemaEstado:  'Colima',
-  sistemaMeta:    208717,        // número — se formatea automáticamente (meta Colima 2027 depurada)
+  sistemaMeta:    208754,        // número — se formatea automáticamente (meta Colima 2027 depurada)
   sistemaAnio:    2027,          // año de la elección
   fechaEleccion:  '2027-06-06', // ISO — para cuenta regresiva (fecha oficial elección)
 

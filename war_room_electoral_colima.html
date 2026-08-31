@@ -310,7 +310,7 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
   </div>
   <div class="fb f2" id="fb-f2" onclick="setFase(2)">
     🗳 &nbsp;FASE 2 — Día de la elección
-    <span class="fchip" style="background:rgba(239,68,68,.15);color:var(--red)">1 JUN 2027</span>
+    <span class="fchip" style="background:rgba(239,68,68,.15);color:var(--red)">6 JUN 2027</span>
   </div>
 </div>
 
@@ -323,7 +323,7 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
     <div class="fb-icon">✏️</div>
     <div>
       <div class="fb-title">FASE 1 — Captura de simpatizantes · En curso</div>
-      <div class="fb-sub">Avance de captura territorial · Meta: <span id="wr-meta-sub">197,297</span> simpatizantes · 334 días a la elección</div>
+      <div class="fb-sub">Avance de captura territorial · Meta: <span id="wr-meta-sub">208,754</span> simpatizantes · <span id="wr-dias-eleccion">279</span> días a la elección</div>
     </div>
   </div>
 
@@ -339,7 +339,7 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
     <span class="cfg-lbl">simpatizantes</span>
     <button class="cfg-btn" onclick="recalc()">⟳ RECALCULAR META</button>
     <span class="cfg-lbl">META ESTATAL CALCULADA:</span>
-    <span class="cfg-val" id="meta-calc">197,297</span>
+    <span class="cfg-val" id="meta-calc">208,754</span>
   </div>
 
   <div class="main">
@@ -349,12 +349,12 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
       <div class="pb-lbl">AVANCE ESTATAL VS META 2027</div>
       <div class="pb-track"><div class="pb-fill" id="pb-fill" style="width:7.2%;background:linear-gradient(90deg,#1d4ed8,#3b82f6)"></div></div>
       <div class="pb-pct" id="pb-pct" style="color:var(--accent)">7.2%</div>
-      <div class="pb-nums" id="pb-nums">14,300 / <span id="wr-meta-pb">197,297</span> capturados</div>
+      <div class="pb-nums" id="pb-nums">14,300 / <span id="wr-meta-pb">208,754</span> capturados</div>
     </div>
 
     <!-- KPIs -->
     <div class="kpi-row">
-      <div class="kpi bl"><div class="kl">Meta estatal <span data-theme="sistema-anio">2027</span></div><div class="kv" id="kpi-meta">197,297</div><div class="ks">votos proyectados</div></div>
+      <div class="kpi bl"><div class="kl">Meta estatal <span data-theme="sistema-anio">2027</span></div><div class="kv" id="kpi-meta">208,754</div><div class="ks">votos proyectados</div></div>
       <div class="kpi gr"><div class="kl">Total capturados</div><div class="kv" id="kpi-total-cap">14,300</div><div class="ks">registros activos</div></div>
       <div class="kpi gr"><div class="kl">Seguro vota</div><div class="kv" id="kpi-seguro-vota">3,432</div><div class="ks">nivel compromiso 3+4</div></div>
       <div class="kpi am"><div class="kl">Prioridad alta</div><div class="kv" id="kpi-atencion">2,757</div><div class="ks">requieren atención</div></div>
@@ -550,7 +550,7 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
 
   <div class="jornada-bar">
     <div>
-      <div class="j-title">🗳 JORNADA ELECTORAL EN CURSO — 1 JUNIO 2027</div>
+      <div class="j-title">🗳 JORNADA ELECTORAL EN CURSO — 6 JUNIO 2027</div>
       <div class="j-sub"><span id="j-total-casillas">—</span> casillas · 08:00–18:00 hrs · Colima</div>
     </div>
     <div class="j-reloj" id="f2-reloj">--:--:--</div>
@@ -767,16 +767,16 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
 let _totalCapturadosReal = 14300;
 
 const MUNS = [
-  {id:'TEC',n:'Tecomán',      cap:4475,meta:29211,secs:62, df:'DF2',cas:153,v24:6820,g24:'Partido A',p24:61.7},
-  {id:'MIN',n:'Minatitlán',   cap:625, meta:4329, secs:14, df:'DF2',cas:19, v24:1440,g24:'Partido A',p24:64.1},
-  {id:'IXT',n:'Ixtlahuacán',  cap:310, meta:2593, secs:12, df:'DF2',cas:12, v24:1280,g24:'Partido A',p24:61.4},
-  {id:'CML',n:'Comala',       cap:631, meta:6292, secs:22, df:'DF1',cas:35, v24:1640,g24:'Partido A',p24:47.7},
-  {id:'ARM',n:'Armería',      cap:688, meta:7337, secs:21, df:'DF2',cas:41, v24:2030,g24:'Partido A',p24:60.4},
-  {id:'VDA',n:'Villa de Álvarez',cap:1393,meta:34952,secs:70,df:'DF1',cas:189,v24:5220,g24:'Partido A',p24:47.0},
-  {id:'MAN',n:'Manzanillo',   cap:2108,meta:49083,secs:79, df:'DF2',cas:252,v24:8420,g24:'Partido A',p24:47.9},
-  {id:'COL',n:'Colima',       cap:1620,meta:48030,secs:99, df:'DF1',cas:247,v24:5180,g24:'Partido A',p24:45.4},
-  {id:'CUA',n:'Cuauhtémoc',   cap:619, meta:8061, secs:32, df:'DF1',cas:45, v24:2310,g24:'Partido A',p24:50.4},
-  {id:'COQ',n:'Coquimatlán',  cap:469, meta:6700, secs:23, df:'DF1',cas:30, v24:1820,g24:'Partido B',p24:52.7},
+  {id:'TEC',n:'Tecomán',      cap:4475,meta:29884,secs:61, df:'DF2',cas:153,v24:6820,g24:'Partido A',p24:61.7},
+  {id:'MIN',n:'Minatitlán',   cap:625, meta:4426, secs:7, df:'DF2',cas:19, v24:1440,g24:'Partido A',p24:64.1},
+  {id:'IXT',n:'Ixtlahuacán',  cap:310, meta:2594, secs:8, df:'DF2',cas:12, v24:1280,g24:'Partido A',p24:61.4},
+  {id:'CML',n:'Comala',       cap:631, meta:6403, secs:13, df:'DF1',cas:35, v24:1640,g24:'Partido A',p24:47.7},
+  {id:'ARM',n:'Armería',      cap:688, meta:8432, secs:21, df:'DF2',cas:41, v24:2030,g24:'Partido A',p24:60.4},
+  {id:'VDA',n:'Villa de Álvarez',cap:1393,meta:36937,secs:71,df:'DF1',cas:194,v24:5220,g24:'Partido A',p24:47.0},
+  {id:'MAN',n:'Manzanillo',   cap:2108,meta:58013,secs:79, df:'DF2',cas:256,v24:8420,g24:'Partido A',p24:47.9},
+  {id:'COL',n:'Colima',       cap:1620,meta:48664,secs:97, df:'DF1',cas:248,v24:5180,g24:'Partido A',p24:45.4},
+  {id:'CUA',n:'Cuauhtémoc',   cap:619, meta:8351, secs:18, df:'DF1',cas:45, v24:2310,g24:'Partido A',p24:50.4},
+  {id:'COQ',n:'Coquimatlán',  cap:469, meta:5050, secs:13, df:'DF1',cas:30, v24:1820,g24:'Partido B',p24:52.7},
 ];
 const DFS = [
   {id:'DF1',n:'Distrito Federal 1',munIds:['CML','VDA','COL','CUA','COQ']},
@@ -1060,7 +1060,7 @@ function sortWR(col) {
 }
 
 // [SWAP LUIS] meta base desde IE_METAS_CASILLA (208,717); fallback demo-safe
-const META_WR=(typeof IE_METAS_CASILLA!=='undefined' && IE_METAS_CASILLA.meta_estatal)?IE_METAS_CASILLA.meta_estatal:197297;
+const META_WR=(typeof IE_METAS_CASILLA!=='undefined' && IE_METAS_CASILLA.meta_estatal)?IE_METAS_CASILLA.meta_estatal:208754;
 function recalc(){
   const p=parseFloat(document.getElementById('cfg-pct').value)||6;
   const meta=Math.round(META_WR*(p/6));
@@ -3238,6 +3238,54 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 </script>
 <script src="ie_metas_casilla_horneado.js"></script>
+<script>
+/* [FIX 31/08] MUNS derivado del horneado, no quemado.
+   Antes: las metas municipales vivian en el literal MUNS (dataset de 2024,
+   sumaba 196,588). La ruta por RPC solo actualizaba m.cap; m.meta unicamente
+   se refrescaba en cargarDatosReales(), que es el FALLBACK. Como la RPC ahora
+   responde bien, nunca se entraba ahi y las metas municipales quedaban
+   congeladas: un coordinador de Colima veia 48,030 en vez de 48,664.
+   IE_METAS_CASILLA ya esta alineado 1:1 con casillas.meta_proyectada. */
+(function(){
+  try{
+    if(typeof IE_METAS_CASILLA==='undefined' || !IE_METAS_CASILLA.secciones) return;
+    if(typeof MUNS==='undefined') return;
+    var norm=function(x){return String(x||'').toUpperCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();};
+    var agg={};
+    Object.keys(IE_METAS_CASILLA.secciones).forEach(function(k){
+      var sec=IE_METAS_CASILLA.secciones[k], m=norm(sec.mun);
+      if(!agg[m]) agg[m]={meta:0,secs:0,cas:0};
+      agg[m].meta += Number(sec.meta_proyectada)||0;
+      agg[m].secs += 1;
+      agg[m].cas  += (sec.casillas||[]).length;
+    });
+    MUNS.forEach(function(m){
+      var a=agg[norm(m.n)];
+      if(a){ m.meta=a.meta; m.secs=a.secs; m.cas=a.cas; }
+    });
+    if(typeof DFS!=='undefined'){
+      DFS.forEach(function(df){
+        df.meta=MUNS.filter(function(m){return df.munIds.indexOf(m.id)>=0;})
+                    .reduce(function(s,m){return s+m.meta;},0);
+        df.secs=MUNS.filter(function(m){return df.munIds.indexOf(m.id)>=0;})
+                    .reduce(function(s,m){return s+m.secs;},0);
+        df.cas =MUNS.filter(function(m){return df.munIds.indexOf(m.id)>=0;})
+                    .reduce(function(s,m){return s+m.cas;},0);
+      });
+    }
+  }catch(e){ console.warn('MUNS desde horneado:', e); }
+})();
+/* [FIX 31/08] Dias a la eleccion calculados, no quemados (decia 334). */
+(function(){
+  try{
+    var f=(typeof FECHA_JORNADA!=='undefined')?FECHA_JORNADA:'2027-06-06';
+    var d=Math.ceil((new Date(f+'T00:00:00') - new Date())/864e5);
+    var el=document.getElementById('wr-dias-eleccion');
+    if(el) el.textContent = d>0 ? d : 0;
+  }catch(e){}
+})();
+</script>
 <script src="tooltips.js"></script>
 <script src="dataRefresh.js"></script>
 <script src="theme.js"></script>
