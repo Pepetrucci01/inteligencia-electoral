@@ -118,6 +118,13 @@ iframe{width:100%;height:100%;border:none;display:block;}
 /* [AISLAMIENTO] Ocultar KPIs estatales (meta estatal, operadores, secciones,
    sec. críticas) a roles que no son de alcance estatal. theme.js pone body.rol-X.
    Los roles estatales (super_admin, admin, coordinador_estatal) SÍ los ven. */
+/* [FIX 31/08] Las 4 tarjetas KPI ya NO llevan .kpi-estatal: la RPC las
+   devuelve acotadas al alcance del usuario, asi que un coordinador ve SUS
+   numeros (meta 48,664 / 14 operadores / 97 secciones / 50 criticas) en vez
+   de los del estado. Se ocultaban porque antes eran valores estatales
+   quemados y le habrian mentido.
+   El bloque .alerts SI conserva la clase: todavia trae numeros horneados
+   (408 duplicados, 183 secciones criticas). Quitarsela cuando se arreglen. */
 body.rol-coordinador  .kpi-estatal,
 body.rol-jefe_seccion .kpi-estatal,
 body.rol-capturista   .kpi-estatal,
@@ -417,14 +424,14 @@ body.rol-consulta     .kpi-estatal { display:none; }
     </div>
 
     <div class="kpi-row">
-      <div class="kpi bl kpi-estatal" data-tip="Total de simpatizantes que la candidatura se propuso captar en todo el estado para 2027."><div class="kv" data-theme="sistema-meta" id="ix-meta-kpi">208,754</div><div class="kl">Meta estatal</div></div>
+      <div class="kpi bl" id="hub-card-meta" data-tip="Total de simpatizantes que se propuso captar en tu alcance territorial para 2027."><div class="kv" data-theme="sistema-meta" id="ix-meta-kpi">208,754</div><div class="kl" id="hub-kl-meta">Meta estatal</div></div>
       <div class="kpi gr" data-tip="Simpatizantes registrados hasta hoy en el padrón de la campaña."><div class="kv" id="hub-kpi-total">10,000</div><div class="kl">Capturados</div></div>
       <div class="kpi gr" data-tip="Simpatizantes con nivel de compromiso alto (3 o 4): se considera que su voto está asegurado."><div class="kv" id="hub-kpi-seguro">4,601</div><div class="kl">Voto seguro</div></div>
       <div class="kpi am" data-tip="Simpatizantes marcados como posible fuga de voto. Requieren visita o seguimiento para no perderlos."><div class="kv" id="hub-kpi-riesgo">2,203</div><div class="kl">En riesgo</div></div>
       <div class="kpi re" data-tip="Registros repetidos en el padrón. Inflan artificialmente el avance y hay que depurarlos."><div class="kv" id="hub-kpi-dup">408</div><div class="kl">Duplicados</div></div>
-      <div class="kpi cy kpi-estatal" data-tip="Personas de la estructura de campo dadas de alta en el sistema (capturistas, coordinadores y líderes)."><div class="kv">60</div><div class="kl">Operadores</div></div>
-      <div class="kpi cy kpi-estatal" data-tip="Secciones electorales del estado sobre las que se organiza el trabajo territorial."><div class="kv">392</div><div class="kl">Secciones</div></div>
-      <div class="kpi re kpi-estatal" data-tip="Secciones con avance menor al 5% de su meta. Son las que más urgen para no perder terreno."><div class="kv">219</div><div class="kl">Sec. críticas</div></div>
+      <div class="kpi cy" data-tip="Personas de la estructura de campo dadas de alta en el sistema (capturistas, coordinadores y líderes)."><div class="kv" id="hub-kpi-oper">17</div><div class="kl">Operadores</div></div>
+      <div class="kpi cy" data-tip="Secciones electorales con casilla sobre las que se organiza el trabajo territorial."><div class="kv" id="hub-kpi-secc">388</div><div class="kl">Secciones</div></div>
+      <div class="kpi re" data-tip="Secciones con avance menor al 5% de su meta. Son las que más urgen para no perder terreno."><div class="kv" id="hub-kpi-crit">218</div><div class="kl">Sec. críticas</div></div>
     </div>
 
     <div class="mod-title">9 módulos del sistema — clic para abrir</div>
@@ -777,6 +784,20 @@ function cerrarSesion(){
       // [FIX 31/08] Duplicados nunca se leia de la RPC: la tarjeta se quedaba
       // con el 408 horneado del HTML, identico para todos los roles.
       set('hub-kpi-dup', fmt(Number(kpis.depurar) || 0));
+      // [FIX 31/08] Operadores, secciones y criticas venian quemados en el
+      // HTML (60 / 392 / 219) e iguales para todos los roles. La RPC ya los
+      // devuelve acotados al alcance territorial del usuario.
+      if(kpis.operadores !== undefined) set('hub-kpi-oper', fmt(Number(kpis.operadores) || 0));
+      if(kpis.secciones  !== undefined) set('hub-kpi-secc', fmt(Number(kpis.secciones)  || 0));
+      if(kpis.criticas   !== undefined) set('hub-kpi-crit', fmt(Number(kpis.criticas)   || 0));
+      // La etiqueta de la tarjeta de meta sigue al alcance: un coordinador
+      // municipal no ve una "meta estatal", ve la de su municipio.
+      (function(){
+        var kl = document.getElementById('hub-kl-meta');
+        if(!kl) return;
+        var a = String(kpis.alcance || '');
+        kl.textContent = a.indexOf('municipio:') === 0 ? 'Meta municipal' : 'Meta estatal';
+      })();
       set('hub-pb-pct',  pct + '%');
       // [v90] Antes: set('hub-pb-nums', total+' / '+meta) reemplazaba el nodo
       // completo y destruia el span [data-theme="sistema-meta"]. Despues,
