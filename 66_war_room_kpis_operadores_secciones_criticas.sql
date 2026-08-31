@@ -1,17 +1,21 @@
--- ============================================================
---  C7 — RPC War Room KPIs  ·  SIE Colima 2027
+-- ═══════════════════════════════════════════════════════════════════════════
+-- VOTERA — 66: operadores, secciones y criticas en get_war_room_kpis
+-- Proyecto staging: dyirhwwmykskpuvzcafx
 --
---  Funcion SECURITY DEFINER: calcula agregados del War Room saltando RLS de
---  forma controlada, pero devolviendo SOLO numeros (cero filas de ciudadanos
---  = cero PII expuesta).
+-- El hub traia tres tarjetas quemadas en el HTML: 60 operadores, 392 secciones
+-- y 219 criticas. Los valores reales son 17 / 388 / 218 a nivel estatal.
+-- El 60 no correspondia a nada: hay 20 usuarios en total, 17 de estructura.
 --
---  Alcance por rol (decidido DENTRO de la funcion, no confiable desde el
---  frontend):
---    super_admin / admin / coordinador_estatal / consulta -> todo el estado
---    coordinador con municipio IS NULL                    -> todo el estado
---    coordinador con municipio asignado                   -> solo su municipio
---    cualquier otro rol                                   -> acceso denegado
---    sin licencia_id                                      -> acceso denegado
+-- Se agregan tres llaves al jsonb, con el mismo filtro territorial que el resto:
+--   operadores → usuarios activos con rol de estructura de campo
+--   secciones  → secciones con casilla activa
+--   criticas   → secciones con avance por debajo del 5%% de su meta
+--
+-- Nota tecnica: las casillas se agrupan por seccion ANTES de unir con los
+-- capturados. Si se une primero, el conteo se multiplica por el numero de
+-- casillas de la seccion (ese error daba 139 criticas en vez de 218).
+--
+-- ESTE ES EL ARCHIVO VIGENTE de get_war_room_kpis.
 --
 --   ⚠ VERSION VIGENTE AL 31/08/2026. Este archivo ya NO trae la meta quemada.
 --
@@ -40,7 +44,7 @@
 --   Los tres archivos (49, 65, 66 y get_war_room_kpis) llevan el MISMO cuerpo.
 --   Correr cualquiera de ellos es seguro. Cambios futuros: editar el 66 y
 --   replicar en los otros.
--- ============================================================
+-- ═══════════════════════════════════════════════════════════════════════════
 
 CREATE OR REPLACE FUNCTION public.get_war_room_kpis()
  RETURNS jsonb
