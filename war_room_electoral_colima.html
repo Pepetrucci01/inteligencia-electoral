@@ -941,12 +941,17 @@ function wrConstruirTerritorio(t){
   });
   MUNS.forEach(m=>{
     const ss = window.SECS_REAL[m.id]||[];
-    if(ss.length){ m.secs=ss.length; m.cas=ss.reduce((a,x)=>a+x.cas,0); m.meta=ss.reduce((a,x)=>a+x.meta,0); }
+    // [FIX 1 sep] Tambien m.cap: si no, tras recargar el territorio los municipios
+    // quedaban en 0 capturados hasta que respondiera get_war_room_kpis, y la barra
+    // parpadeaba a "0 / ..." en cada refresco de 30 s.
+    if(ss.length){ m.secs=ss.length; m.cas=ss.reduce((a,x)=>a+x.cas,0);
+                   m.meta=ss.reduce((a,x)=>a+x.meta,0); m.cap=ss.reduce((a,x)=>a+x.cap,0); }
   });
   DFS.forEach(df=>{
     df.meta=MUNS.filter(m=>df.munIds.includes(m.id)).reduce((a,m)=>a+m.meta,0);
     df.secs=MUNS.filter(m=>df.munIds.includes(m.id)).reduce((a,m)=>a+m.secs,0);
     df.cas =MUNS.filter(m=>df.munIds.includes(m.id)).reduce((a,m)=>a+m.cas,0);
+    df.cap =MUNS.filter(m=>df.munIds.includes(m.id)).reduce((a,m)=>a+m.cap,0);
   });
   window.TERRITORIO_REAL = true;
   console.log(`✅ Territorio real [${t.alcance}]: ${secciones.length} secciones · ${casillas.length} casillas · ${caps.length} capturistas`);
@@ -1396,7 +1401,10 @@ function renderCuadF1(){
       +`<div class="bar"><i style="width:${Math.min(p*5,100)}%;background:${c}"></i></div>`
       +`<div class="sub">${fmt(o.cap)} / ${fmt(o.meta)}</div>`
       +(o.hint?`<div class="hint">${o.hint}</div>`:'')+`</div>`;};
-  const capTot=MUNS.reduce((s,m)=>s+m.cap,0), metaTot=MUNS.reduce((s,m)=>s+m.meta,0);
+  // [FIX 1 sep] Antes sumaba SIEMPRE los 10 municipios: a un coordinador municipal
+  // la barra le mostraba la meta estatal (208,754) aunque sus KPIs dijeran 58,013.
+  const _mAlc = (typeof wrAlcanceMun==='function' && wrAlcanceMun()) ? [wrAlcanceMun()] : MUNS;
+  const capTot=_mAlc.reduce((s,m)=>s+m.cap,0), metaTot=_mAlc.reduce((s,m)=>s+m.meta,0);
   // [AISLAMIENTO] Coordinador municipal: su municipio ES su nivel superior.
   // Una sola tarjeta en el primer renglón, sin Estado ni distritos federales.
   const _am=wrAlcanceMun();
@@ -3027,6 +3035,8 @@ async function cargarDesdeRPC() {
     window._kpisRPC = data;
     // [FIX 1 sep] Panel derecho de F1 (alertas, compromiso, origen) con datos reales
     if (typeof wrPintarPanelF1 === 'function') wrPintarPanelF1(data);
+    // [FIX 1 sep] Avisar a los bloques que dependen de la meta del alcance
+    try { window.dispatchEvent(new Event('wr-kpis-listos')); } catch(_e) {}
 
     console.log('✅ War Room cargado vía RPC (sin paginación)');
   } catch (e) {
@@ -3692,11 +3702,20 @@ document.addEventListener('DOMContentLoaded',()=>{
 <script src="theme.js"></script>
 <script>
 // [SWAP LUIS] Corrección final de META tras theme.js: el valor horneado manda.
+// [FIX 1 sep] ...salvo cuando el alcance del usuario NO es estatal. Este bloque
+// corre a los 300 y 1000 ms y pisaba la meta municipal (58,013) con la estatal
+// (208,754): el coordinador de Manzanillo veía "META DE MANZANILLO: 208,754".
+// Ahora la meta de la RPC manda, porque es la unica que respeta el alcance.
 (function(){
   if(typeof IE_METAS_CASILLA==='undefined' || !IE_METAS_CASILLA.meta_estatal) return;
-  var M = IE_METAS_CASILLA.meta_estatal;
+  function metaVigente(){
+    var k = window._kpisRPC;
+    if(k && Number(k.meta) > 0) return Number(k.meta);
+    return IE_METAS_CASILLA.meta_estatal;
+  }
   function f(n){ return Number(n).toLocaleString('es-MX'); }
   function ap(){
+    var M = metaVigente();
     var m=f(M);
     ['meta-calc','kpi-meta','wr-meta-sub','wr-meta-pb'].forEach(function(id){
       var el=document.getElementById(id); if(el) el.textContent=m;
@@ -3705,6 +3724,9 @@ document.addEventListener('DOMContentLoaded',()=>{
   ap();
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', ap);
   setTimeout(ap,300); setTimeout(ap,1000);
+  // [FIX 1 sep] Y cada vez que la RPC entregue KPIs (llega despues de los timeouts
+  // y en cada refresco de 30 s), para que la meta del encabezado siga al alcance.
+  window.addEventListener('wr-kpis-listos', ap);
 })();
 </script>
 <script>
