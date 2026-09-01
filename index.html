@@ -408,7 +408,18 @@ body.rol-consulta     .kpi-estatal { display:none; }
       <div class="spinner"></div>
       <div class="ld-txt" id="ld-txt">Cargando...</div>
     </div>
-    <iframe id="fr" title="Módulo" sandbox="allow-scripts allow-same-origin allow-forms allow-downloads allow-modals"></iframe>
+    <!-- [FIX 1 sep] Se agregan allow-popups y allow-popups-to-escape-sandbox.
+         Sin ellos, NINGÚN módulo dentro del iframe puede abrir una pestaña
+         nueva: los botones de WhatsApp (reparto de accesos, contacto del
+         activista y de su coordinador, alertas) no hacían nada al darles clic,
+         ni siquiera siendo enlaces <a target="_blank">. El navegador los
+         bloqueaba en silencio, sin error en consola.
+         NO se agrega allow-top-navigation: un módulo sigue sin poder navegar la
+         ventana del hub por su cuenta; para volver al hub usa el mensaje
+         'ie:volver-al-hub' que atiende showHub() más abajo.
+         allow-popups-to-escape-sandbox hace que la pestaña que se abre (wa.me,
+         maps, etc.) NO herede el sandbox y funcione como un sitio normal. -->
+    <iframe id="fr" title="Módulo" sandbox="allow-scripts allow-same-origin allow-forms allow-downloads allow-modals allow-popups allow-popups-to-escape-sandbox"></iframe>
   </div>
 
   <!-- HUB -->
@@ -546,7 +557,7 @@ function actualizarContadorModulos(){
   }catch(_e){}
 }
 
-const APP_BUILD = '20260901c'; // [01/09 b] panel_capturista_personal sin datos horneados // [31/08] subir esta cadena cada vez que se actualice un modulo: es el rompe-cache de los iframes
+const APP_BUILD = '20260901d'; // [01/09 b] panel_capturista_personal sin datos horneados // [31/08] subir esta cadena cada vez que se actualice un modulo: es el rompe-cache de los iframes
 
 let collapsed = false;
 
