@@ -2177,61 +2177,125 @@ function abrirModalAlerta(destinatarios, msgPredefinido){
 
       <div style="display:flex;gap:8px">
         <button onclick="document.getElementById('modal-alerta').remove()" style="flex:1;padding:10px;background:#1e2130;border:1px solid #2a2f45;border-radius:8px;color:#94a3b8;font-size:13px;font-family:monospace;cursor:pointer">Cancelar</button>
-        <button onclick="confirmarEnvioAlerta(${JSON.stringify(destinatarios).replace(/"/g,'&quot;')}, '${msgPredefinido.replace(/'/g,"\\'")}')" style="flex:2;padding:10px;background:rgba(239,68,68,.2);border:1px solid rgba(239,68,68,.4);border-radius:8px;color:#f87171;font-size:13px;font-weight:600;font-family:monospace;cursor:pointer">🚨 Confirmar y enviar alerta</button>
+        <button class="btn-confirmar-alerta" onclick="confirmarEnvioAlerta(${JSON.stringify(destinatarios).replace(/"/g,'&quot;')}, '${msgPredefinido.replace(/'/g,"\\'")}')" style="flex:2;padding:10px;background:rgba(239,68,68,.2);border:1px solid rgba(239,68,68,.4);border-radius:8px;color:#f87171;font-size:13px;font-weight:600;font-family:monospace;cursor:pointer">🚨 Confirmar y enviar alerta</button>
       </div>
     </div>
   </div>`;
   document.body.appendChild(modal);
 }
 
-function confirmarEnvioAlerta(destinatarios, mensaje){
-  // Guardar alerta en localStorage para que el panel del capturista la lea
-  const alertas = JSON.parse(localStorage.getItem('IE_alertas_capturistas')||'[]');
-  const nuevaAlerta = {
-    id: Date.now(),
-    mensaje: mensaje,
-    fecha: new Date().toLocaleString('es-MX'),
-    destinatarios: destinatarios.map(d=>d.nombre),
-    secciones: destinatarios.map(d=>d.seccion),
-    leida: false
-  };
-  alertas.unshift(nuevaAlerta);
-  localStorage.setItem('IE_alertas_capturistas', JSON.stringify(alertas.slice(0,50)));
+// ══════════════════════════════════════════════════════════════════════════
+// [FIX 1 sep] ENVÍO DE ALERTAS A LA BASE
+// ANTES: la alerta se guardaba en localStorage.IE_alertas_capturistas, es decir
+// EN EL NAVEGADOR DEL COORDINADOR. El capturista, en su propio teléfono, jamás
+// la recibía: el mensaje nunca salía de la máquina de quien lo escribió. El
+// panel del capturista ya leía de la tabla `alertas` en Supabase — solo el
+// envío se había quedado en el navegador.
+// AHORA: se inserta una fila por destinatario en `alertas`. El RLS ya garantiza
+// que cada quien vea únicamente las de sus secciones.
+// ══════════════════════════════════════════════════════════════════════════
+async function confirmarEnvioAlerta(destinatarios, mensaje){
+  const modal = document.getElementById('modal-alerta');
+  const btn = modal ? modal.querySelector('.btn-confirmar-alerta') : null;
+  if (btn) { btn.disabled = true; btn.textContent = 'Enviando…'; }
 
-  // Cerrar modal
-  document.getElementById('modal-alerta').remove();
+  // Una fila por destinatario: cada capturista recibe la suya y puede marcarla
+  // como leída sin afectar a los demás.
+  const filas = destinatarios
+    .filter(d => d.seccion != null && d.seccion !== '')
+    .map(d => ({
+      licencia_id: LICENCIA_ID,
+      seccion: String(d.seccion),
+      destinatario_nombre: d.nombre || null,
+      mensaje: mensaje,
+      leida: false,
+    }));
 
-  // Actualizar historial
-  actualizarHistorialAlertas();
-
-  // Confirmar visualmente
-  const toast=document.createElement('div');
-  toast.style.cssText='position:fixed;bottom:24px;right:24px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);color:#4ade80;font-size:12px;font-family:monospace;padding:12px 18px;border-radius:8px;z-index:9999;display:flex;align-items:center;gap:8px';
-  toast.innerHTML=`<span style="font-size:16px">✓</span> ${destinatarios.length} alerta${destinatarios.length!==1?'s':''} enviada${destinatarios.length!==1?'s':''}. Notificación activa en panel de activistas.`;
-  document.body.appendChild(toast);
-  setTimeout(()=>toast.remove(),4000);
-}
-
-function actualizarHistorialAlertas(){
-  const alertas=JSON.parse(localStorage.getItem('IE_alertas_capturistas')||'[]');
-  const cont=document.getElementById('alerta-historial');
-  const count=document.getElementById('alerta-hist-count');
-  if(count) count.textContent=alertas.length+' enviada'+(alertas.length!==1?'s':'');
-  if(!cont) return;
-  if(!alertas.length){
-    cont.innerHTML='<div style="font-size:11px;color:var(--text3);padding:10px;text-align:center">Sin alertas enviadas</div>';
+  if (!filas.length) {
+    alert('Los destinatarios seleccionados no tienen sección asignada; no se puede enviar.');
+    if (btn) { btn.disabled = false; btn.textContent = 'Enviar alerta'; }
     return;
   }
-  cont.innerHTML=alertas.slice(0,5).map(a=>`
-    <div style="padding:8px 12px;border-bottom:1px solid var(--border2);font-size:11px">
-      <div style="display:flex;justify-content:space-between;margin-bottom:2px">
-        <span style="color:var(--red);font-family:var(--mono)">🚨 ${a.destinatarios.length} activistas</span>
-        <span style="color:var(--text3);font-size:10px">${a.fecha}</span>
-      </div>
-      <div style="color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.mensaje.substring(0,60)}...</div>
-    </div>`).join('');
+
+  try {
+    const r = await wrFetch(`${SUPA_URL}/rest/v1/alertas`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify(filas),
+    });
+    if (!r.ok) {
+      const detalle = await r.text().catch(() => '');
+      throw new Error('HTTP ' + r.status + (detalle ? ' — ' + detalle.slice(0, 160) : ''));
+    }
+
+    if (modal) modal.remove();
+    await actualizarHistorialAlertas();
+
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;bottom:24px;right:24px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);color:#4ade80;font-size:13px;padding:12px 18px;border-radius:9px;z-index:9999;display:flex;align-items:center;gap:9px';
+    toast.innerHTML = `<span style="font-size:16px">✓</span> ${filas.length} alerta${filas.length !== 1 ? 's' : ''} enviada${filas.length !== 1 ? 's' : ''} · llegan al panel de cada activista`;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 4500);
+    const msgEl = document.getElementById('alerta-msg');
+    if (msgEl) msgEl.value = '';
+  } catch (e) {
+    console.error('Alerta no enviada:', e);
+    alert('No se pudo enviar la alerta: ' + (e.message || e) + '\n\nNo se guardó nada; puedes reintentar.');
+    if (btn) { btn.disabled = false; btn.textContent = 'Enviar alerta'; }
+  }
 }
 
+// [FIX 1 sep] El historial también salía de localStorage: cada coordinador veía
+// solo lo que él mismo había enviado desde ESE navegador, y se perdía al limpiar
+// la caché. Ahora se lee de la tabla, agrupando por mensaje y fecha.
+async function actualizarHistorialAlertas(){
+  const cont  = document.getElementById('alerta-historial');
+  const count = document.getElementById('alerta-hist-count');
+  if (!cont && !count) return;
+  try {
+    const r = await wrFetch(`${SUPA_URL}/rest/v1/alertas`
+      + `?select=mensaje,seccion,leida,created_at,destinatario_nombre`
+      + `&licencia_id=eq.${encodeURIComponent(LICENCIA_ID)}`
+      + `&order=created_at.desc&limit=400`);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const filas = await r.json();
+    if (!Array.isArray(filas)) throw new Error('respuesta inesperada');
+
+    // Agrupar: un envío masivo genera N filas con el mismo mensaje y hora.
+    const grupos = {};
+    filas.forEach(f => {
+      const k = (f.mensaje || '') + '|' + String(f.created_at || '').slice(0, 16);
+      if (!grupos[k]) grupos[k] = { mensaje: f.mensaje || '', fecha: f.created_at, n: 0, leidas: 0 };
+      grupos[k].n++;
+      if (f.leida) grupos[k].leidas++;
+    });
+    const lista = Object.values(grupos).sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+    if (count) count.textContent = lista.length + ' enviada' + (lista.length !== 1 ? 's' : '');
+    if (!cont) return;
+    if (!lista.length) {
+      cont.innerHTML = '<div style="font-size:11px;color:var(--text3);padding:10px;text-align:center">Sin alertas enviadas</div>';
+      return;
+    }
+    const esc = t => String(t ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    cont.innerHTML = lista.slice(0, 5).map(a => {
+      const f = a.fecha ? new Date(a.fecha).toLocaleString('es-MX', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
+      const pct = a.n ? Math.round(a.leidas / a.n * 100) : 0;
+      return `<div style="padding:8px 12px;border-bottom:1px solid var(--border2);font-size:11px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:2px">
+          <span style="color:var(--red);font-family:var(--mono)">🚨 ${a.n} activista${a.n !== 1 ? 's' : ''}</span>
+          <span style="color:var(--text3);font-size:10px">${f}</span>
+        </div>
+        <div style="color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(a.mensaje).slice(0,70)}</div>
+        <div style="color:${a.leidas === a.n ? 'var(--green)' : 'var(--text3)'};font-size:10px;font-family:var(--mono);margin-top:3px">
+          ${a.leidas} de ${a.n} leídas · ${pct}%</div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    console.warn('Historial de alertas:', e.message);
+    if (cont) cont.innerHTML = '<div style="font-size:11px;color:var(--text3);padding:10px;text-align:center">No se pudo cargar el historial</div>';
+  }
+}
 
 function updateBcF2(){
   const el=document.getElementById('bc-f2'); if(!el) return;
