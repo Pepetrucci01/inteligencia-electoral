@@ -987,6 +987,9 @@ function wrConstruirTerritorio(t){
     CAPS[sec.id].push({
       id:k.id, nombre:k.nombre||'Sin nombre', seccion:sec.id, secNum:sec.num,
       mun:sec.mun, munNombre:sec.munNombre, tel:String(k.tel||'').trim() || '—',
+      // [FIX 1 sep] Contacto de su coordinador municipal, para poder escalar
+      // desde la ficha sin salir del sistema.
+      coordNombre: k.coord_nombre || null, coordTel: String(k.coord_tel||'').trim() || null,
       meta:Number(k.meta)||0, cap:Number(k.cap)||0, votosF2:0,
     });
   });
@@ -1690,11 +1693,48 @@ function detalleCapturista(cap){
         </div>
       </div>
     </div>
+    <!-- [FIX 1 sep] Contacto: el activista y su coordinador, con llamada y WhatsApp. -->
+    ${wrBloqueContacto(cap)}
     <div style="margin-top:12px;display:flex;gap:8px">
       <button onclick="alertarCapturista('${cap.id}')" style="flex:1;padding:9px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:7px;color:var(--red);font-size:12px;font-family:var(--mono);cursor:pointer">🚨 Enviar alerta</button>
       <a href="https://wa.me/52${cap.tel.replace(/-/g,'')}" target="_blank" style="flex:1;padding:9px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:7px;color:var(--green);font-size:12px;font-family:var(--mono);cursor:pointer;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px">📱 WhatsApp</a>
     </div>
   </div>`;
+}
+
+// [FIX 1 sep] Contacto del activista y de su coordinador municipal.
+function wrTelDig(t){ return String(t||'').replace(/\D/g,''); }
+function wrTelFmt(t){ const d=wrTelDig(t); return d.length===10 ? `${d.slice(0,3)} ${d.slice(3,6)} ${d.slice(6)}` : (t||'—'); }
+function wrWhats(tel, nombre){
+  const d = wrTelDig(tel);
+  if (d.length < 10) { alert('Sin teléfono registrado.'); return; }
+  const num = d.length === 10 ? '52'+d : d;
+  const saludo = nombre ? `Hola ${String(nombre).split(' ')[0]}, ` : '';
+  window.open('https://wa.me/'+num+'?text='+encodeURIComponent(saludo), '_blank', 'noopener');
+}
+function wrFilaContacto(etiqueta, nombre, tel){
+  const d = wrTelDig(tel);
+  const hay = d.length >= 10;
+  const acc = hay
+    ? `<a href="tel:${d}" title="Llamar" style="color:var(--accent);text-decoration:none;font-size:14px;padding:0 5px">☎</a>
+       <span onclick="wrWhats('${d}', ${JSON.stringify(nombre||'').replace(/"/g,'&quot;')})" title="WhatsApp"
+             style="color:var(--green);cursor:pointer;font-size:14px;padding:0 5px">✆</span>`
+    : `<span style="color:var(--text3);font-size:10px;font-family:var(--mono)">sin teléfono</span>`;
+  return `<div style="display:flex;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05)">
+      <span style="font-size:9px;font-family:var(--mono);color:var(--text3);width:70px;flex-shrink:0;text-transform:uppercase">${etiqueta}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${nombre || '—'}</div>
+        ${hay ? `<div style="font-size:12px;font-family:var(--mono);color:var(--text)">${wrTelFmt(tel)}</div>` : ''}
+      </div>${acc}
+    </div>`;
+}
+function wrBloqueContacto(cap){
+  return `<div style="margin-top:12px;padding:10px 12px;background:var(--bg3);
+              border:1px solid var(--border2);border-radius:8px">
+      <div style="font-size:10px;font-family:var(--mono);color:var(--text3);letter-spacing:.06em;margin-bottom:4px">CONTACTO</div>
+      ${wrFilaContacto('Activista', cap.nombre, cap.tel)}
+      ${wrFilaContacto('Coordina', cap.coordNombre, cap.coordTel)}
+    </div>`;
 }
 
 function alertarCapturista(capId){
@@ -1874,7 +1914,7 @@ function renderTablaActF2(){
     const p=pct(c.votosF2,Math.max(c.cap,1));const col=semC2(p);
     const ic=semI2(p);
     return`<tr>
-      <td><div class="nm">${c.nombre}</div><div class="sub">${c.tel}</div></td>
+      <td><div class="nm">${c.nombre}</div><div class="sub">${wrTelFmt(c.tel)}</div></td>
       <td class="mono" style="text-align:center">Secc. ${c.secNum}</td>
       <td style="text-align:center">${c.munNombre}</td>
       <td class="mono" style="text-align:center;color:var(--text2)">${c.cap}</td>
