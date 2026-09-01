@@ -552,6 +552,56 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
         </div>
       </div>
 
+        <div class="card">
+          <div class="card-h"><span class="card-title" data-tip="Manda un mensaje urgente a tu estructura en campo.">⚡ Enviar alerta a activistas</span></div>
+          <div class="card-b">
+            <div style="font-size:11px;color:var(--text2);margin-bottom:10px">Notifica a los activistas que van en rojo o sin reporte. El mensaje llega dentro del sistema y por WhatsApp.</div>
+
+            <!-- Destinatarios -->
+            <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Destinatarios</div>
+            <select id="alerta-dest" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:7px 10px;outline:none;margin-bottom:8px" onchange="actualizarConteoAlerta()">
+              <option value="rojos">Solo secciones en rojo (bajo meta)</option>
+              <option value="sinreporte">Sin reporte de avance</option>
+              <option value="municipio">Por municipio</option>
+              <option value="todos">Todos los activistas</option>
+            </select>
+            <select id="alerta-mun" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:7px 10px;outline:none;margin-bottom:10px;display:none" onchange="actualizarConteoAlerta()">
+              <option value="">Todos los municipios</option>
+              <option>Armería</option><option>Colima</option><option>Comala</option>
+              <option>Coquimatlán</option><option>Cuauhtémoc</option><option>Ixtlahuacán</option>
+              <option>Manzanillo</option><option>Minatitlán</option><option>Tecomán</option>
+              <option>Villa de Álvarez</option>
+            </select>
+
+            <!-- Contador -->
+            <div id="alerta-conteo" style="font-size:11px;font-family:var(--mono);color:var(--amber);margin-bottom:10px;padding:6px 10px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:6px">
+              ● Calculando destinatarios...
+            </div>
+
+            <!-- Mensaje -->
+            <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Mensaje</div>
+            <textarea id="alerta-msg" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:8px 10px;outline:none;resize:vertical;min-height:72px;font-family:var(--mono);line-height:1.5" placeholder="Escribe el mensaje de alerta...">⚠️ ALERTA: Tu sección va por debajo de la meta. Se requiere acelerar la captura de simpatizantes de inmediato. Reporta tu avance al coordinador.</textarea>
+            <div style="display:flex;gap:6px;margin-top:6px;margin-bottom:10px;flex-wrap:wrap">
+              <button onclick="msgRapido('⚠️ ALERTA: Tu sección va por debajo de la meta. Se requiere acelerar la captura de simpatizantes de inmediato. Reporta tu avance al coordinador.')" style="font-size:10px;font-family:var(--mono);padding:4px 8px;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);border-radius:5px;cursor:pointer">Alerta meta</button>
+              <button onclick="msgRapido('🔴 URGENTE: Necesitamos tu reporte de avance. Marca cuántos simpatizantes has contactado hoy y actualiza tu panel ahora.')" style="font-size:10px;font-family:var(--mono);padding:4px 8px;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);border-radius:5px;cursor:pointer">Sin reporte</button>
+              <button onclick="msgRapido('📋 Recordatorio: Verifica que todos tus simpatizantes con compromiso alto estén confirmados para el día de la elección.')" style="font-size:10px;font-family:var(--mono);padding:4px 8px;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);border-radius:5px;cursor:pointer">Recordatorio</button>
+            </div>
+
+            <!-- Botón enviar -->
+            <button onclick="enviarAlertaCompleta()" style="width:100%;font-family:var(--mono);font-size:12px;font-weight:600;padding:9px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:var(--red);border-radius:6px;cursor:pointer;transition:background .15s" onmouseover="this.style.background='rgba(239,68,68,.25)'" onmouseout="this.style.background='rgba(239,68,68,.15)'">
+              🚨 Enviar alerta ahora
+            </button>
+          </div>
+        </div>
+
+        <!-- Historial de alertas enviadas -->
+        <div class="card">
+          <div class="card-h"><span class="card-title" data-tip="Registro de todas las alertas enviadas hoy.">Historial de alertas</span><span id="alerta-hist-count" style="font-size:10px;font-family:var(--mono);color:var(--text3)">0 enviadas</span></div>
+          <div id="alerta-historial" style="max-height:160px;overflow-y:auto">
+            <div style="font-size:11px;color:var(--text3);padding:10px;text-align:center">Sin alertas enviadas</div>
+          </div>
+        </div>
+
     </div>
 
   </div>
@@ -738,55 +788,11 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
           </div>
           <div id="f2-alertas-list"></div>
         </div>
-        <div class="card">
-          <div class="card-h"><span class="card-title" data-tip="Manda un mensaje urgente a tu estructura en campo.">⚡ Enviar alerta a activistas</span></div>
-          <div class="card-b">
-            <div style="font-size:11px;color:var(--text2);margin-bottom:10px">Notifica a los activistas que van en rojo o sin reporte. El mensaje llega dentro del sistema y por WhatsApp.</div>
-
-            <!-- Destinatarios -->
-            <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Destinatarios</div>
-            <select id="alerta-dest" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:7px 10px;outline:none;margin-bottom:8px" onchange="actualizarConteoAlerta()">
-              <option value="rojos">Solo secciones en rojo (bajo meta)</option>
-              <option value="sinreporte">Sin reporte de avance</option>
-              <option value="municipio">Por municipio</option>
-              <option value="todos">Todos los activistas</option>
-            </select>
-            <select id="alerta-mun" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:7px 10px;outline:none;margin-bottom:10px;display:none" onchange="actualizarConteoAlerta()">
-              <option value="">Todos los municipios</option>
-              <option>Armería</option><option>Colima</option><option>Comala</option>
-              <option>Coquimatlán</option><option>Cuauhtémoc</option><option>Ixtlahuacán</option>
-              <option>Manzanillo</option><option>Minatitlán</option><option>Tecomán</option>
-              <option>Villa de Álvarez</option>
-            </select>
-
-            <!-- Contador -->
-            <div id="alerta-conteo" style="font-size:11px;font-family:var(--mono);color:var(--amber);margin-bottom:10px;padding:6px 10px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:6px">
-              ● Calculando destinatarios...
-            </div>
-
-            <!-- Mensaje -->
-            <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Mensaje</div>
-            <textarea id="alerta-msg" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:8px 10px;outline:none;resize:vertical;min-height:72px;font-family:var(--mono);line-height:1.5" placeholder="Escribe el mensaje de alerta...">⚠️ ALERTA: Tu sección va por debajo de la meta. Se requiere acelerar la captura de simpatizantes de inmediato. Reporta tu avance al coordinador.</textarea>
-            <div style="display:flex;gap:6px;margin-top:6px;margin-bottom:10px;flex-wrap:wrap">
-              <button onclick="msgRapido('⚠️ ALERTA: Tu sección va por debajo de la meta. Se requiere acelerar la captura de simpatizantes de inmediato. Reporta tu avance al coordinador.')" style="font-size:10px;font-family:var(--mono);padding:4px 8px;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);border-radius:5px;cursor:pointer">Alerta meta</button>
-              <button onclick="msgRapido('🔴 URGENTE: Necesitamos tu reporte de avance. Marca cuántos simpatizantes has contactado hoy y actualiza tu panel ahora.')" style="font-size:10px;font-family:var(--mono);padding:4px 8px;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);border-radius:5px;cursor:pointer">Sin reporte</button>
-              <button onclick="msgRapido('📋 Recordatorio: Verifica que todos tus simpatizantes con compromiso alto estén confirmados para el día de la elección.')" style="font-size:10px;font-family:var(--mono);padding:4px 8px;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);border-radius:5px;cursor:pointer">Recordatorio</button>
-            </div>
-
-            <!-- Botón enviar -->
-            <button onclick="enviarAlertaCompleta()" style="width:100%;font-family:var(--mono);font-size:12px;font-weight:600;padding:9px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:var(--red);border-radius:6px;cursor:pointer;transition:background .15s" onmouseover="this.style.background='rgba(239,68,68,.25)'" onmouseout="this.style.background='rgba(239,68,68,.15)'">
-              🚨 Enviar alerta ahora
-            </button>
-          </div>
-        </div>
-
-        <!-- Historial de alertas enviadas -->
-        <div class="card">
-          <div class="card-h"><span class="card-title" data-tip="Registro de todas las alertas enviadas hoy.">Historial de alertas</span><span id="alerta-hist-count" style="font-size:10px;font-family:var(--mono);color:var(--text3)">0 enviadas</span></div>
-          <div id="alerta-historial" style="max-height:160px;overflow-y:auto">
-            <div style="font-size:11px;color:var(--text3);padding:10px;text-align:center">Sin alertas enviadas</div>
-          </div>
-        </div>
+        <!-- [FIX 1 sep] El bloque de "Enviar alerta a activistas" y su historial
+             vivían AQUÍ, dentro de FASE 2 (día de la elección). Pero la alerta
+             masiva sirve sobre todo durante la campaña: hoy faltan 278 días y es
+             cuando un coordinador necesita escribirle a los capturistas que van
+             en 0%. Se movió a FASE 1, junto al panel de alertas del sistema. -->
     </div>
 
   </div>
@@ -2127,8 +2133,21 @@ function calcularDestinatarios(dest, mun){
 }
 
 function actualizarConteoAlerta(){
-  const dest=document.getElementById('alerta-dest').value;
+  const destSel=document.getElementById('alerta-dest');
   const munSel=document.getElementById('alerta-mun');
+  if(!destSel||!munSel) return;
+  // [FIX 1 sep] Un coordinador municipal solo puede alertar a SU municipio:
+  // se fija el selector y se quitan los ajenos, igual que en el mapa.
+  const _am = (typeof wrAlcanceMun==='function') ? wrAlcanceMun() : null;
+  if(_am && !munSel.dataset.acotado){
+    const nrm = x => String(x||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+    const miMun = nrm(_am.n);
+    Array.from(munSel.options).forEach(o=>{ if(o.value!=='' && nrm(o.textContent)!==miMun) o.remove(); });
+    Array.from(munSel.options).forEach(o=>{ if(nrm(o.textContent)===miMun) munSel.value=o.value||o.textContent; });
+    munSel.disabled = true;
+    munSel.dataset.acotado = '1';
+  }
+  const dest=destSel.value;
   munSel.style.display=dest==='municipio'?'block':'none';
   const mun=munSel.value;
   const n=calcularDestinatarios(dest,mun).length;
@@ -3666,6 +3685,10 @@ document.addEventListener('DOMContentLoaded',()=>{
     await cargarTerritorioReal();
     await cargarDesdeRPC();   // KPIs y avance por seccion/municipio
     if (typeof cargarCasillasF2Reales === 'function') { try { await cargarCasillasF2Reales(); } catch(_e) {} }
+    // [FIX 1 sep] El contador de destinatarios corría ANTES de que llegara el
+    // territorio, así que decía "0 activistas" y ya no se recalculaba. Va aquí,
+    // cuando CAPS ya tiene a la gente real.
+    try { actualizarConteoAlerta(); } catch(e) { console.warn('conteo alerta:', e); }
   })();
   actualizarConteoAlerta();
   actualizarHistorialAlertas();
