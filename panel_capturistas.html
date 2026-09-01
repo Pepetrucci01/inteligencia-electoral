@@ -225,7 +225,12 @@ table.cap-table tr.selected{background:rgba(59,130,246,0.1);}
   <div class="filter-sep"></div>
   <span class="filter-label">BUSCAR</span>
   <input type="text" id="fil-search" placeholder="ID o nombre..." oninput="aplicarFiltros()" style="width:160px">
-  <span class="results-count" id="results-count">60 activistas</span>
+  <!-- [FIX 1 sep] Reparto de accesos: el coordinador genera la contraseña de su
+       gente desde aquí, sin manejar archivos con credenciales. -->
+  <button onclick="abrirReparto()" style="background:rgba(168,85,247,.13);border:1px solid rgba(168,85,247,.32);
+          color:#c4a5f7;font-family:var(--mono);font-size:11px;padding:5px 12px;border-radius:5px;cursor:pointer">
+    🔑 Repartir accesos</button>
+  <span class="results-count" id="results-count">— activistas</span>
 </div>
 
 <div class="main">
@@ -302,6 +307,52 @@ table.cap-table tr.selected{background:rgba(59,130,246,0.1);}
         </div>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     [FIX 1 sep] REPARTO DE ACCESOS
+     Antes había que repartir un CSV con 510 contraseñas. Ahora el coordinador
+     genera la de cada persona de SU municipio aquí mismo: la contraseña se
+     crea al momento, se muestra una vez y se manda por WhatsApp. Nadie maneja
+     archivos con credenciales y si alguien pierde la suya, su coordinador se
+     la repone sin depender de nadie.
+     ══════════════════════════════════════════════════════════════════════ -->
+<div id="rep-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);
+     z-index:900;padding:26px;overflow-y:auto">
+  <div style="max-width:860px;margin:0 auto;background:var(--bg2);border:1px solid var(--border2);
+       border-radius:12px;overflow:hidden">
+    <div style="padding:15px 20px;border-bottom:1px solid var(--border2);display:flex;
+         align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:14px;font-weight:600">🔑 Repartir accesos</div>
+        <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px"
+             id="rep-sub">Cargando…</div>
+      </div>
+      <button onclick="cerrarReparto()" style="background:none;border:none;color:var(--text3);
+              font-size:22px;cursor:pointer;line-height:1">×</button>
+    </div>
+
+    <div style="padding:13px 20px;background:rgba(59,130,246,.06);border-bottom:1px solid var(--border);
+         font-size:12px;color:var(--text2);line-height:1.6">
+      Al dar clic en <b>Generar y enviar</b> se crea una contraseña nueva para esa persona y se
+      abre WhatsApp con el mensaje listo. <b>La contraseña se muestra una sola vez</b>: si se
+      pierde, vuelve a generarla aquí. La contraseña anterior deja de servir.
+    </div>
+
+    <div style="padding:11px 20px;display:flex;gap:9px;align-items:center;flex-wrap:wrap;
+         border-bottom:1px solid var(--border)">
+      <input type="text" id="rep-buscar" placeholder="Buscar nombre o sección…" oninput="pintarReparto()"
+             style="background:var(--bg3);border:1px solid var(--border2);color:var(--text);
+             font-family:var(--mono);font-size:11px;padding:6px 10px;border-radius:5px;width:200px">
+      <label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer;color:var(--text2)">
+        <input type="checkbox" id="rep-solo-pend" checked onchange="pintarReparto()" style="cursor:pointer">
+        Solo quienes no han entrado
+      </label>
+      <span style="margin-left:auto;font-size:11px;font-family:var(--mono);color:var(--text3)" id="rep-cont"></span>
+    </div>
+
+    <div id="rep-lista" style="max-height:56vh;overflow-y:auto"></div>
   </div>
 </div>
 
@@ -479,6 +530,115 @@ function scoreColor(s){
   if(s>=55) return '#f59e0b';
   return '#ef4444';
 }
+// ══════════════════════════════════════════════════════════════════════════
+// [FIX 1 sep] REPARTO DE ACCESOS
+// Cada coordinador genera la contraseña de su gente y la manda por WhatsApp.
+// La contraseña la crea la Edge Function generar-credencial, que valida el
+// alcance del lado servidor: un coordinador solo puede sobre su municipio.
+// ══════════════════════════════════════════════════════════════════════════
+window._REPARTO = [];
+
+async function abrirReparto(){
+  const modal = document.getElementById('rep-modal');
+  modal.style.display = 'block';
+  document.getElementById('rep-lista').innerHTML =
+    '<div style="padding:34px;text-align:center;color:var(--text3);font-family:var(--mono);font-size:12px">Cargando…</div>';
+  try{
+    const r = await (window.supaFetch || fetch)(SUPA_URL + '/rest/v1/rpc/get_estado_credenciales', {
+      method:'POST', headers:{ apikey: SUPA_KEY, 'Content-Type':'application/json' }, body:'{}' });
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    const d = await r.json();
+    window._REPARTO = Array.isArray(d.personas) ? d.personas : [];
+    const alc = String(d.alcance||'').indexOf('municipio:') === 0
+      ? d.alcance.slice(10) : 'todo el estado';
+    document.getElementById('rep-sub').textContent =
+      `${d.total||0} personas en ${alc} · ${d.han_entrado||0} ya entraron al sistema`;
+    pintarReparto();
+  }catch(e){
+    document.getElementById('rep-lista').innerHTML =
+      '<div style="padding:30px;text-align:center;color:#fca5a5;font-size:12px">No se pudo cargar: ' + e.message + '</div>';
+  }
+}
+
+function cerrarReparto(){ document.getElementById('rep-modal').style.display = 'none'; }
+
+function pintarReparto(){
+  const q = (document.getElementById('rep-buscar').value||'').toLowerCase().trim();
+  const soloPend = document.getElementById('rep-solo-pend').checked;
+  let d = window._REPARTO;
+  if(soloPend) d = d.filter(p => !p.ha_entrado);
+  if(q) d = d.filter(p => String(p.nombre||'').toLowerCase().includes(q) || String(p.seccion||'').includes(q));
+
+  document.getElementById('rep-cont').textContent =
+    d.length + ' de ' + window._REPARTO.length;
+
+  const esc = t => String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  document.getElementById('rep-lista').innerHTML = d.length ? d.map(p => {
+    const tel = String(p.telefono||'').replace(/\D/g,'');
+    const estado = p.ha_entrado
+      ? '<span style="font-size:10px;font-family:var(--mono);color:var(--green)">ya entró</span>'
+      : (p.ultima_cred
+          ? '<span style="font-size:10px;font-family:var(--mono);color:var(--amber)">enviada, sin entrar</span>'
+          : '<span style="font-size:10px;font-family:var(--mono);color:var(--text3)">sin enviar</span>');
+    return `<div style="display:flex;align-items:center;gap:11px;padding:9px 20px;
+              border-bottom:1px solid rgba(255,255,255,.04);font-size:12px" id="rep-f-${p.id}">
+        <span style="font-family:var(--mono);color:var(--text3);width:70px;flex-shrink:0">${p.seccion?('Secc. '+esc(p.seccion)):'—'}</span>
+        <div style="flex:1;min-width:0">
+          <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.nombre)}</div>
+          <div style="font-size:10px;font-family:var(--mono);color:var(--text3)">${tel ? tel.replace(/(\d{3})(\d{3})(\d{4})/,'$1 $2 $3') : 'sin teléfono'} · ${estado}</div>
+        </div>
+        <button onclick="generarYEnviar('${p.id}')" ${tel?'':'disabled style="opacity:.35;cursor:not-allowed"'}
+          style="background:rgba(168,85,247,.14);border:1px solid rgba(168,85,247,.32);color:#c4a5f7;
+          font-family:var(--mono);font-size:11px;padding:5px 12px;border-radius:5px;cursor:pointer;white-space:nowrap">
+          Generar y enviar</button>
+      </div>`;
+  }).join('') : '<div style="padding:34px;text-align:center;color:var(--text3);font-family:var(--mono);font-size:12px">Sin resultados</div>';
+}
+
+async function generarYEnviar(id){
+  const p = window._REPARTO.filter(x => x.id === id)[0];
+  if(!p) return;
+  const fila = document.getElementById('rep-f-'+id);
+  const btn = fila ? fila.querySelector('button') : null;
+  if(btn){ btn.disabled = true; btn.textContent = 'Generando…'; }
+  try{
+    const token = window._sesion?.access_token;
+    if(!token) throw new Error('Sesión no válida. Vuelve a entrar.');
+    const r = await fetch(SUPA_URL + '/functions/v1/generar-credencial', {
+      method:'POST',
+      headers:{ apikey: SUPA_KEY, Authorization:'Bearer '+token, 'Content-Type':'application/json' },
+      body: JSON.stringify({ usuario_id: id, motivo: 'reparto' })
+    });
+    const d = await r.json().catch(() => ({}));
+    if(!r.ok || !d.ok) throw new Error(d.error || ('HTTP '+r.status));
+    const res = (d.resultados||[])[0];
+    if(!res || !res.ok) throw new Error(res?.error || 'No se pudo generar');
+
+    // Mensaje con su usuario y su contraseña nueva
+    const liga = location.origin + '/index.html';
+    const nombre1 = String(p.nombre||'').split(' ')[0];
+    const texto =
+      'Hola ' + nombre1 + ', te damos la bienvenida a la campaña.\n\n' +
+      'Ya tienes tu acceso al sistema de captura:\n\n' +
+      'Liga: ' + liga + '\n' +
+      'Usuario: ' + (res.email || p.email) + '\n' +
+      'Contraseña: ' + res.password + '\n\n' +
+      (p.seccion ? 'Te toca la sección ' + p.seccion + ' de ' + (p.municipio||'') +
+        (p.meta ? ', con una meta de ' + Number(p.meta).toLocaleString('es-MX') + ' simpatizantes' : '') + '.\n\n' : '') +
+      'Entra desde tu celular y cambia tu contraseña. Cualquier duda, escríbeme.';
+
+    const tel = String(p.telefono||'').replace(/\D/g,'');
+    const num = tel.length === 10 ? '52'+tel : tel;
+    window.open('https://wa.me/'+num+'?text='+encodeURIComponent(texto), '_blank', 'noopener');
+
+    p.ultima_cred = new Date().toISOString();
+    if(btn){ btn.textContent = 'Enviada ✓'; btn.style.opacity = '.55'; }
+  }catch(e){
+    alert('No se pudo generar la credencial: ' + e.message);
+    if(btn){ btn.disabled = false; btn.textContent = 'Generar y enviar'; }
+  }
+}
+
 // [FIX 1 sep] Contacto del activista y de su coordinador municipal.
 // El vínculo con el coordinador es por municipio (no hay columna de jerarquía).
 function pcTelLimpio(t){ return String(t||'').replace(/\D/g,''); }
