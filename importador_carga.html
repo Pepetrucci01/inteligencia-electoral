@@ -145,6 +145,25 @@ table.res th{color:var(--text3);font-family:var(--mono);font-size:10px;text-tran
     </div>
     <div class="tipos" id="e-tipos"></div>
     <div id="e-preview-msg"></div>
+    <!-- [FIX 1 sep] BAJAS. El importador solo creaba y actualizaba: si el partido
+         quitaba gente y subías el Excel sin ella, esas personas seguían activas,
+         contando en los totales y con acceso al padrón. Aquí se muestra quién
+         está en la base pero NO en el archivo, para decidir antes de importar. -->
+    <div id="e-bajas" class="hidden" style="margin-top:12px;padding:12px 14px;
+         background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.3);border-radius:8px">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:8px">
+        <span style="font-size:15px">⚠️</span>
+        <b id="e-bajas-titulo" style="font-size:13px;color:#fcd34d"></b>
+      </div>
+      <div id="e-bajas-detalle" style="font-size:12px;color:var(--text2,#8a9ab5);margin-bottom:9px"></div>
+      <div id="e-bajas-lista" style="max-height:180px;overflow-y:auto;background:rgba(0,0,0,.2);
+           border-radius:6px;margin-bottom:10px"></div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer">
+        <input type="checkbox" id="e-bajas-chk" style="width:15px;height:15px;cursor:pointer">
+        <span>Dar de baja a estas personas al importar
+          <span style="color:var(--text3,#5a6a85)">(pierden acceso; sus capturas se conservan)</span></span>
+      </label>
+    </div>
     <div class="actions">
       <button class="btn btn-primary" id="e-btn-import" disabled onclick="importarEstructura()">Dar de alta a la estructura</button>
       <button class="btn btn-ghost" onclick="location.reload()">Cancelar</button>
@@ -523,6 +542,76 @@ function previewEstructura(){
   document.getElementById('e-preview-msg').innerHTML = msg.map(m => '<div class="msg '+(m.startsWith('❌')?'msg-err':m.startsWith('⚠')?'msg-warn':'msg-ok')+'">'+m+'</div>').join('');
   btn.disabled = bloquea;
   document.getElementById('e-preview').classList.remove('hidden');
+  // [FIX 1 sep] Revisar quién quedaría fuera con este archivo.
+  if(!bloquea) revisarBajasEstructura(emails.filter(Boolean));
+}
+
+// ── [FIX 1 sep] BAJAS DE ESTRUCTURA ────────────────────────────────────────
+// Compara los correos del archivo contra la estructura activa en la base y
+// muestra quién quedaría fuera. NO da de baja a nadie por su cuenta: hace falta
+// marcar la casilla. Baja lógica, nunca borrado.
+window._BAJAS_PENDIENTES = null;
+
+async function revisarBajasEstructura(emailsArchivo){
+  const box = document.getElementById('e-bajas');
+  if(!box) return;
+  box.classList.add('hidden');
+  window._BAJAS_PENDIENTES = null;
+  const chk = document.getElementById('e-bajas-chk');
+  if(chk) chk.checked = false;
+  try{
+    const token = (await window.supabase.auth.getSession()).data.session?.access_token;
+    if(!token) return;
+    const r = await fetch(`${SUPA_URL}/rest/v1/rpc/previsualizar_bajas_estructura`, {
+      method:'POST',
+      headers:{ 'apikey':SUPA_KEY, 'Authorization':'Bearer '+token, 'Content-Type':'application/json' },
+      body: JSON.stringify({ p_emails: emailsArchivo })
+    });
+    if(!r.ok){ console.warn('Revisión de bajas: HTTP '+r.status); return; }
+    const d = await r.json();
+    const n = Number(d?.total)||0;
+    if(!n) return;                       // nadie sobra: no se muestra nada
+
+    window._BAJAS_PENDIENTES = emailsArchivo;
+    const esc = t => String(t??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const roles = Object.entries(d.por_rol||{})
+      .map(([k,v]) => `${v} ${k.replace('_',' ')}${v!==1?'s':''}`).join(' · ');
+    document.getElementById('e-bajas-titulo').textContent =
+      `${n} persona${n!==1?'s':''} de la estructura no viene${n!==1?'n':''} en este archivo`;
+    const capAf = Number(d.capturas_afectadas)||0;
+    document.getElementById('e-bajas-detalle').innerHTML =
+      `${roles}. Si el partido las dio de baja, márcalas abajo y perderán acceso al sistema. ` +
+      `Si el archivo está incompleto (por ejemplo, filtrado por un municipio), <b>deja la casilla sin marcar</b> y no se tocará a nadie.` +
+      (capAf ? `<br><span style="color:#fcd34d">${capAf.toLocaleString('es-MX')} capturas suyas se conservan y seguirán contando en el avance.</span>` : '');
+    document.getElementById('e-bajas-lista').innerHTML =
+      (d.personas||[]).map(x => `<div style="display:flex;gap:8px;padding:4px 9px;font-size:11px;
+            border-bottom:1px solid rgba(255,255,255,.05)">
+          <span style="font-family:var(--mono,monospace);color:var(--text3,#5a6a85);width:70px;flex-shrink:0">${esc(x.rol).slice(0,10)}</span>
+          <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(x.nombre)}</span>
+          <span style="color:var(--text3,#5a6a85);width:110px;flex-shrink:0">${esc(x.municipio||'—')}</span>
+          <span style="font-family:var(--mono,monospace);color:var(--text3,#5a6a85);width:62px;flex-shrink:0">${x.seccion?('Secc. '+esc(x.seccion)):'—'}</span>
+          <span style="font-family:var(--mono,monospace);color:${x.capturas>0?'#fcd34d':'var(--text3,#5a6a85)'};width:56px;text-align:right;flex-shrink:0">${x.capturas} cap.</span>
+        </div>`).join('');
+    box.classList.remove('hidden');
+  }catch(e){ console.warn('Revisión de bajas:', e.message); }
+}
+
+async function aplicarBajasSiCorresponde(){
+  const chk = document.getElementById('e-bajas-chk');
+  if(!chk || !chk.checked || !window._BAJAS_PENDIENTES) return null;
+  try{
+    const token = (await window.supabase.auth.getSession()).data.session?.access_token;
+    const r = await fetch(`${SUPA_URL}/rest/v1/rpc/aplicar_bajas_estructura`, {
+      method:'POST',
+      headers:{ 'apikey':SUPA_KEY, 'Authorization':'Bearer '+token, 'Content-Type':'application/json' },
+      body: JSON.stringify({ p_emails: window._BAJAS_PENDIENTES })
+    });
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    return await r.json();
+  }catch(e){
+    console.error('Bajas no aplicadas:', e);
+    return { error: e.message };
+  }
 }
 
 // ── Pestaña 3 · Representantes ──────────────────────────────────────────────
@@ -598,6 +687,19 @@ async function correrAltas(filas, pre, etiqueta){
     }
     msg.innerHTML = '<div class="msg '+(errores?'msg-warn':'msg-ok')+'">'+(errores?'⚠️':'✅')+' Terminado: <b>'+creados+'</b> cuentas creadas · <b>'+actualizados+'</b> actualizadas · <b>'+errores+'</b> con error.'
       + (creados ? '<br><b>Descarga las credenciales ahora</b>: las contraseñas temporales solo se muestran una vez.' : '')+'</div>';
+    // [FIX 1 sep] Las bajas se aplican DESPUÉS de importar: primero entran los
+    // nuevos y se actualizan los que siguen; solo entonces se desactiva al resto.
+    if (pre === 'e') {
+      const bj = await aplicarBajasSiCorresponde();
+      if (bj && !bj.error && Number(bj.bajas) > 0) {
+        msg.innerHTML += '<div class="msg msg-warn">👤 <b>'+bj.bajas+'</b> persona(s) dadas de baja: '
+          + 'pierden acceso al sistema y salen de los conteos. Sus capturas se conservan.'
+          + (bj.asignaciones_cerradas ? ' Se cerraron '+bj.asignaciones_cerradas+' asignación(es) de sección.' : '')
+          + '</div>';
+      } else if (bj && bj.error) {
+        msg.innerHTML += '<div class="msg msg-err">No se pudieron aplicar las bajas: '+bj.error+'. La importación sí se completó.</div>';
+      }
+    }
     document.getElementById(pre+'-cred-actions').classList.remove('hidden');
     const errs = E_RES.filter(x => x.estado==='error');
     document.getElementById(pre+'-tabla').innerHTML = errs.length ? '<table class="res"><tr><th>Correo</th><th>Nombre</th><th>Sección</th><th>Error</th></tr>'
