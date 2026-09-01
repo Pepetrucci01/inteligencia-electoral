@@ -452,7 +452,7 @@ async function plRpc(fn, body) {
 // Antes, cualquier fallo de red/RLS caia en silencio a datos inventados
 // (247 ciudadanos, CAP-017...) y el panel PARECIA funcionar. Eso fue lo que
 // vio Jose en la validacion del 16-17 jul.
-const MODO_DEMO = new URLSearchParams(location.search).has('demo');
+// [FIX 1 sep] MODO_DEMO retirado junto con el generador de datos ficticios.
 let SECCION_LIDER = null;
 let CIUDADANOS_SEC = [];
 let CAPTURISTAS_SEC = [];
@@ -530,8 +530,7 @@ async function cargarDatos() {
 
     // Si BD vacía → demo solo con ?demo=1; en producción, decirlo de frente.
     if (CIUDADANOS_SEC.length === 0) {
-      if (MODO_DEMO) { cargarDatosSimuladosLider(); return; }
-      mostrarSinDatos(`Sin registros para la sección ${SECCION_LIDER} en la base. Verifica la sección asignada y los permisos (RLS).`);
+      mostrarSinDatos(`Aún no hay simpatizantes capturados en la sección ${SECCION_LIDER}. Aparecerán aquí conforme tus capturistas registren.`);
       return;
     }
 
@@ -560,8 +559,7 @@ async function cargarDatos() {
 
   } catch (e) {
     console.error('Error cargando datos:', e);
-    if (MODO_DEMO) { cargarDatosSimuladosLider(); }
-    else mostrarSinDatos('No se pudieron cargar los datos reales (' + (e && e.message ? e.message : e) + '). Revisa conexión y permisos.');
+    mostrarSinDatos('No se pudieron cargar los datos reales (' + (e && e.message ? e.message : e) + '). Revisa conexión y permisos.');
   }
 
   mostrarCargando(false);
@@ -609,42 +607,12 @@ function mostrarSinDatos(msg) {
   mostrarCargando(false);
 }
 
-function cargarDatosSimuladosLider() {
-  const seccion = SECCION_LIDER || 138;
-  const NOMS = ['María García','Juan López','Rosa Martínez','Pedro Soto','Ana Torres',
-    'Luis Herrera','Carmen Díaz','Jorge Cruz','Silvia Reyes','Roberto Vega',
-    'Beatriz Leal','Oscar Ramírez','Fernanda Castillo','David Herrera','Patricia Núñez',
-    'Miguel Ángel Ríos','Arturo Reyes','Laura Guzmán','Elena Vega','Carlos Mendoza'];
-  const CAPS = ['CAP-017','CAP-022','CAP-031','CAP-045'];
-  const COLS = ['Col. Centro','Col. Jardines','Col. Las Palmas','Col. Obrera','Col. La Esperanza'];
-
-  CIUDADANOS_SEC = Array.from({length: 247}, (_, i) => ({
-    id: `CIU-${String(i+1).padStart(5,'0')}`,
-    nombre_completo: NOMS[i % NOMS.length] + ' ' + NOMS[(i+3) % NOMS.length].split(' ')[1],
-    curp: `CURP${String(i+1).padStart(6,'0')}`,
-    nivel_compromiso: Math.floor(Math.random()*4)+1,
-    es_riesgo: Math.random() < 0.07,
-    capturista_id: CAPS[i % CAPS.length],
-    colonia: COLS[i % COLS.length],
-    fecha_nacimiento: `${1950 + Math.floor(Math.random()*50)}-${String(Math.floor(Math.random()*12)+1).padStart(2,'0')}-${String(Math.floor(Math.random()*28)+1).padStart(2,'0')}`,
-    licencia_id: 'DEMO'
-  }));
-
-  const capMap = {};
-  CIUDADANOS_SEC.forEach(c => {
-    const cap = c.capturista_id;
-    if (!capMap[cap]) capMap[cap] = { id: cap, capturas: 0 };
-    capMap[cap].capturas++;
-  });
-  CAPTURISTAS_SEC = Object.values(capMap).sort((a, b) => b.capturas - a.capturas);
-
-  actualizarKPIs();
-  renderRankingCapturistas();
-  const tabActiva = document.querySelector('.tab.active')?.id?.replace('tab-', '');
-  if (tabActiva === 'capturistas') renderCapturistas();
-  if (tabActiva === 'simpatizantes') renderSimps();
-  mostrarCargando(false);
-}
+// [FIX 1 sep] Aqui vivia cargarDatosSimuladosLider(): fabricaba 247 ciudadanos
+// con nombres inventados ("Maria Garcia", "Carlos Mendoza"), compromiso y fechas
+// de nacimiento al azar (Math.random) y capturistas ficticios CAP-017/022/031/045.
+// Solo se disparaba con ?demo en la URL, pero bastaba que alguien compartiera un
+// enlace con ese parametro para que un jefe de seccion viera 247 simpatizantes
+// que no existen. Eliminada: si no hay datos reales, se dice y punto.
 
 function mostrarCargando(estado) {
   const kpis = ['kpi-capturas', 'kpi-meta', 'kpi-pct', 'kpi-riesgo', 'kpi-voto-seg'];

@@ -289,8 +289,17 @@ input:focus,select:focus,textarea:focus{border-color:var(--cyan);}
 
   <!-- ══════════ TAB 4: CRUCE ══════════ -->
   <div class="pane" id="pane-cruce">
+    <!-- [FIX 1 sep] Estos cuatro KPIs y la tabla de abajo son un EJEMPLO: la tabla
+         `encuestas` tiene 0 filas, no existe ningun levantamiento real todavia.
+         El tab de Resultados en vivo ya venia rotulado como simulacion; este no,
+         y se leia como dato real de campo. Se rotula igual. -->
+    <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:8px;
+                padding:9px 13px;margin-bottom:10px;font-size:11px;color:#fcd34d;font-family:var(--mono,monospace)">
+      ⚠ EJEMPLO DEMOSTRATIVO — cifras de muestra. Aún no hay levantamientos cargados;
+      al capturar entrevistas reales este tablero las reemplazará.
+    </div>
     <div class="kpi-row">
-      <div class="kpi pu"><div class="kl">Entrevistas</div><div class="kv">2,847</div><div class="ks">Estatal · Julio 2026</div></div>
+      <div class="kpi pu"><div class="kl">Entrevistas</div><div class="kv">2,847</div><div class="ks">ejemplo · no es un dato real</div></div>
       <div class="kpi"><div class="kl">Intención de voto</div><div class="kv">37.8%</div><div class="ks">promedio estatal</div></div>
       <div class="kpi am"><div class="kl">Indecisos</div><div class="kv">22%</div><div class="ks">bolsa por disputar</div></div>
       <div class="kpi gr"><div class="kl">Voto firme</div><div class="kv">61%</div><div class="ks">de quienes declaran</div></div>

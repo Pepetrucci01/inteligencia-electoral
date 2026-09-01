@@ -571,10 +571,10 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
           </div>
           <div class="form-group">
             <label class="form-label">Meta estatal de registros</label>
-            <input class="form-input" type="number" id="cfg-meta" value="208717" placeholder="Ej. 208717"
+            <input class="form-input" type="number" id="cfg-meta" value="208754" placeholder="Ej. 208754"
               oninput="actualizarPrevMeta(this.value)">
             <div style="font-size:10px;font-family:var(--mono);color:var(--text3);margin-top:4px">
-              Vista previa: <span id="cfg-meta-prev" style="color:var(--accent);font-weight:600">208,717</span> registros
+              Vista previa: <span id="cfg-meta-prev" style="color:var(--accent);font-weight:600">—</span> registros
             </div>
           </div>
           <button class="btn primary" style="width:100%;margin-top:4px" onclick="guardarConfigOperativa()"> Guardar datos operativos</button>
@@ -638,7 +638,8 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
   <div class="kpi-row">
     <div class="kpi gr"><div class="kpi-lbl">Uptime del sistema</div><div class="kpi-val">99.9%</div></div>
     <div class="kpi gr"><div class="kpi-lbl">Base de datos</div><div class="kpi-val">OK</div></div>
-    <div class="kpi bl"><div class="kpi-lbl">Total registros</div><div class="kpi-val">10,408</div></div>
+    <!-- [FIX 1 sep] "10,408" estaba escrito a mano. Ahora lo llena adminContarRegistros(). -->
+    <div class="kpi bl"><div class="kpi-lbl">Total registros</div><div class="kpi-val" id="adm-total-reg">—</div></div>
     <div class="kpi am"><div class="kpi-lbl">Uso de almacenamiento</div><div class="kpi-val">38 MB</div></div>
     <div class="kpi cy"><div class="kpi-lbl">Último backup</div><div class="kpi-val">Hoy</div></div>
     <div class="kpi gr"><div class="kpi-lbl">Versión</div><div class="kpi-val">v1.0</div></div>
@@ -1544,7 +1545,7 @@ function guardarConfigOperativa() {
   // [FIX 14 jul] El fallback era la meta VIEJA (197,297). Ahora: valor del campo
   // -> meta viva de Supabase (window.SISTEMA_META) -> 208,717.
   const meta   = parseInt(document.getElementById('cfg-meta').value.replace(/\D/g,''))
-                 || (typeof window.SISTEMA_META === 'number' && window.SISTEMA_META > 0 ? window.SISTEMA_META : 208717);
+                 || (typeof window.SISTEMA_META === 'number' && window.SISTEMA_META > 0 ? window.SISTEMA_META : 208754)   /* [FIX 1 sep] canonico */;
 
   if (!estado) { alert('Por favor ingresa el estado.'); return; }
 
@@ -2038,11 +2039,11 @@ function procesarExcelCandidaturas(input){
 function descargarPlantillaCand(){
   const csv = [
     'TIPO,NOMBRE,MUNICIPIO_DISTRITO,META_VOTOS,CAPTURISTAS,ACTIVA',
-    'gobernador,Candidato a Gobernador,Estado de Colima,208717,1500,SI',
+    'gobernador,Candidato a Gobernador,Estado de Colima,208754,1500,SI',
     'presidente,Presidente Municipal Ejemplo,Nombre Municipio,25000,120,SI',
     'dip_local,Diputado Local Dist. 1,Distrito Local 1,18000,80,SI',
     'dip_federal,Diputado Federal Dist. 1,Distrito Federal 1,98000,380,SI',
-    'senador,Candidato a Senador,Estado de Colima,208717,800,SI',
+    'senador,Candidato a Senador,Estado de Colima,208754,800,SI',
   ].join('\n');
   const blob = new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
   const a = document.createElement('a');
@@ -2062,7 +2063,10 @@ showTab = function(t){
   if(t==='candidaturas') initCandidaturas();
 };
 </script>
-<script src="theme.js">
+<script src="theme.js"></script>
+<!-- [FIX 1 sep] Este bloque venia DENTRO de la etiqueta que carga theme.js.
+     Con atributo src, el navegador ignora el contenido inline: nunca se ejecuto. -->
+<script>
 function checkTerminosLic() {
   var chk = document.getElementById('chk-terminos-lic');
   var btn = document.getElementById('btn-crear-lic');
@@ -2332,6 +2336,25 @@ function ieVolverAlHub(){
   } catch(e) { /* si ni siquiera podemos comparar, caemos a navegar */ }
   window.location.href = 'index.html';
 }
+
+// [FIX 1 sep] Total de registros real (ciudadanos de la licencia), en vez del
+// "10,408" horneado. Si falla, se queda en "—": no se inventa un numero.
+(async function adminContarRegistros(){
+  const el = document.getElementById('adm-total-reg');
+  if (!el) return;
+  try {
+    const ses = JSON.parse(localStorage.getItem('electoral_sesion') || 'null');
+    const tok = window._sesion?.access_token || ses?.access_token;
+    const lic = window._sesion?.licencia_id || ses?.licencia_id;
+    if (!tok || !lic || typeof SUPA_URL === 'undefined') return;
+    const r = await (window.supaFetch || fetch)(
+      SUPA_URL + '/rest/v1/ciudadanos?select=id&licencia_id=eq.' + encodeURIComponent(lic) + '&limit=1',
+      { headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + tok, Prefer: 'count=exact' } });
+    const rango = r.headers.get('content-range');       // formato: 0-0/14276
+    const total = rango && rango.split('/')[1];
+    if (total && total !== '*') el.textContent = Number(total).toLocaleString('es-MX');
+  } catch(e) { console.warn('Total de registros no disponible:', e.message); }
+})();
 </script>
 </body>
 </html>

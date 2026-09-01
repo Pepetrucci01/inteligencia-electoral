@@ -617,12 +617,28 @@ async function cargarSimpatizantesDiaE() {
     // [T9 16 jul] Tope de seguridad: sin límite, un admin sin asignar podría
     // intentar bajar toda la licencia. Se acota a 20000 (suficiente para el
     // día E; PostgREST default corta en 1000, este tope evita esa trampa).
-    query = query.limit(20000);
-
-    const { data, error } = await query.limit(2000);
+    // [FIX 1 sep · TRUNCADO] Habia DOS .limit() encadenados: .limit(20000) y
+    // luego .limit(2000) al ejecutar. El segundo pisa al primero, asi que el
+    // tope real eran 2,000 filas. Hoy hay 7,838 ciudadanos con compromiso >= 2:
+    // el dia de la eleccion la lista de movilizacion habria salido con 5,838
+    // personas de MENOS, en silencio y sin ningun aviso. Mismo patron que el
+    // truncado de 1000 de PostgREST que ya nos mordio en la carga maestra.
+    // Ahora: un solo tope alto y paginacion por si la licencia crece.
+    const PAGINA_DIAE = 1000;
+    let acumulado = [];
+    let error = null;
+    for (let p = 0; p < 40; p++) {
+      const { data: pag, error: e } = await query.range(p*PAGINA_DIAE, (p+1)*PAGINA_DIAE - 1);
+      if (e) { error = e; break; }
+      if (!pag || !pag.length) break;
+      acumulado = acumulado.concat(pag);
+      if (pag.length < PAGINA_DIAE) break;
+    }
+    const data = acumulado;
 
     if(error || !data || !data.length) {
-      console.warn('Sin datos de Supabase para Día E, usando demo');
+      console.warn('Día E: sin datos de Supabase' + (error ? ' — ' + error.message : '') +
+                   '. La lista queda vacía; no se inventan simpatizantes.');
       return;
     }
 
@@ -655,7 +671,10 @@ async function cargarSimpatizantesDiaE() {
       }
     } catch(e) {}
 
-    console.log(`Día E: ${SIMPATIZANTES.length} simpatizantes cargados`);
+    console.log(`Día E: ${SIMPATIZANTES.length} simpatizantes cargados (sin truncar)`);
+    if (SIMPATIZANTES.length >= 40000) {
+      console.warn('Día E: se alcanzó el tope de paginación. Revisar si faltan registros.');
+    }
     renderLista();
     actualizarContador();
 
