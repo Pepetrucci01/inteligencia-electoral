@@ -199,19 +199,11 @@ table.cap-table tr.selected{background:rgba(59,130,246,0.1);}
   </div>
 </div>
 
-<!-- [FIX 21 jul · auditoría de fallbacks] Aviso VISIBLE de datos simulados.
-     Antes, si el RPC fallaba, el panel pintaba 60 capturistas ficticios
-     generados con Math.random() (nombres, avances y scores inventados) y el
-     único aviso era un console.warn que nadie ve. Un coordinador podía estar
-     evaluando el desempeño de gente que no existe. Ahora el fallback se
-     anuncia en pantalla. -->
-<div id="aviso-simulados" style="display:none;margin:10px 16px 0;padding:10px 14px;
+<!-- [FIX 1 sep] Ya NO existe fallback a datos simulados. Si la RPC falla, este
+     aviso lo dice y la tabla queda vacia. Nunca se pintan capturistas inventados. -->
+<div id="aviso-carga" style="display:none;margin:10px 16px 0;padding:10px 14px;
      background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35);
-     border-radius:8px;color:#fca5a5;font-family:monospace;font-size:12px;line-height:1.5">
-  ⚠️ <b>DATOS SIMULADOS</b> — no se pudieron cargar los capturistas reales.
-  Lo que ves abajo es <b>ejemplo, no información de campo</b>. Revisa la consola (F12)
-  para el detalle y recarga la página.
-</div>
+     border-radius:8px;color:#fca5a5;font-family:monospace;font-size:12px;line-height:1.5"></div>
 
 <div class="filters">
   <span class="filter-label">MUNICIPIO</span>
@@ -238,7 +230,7 @@ table.cap-table tr.selected{background:rgba(59,130,246,0.1);}
   <div class="kpi-row">
     <div class="kpi blue">
       <div class="kpi-label">Total operadores</div>
-      <div class="kpi-val" id="kpi-total">60</div>
+      <div class="kpi-val" id="kpi-total">—</div>
       <div class="kpi-sub">estructura activa</div>
     </div>
     <div class="kpi green">
@@ -371,15 +363,14 @@ async function cargarDatosSupabase() {
     });
 
     if (!res.ok) {
-      console.warn(`⚠️ RPC get_capturistas_stats status ${res.status}, usando simulados`);
-      cargarDatosSimulados();
+      mostrarErrorCarga(`No se pudieron cargar los capturistas (HTTP ${res.status}). Recarga la página; si persiste, avisa a soporte.`);
       return;
     }
 
     const data = await res.json();
     if (!data || !Array.isArray(data.capturistas)) {
-      console.warn('⚠️ RPC devolvió respuesta inesperada, usando simulados:', data);
-      cargarDatosSimulados();
+      mostrarErrorCarga('La base devolvió una respuesta inesperada. Recarga la página.');
+      console.warn('RPC get_capturistas_stats respuesta inesperada:', data);
       return;
     }
 
@@ -390,8 +381,10 @@ async function cargarDatosSupabase() {
         ID_CAPTURISTA: c.id,
         CAPTURADO_POR: c.nombre,
         MUNICIPIO:     c.municipio || '—',
+        SECCION:       c.seccion || null,
+        EN_ESTRUCTURA: c.en_estructura !== false,
         total:         c.total || 0,
-        meta:          c.meta || 50,
+        meta:          Number(c.meta) || 0,   // [FIX 1 sep] meta real de asignaciones_seccion (Hamilton); la RPC ya trae default si no hay
         faltantes:     c.faltantes || 0,
         validados:     c.validados || 0,
         seguros:       c.seguros || 0,
@@ -418,16 +411,12 @@ async function cargarDatosSupabase() {
     // Mostrar aviso de registros pendientes de asignar
     mostrarAvisoSinAsignar(data.sin_asignar);
 
-    // Si no hay capturistas reales, mostrar simulados (entorno de demo)
+    // [FIX 1 sep] Sin capturistas en el alcance: estado vacio honesto, no simulados.
+    var _av = document.getElementById('aviso-carga');
     if (DATOS.length === 0) {
-      console.log('ℹ️ Sin capturistas con registros asignados; usando simulados');
-      cargarDatosSimulados();
-      return;
-    }
-
-    // [FIX 21 jul] Datos reales confirmados: retirar el aviso de simulados.
-    var _av = document.getElementById('aviso-simulados');
-    if (_av) _av.style.display = 'none';
+      if (_av) { _av.style.display = 'block'; _av.style.background='rgba(245,158,11,.1)'; _av.style.borderColor='rgba(245,158,11,.35)'; _av.style.color='#fcd34d';
+        _av.textContent = 'Aún no hay capturistas dados de alta en tu alcance. Cárgalos desde el módulo Cargas › Estructura.'; }
+    } else if (_av) { _av.style.display = 'none'; }
 
     aplicarFiltros();
 
@@ -450,48 +439,18 @@ async function cargarDatosSupabase() {
                 (sa > 0 ? ` · ${sa.toLocaleString('es-MX')} registros sin asignar` : ''));
   } catch(e) {
     console.error('Error cargando datos capturistas:', e);
-    cargarDatosSimulados();
+    mostrarErrorCarga('Error de conexión al cargar los capturistas: ' + (e.message || e));
   }
 }
 
-function cargarDatosSimulados() {
-  // [FIX 21 jul] Anunciar en pantalla que estos datos NO son reales.
-  var _av = document.getElementById('aviso-simulados');
-  if (_av) _av.style.display = 'block';
-  const MUNS = ['Colima','Manzanillo','Villa de Álvarez','Tecomán','Comala','Armería','Cuauhtémoc','Minatitlán','Ixtlahuacán','Coquimatlán'];
-  const NOMS = ['Carlos Mendoza','Rosa Jiménez','Pedro Soto','Ana Flores','Luis Torres','María Ruiz','Jorge Díaz','Elena Vega','Roberto Cruz','Carmen López','Arturo Reyes','Silvia Morales','David Herrera','Patricia Núñez','Miguel Ángel Ríos','Fernanda Castillo','Héctor Vargas','Laura Guzmán','Oscar Ramírez','Beatriz Leal','Ramón Ibarra','Claudia Espinoza','Felipe Guerrero','Adriana Salinas','Ernesto Peña','Norma Castellanos','Alfredo Ramos','Yolanda Fuentes','Sergio Acosta','Irma Delgado','Benjamín Ortega','Marisol Cabrera','Rodrigo Sandoval','Verónica Montes','Salvador Trejo','Alejandra Cortés','Ignacio Medina','Lucía Pacheco','Óscar Bermúdez','Diana Aguilar','Aurelio Zúñiga','Rocío Villanueva','Jesús Cárdenas','Mónica Estrada','Jaime Leyva','Esperanza Molina','Genaro Vázquez','Concepción Solís','Rubén Santana','Gloria Ochoa','Edmundo Cisneros','Alicia Ponce','Heriberto Mendívil','Pilar Arellano','Tomás Carrillo','Rebeca Quintero','Esteban Fragoso','Margarita Alvarado','Gilberto Durán','Nadia Robles'];
-  DATOS = NOMS.map((n, i) => {
-    const total = Math.floor(Math.random()*80)+10;
-    const meta = 50;
-    const validados = Math.floor(total * (0.4 + Math.random()*0.5));
-    const seguros = Math.floor(validados * (0.4 + Math.random()*0.4));
-    const pct_meta = +((total/meta)*100).toFixed(1);
-    const pct_val  = total > 0 ? +((validados/total)*100).toFixed(1) : 0;
-    const pct_seg  = total > 0 ? +((seguros/total)*100).toFixed(1) : 0;
-    const score    = +((pct_val*0.5 + pct_seg*0.5)).toFixed(1);
-    const dias = Math.floor(Math.random()*30);
-    const fecha = new Date(Date.now() - dias*86400000);
-    return {
-      ID_CAPTURISTA: `CAP-${String(i+1).padStart(3,'0')}`,
-      CAPTURADO_POR: n,
-      MUNICIPIO: MUNS[i % MUNS.length],
-      total, meta, faltantes: Math.max(0,meta-total),
-      validados, seguros, riesgo_alto: Math.floor(total*0.05),
-      duplicados: Math.floor(Math.random()*3),
-      pct_meta, pct_val, pct_seg, score,
-      moviliza: Math.floor(seguros*0.4),
-      simpatizantes: Math.floor(validados*0.3),
-      contactos: Math.floor(total*0.1),
-      alta_prob:0, casa:0, referido:0, evento:0, digital:0,
-      ultima_str: fecha.toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',year:'numeric'}),
-      ultima_fecha: fecha
-    };
-  });
-  aplicarFiltros();
-  const munsSet = new Set(DATOS.map(d => d.MUNICIPIO));
-  const sel = document.getElementById('filtro-municipio');
-  if(sel){ munsSet.forEach(m=>{ if(![...sel.options].find(o=>o.value===m)){ const o=document.createElement('option'); o.value=m; o.textContent=m; sel.appendChild(o); } }); }
+function mostrarErrorCarga(msg){
+  var _av = document.getElementById('aviso-carga');
+  if (_av) { _av.style.display = 'block'; _av.textContent = '⚠️ ' + msg; }
+  DATOS = [];
+  try { aplicarFiltros(); } catch(_e) {}
 }
+
+// [FIX 1 sep] cargarDatosSimulados() eliminada: 60 capturistas con Math.random() ya no existen en el sistema.
 
 
 let sortField = 'score';

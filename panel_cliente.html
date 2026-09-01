@@ -255,11 +255,11 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
 <div class="screen active" id="sc-resumen">
 
   <div class="kpi-row">
-    <div class="kpi bl"><div class="kpi-lbl">Meta estatal</div><div class="kpi-val" data-theme="sistema-meta">197,297</div></div>
-    <div class="kpi gr"><div class="kpi-lbl">Capturados</div><div class="kpi-val">10,092</div></div>
-    <div class="kpi am"><div class="kpi-lbl">Avance</div><div class="kpi-val">5.1%</div></div>
-    <div class="kpi cy"><div class="kpi-lbl">Activos hoy</div><div class="kpi-val">23</div></div>
-    <div class="kpi pu"><div class="kpi-lbl">Secciones cubiertas</div><div class="kpi-val">209</div></div>
+    <div class="kpi bl"><div class="kpi-lbl">Meta estatal</div><div class="kpi-val" data-theme="sistema-meta">—</div></div>
+    <div class="kpi gr"><div class="kpi-lbl">Capturados</div><div class="kpi-val">—</div></div>
+    <div class="kpi am"><div class="kpi-lbl">Avance</div><div class="kpi-val">—</div></div>
+    <div class="kpi cy"><div class="kpi-lbl">Activos hoy</div><div class="kpi-val">—</div></div>
+    <div class="kpi pu"><div class="kpi-lbl">Secciones cubiertas</div><div class="kpi-val">—</div></div>
     <div class="kpi re"><div class="kpi-lbl">Días a elección</div><div class="kpi-val" id="dias-elec">—</div></div>
   </div>
 
@@ -298,12 +298,12 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
 <div class="screen" id="sc-usuarios">
 
   <div class="kpi-row">
-    <div class="kpi bl"><div class="kpi-lbl">Total usuarios</div><div class="kpi-val" id="kpi-total">68</div></div>
-    <div class="kpi gr"><div class="kpi-lbl">Activos hoy</div><div class="kpi-val">23</div></div>
-    <div class="kpi am"><div class="kpi-lbl">Pendientes</div><div class="kpi-val" id="kpi-pend">5</div></div>
-    <div class="kpi re"><div class="kpi-lbl">Bloqueados</div><div class="kpi-val" id="kpi-bloq">2</div></div>
-    <div class="kpi cy"><div class="kpi-lbl">Coordinadores</div><div class="kpi-val">4</div></div>
-    <div class="kpi pu"><div class="kpi-lbl">Capturistas</div><div class="kpi-val" id="kpi-caps">60</div></div>
+    <div class="kpi bl"><div class="kpi-lbl">Total usuarios</div><div class="kpi-val" id="kpi-total">—</div></div>
+    <div class="kpi gr"><div class="kpi-lbl">Activos hoy</div><div class="kpi-val" id="kpi-activos-eq">—</div></div>
+    <div class="kpi am"><div class="kpi-lbl">Pendientes</div><div class="kpi-val" id="kpi-pend">—</div></div>
+    <div class="kpi re"><div class="kpi-lbl">Bloqueados</div><div class="kpi-val" id="kpi-bloq">—</div></div>
+    <div class="kpi cy"><div class="kpi-lbl">Coordinadores</div><div class="kpi-val" id="kpi-coords">—</div></div>
+    <div class="kpi pu"><div class="kpi-lbl">Capturistas</div><div class="kpi-val" id="kpi-caps">—</div></div>
   </div>
 
   <div class="card">
@@ -695,6 +695,7 @@ async function cargarDatosCliente() {
     try {
       const deHoy = await pcFetch(`ciudadanos?select=capturista_id&licencia_id=eq.${LICENCIA_ID}&created_at=gte.${hoy}&limit=1000`);
       activosHoy = new Set((Array.isArray(deHoy) ? deHoy : []).map(c => c.capturista_id).filter(Boolean)).size;
+      window.__activosHoy = activosHoy;   // [FIX 1 sep] para la tarjeta de Equipo
     } catch (eH) { console.warn('Activos hoy no disponible:', eH); }
 
     // Actualizar KPIs resumen
@@ -792,6 +793,11 @@ async function cargarDatosCliente() {
       document.getElementById('kpi-pend').textContent  = USUARIOS.filter(u => u.status === 'pendiente').length;
       document.getElementById('kpi-bloq').textContent  = USUARIOS.filter(u => u.status === 'bloqueado' || u.status === 'inactivo').length;
       document.getElementById('kpi-caps').textContent  = USUARIOS.filter(u => u.rol === 'capturista').length;
+      // [FIX 1 sep] Estas dos tarjetas decian 23 y 4 escritos a mano y nunca se actualizaban.
+      const _coords = document.getElementById('kpi-coords');
+      if (_coords) _coords.textContent = USUARIOS.filter(u => u.rol === 'coordinador' || u.rol === 'coordinador_estatal').length;
+      const _act = document.getElementById('kpi-activos-eq');
+      if (_act && typeof window.__activosHoy === 'number') _act.textContent = window.__activosHoy;
 
       // Re-renderizar tabla si está visible
       const sc = document.getElementById('sc-usuarios');
@@ -956,42 +962,8 @@ function renderBarras(){
   }).join('');
 }
 
-// Actividad reciente
-function renderActividad(){
-  const items = [
-    {color:'var(--green)', texto:'CAP-032 capturó 12 registros · Sección 236 · Manzanillo', hora:'Hoy 09:38'},
-    {color:'var(--accent)', texto:'CORD-MZL revisó avance municipal · Manzanillo', hora:'Hoy 08:45'},
-    {color:'var(--green)', texto:'CAP-038 capturó 8 registros · Sección 248', hora:'Hoy 08:12'},
-    {color:'var(--amber)', texto:'CAP-091 activado · Primera sesión pendiente', hora:'Ayer 22:30'},
-    {color:'var(--purple)', texto:'Reporte semanal generado automáticamente', hora:'Lun 08:00'},
-  ];
-  document.getElementById('actividad-lista').innerHTML = items.map(i =>
-    `<div style="display:flex;gap:10px;padding:11px 16px;border-bottom:1px solid var(--border);align-items:flex-start">
-      <div style="width:7px;height:7px;border-radius:50%;background:${i.color};margin-top:4px;flex-shrink:0"></div>
-      <div style="flex:1;font-size:12px">${i.texto}</div>
-      <div style="font-size:10px;font-family:var(--mono);color:var(--text3);white-space:nowrap">${i.hora}</div>
-    </div>`
-  ).join('');
-}
-
-// Alertas
-function renderAlertas(){
-  const items = [
-    {color:'var(--red)',   texto:'36 secciones sin ningún registro capturado', meta:'Comala · Coquimatlán · Tecomán sur'},
-    {color:'var(--red)',   texto:'408 registros duplicados pendientes', meta:'4.1% de la base · CURP o clave repetida'},
-    {color:'var(--red)',   texto:'Ritmo insuficiente — se requiere ×4.4 más capturas/semana', meta:'574/sem actual vs 2,531/sem requerido'},
-    {color:'var(--amber)', texto:'183 secciones en estado crítico — avance < 5%', meta:'Requieren refuerzo de campo esta semana'},
-  ];
-  document.getElementById('alertas-lista').innerHTML = items.map(i =>
-    `<div style="display:flex;gap:10px;padding:11px 16px;border-bottom:1px solid var(--border);align-items:flex-start">
-      <div style="width:7px;height:7px;border-radius:50%;background:${i.color};margin-top:4px;flex-shrink:0"></div>
-      <div>
-        <div style="font-size:12px;margin-bottom:2px">${i.texto}</div>
-        <div style="font-size:10px;font-family:var(--mono);color:var(--text3)">${i.meta}</div>
-      </div>
-    </div>`
-  ).join('');
-}
+// [FIX 1 sep] renderActividad() y renderAlertas() (listas inventadas: "CAP-032 capturó 12", "36 secciones",
+// "408 duplicados"...) eliminadas. Las reales son renderActividadReal() y renderAlertasReal().
 
 // [FIX 18 jul · Bugs 3-4] Si 'supabase-ready' disparaba ANTES de registrar el
 // listener, cargarDatosCliente NUNCA corría y el panel se quedaba con el HTML
@@ -1205,7 +1177,11 @@ function enviarTicket(){
   });
 });
 </script>
-<script src="theme.js">
+<script src="theme.js"></script>
+<!-- [FIX 1 sep] Este bloque venia DENTRO de la etiqueta que carga theme.js.
+     Cuando una etiqueta de script trae atributo src, el navegador ignora su
+     contenido inline: el boton de regreso al menu nunca llegaba a mostrarse. -->
+<script>
 // Mostrar botón de menú solo si NO está en iframe
 (function() {
   try {

@@ -377,17 +377,17 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
       <div class="pb-lbl">AVANCE ESTATAL VS META 2027</div>
       <div class="pb-track"><div class="pb-fill" id="pb-fill" style="width:7.2%;background:linear-gradient(90deg,#1d4ed8,#3b82f6)"></div></div>
       <div class="pb-pct" id="pb-pct" style="color:var(--accent)">7.2%</div>
-      <div class="pb-nums" id="pb-nums">14,300 / <span id="wr-meta-pb">208,754</span> capturados</div>
+      <div class="pb-nums" id="pb-nums">— / <span id="wr-meta-pb">208,754</span> capturados</div>
     </div>
 
     <!-- KPIs -->
     <div class="kpi-row">
       <div class="kpi bl" data-tip="Votos que la candidatura necesita para ganar en 2027. Es el objetivo final."><div class="kl">Meta estatal <span data-theme="sistema-anio">2027</span></div><div class="kv" id="kpi-meta">208,754</div><div class="ks">votos proyectados</div></div>
-      <div class="kpi gr" data-tip="Ciudadanos registrados hasta hoy por tu estructura en campo."><div class="kl">Total capturados</div><div class="kv" id="kpi-total-cap">14,300</div><div class="ks">registros activos</div></div>
-      <div class="kpi gr" data-tip="Ciudadanos con alto compromiso de votar por ti (nivel 3 y 4)."><div class="kl">Seguro vota</div><div class="kv" id="kpi-seguro-vota">3,432</div><div class="ks">nivel compromiso 3+4</div></div>
-      <div class="kpi am" data-tip="Ciudadanos que requieren atención inmediata para asegurar su voto."><div class="kl">Prioridad alta</div><div class="kv" id="kpi-atencion">2,757</div><div class="ks">requieren atención</div></div>
-      <div class="kpi re" data-tip="Ciudadanos con posible fuga de voto. Requieren seguimiento urgente."><div class="kl">Riesgo alto</div><div class="kv">2,203</div><div class="ks">posible fuga de voto</div></div>
-      <div class="kpi pu" data-tip="Registros repetidos que inflan tus números. Hay que depurarlos."><div class="kl">Duplicados</div><div class="kv" id="kpi-depurar">408</div><div class="ks">registros a depurar</div></div>
+      <div class="kpi gr" data-tip="Ciudadanos registrados hasta hoy por tu estructura en campo."><div class="kl">Total capturados</div><div class="kv" id="kpi-total-cap">—</div><div class="ks">registros activos</div></div>
+      <div class="kpi gr" data-tip="Ciudadanos con alto compromiso de votar por ti (nivel 3 y 4)."><div class="kl">Seguro vota</div><div class="kv" id="kpi-seguro-vota">—</div><div class="ks">nivel compromiso 3+4</div></div>
+      <div class="kpi am" data-tip="Ciudadanos que requieren atención inmediata para asegurar su voto."><div class="kl">Prioridad alta</div><div class="kv" id="kpi-atencion">—</div><div class="ks">requieren atención</div></div>
+      <div class="kpi re" data-tip="Ciudadanos con posible fuga de voto. Requieren seguimiento urgente."><div class="kl">Riesgo alto</div><div class="kv" id="kpi-riesgo">—</div><div class="ks">posible fuga de voto</div></div>
+      <div class="kpi pu" data-tip="Registros repetidos que inflan tus números. Hay que depurarlos."><div class="kl">Duplicados</div><div class="kv" id="kpi-depurar">—</div><div class="ks">registros a depurar</div></div>
     </div>
 
     <!-- DIVIDER CUADRANTES F1 -->
@@ -528,38 +528,27 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
       <div class="card">
         <div class="card-h">
           <span class="card-title" data-tip="Avisos automáticos sobre riesgos y pendientes detectados.">Alertas del sistema</span>
-          <span style="font-size:10px;font-family:var(--mono);color:var(--red)">● 3 críticas</span>
+          <span style="font-size:10px;font-family:var(--mono);color:var(--red)" id="wr-al-badge">—</span>
         </div>
-        <div class="al-item al-click" data-tip="Clic para abrir el detalle completo." onclick="abrirDetalleAlertaF1('sincap')"><div class="al-dot" style="background:var(--red)"></div><div><div class="al-title">Secciones sin captura</div><div class="al-desc">Comala (98,99), Coquimatlán (114,119),<br>Manzanillo (207) — 0% avance</div><div class="al-chev">→</div></div></div>
-        <div class="al-item al-click" data-tip="Clic para abrir el detalle completo." onclick="abrirDetalleAlertaF1('dup')"><div class="al-dot" style="background:var(--red)"></div><div><div class="al-title">408 registros duplicados</div><div class="al-desc">4.1% de la base — requieren<br>depuración urgente</div><div class="al-chev">→</div></div></div>
-        <div class="al-item al-click" data-tip="Clic para abrir el detalle completo." onclick="abrirDetalleAlertaF1('oposicion')"><div class="al-dot" style="background:var(--red)"></div><div><div class="al-title">55 secciones ganadas por oposición</div><div class="al-desc">Partido B ganó 14% de secciones<br>en 2024 — zonas de mayor esfuerzo</div><div class="al-chev">→</div></div></div>
-        <div class="al-item al-click" data-tip="Clic para abrir el detalle completo." onclick="abrirDetalleAlertaF1('ritmo')"><div class="al-dot" style="background:var(--amber)"></div><div><div class="al-title">Ritmo insuficiente — se requiere ×7.2</div><div class="al-desc">Actual 574/sem · Req. 4,140/sem</div><div class="al-chev">→</div></div></div>
-        <div class="al-item al-click" data-tip="Clic para abrir el detalle completo." onclick="abrirDetalleAlertaF1('apoyo')"><div class="al-dot" style="background:var(--amber)"></div><div><div class="al-title">1,845 votantes sin apoyo asignado</div><div class="al-desc">Logística pendiente de asignar</div><div class="al-chev">→</div></div></div>
+        <!-- [FIX 1 sep] Aqui vivian 5 alertas escritas a mano (408 duplicados,
+             "Comala (98,99)", x7.2, 1,845 sin apoyo, 55 secciones oposicion).
+             Las llena wrPintarPanelF1() con get_war_room_kpis(). -->
+        <div id="wr-alertas-f1"></div>
       </div>
 
       <!-- Nivel de compromiso -->
       <div class="card">
         <div class="card-h"><span class="card-title" data-tip="Qué tan seguro es el voto de cada ciudadano (1 = frío, 4 = seguro).">Nivel de compromiso</span></div>
-        <div class="card-b">
-          <div class="comp-row"><div class="comp-lbl">4 · Moviliza</div><div class="comp-track"><div class="comp-fill" style="width:11.7%;background:var(--green)"></div></div><div class="comp-num" style="color:var(--green)">1,169</div></div>
-          <div class="comp-row"><div class="comp-lbl">3 · Seguro vota</div><div class="comp-track"><div class="comp-fill" style="width:34.3%;background:#16a34a"></div></div><div class="comp-num" style="color:#16a34a">3,432</div></div>
-          <div class="comp-row"><div class="comp-lbl">2 · Simpatiza</div><div class="comp-track"><div class="comp-fill" style="width:32.2%;background:var(--accent)"></div></div><div class="comp-num" style="color:var(--accent)">3,219</div></div>
-          <div class="comp-row"><div class="comp-lbl">1 · Contacto</div><div class="comp-track"><div class="comp-fill" style="width:21.8%;background:var(--text3)"></div></div><div class="comp-num" style="color:var(--text3)">2,180</div></div>
-          <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:11px;font-family:var(--mono)">
-            <span style="color:var(--text3)">VOTO SEGURO (3+4)</span>
-            <span style="color:var(--green);font-weight:600">4,601 — 46%</span>
-          </div>
+        <div class="card-b" id="wr-compromiso">
+          <!-- [FIX 1 sep] Antes: 1,169 / 3,432 / 3,219 / 2,180 horneados. -->
         </div>
       </div>
 
       <!-- Origen de captura -->
       <div class="card">
         <div class="card-h"><span class="card-title" data-tip="De dónde vienen tus registros: campo, call center, eventos, etc.">Origen de captura</span></div>
-        <div class="card-b">
-          <div class="or-row"><div class="or-ic" style="background:rgba(59,130,246,.12);color:var(--accent)">🚪</div><div class="or-nm">Casa por casa</div><div class="or-bar"><div class="or-fill" style="width:45.4%;background:var(--accent)"></div></div><div class="or-num">4,538</div></div>
-          <div class="or-row"><div class="or-ic" style="background:rgba(168,85,247,.12);color:var(--purple)">👥</div><div class="or-nm">Referido</div><div class="or-bar"><div class="or-fill" style="width:25.2%;background:var(--purple)"></div></div><div class="or-num">2,519</div></div>
-          <div class="or-row"><div class="or-ic" style="background:rgba(245,158,11,.12);color:var(--amber)">🎪</div><div class="or-nm">Evento</div><div class="or-bar"><div class="or-fill" style="width:17.1%;background:var(--amber)"></div></div><div class="or-num">1,711</div></div>
-          <div class="or-row"><div class="or-ic" style="background:rgba(6,182,212,.12);color:var(--cyan)">💻</div><div class="or-nm">Digital</div><div class="or-bar"><div class="or-fill" style="width:12.3%;background:var(--cyan)"></div></div><div class="or-num">1,232</div></div>
+        <div class="card-b" id="wr-origen">
+          <!-- [FIX 1 sep] Antes: 4,538 / 2,519 / 1,711 / 1,232 horneados. -->
         </div>
       </div>
 
@@ -576,10 +565,10 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
   <div class="jornada-bar">
     <div>
       <div class="j-title">🗳 JORNADA ELECTORAL EN CURSO — 6 JUNIO 2027</div>
-      <div class="j-sub"><span id="j-total-casillas">1,033</span> casillas · 08:00–18:00 hrs · Colima</div>
+      <div class="j-sub"><span id="j-total-casillas">—</span> casillas · 08:00–18:00 hrs · Colima</div>
     </div>
     <div class="j-reloj" id="f2-reloj">--:--:--</div>
-    <button class="sim-btn" onclick="simActualizar()">⟳ Simular actualización</button>
+    <button class="sim-btn" onclick="simActualizar()">⟳ Actualizar</button>
   </div>
 
   <!-- F2 KPIs -->
@@ -808,19 +797,19 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
 // DATOS BASE
 // ══════════════════════════════════════════════════
 // Variable global para preservar el conteo real de Supabase
-let _totalCapturadosReal = 14300;
+let _totalCapturadosReal = 0;   // [FIX 1 sep] antes 14300 horneado; lo llena get_war_room_kpis
 
 const MUNS = [
-  {id:'TEC',n:'Tecomán',      cap:4475,meta:29884,secs:61, df:'DF2',cas:153,v24:6820,g24:'Partido A',p24:61.7},
-  {id:'MIN',n:'Minatitlán',   cap:625, meta:4426, secs:7, df:'DF2',cas:19, v24:1440,g24:'Partido A',p24:64.1},
-  {id:'IXT',n:'Ixtlahuacán',  cap:310, meta:2594, secs:8, df:'DF2',cas:12, v24:1280,g24:'Partido A',p24:61.4},
-  {id:'CML',n:'Comala',       cap:631, meta:6403, secs:13, df:'DF1',cas:35, v24:1640,g24:'Partido A',p24:47.7},
-  {id:'ARM',n:'Armería',      cap:688, meta:8432, secs:21, df:'DF2',cas:41, v24:2030,g24:'Partido A',p24:60.4},
-  {id:'VDA',n:'Villa de Álvarez',cap:1393,meta:36937,secs:71,df:'DF1',cas:194,v24:5220,g24:'Partido A',p24:47.0},
-  {id:'MAN',n:'Manzanillo',   cap:2108,meta:58013,secs:79, df:'DF2',cas:256,v24:8420,g24:'Partido A',p24:47.9},
-  {id:'COL',n:'Colima',       cap:1620,meta:48664,secs:97, df:'DF1',cas:248,v24:5180,g24:'Partido A',p24:45.4},
-  {id:'CUA',n:'Cuauhtémoc',   cap:619, meta:8351, secs:18, df:'DF1',cas:45, v24:2310,g24:'Partido A',p24:50.4},
-  {id:'COQ',n:'Coquimatlán',  cap:469, meta:5050, secs:13, df:'DF1',cas:30, v24:1820,g24:'Partido B',p24:52.7},
+  {id:'TEC',n:'Tecomán',      cap:0,   meta:29884,secs:61, df:'DF2',cas:153,v24:6820,g24:'Partido A',p24:61.7},
+  {id:'MIN',n:'Minatitlán',   cap:0,   meta:4426, secs:7, df:'DF2',cas:19, v24:1440,g24:'Partido A',p24:64.1},
+  {id:'IXT',n:'Ixtlahuacán',  cap:0,   meta:2594, secs:8, df:'DF2',cas:12, v24:1280,g24:'Partido A',p24:61.4},
+  {id:'CML',n:'Comala',       cap:0,   meta:6403, secs:13, df:'DF1',cas:35, v24:1640,g24:'Partido A',p24:47.7},
+  {id:'ARM',n:'Armería',      cap:0,   meta:8432, secs:21, df:'DF2',cas:41, v24:2030,g24:'Partido A',p24:60.4},
+  {id:'VDA',n:'Villa de Álvarez',cap:0,   meta:36937,secs:71,df:'DF1',cas:194,v24:5220,g24:'Partido A',p24:47.0},
+  {id:'MAN',n:'Manzanillo',   cap:0,   meta:58013,secs:79, df:'DF2',cas:256,v24:8420,g24:'Partido A',p24:47.9},
+  {id:'COL',n:'Colima',       cap:0,   meta:48664,secs:97, df:'DF1',cas:248,v24:5180,g24:'Partido A',p24:45.4},
+  {id:'CUA',n:'Cuauhtémoc',   cap:0,   meta:8351, secs:18, df:'DF1',cas:45, v24:2310,g24:'Partido A',p24:50.4},
+  {id:'COQ',n:'Coquimatlán',  cap:0,   meta:5050, secs:13, df:'DF1',cas:30, v24:1820,g24:'Partido B',p24:52.7},
 ];
 const DFS = [
   {id:'DF1',n:'Distrito Federal 1',munIds:['CML','VDA','COL','CUA','COQ']},
@@ -853,76 +842,133 @@ MUNS.forEach(m=>{
   });
 });
 
-// Secciones
+// ══════════════════════════════════════════════════════════════════════════
+// [FIX 1 sep] TERRITORIO REAL. Antes aqui vivian tres generadores con
+// Math.random(): SECS (secciones con capturado aleatorio), CAS_SEC (casillas
+// con tipo/representante/domicilio/apertura/votos inventados) y CAPS
+// (capturistas "Carlos Mendoza", "Rosa Jimenez"... con telefonos ficticios).
+// Ahora las tres estructuras arrancan vacias y las llena
+// wrConstruirTerritorio() con get_war_room_territorio(): 388 secciones reales
+// con su distrito local/federal y meta, 1,033 casillas reales con su estado de
+// jornada, y los 500 capturistas reales con su meta de Hamilton.
+// Si la RPC falla, se quedan vacias: NUNCA se pintan datos inventados.
+// Las formas de los objetos se conservan para que todo el render siga igual.
+// ══════════════════════════════════════════════════════════════════════════
 const SECS = {};
-let sN=1;
-DLS.forEach(dl=>{
-  SECS[dl.id]=[];
-  const nS=Math.max(2,dl.secs);
-  for(let i=0;i<nS;i++){
-    SECS[dl.id].push({id:'S'+sN,num:sN,dl:dl.id,mun:dl.mun,munNombre:dl.munNombre,
-      cap:Math.round(dl.cap/nS*(0.5+Math.random())),meta:Math.round(dl.meta/nS),
-      cas:Math.max(1,Math.round(dl.cas/nS))});
-    sN++;
-  }
-});
-
-// Casillas
 const CAS_SEC = {};
-const TIPOS=['Básica','Contigua','Especial','Extraordinaria'];
-const REPS=['REP-001','REP-002','REP-003','REP-004','REP-005','REP-006','REP-007','REP-008','REP-009','REP-010'];
-const INCS=['Representante no se presentó','Sin materiales electorales','Casilla dañada','Disturbio externo'];
-const COLS=['Col. Centro','Col. Jardines','Col. Las Palmas','Col. Obrera','Col. Magisterial'];
-const LGRS=['Escuela primaria','Jardín vecinal','Salón ejidal','Casa de cultura','Explanada municipal'];
-const CLLS=['Hidalgo','Juárez','Morelos','Allende','Reforma','5 de Mayo'];
-
-function rnd(a){return a[Math.floor(Math.random()*a.length)];}
-function fmt(n){return Number(n).toLocaleString('es-MX');}
-
-let casN=1;
-Object.values(SECS).flat().forEach(sec=>{
-  CAS_SEC[sec.id]=[];
-  for(let i=0;i<sec.cas;i++){
-    const r=Math.random();
-    let est='sinreporte';
-    if(r<0.10)est='abierta'; else if(r<0.015)est='incidencia'; else if(r<0.003)est='cerrada';
-    const ab=est!=='sinreporte';
-    CAS_SEC[sec.id].push({
-      id:'CAS-'+String(casN).padStart(4,'0'),num:casN,tipo:rnd(TIPOS),
-      sec:sec.id,secNum:sec.num,mun:sec.mun,munNombre:sec.munNombre,
-      rep:rnd(REPS),domicilio:'Calle '+rnd(CLLS)+' '+Math.floor(Math.random()*500),
-      colonia:rnd(COLS),lugar:rnd(LGRS),
-      apertura:ab?('0'+(6+Math.floor(Math.random()*2))+':'+(Math.random()<.5?'00':'30')):'—',
-      horaReg:ab?(new Date(Date.now()-Math.random()*7200000).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})):'—',
-      votos:ab?Math.floor(Math.random()*50):0,nuevos:ab?Math.floor(Math.random()*8):0,
-      estatus:est,incidencia:est==='incidencia'?rnd(INCS):'',
-    });
-    casN++;
-  }
-});
-
-// ── CAPTURISTAS ──────────────────────────────────────────────────────────────
-const NOMBRES = ['Carlos Mendoza','Rosa Jiménez','Pedro Soto','Ana Flores','Luis Torres',
-  'María Ruiz','Jorge Díaz','Elena Vega','Roberto Cruz','Carmen López','Arturo Reyes',
-  'Silvia Morales','David Herrera','Patricia Núñez','Miguel Ángel Ríos'];
 const CAPS = {};
-Object.values(SECS).flat().forEach(sec=>{
-  const n = Math.max(1, Math.round(sec.cap / 25));
-  CAPS[sec.id] = [];
-  for(let i=0;i<n;i++){
-    const metaCap = Math.round(sec.meta / n);
-    const capCap  = Math.round(sec.cap  / n * (0.4 + Math.random()*0.8));
-    CAPS[sec.id].push({
-      id: `CAP-${sec.id}-${i}`,
-      nombre: NOMBRES[Math.floor(Math.random()*NOMBRES.length)],
-      seccion: sec.id, secNum: sec.num,
-      mun: sec.mun, munNombre: sec.munNombre,
-      tel: `312-${String(Math.floor(Math.random()*9000000)+1000000)}`,
-      meta: metaCap, cap: capCap,
-      votosF2: Math.floor(capCap * 0.6 * Math.random()),
+function fmt(n){return Number(n||0).toLocaleString('es-MX');}
+
+const WR_MUN_ID = {'TECOMAN':'TEC','MINATITLAN':'MIN','IXTLAHUACAN':'IXT','COMALA':'CML','ARMERIA':'ARM',
+  'VILLA DE ALVAREZ':'VDA','MANZANILLO':'MAN','COLIMA':'COL','CUAUHTEMOC':'CUA','COQUIMATLAN':'COQ'};
+const wrNorm = x => String(x||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+const wrCap1 = x => { x=String(x||'').trim(); return x ? x.charAt(0).toUpperCase()+x.slice(1).toLowerCase() : '—'; };
+function wrHora(ts){ if(!ts) return '—'; try{ return new Date(ts).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}); }catch(_e){ return '—'; } }
+function wrEstatus(c){
+  const e = wrNorm(c.estatus);
+  if(c.incidencia) return 'incidencia';
+  if(c.cierre || e.indexOf('CERR')===0) return 'cerrada';
+  if(c.apertura || e.indexOf('ABIER')===0 || e==='INSTALADA') return 'abierta';
+  if(e==='INCIDENCIA') return 'incidencia';
+  return 'sinreporte';
+}
+
+function wrConstruirTerritorio(t){
+  const secciones = Array.isArray(t.secciones) ? t.secciones : [];
+  const casillas  = Array.isArray(t.casillas)  ? t.casillas  : [];
+  const caps      = Array.isArray(t.capturistas) ? t.capturistas : [];
+
+  // Limpiar
+  Object.keys(SECS).forEach(k=>delete SECS[k]);
+  Object.keys(CAS_SEC).forEach(k=>delete CAS_SEC[k]);
+  Object.keys(CAPS).forEach(k=>delete CAPS[k]);
+  window.SECS_REAL = window.SECS_REAL || {};
+  Object.keys(window.SECS_REAL).forEach(k=>delete window.SECS_REAL[k]);
+  DLS.forEach(dl=>{ SECS[dl.id]=[]; });
+
+  // Secciones -> SECS por distrito local + SECS_REAL por municipio
+  const secPorNum = {};
+  secciones.forEach(sc=>{
+    const munId = WR_MUN_ID[wrNorm(sc.mun)]; if(!munId) return;
+    const m = MUNS.find(x=>x.id===munId);
+    const dlId = 'DL_'+munId+'_'+sc.dl;
+    if(!DLS.find(d=>d.id===dlId)){
+      DLS.push({id:dlId,num:sc.dl,n:'Distrito Local '+sc.dl,mun:munId,munNombre:m?m.n:sc.mun,cap:0,meta:0,secs:0,cas:0});
+      SECS[dlId]=[];
+    }
+    const o = {id:'S'+sc.num, num:Number(sc.num), dl:dlId, mun:munId, munNombre:m?m.n:sc.mun,
+               cap:Number(sc.cap)||0, meta:Math.round(Number(sc.meta)||0), cas:Number(sc.cas)||0};
+    SECS[dlId].push(o);
+    (window.SECS_REAL[munId] = window.SECS_REAL[munId] || []).push(o);
+    secPorNum[o.num]=o;
+    CAS_SEC[o.id]=[]; CAPS[o.id]=[];
+  });
+
+  // Casillas reales
+  casillas.forEach(c=>{
+    const sec = secPorNum[Number(c.sec)]; if(!sec) return;
+    const dir = String(c.direccion||'');
+    const partes = dir.split(',').map(x=>x.trim()).filter(Boolean);
+    CAS_SEC[sec.id].push({
+      id:'S'+c.sec+'-'+wrCap1(c.tipo).charAt(0)+(c.num||1), num:c.num, tipo:wrCap1(c.tipo),
+      sec:sec.id, secNum:sec.num, mun:sec.mun, munNombre:sec.munNombre,
+      rep:c.rep||'—',
+      domicilio:c.calle || (partes.length>1 ? partes.slice(1,3).join(', ') : (partes[0]||'—')),
+      colonia:c.colonia || '—',
+      lugar:c.lugar || partes[0] || '—',
+      apertura:wrHora(c.apertura), horaReg:wrHora(c.apertura),
+      votos:Number(c.votos)||0, nuevos:0,
+      estatus:wrEstatus(c), incidencia:c.incidencia||'',
+      ln:Number(c.ln)||0, meta:Number(c.meta)||0,
     });
+  });
+
+  // Capturistas reales
+  caps.forEach(k=>{
+    const sec = secPorNum[Number(k.sec)]; if(!sec) return;
+    CAPS[sec.id].push({
+      id:k.id, nombre:k.nombre||'Sin nombre', seccion:sec.id, secNum:sec.num,
+      mun:sec.mun, munNombre:sec.munNombre, tel:String(k.tel||'').trim() || '—',
+      meta:Number(k.meta)||0, cap:Number(k.cap)||0, votosF2:0,
+    });
+  });
+
+  // Totales de distrito local y municipio desde lo real
+  DLS.forEach(dl=>{
+    const ss = SECS[dl.id]||[];
+    dl.secs = ss.length; dl.cas = ss.reduce((a,x)=>a+x.cas,0);
+    dl.meta = ss.reduce((a,x)=>a+x.meta,0); dl.cap = ss.reduce((a,x)=>a+x.cap,0);
+  });
+  MUNS.forEach(m=>{
+    const ss = window.SECS_REAL[m.id]||[];
+    if(ss.length){ m.secs=ss.length; m.cas=ss.reduce((a,x)=>a+x.cas,0); m.meta=ss.reduce((a,x)=>a+x.meta,0); }
+  });
+  DFS.forEach(df=>{
+    df.meta=MUNS.filter(m=>df.munIds.includes(m.id)).reduce((a,m)=>a+m.meta,0);
+    df.secs=MUNS.filter(m=>df.munIds.includes(m.id)).reduce((a,m)=>a+m.secs,0);
+    df.cas =MUNS.filter(m=>df.munIds.includes(m.id)).reduce((a,m)=>a+m.cas,0);
+  });
+  window.TERRITORIO_REAL = true;
+  console.log(`✅ Territorio real [${t.alcance}]: ${secciones.length} secciones · ${casillas.length} casillas · ${caps.length} capturistas`);
+}
+
+async function cargarTerritorioReal(){
+  try{
+    const r = await wrFetch(`${SUPA_URL}/rest/v1/rpc/get_war_room_territorio`, {
+      method:'POST', headers:{'Content-Type':'application/json'}, body:'{}' });
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const t = await r.json();
+    if(!t || !Array.isArray(t.secciones)) throw new Error('estructura inesperada');
+    wrConstruirTerritorio(t);
+    if(typeof poblarFiltrosSecciones==='function') poblarFiltrosSecciones(null);
+    ['renderMunF1','renderCuadF1','updateBcF1','renderTablaCapturistas','renderSemaforoGlobal','renderSemaforoF2','renderCuadF2','renderTablaF2']
+      .forEach(fn=>{ try{ if(typeof window[fn]==='function') window[fn](); }catch(e){ console.warn(fn, e); } });
+    return true;
+  }catch(e){
+    console.warn('⚠ Territorio real no disponible:', e.message, '— el desglose queda vacío, no se inventa nada.');
+    return false;
   }
-});
+}
 
 function pct(c,m){return m>0?Math.min(parseFloat((c/m*100).toFixed(1)),100):0;}
 function semC(p){return p>=10?'var(--green)':p>=5?'var(--amber)':'var(--red)';}
@@ -1023,8 +1069,10 @@ function renderMunF1(){
   const _esEstatal = ['super_admin','admin','coordinador_estatal'].includes(_rolU);
   const _norm = s => (s||'').toString().trim().toUpperCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g,'');   // quita acentos
+  // [FIX 1 sep] Decia `_munsPermitidos.slice()` dentro de su propia declaracion:
+  // ReferenceError (TDZ) para todo rol estatal. Debe partir de MUNS.
   const _munsPermitidos = (_esEstatal || !_munU)
-    ? _munsPermitidos.slice()
+    ? MUNS.slice()
     : MUNS.filter(m => _norm(m.n) === _norm(_munU) || _norm(m.nombre) === _norm(_munU));
 
   // [AISLAMIENTO] Ajustar el encabezado de KPIs al alcance del usuario: un
@@ -1153,6 +1201,103 @@ function irSeccionF1(secId){
   syncFiltrosDesdeDrillF1();renderCuadF1();renderMunF1();renderTablaCapturistas();updateBcF1();
   document.getElementById('cuad-f1').scrollIntoView({behavior:'smooth',block:'start'});
 }
+// ══════════════════════════════════════════════════════════════════════════
+// [FIX 1 sep] PANEL DERECHO DE FASE 1 CON DATOS REALES
+// Alertas, nivel de compromiso y origen de captura venian escritos a mano en
+// el HTML e iguales para todo el mundo. get_war_room_kpis v3 ya devuelve
+// compromiso{1..4}, origen{}, sin_captura, sin_apoyo y semana, acotados al
+// alcance territorial del usuario.
+// ══════════════════════════════════════════════════════════════════════════
+window.WR_KPIS = null;
+
+function wrSemanasAEleccion(k){
+  const f = (k && k.fecha_eleccion) || '2027-06-06';
+  const d = Math.ceil((new Date(f+'T00:00:00') - new Date()) / 864e5);
+  return Math.max(1, Math.round(d/7));
+}
+
+function wrPintarPanelF1(k){
+  if(!k) return;
+  window.WR_KPIS = k;
+  const esc = t => String(t??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const total = Number(k.total)||0;
+
+  // ── Alertas ──
+  const al = [];
+  if(Number(k.sin_captura)>0) al.push({n:'critica',key:'sincap',t:`${fmt(k.sin_captura)} secciones sin captura`,
+    d:`de ${fmt(k.secciones)} secciones · 0% de avance`});
+  if(Number(k.depurar)>0) al.push({n: (total>0 && k.depurar/total>=0.03)?'critica':'aviso', key:'dup',
+    t:`${fmt(k.depurar)} registros duplicados`, d:`${total>0?(k.depurar/total*100).toFixed(1):0}% de la base — requieren depuración`});
+  const opos = MUNS.filter(m=>m.g24 && m.g24!=='Partido A').length;
+  if(opos>0) al.push({n:'critica',key:'oposicion',t:`${opos} municipios ganados por la oposición en 2024`,
+    d:'Zonas que exigen mayor esfuerzo de estructura'});
+  const sem = wrSemanasAEleccion(k), rest = Math.max(0, (Number(k.meta)||0) - total);
+  const req = Math.ceil(rest/sem), act = Number(k.semana)||0;
+  if(req>0 && act<req) al.push({n:'aviso',key:'ritmo',
+    t: act>0 ? `Ritmo insuficiente — se requiere ×${(req/act).toFixed(1)}` : 'Sin capturas en los últimos 7 días',
+    d: `Actual ${fmt(act)}/sem · Req. ${fmt(req)}/sem`});
+  if(Number(k.sin_apoyo)>0) al.push({n:'aviso',key:'apoyo',t:`${fmt(k.sin_apoyo)} votantes sin apoyo asignado`,
+    d:'Logística pendiente de asignar'});
+
+  const cont = document.getElementById('wr-alertas-f1');
+  if(cont){
+    cont.innerHTML = al.length ? al.map(a=>`
+      <div class="al-item al-click" data-tip="Clic para abrir el detalle completo." onclick="abrirDetalleAlertaF1('${a.key}')">
+        <div class="al-dot" style="background:var(--${a.n==='critica'?'red':'amber'})"></div>
+        <div><div class="al-title">${esc(a.t)}</div><div class="al-desc">${esc(a.d)}</div><div class="al-chev">→</div></div>
+      </div>`).join('')
+      : '<div style="padding:14px;color:var(--text3);font-size:12px;text-align:center">Sin alertas activas</div>';
+  }
+  const badge = document.getElementById('wr-al-badge');
+  if(badge){
+    const c = al.filter(a=>a.n==='critica').length, v = al.length-c;
+    badge.textContent = c ? `● ${c} crítica${c>1?'s':''}` : (v ? `● ${v} aviso${v>1?'s':''}` : '● sin alertas');
+    badge.style.color = c ? 'var(--red)' : (v ? 'var(--amber)' : 'var(--green)');
+  }
+
+  // ── Nivel de compromiso ──
+  const cp = k.compromiso || {};
+  const NIV = [
+    {n:4, lbl:'4 · Moviliza',    col:'var(--green)'},
+    {n:3, lbl:'3 · Seguro vota', col:'#16a34a'},
+    {n:2, lbl:'2 · Simpatiza',   col:'var(--accent)'},
+    {n:1, lbl:'1 · Contacto',    col:'var(--text3)'},
+  ];
+  const maxN = Math.max(1, ...NIV.map(x=>Number(cp[x.n])||0));
+  const boxC = document.getElementById('wr-compromiso');
+  if(boxC){
+    const seg = (Number(cp[3])||0) + (Number(cp[4])||0);
+    boxC.innerHTML = NIV.map(x=>{
+      const v = Number(cp[x.n])||0;
+      return `<div class="comp-row"><div class="comp-lbl">${x.lbl}</div>
+        <div class="comp-track"><div class="comp-fill" style="width:${(v/maxN*100).toFixed(1)}%;background:${x.col}"></div></div>
+        <div class="comp-num" style="color:${x.col}">${fmt(v)}</div></div>`;
+    }).join('') + `
+      <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:11px;font-family:var(--mono)">
+        <span style="color:var(--text3)">VOTO SEGURO (3+4)</span>
+        <span style="color:var(--green);font-weight:600">${fmt(seg)} — ${total>0?Math.round(seg/total*100):0}%</span>
+      </div>`;
+  }
+
+  // ── Origen de captura ──
+  const ICO = {'casa por casa':['🚪','var(--accent)','rgba(59,130,246,.12)'], 'referido':['👥','var(--purple)','rgba(168,85,247,.12)'],
+    'evento':['🎪','var(--amber)','rgba(245,158,11,.12)'], 'digital':['💻','var(--cyan)','rgba(6,182,212,.12)'],
+    'call center':['📞','var(--accent)','rgba(59,130,246,.12)']};
+  const orig = Object.entries(k.origen||{}).map(([nm,v])=>({nm, v:Number(v)||0}))
+    .filter(o=>o.v>0).sort((a,b)=>b.v-a.v).slice(0,6);
+  const maxO = Math.max(1, ...orig.map(o=>o.v));
+  const boxO = document.getElementById('wr-origen');
+  if(boxO){
+    boxO.innerHTML = orig.length ? orig.map(o=>{
+      const ic = ICO[o.nm.toLowerCase()] || ['📋','var(--text3)','rgba(255,255,255,.06)'];
+      return `<div class="or-row"><div class="or-ic" style="background:${ic[2]};color:${ic[1]}">${ic[0]}</div>
+        <div class="or-nm">${esc(o.nm)}</div>
+        <div class="or-bar"><div class="or-fill" style="width:${(o.v/maxO*100).toFixed(1)}%;background:${ic[1]}"></div></div>
+        <div class="or-num">${fmt(o.v)}</div></div>`;
+    }).join('') : '<div style="padding:10px;color:var(--text3);font-size:12px;text-align:center">Sin registros todavía</div>';
+  }
+}
+
 function abrirDetalleAlertaF1(k){
   _mTipo='f1-'+k; _mSortField=null; _mSortAsc=true;
   if(k==='sincap'){
@@ -1165,8 +1310,18 @@ function abrirDetalleAlertaF1(k){
     _mData=[...MUNS].map(m=>({mid:m.id,df:m.df,mun:m.n,g24:m.g24,p24:m.p24,v24:m.v24,secs:m.secs}))
       .sort((a,b)=>((a.g24==='Partido B'?0:1)-(b.g24==='Partido B'?0:1))||b.p24-a.p24);
   } else if(k==='ritmo'){
-    const cap=_totalCapturadosReal, meta=Math.round(META_WR);
-    _mData={cap:cap,meta:meta,rest:meta-cap,sem:48,act:574,req:Math.ceil((meta-cap)/48)};
+    // [FIX 1 sep] Antes: sem:48 y act:574 fijos. Ahora de la RPC y la fecha real.
+    const K=window.WR_KPIS||{};
+    const cap=Number(K.total)||_totalCapturadosReal||0;
+    const meta=Number(K.meta)||Math.round(META_WR);
+    const sem=wrSemanasAEleccion(K), rest=Math.max(0,meta-cap);
+    _mData={cap:cap,meta:meta,rest:rest,sem:sem,act:Number(K.semana)||0,req:Math.ceil(rest/sem)};
+  } else if(k==='dup'){
+    const K=window.WR_KPIS||{};
+    _mData={dup:Number(K.depurar)||0,total:Number(K.total)||0};
+  } else if(k==='apoyo'){
+    const K=window.WR_KPIS||{};
+    _mData={sin:Number(K.sin_apoyo)||0,apoyos:Number(K.apoyos)||0};
   } else _mData=null;
   renderDetalleAlerta();
   document.getElementById('alerta-detalle-modal').style.display='flex';
@@ -1614,7 +1769,10 @@ function buildAlertasF2(){
   if(sr>800)alertas.push({t:'re',key:'sinreporte',txt:`${sr} casillas sin reporte`,desc:'Enviar alerta masiva urgente'});
   else if(sr>400)alertas.push({t:'am',key:'sinreporte',txt:`${sr} casillas sin reporte`,desc:'Verificar zonas rurales primero'});
   if(ab<100)alertas.push({t:'am',key:'activas',txt:`Solo ${ab} casillas activas`,desc:'Apertura lenta — monitorear'});
-  alertas.push({t:'am',key:'transporte',txt:'1,845 votantes necesitan transporte',desc:'Asignar antes de las 14:00'});
+  // [FIX 1 sep] Antes: '1,845 votantes necesitan transporte' fijo, sin importar
+  // el dato. Ahora sale de la RPC (es_apoyo sin responsable) y solo si hay.
+  const _apoyo = Number((window.WR_KPIS||{}).sin_apoyo)||0;
+  if(_apoyo>0) alertas.push({t:'am',key:'transporte',txt:`${fmt(_apoyo)} votantes necesitan transporte`,desc:'Asignar antes de las 14:00'});
   if(vt>0)alertas.push({t:'bl',key:'votos',txt:`${fmt(vt)} votos confirmados`,desc:`${ab} casillas reportando`});
   const crit=alertas.filter(a=>a.t==='re').length+alertas.filter(a=>a.t==='am').length;
   const badge=document.getElementById('f2-alert-badge');if(badge)badge.textContent='● '+crit;
@@ -1943,21 +2101,18 @@ function enviarAlertaMasiva(){
 function enviarAlertaCompleta(){ enviarAlertaMasiva(); }
 
 function calcularDestinatarios(dest, mun){
-  // Simulación de capturistas registrados con sus datos
-  const todos=[
-    {nombre:'Carlos Mendoza',seccion:138,municipio:'Villa de Álvarez',tel:'312-100-0001',avance:22},
-    {nombre:'Rosa Jiménez',seccion:145,municipio:'Villa de Álvarez',tel:'312-100-0002',avance:45},
-    {nombre:'Pedro Soto',seccion:207,municipio:'Manzanillo',tel:'312-100-0003',avance:0},
-    {nombre:'Ana Flores',seccion:212,municipio:'Manzanillo',tel:'312-100-0004',avance:15},
-    {nombre:'Luis Torres',seccion:98,municipio:'Comala',tel:'312-100-0005',avance:0},
-    {nombre:'María Ruiz',seccion:114,municipio:'Coquimatlán',tel:'312-100-0006',avance:8},
-    {nombre:'Jorge Díaz',seccion:170,municipio:'Armería',tel:'312-100-0007',avance:35},
-    {nombre:'Elena Vega',seccion:320,municipio:'Tecomán',tel:'312-100-0008',avance:18},
-  ];
-  let filtrados=todos;
-  if(dest==='rojos') filtrados=todos.filter(c=>c.avance<30);
-  else if(dest==='sinreporte') filtrados=todos.filter(c=>c.avance===0);
-  else if(dest==='municipio'&&mun) filtrados=todos.filter(c=>c.municipio===mun);
+  // [FIX 1 sep] Antes: 8 capturistas inventados ("Carlos Mendoza 312-100-0001"...).
+  // Ahora: los capturistas REALES del territorio (CAPS, via get_war_room_territorio),
+  // con su avance real = capturas / meta de Hamilton.
+  const wrN = x => String(x||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+  const todos = Object.values(CAPS).flat().map(c => ({
+    id: c.id, nombre: c.nombre, seccion: c.secNum, municipio: c.munNombre, tel: c.tel,
+    avance: c.meta > 0 ? Math.round(c.cap / c.meta * 100) : 0, capturas: c.cap,
+  }));
+  let filtrados = todos;
+  if(dest==='rojos') filtrados = todos.filter(c=>c.avance<30);
+  else if(dest==='sinreporte') filtrados = todos.filter(c=>c.capturas===0);
+  else if(dest==='municipio'&&mun) filtrados = todos.filter(c=>wrN(c.municipio)===wrN(mun));
   return filtrados;
 }
 
@@ -2087,16 +2242,12 @@ function updateBcF2(){
   el.innerHTML=h;
 }
 
-function simActualizar(){
-  Object.values(CAS_SEC).flat().forEach(c=>{
-    if(c.estatus==='sinreporte'&&Math.random()<0.06){
-      c.estatus=Math.random()<0.04?'incidencia':'abierta';
-      c.apertura='0'+(7+Math.floor(Math.random()*2))+':'+(Math.random()<.5?'00':'30');
-      c.horaReg=new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
-      c.votos=Math.floor(Math.random()*35);c.nuevos=Math.floor(Math.random()*5);
-      if(c.estatus==='incidencia')c.incidencia=rnd(INCS);
-    }else if(c.estatus==='abierta'){c.votos+=Math.floor(Math.random()*8);if(Math.random()<0.2)c.nuevos++;}
-  });
+// [FIX 1 sep] Antes "Simular actualizacion": abria casillas al azar, inventaba
+// horas, votos e incidencias sobre CAS_SEC. Ahora recarga el territorio real y
+// repinta. Cero azar.
+async function simActualizar(){
+  await cargarTerritorioReal();
+  if (typeof cargarCasillasF2Reales === 'function') { try { await cargarCasillasF2Reales(); } catch(_e) {} }
   updateF2KPIs();renderMunF2();buildAlertasF2();renderCuadF2();
 }
 
@@ -2161,7 +2312,7 @@ async function cargarCasillasF2Reales() {
     // limit/offset (no Range: dispara preflight CORS) + order estable.
     const base = `${SUPA_URL}/rest/v1/casillas` +
       `?select=id,numero_seccion,numero_casilla,tipo_casilla,municipio,` +
-      `estatus_casilla,hora_apertura,hora_cierre,votos_nuestro_partido,` +
+      `estatus_casilla,hora_apertura,hora_cierre,votos_favor,` +
       `presidente_casilla,incidencias_apertura,incidencias_cierre` +
       `&order=numero_seccion,numero_casilla`;
     let filas = [];
@@ -2188,7 +2339,7 @@ async function cargarCasillasF2Reales() {
         estatus:   est,
         hora:      horaLegible(c.hora_apertura),
         rep:       c.presidente_casilla || '—',
-        votos:     Number(c.votos_nuestro_partido || 0),
+        votos:     Number(c.votos_favor || 0),   // [FIX 1 sep] antes votos_nuestro_partido = historico 2024 pintado como jornada 2027
       };
     });
 
@@ -2703,6 +2854,8 @@ async function cargarSeccionesSupabase(munId = null) {
     'COL':'COLIMA','CUA':'CUAUHTÉMOC','COQ':'COQUIMATLÁN'
   };
 
+  // [FIX 1 sep] Si el territorio real ya cargo, no hay nada que sustituir.
+  if (window.TERRITORIO_REAL) { poblarFiltrosSecciones(munId); return; }
   try {
     const bdNombre = MUN_BD_NAME[munId] || '';
     if(!bdNombre) return;
@@ -2872,6 +3025,8 @@ async function cargarDesdeRPC() {
 
     // Guardar el bloque de KPIs por si otra parte del código lo necesita
     window._kpisRPC = data;
+    // [FIX 1 sep] Panel derecho de F1 (alertas, compromiso, origen) con datos reales
+    if (typeof wrPintarPanelF1 === 'function') wrPintarPanelF1(data);
 
     console.log('✅ War Room cargado vía RPC (sin paginación)');
   } catch (e) {
@@ -3201,6 +3356,11 @@ function renderDetalleAlerta() {
   else if (tipo === 'transporte') {
     const lista = _mSortField ? sortArr(data) : data;
     tituloTxt = `${fmt(lista.length)} votantes necesitan transporte`;
+    if (!lista.length) {
+      // [FIX 1 sep] Sin registro de transporte todavia: se dice, no se inventa.
+      html = `<div style="padding:28px;text-align:center;color:var(--text3);font-size:12px;line-height:1.6">
+        Aún no hay solicitudes de transporte registradas.<br>Se llenará cuando los capturistas marquen ciudadanos que requieren traslado el día de la elección.</div>`;
+    } else
     html = `<table class="t" style="width:100%"><thead><tr>
       ${thM('Nombre','nombre','')}${thM('Sección','seccion','c')}${thM('Municipio','municipio','')}${thM('Colonia','colonia','')}${thM('Teléfono','tel','')}
     </tr></thead><tbody>
@@ -3302,18 +3462,25 @@ function renderDetalleAlerta() {
     <div class="al-d-cap" style="margin-top:10px">Palancas: sumar activistas por sección (lente 👤 Activistas), reforzar municipios en 🔴 y activar campañas del Centro de Llamadas.</div>`;
   }
   else if (tipo === 'f1-dup') {
-    tituloTxt='408 registros duplicados';
+    // [FIX 1 sep] Antes: 408 y 4.1% escritos a mano.
+    const d = data || {dup:0,total:0};
+    const p = d.total>0 ? (d.dup/d.total*100).toFixed(1) : '0.0';
+    tituloTxt=`${fmt(d.dup)} registros duplicados`;
     html=`<table class="t" style="width:100%"><tbody>
-      <tr><td>Total detectados</td><td class="mono" style="text-align:right;color:var(--red);font-weight:700">408</td></tr>
-      <tr><td>Proporción de la base</td><td class="mono" style="text-align:right;color:var(--red)">4.1%</td></tr>
+      <tr><td>Total detectados</td><td class="mono" style="text-align:right;color:var(--red);font-weight:700">${fmt(d.dup)}</td></tr>
+      <tr><td>Proporción de la base</td><td class="mono" style="text-align:right;color:var(--red)">${p}%</td></tr>
+      <tr><td>Base total</td><td class="mono" style="text-align:right;color:var(--text2)">${fmt(d.total)}</td></tr>
       <tr><td>Criterio de detección</td><td style="text-align:right;color:var(--text2)">CURP o clave de elector repetida</td></tr>
     </tbody></table>
     <div class="al-d-cap" style="margin-top:10px">Inflan tus números y duplican trabajo de campo. Se depuran en: módulo Captura ciudadana → buscador → pestaña Duplicados (fusionar o eliminar con confirmación).</div>`;
   }
   else if (tipo === 'f1-apoyo') {
-    tituloTxt='1,845 votantes sin apoyo asignado';
+    // [FIX 1 sep] Antes: 1,845 escrito a mano.
+    const d = data || {sin:0,apoyos:0};
+    tituloTxt=`${fmt(d.sin)} votantes sin apoyo asignado`;
     html=`<table class="t" style="width:100%"><tbody>
-      <tr><td>Sin responsable asignado</td><td class="mono" style="text-align:right;color:var(--amber);font-weight:700">1,845</td></tr>
+      <tr><td>Sin responsable asignado</td><td class="mono" style="text-align:right;color:var(--amber);font-weight:700">${fmt(d.sin)}</td></tr>
+      <tr><td>Total que declaró requerir apoyo</td><td class="mono" style="text-align:right;color:var(--text2)">${fmt(d.apoyos)}</td></tr>
       <tr><td>Tipo de apoyo declarado</td><td style="text-align:right;color:var(--text2)">Transporte y acompañamiento el día E</td></tr>
     </tbody></table>
     <div class="al-d-cap" style="margin-top:10px">Acción sugerida: asignarlos por sección desde la lente 👤 Activistas para repartir la logística antes de la jornada.</div>`;
@@ -3337,19 +3504,10 @@ function abrirDetalleAlerta(tipo) {
     _mData = all.filter(c => c.estatus === 'abierta');
   }
   else if (tipo === 'transporte') {
-    const NOMS = ['María García','Juan López','Rosa Martínez','Pedro Soto','Ana Torres','Luis Herrera','Carmen Díaz','Jorge Cruz','Silvia Reyes','Roberto Vega'];
-    const COLS2 = ['Col. Centro','Col. Jardines','Col. Las Palmas','Col. Obrera'];
-    const pendientes = [];
-    Object.values(SECS).flat().forEach(sec => {
-      const n = Math.floor(Math.random()*6)+1;
-      for(let i=0;i<n;i++) pendientes.push({
-        nombre: NOMS[Math.floor(Math.random()*NOMS.length)],
-        seccion: sec.num, municipio: sec.munNombre,
-        colonia: COLS2[Math.floor(Math.random()*COLS2.length)],
-        tel: `312-${String(Math.floor(Math.random()*9000000)+1000000)}`
-      });
-    });
-    _mData = pendientes;
+    // [FIX 1 sep] Antes: lista inventada ("Maria Garcia", "Col. Centro", telefonos
+    // aleatorios) de 1 a 6 personas por seccion. No existe todavia un registro de
+    // transporte en ciudadanos: la lista queda vacia y el render lo explica.
+    _mData = [];
   }
   else if (tipo === 'votos') {
     const abiertas = all.filter(c => c.estatus === 'abierta' && c.votos > 0);
@@ -3415,18 +3573,19 @@ document.addEventListener('DOMContentLoaded',()=>{
       todasSecs.map(s=>`<option value="${s.id}">Secc. ${s.num} — ${s.munNombre}</option>`).join('');
   }
 
-  // Precargar secciones de todos los municipios en segundo plano
-  setTimeout(() => {
-    MUNS.forEach((m, i) => {
-      setTimeout(() => cargarSeccionesSupabase(m.id), i * 300);
-    });
-  }, 2000); // Esperar 2s para que cargue lo importante primero
-
+  // [FIX 1 sep] Antes: 10 fetch a secciones_electorales_colima con la anon key
+  // (uno por municipio, cada 300 ms) para ir sustituyendo secciones demo.
+  // Ahora una sola RPC trae secciones + casillas + capturistas reales y
+  // reconstruye todo el desglose. Despues, los KPIs.
   renderMunF1();
   renderCuadF1();
   updateBcF1();
   renderTablaCapturistas();
-  cargarDesdeRPC(); // ← carga datos reales y re-renderiza con Supabase
+  (async () => {
+    await cargarTerritorioReal();
+    await cargarDesdeRPC();   // KPIs y avance por seccion/municipio
+    if (typeof cargarCasillasF2Reales === 'function') { try { await cargarCasillasF2Reales(); } catch(_e) {} }
+  })();
   actualizarConteoAlerta();
   actualizarHistorialAlertas();
   renderSemaforoGlobal();
@@ -3460,7 +3619,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     if (msInicial === MS_JORNADA) console.log('⚡ War Room en MODO JORNADA: refresco cada 10s.');
 
     window.wrRefresher = createRefresher({
-      fn: async () => { await cargarDesdeRPC(); if (typeof renderTablaActF2 === 'function') renderTablaActF2(); if (typeof cargarCasillasF2Reales === 'function') await cargarCasillasF2Reales(); },
+      fn: async () => { await cargarTerritorioReal(); await cargarDesdeRPC(); if (typeof renderTablaActF2 === 'function') renderTablaActF2(); if (typeof cargarCasillasF2Reales === 'function') await cargarCasillasF2Reales(); },
       intervalMs: msInicial,
       label: 'war-room',
     });
