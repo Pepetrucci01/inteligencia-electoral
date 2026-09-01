@@ -229,7 +229,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
 <!-- ═══════════ RESUMEN EJECUTIVO ═══════════ -->
 <div class="screen active" id="sc-resumen">
   <div class="kpi-row">
-    <div class="kpi bl" data-tip="Total de simpatizantes que la candidatura se propuso captar en todo el estado para 2027."><div class="kpi-lbl">Meta estatal 2027</div><div class="kpi-val" id="rep-meta-kpi">208,717</div><div class="kpi-trend">votos proyectados</div></div>
+    <div class="kpi bl" data-tip="Total de simpatizantes que la candidatura se propuso captar en todo el estado para 2027."><div class="kpi-lbl">Meta estatal 2027</div><div class="kpi-val" id="rep-meta-kpi">—</div><div class="kpi-trend">votos proyectados</div></div>
     <div class="kpi gr" data-tip="Simpatizantes registrados hasta hoy en el padrón de la campaña."><div class="kpi-lbl">Total capturados</div><div class="kpi-val" id="rep-total-cap">—</div><div class="kpi-trend" style="opacity:.5">registros activos</div></div>
     <div class="kpi bl" data-tip="Qué porcentaje de la meta estatal se ha alcanzado con los registros capturados hasta hoy."><div class="kpi-lbl">Avance estatal</div><div class="kpi-val" id="rep-avance-est">—</div><div class="kpi-trend" style="opacity:.5">sobre la meta estatal</div></div>
     <div class="kpi gr" data-tip="Simpatizantes con nivel de compromiso alto (3 o 4): se considera que su voto está asegurado."><div class="kpi-lbl">Voto seguro</div><div class="kpi-val" id="rep-voto-seguro">—</div><div class="kpi-trend" id="rep-voto-seguro-pct">—</div></div>
@@ -252,7 +252,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
       </div>
       <div class="prog-total"><div class="prog-fill" id="rep-prog-fill" style="width:0%"></div></div>
       <div style="display:flex;justify-content:space-between;font-size:11px;font-family:var(--mono);color:var(--text3)">
-        <span>0</span><span style="color:var(--accent)" id="rep-cap-label">— capturados</span><span id="rep-meta-bar">208,717 meta</span>
+        <span>0</span><span style="color:var(--accent)" id="rep-cap-label">— capturados</span><span id="rep-meta-bar">— meta</span>
       </div>
       <div class="proy-box">
         <!-- [FIX 10 jul] Estas filas estaban HARDCODEADAS (574/sem, 48 semanas,
@@ -273,113 +273,15 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
   <div class="grid2">
     <div class="card">
       <div class="card-head"><div class="card-title">Top 3 municipios por avance</div></div>
-      <div class="card-body">
-        <div class="bar-row"><div class="bar-label">Tecomán</div><div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--green)"></div></div><div class="bar-val">1,537</div><div class="bar-pct">14.5%</div></div>
-        <div class="bar-row"><div class="bar-label">Armería</div><div class="bar-track"><div class="bar-fill" style="width:54%;background:var(--accent)"></div></div><div class="bar-val">688</div><div class="bar-pct">7.8%</div></div>
-        <div class="bar-row"><div class="bar-label">Colima</div><div class="bar-track"><div class="bar-fill" style="width:50%;background:var(--accent)"></div></div><div class="bar-val">1,620</div><div class="bar-pct">7.3%</div></div>
-      </div>
+      <!-- [FIX 1 sep] Estas seis barras estaban escritas a mano (Tecomán 1,537 ·
+           Armería · Colima 1,620 / Minatitlán · Comala · Ixtlahuacán) y no se
+           actualizaban nunca. Ahora las llena pintarRankingMunicipios() con
+           MUN_DATA, que ya viene de la RPC. -->
+      <div class="card-body" id="rep-top3-mun"></div>
     </div>
     <div class="card">
       <div class="card-head"><div class="card-title">Bottom 3 municipios — alerta</div></div>
-      <div class="card-body">
-        <div class="bar-row"><div class="bar-label">Minatitlán</div><div class="bar-track"><div class="bar-fill" style="width:10%;background:var(--red)"></div></div><div class="bar-val">625</div><div class="bar-pct">1.5%</div></div>
-        <div class="bar-row"><div class="bar-label">Coquimatlán</div><div class="bar-track"><div class="bar-fill" style="width:12%;background:var(--red)"></div></div><div class="bar-val">469</div><div class="bar-pct">1.7%</div></div>
-        <div class="bar-row"><div class="bar-label">Cuauhtémoc</div><div class="bar-track"><div class="bar-fill" style="width:18%;background:var(--amber)"></div></div><div class="bar-val">619</div><div class="bar-pct">2.6%</div></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════ DIAGNÓSTICO IA ═══════════ -->
-<div class="screen" id="sc-diagnostico">
-  <style>
-    .diag-hero{background:linear-gradient(135deg,var(--bg2),var(--bg3));border:1px solid var(--border2);border-radius:12px;padding:30px 24px;text-align:center;margin-bottom:18px;}
-    .diag-hero h2{font-size:16px;font-weight:600;margin-bottom:6px;letter-spacing:.02em;}
-    .diag-hero p{font-size:12px;color:var(--text2);font-family:var(--mono);line-height:1.6;max-width:580px;margin:0 auto 20px;}
-    .diag-btn{display:inline-flex;align-items:center;gap:9px;padding:12px 26px;border-radius:9px;border:none;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;font-family:var(--sans);font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;box-shadow:0 4px 18px rgba(124,58,237,.35);}
-    .diag-btn:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(124,58,237,.5);}
-    .diag-btn:disabled{opacity:.55;cursor:default;transform:none;box-shadow:none;}
-    .diag-spin{width:15px;height:15px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:diagspin .7s linear infinite;}
-    @keyframes diagspin{to{transform:rotate(360deg);}}
-    .diag-loading{display:none;text-align:center;padding:34px 20px;}
-    .diag-loading.show{display:block;}
-    .diag-step{font-family:var(--mono);font-size:12px;color:var(--text3);margin:7px 0;opacity:.35;transition:opacity .3s,color .3s;}
-    .diag-step.done{color:var(--green);opacity:1;}
-    .diag-step.done::before{content:"✓ ";}
-    .diag-step.active{color:var(--purple);opacity:1;}
-    .diag-report{display:none;}
-    .diag-report.show{display:block;animation:diagfade .5s ease;}
-    @keyframes diagfade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
-    .diag-actions{display:flex;gap:9px;justify-content:flex-end;margin-bottom:14px;}
-    .diag-doc{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:22px 24px;}
-    .diag-verdict{display:flex;align-items:flex-start;gap:14px;padding:16px 18px;border-radius:10px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);margin-bottom:20px;}
-    .diag-verdict .dv-dot{width:14px;height:14px;border-radius:50%;background:var(--red);flex-shrink:0;margin-top:3px;box-shadow:0 0 12px rgba(239,68,68,.6);}
-    .diag-verdict .dv-text{font-size:13px;line-height:1.6;}
-    .diag-verdict .dv-text b{color:var(--red);}
-    .diag-sec{margin-bottom:20px;}
-    .diag-sec h3{font-size:11px;font-family:var(--mono);color:var(--purple);text-transform:uppercase;letter-spacing:.07em;margin-bottom:9px;}
-    .diag-sec p{font-size:13px;line-height:1.7;color:var(--text);margin-bottom:8px;}
-    .diag-sec .hl{color:var(--amber);font-weight:600;}
-    .diag-sec .hlg{color:var(--green);font-weight:600;}
-    .diag-sec .hr{color:var(--red);font-weight:600;}
-    .diag-rank{list-style:none;padding:0;margin:6px 0 0;}
-    .diag-rank li{display:flex;align-items:center;gap:10px;font-size:12px;font-family:var(--mono);padding:5px 0;border-bottom:1px solid var(--border);}
-    .diag-rank li:last-child{border-bottom:none;}
-    .diag-rank .rk-name{flex:1;color:var(--text2);}
-    .diag-rank .rk-bar{width:120px;height:6px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden;}
-    .diag-rank .rk-fill{height:100%;border-radius:99px;}
-    .diag-rank .rk-pct{width:48px;text-align:right;}
-    .diag-rec{counter-reset:rec;list-style:none;padding:0;margin:0;}
-    .diag-rec li{position:relative;padding:10px 12px 10px 42px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;margin-bottom:7px;font-size:12.5px;line-height:1.55;}
-    .diag-rec li::before{counter-increment:rec;content:counter(rec);position:absolute;left:12px;top:10px;width:20px;height:20px;border-radius:50%;background:var(--purple);color:#fff;font-family:var(--mono);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;}
-    .diag-foot{font-size:10px;font-family:var(--mono);color:var(--text3);text-align:center;margin-top:20px;padding-top:14px;border-top:1px solid var(--border);line-height:1.7;}
-  </style>
-
-  <div class="diag-hero" id="diag-hero">
-    <h2>✨ Diagnóstico ejecutivo con Inteligencia Artificial</h2>
-    <p>La IA analiza el avance de la candidatura contra la meta estatal, el ritmo de captura, la calidad del padrón y el desempeño territorial — y entrega un reporte ejecutivo con hallazgos y recomendaciones priorizadas.</p>
-    <button class="diag-btn" id="diag-generate" onclick="generarDiagnosticoIA()"><span>✨</span> Generar diagnóstico</button>
-  </div>
-
-  <div class="diag-loading" id="diag-loading">
-    <div class="diag-spin" style="margin:0 auto 18px"></div>
-    <div class="diag-step" id="ds-1">Leyendo agregados de la candidatura…</div>
-    <div class="diag-step" id="ds-2">Evaluando ritmo de captura vs. meta…</div>
-    <div class="diag-step" id="ds-3">Analizando desempeño por municipio…</div>
-    <div class="diag-step" id="ds-4">Detectando riesgos del padrón…</div>
-    <div class="diag-step" id="ds-5">Redactando reporte ejecutivo…</div>
-  </div>
-
-  <div class="diag-report" id="diag-report">
-    <div class="diag-actions">
-      <button class="export-btn" onclick="generarDiagnosticoIA(true)">↻ Regenerar</button>
-      <button class="export-btn primary" id="diag-copy-btn" onclick="copiarDiagnostico()">⧉ Copiar reporte</button>
-    </div>
-    <div class="diag-doc" id="diag-content"></div>
-  </div>
-</div>
-
-<!-- ═══════════ AVANCE & RITMO ═══════════ -->
-<div class="screen" id="sc-avance">
-  <div id="ritmo-aviso"></div>
-  <div class="kpi-row">
-    <!-- [FIX 14 jul] "84/dia", "mejor semana 614", "peor 421": INVENTADOS.
-         El dato SI existe (ciudadanos.created_at) — solo no se calculaba.
-         Ahora sale de la RPC get_ritmo_capturas(), que agrupa por semana EN LA
-         BASE (unas 50 filas) en vez de bajar 14,261 registros al navegador. -->
-    <div class="kpi gr"><div class="kpi-lbl">Promedio diario</div><div class="kpi-val" id="ritmo-diario">—</div><div class="kpi-trend">capturas/día</div></div>
-    <div class="kpi bl"><div class="kpi-lbl">Mejor semana</div><div class="kpi-val" id="ritmo-mejor">—</div><div class="kpi-trend" id="ritmo-mejor-fecha">—</div></div>
-    <div class="kpi am"><div class="kpi-lbl">Peor semana</div><div class="kpi-val" id="ritmo-peor">—</div><div class="kpi-trend dn" id="ritmo-peor-fecha">—</div></div>
-    <div class="kpi cy"><div class="kpi-lbl">Semana en curso</div><div class="kpi-val" id="ritmo-actual">—</div><div class="kpi-trend">capturas esta semana</div></div>
-  </div>
-
-  <div class="card" style="margin-bottom:14px">
-    <!-- [FIX 14 jul] Decia "ultimas 12 semanas" y "datos reales INE": ninguna de
-         las dos cosas era cierta. Ahora muestra el historico REAL, que puede ser
-         mas o menos semanas segun lo que haya en la BD. -->
-    <div class="card-head"><div class="card-title">Capturas por semana</div><div class="card-meta">histórico real</div></div>
-    <div class="chart-wrap" style="height:220px">
-      <canvas id="ch-semanas" role="img" aria-label="Gráfica de capturas por semana: promedio 574 por semana con picos en febrero y marzo 2026">Capturas semanales: 586, 524, 614, 585, 561, 614, 590, 579, 582, 573, 574, 421.</canvas>
+      <div class="card-body" id="rep-bottom3-mun"></div>
     </div>
   </div>
 
@@ -439,10 +341,13 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
   </div>
 
   <div class="kpi-row">
-    <div class="kpi gr"><div class="kpi-lbl">Validados</div><div class="kpi-val" id="cal-kpi-val">7,193</div><div class="kpi-trend" id="cal-kpi-val-pct">71.9% de la base</div></div>
-    <div class="kpi am"><div class="kpi-lbl">Pendientes</div><div class="kpi-val" id="cal-kpi-pen">1,763</div><div class="kpi-trend dn" id="cal-kpi-pen-pct">17.6%</div></div>
-    <div class="kpi re"><div class="kpi-lbl">Incompletos</div><div class="kpi-val" id="cal-kpi-inc">636</div><div class="kpi-trend dn" id="cal-kpi-inc-pct">6.4%</div></div>
-    <div class="kpi re"><div class="kpi-lbl">Duplicados</div><div class="kpi-val" id="cal-kpi-dup">408</div><div class="kpi-trend dn">depurar ahora</div></div>
+    <!-- [FIX 1 sep] Estos cuatro arrancaban con 7,193 / 1,763 / 636 / 408 escritos
+         a mano. Se actualizan solos al cargar, pero mientras tanto se veian como
+         cifras reales. Ahora arrancan vacios. -->
+    <div class="kpi gr"><div class="kpi-lbl">Validados</div><div class="kpi-val" id="cal-kpi-val">—</div><div class="kpi-trend" id="cal-kpi-val-pct">—</div></div>
+    <div class="kpi am"><div class="kpi-lbl">Pendientes</div><div class="kpi-val" id="cal-kpi-pen">—</div><div class="kpi-trend dn" id="cal-kpi-pen-pct">—</div></div>
+    <div class="kpi re"><div class="kpi-lbl">Incompletos</div><div class="kpi-val" id="cal-kpi-inc">—</div><div class="kpi-trend dn" id="cal-kpi-inc-pct">—</div></div>
+    <div class="kpi re"><div class="kpi-lbl">Duplicados</div><div class="kpi-val" id="cal-kpi-dup">—</div><div class="kpi-trend dn">depurar ahora</div></div>
   </div>
 
   <div class="grid2">
@@ -475,10 +380,10 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
   <div class="card">
     <div class="card-head"><div class="card-title">Origen de captura</div><div class="card-meta">— registros</div></div>
     <div class="card-body">
-      <div class="bar-row"><div class="bar-label">Casa por casa</div><div class="bar-track"><div class="bar-fill origen-bar-fill" style="width:100%;background:var(--accent)"></div></div><div class="bar-val origen-bar-val">4,538</div><div class="bar-pct origen-bar-pct">45.4%</div></div>
-      <div class="bar-row"><div class="bar-label">Referido</div><div class="bar-track"><div class="bar-fill origen-bar-fill" style="width:55.5%;background:var(--purple)"></div></div><div class="bar-val origen-bar-val">2,519</div><div class="bar-pct origen-bar-pct">25.2%</div></div>
-      <div class="bar-row"><div class="bar-label">Evento</div><div class="bar-track"><div class="bar-fill origen-bar-fill" style="width:37.7%;background:var(--amber)"></div></div><div class="bar-val origen-bar-val">1,711</div><div class="bar-pct origen-bar-pct">17.1%</div></div>
-      <div class="bar-row"><div class="bar-label">Digital</div><div class="bar-track"><div class="bar-fill origen-bar-fill" style="width:27.1%;background:var(--cyan)"></div></div><div class="bar-val origen-bar-val">1,232</div><div class="bar-pct origen-bar-pct">12.3%</div></div>
+      <div class="bar-row"><div class="bar-label">Casa por casa</div><div class="bar-track"><div class="bar-fill origen-bar-fill" style="width:0%;background:var(--accent)"></div></div><div class="bar-val origen-bar-val">—</div><div class="bar-pct origen-bar-pct">—</div></div>
+      <div class="bar-row"><div class="bar-label">Referido</div><div class="bar-track"><div class="bar-fill origen-bar-fill" style="width:0%;background:var(--purple)"></div></div><div class="bar-val origen-bar-val">—</div><div class="bar-pct origen-bar-pct">—</div></div>
+      <div class="bar-row"><div class="bar-label">Evento</div><div class="bar-track"><div class="bar-fill origen-bar-fill" style="width:0%;background:var(--amber)"></div></div><div class="bar-val origen-bar-val">—</div><div class="bar-pct origen-bar-pct">—</div></div>
+      <div class="bar-row"><div class="bar-label">Digital</div><div class="bar-track"><div class="bar-fill origen-bar-fill" style="width:0%;background:var(--cyan)"></div></div><div class="bar-val origen-bar-val">—</div><div class="bar-pct origen-bar-pct">—</div></div>
     </div>
   </div>
 </div>
@@ -623,16 +528,10 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
     <div class="card">
       <div class="card-head"><div class="card-title" id="ec-top10-titulo">Top 10 capturistas — volumen real</div></div>
       <div class="card-body" id="ec-top10-bars">
-        <div class="bar-row"><div class="bar-label" title="CAP-032 Manzanillo">CAP-032 Manz.</div><div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--accent)"></div></div><div class="bar-val">52</div><div class="bar-pct">62.5</div></div>
-        <div class="bar-row"><div class="bar-label" title="CAP-038 Manzanillo">CAP-038 Manz.</div><div class="bar-track"><div class="bar-fill" style="width:96.2%;background:var(--accent)"></div></div><div class="bar-val">50</div><div class="bar-pct">52.0</div></div>
-        <div class="bar-row"><div class="bar-label" title="CAP-004 Manzanillo">CAP-004 Manz.</div><div class="bar-track"><div class="bar-fill" style="width:92.3%;background:var(--accent)"></div></div><div class="bar-val">48</div><div class="bar-pct">67.7</div></div>
-        <div class="bar-row"><div class="bar-label" title="CAP-042 Manzanillo">CAP-042 Manz.</div><div class="bar-track"><div class="bar-fill" style="width:92.3%;background:var(--accent)"></div></div><div class="bar-val">48</div><div class="bar-pct">67.7</div></div>
-        <div class="bar-row"><div class="bar-label" title="CAP-006 Manzanillo">CAP-006 Manz.</div><div class="bar-track"><div class="bar-fill" style="width:88.5%;background:var(--accent)"></div></div><div class="bar-val">46</div><div class="bar-pct">54.3</div></div>
-        <div class="bar-row"><div class="bar-label" title="CAP-018 Manzanillo">CAP-018 Manz.</div><div class="bar-track"><div class="bar-fill" style="width:88.5%;background:var(--accent)"></div></div><div class="bar-val">46</div><div class="bar-pct">53.3</div></div>
-        <div class="bar-row"><div class="bar-label" title="CAP-021 Manzanillo">CAP-021 Manz.</div><div class="bar-track"><div class="bar-fill" style="width:88.5%;background:var(--accent)"></div></div><div class="bar-val">46</div><div class="bar-pct">59.8</div></div>
-        <div class="bar-row"><div class="bar-label" title="CAP-057 Manzanillo">CAP-057 Manz.</div><div class="bar-track"><div class="bar-fill" style="width:86.5%;background:var(--purple)"></div></div><div class="bar-val">45</div><div class="bar-pct">65.6</div></div>
-        <div class="bar-row"><div class="bar-label" title="CAP-027 Colima">CAP-027 Col.</div><div class="bar-track"><div class="bar-fill" style="width:84.6%;background:var(--text3)"></div></div><div class="bar-val">44</div><div class="bar-pct">47.7</div></div>
-        <div class="bar-row"><div class="bar-label" title="CAP-053 Manzanillo">CAP-053 Manz.</div><div class="bar-track"><div class="bar-fill" style="width:84.6%;background:var(--accent)"></div></div><div class="bar-val">44</div><div class="bar-pct">64.8</div></div>
+        <!-- [FIX 1 sep] Aqui vivian 10 barras con capturistas inventados
+             (CAP-032 Manz. 52, CAP-038 50, CAP-004 48...). El contenedor SI se
+             llena solo desde la RPC, pero mientras cargaba se veian como reales.
+             Se deja vacio: si no hay datos, no se muestra nadie. -->
         <div style="margin-top:8px;font-size:10px;font-family:var(--mono);color:var(--text3)">Col. derecha = score de calidad (validados + comprometidos)</div>
       </div>
     </div>
@@ -989,7 +888,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
   function metaActual(){
     if(typeof window.SISTEMA_META==='number'&&window.SISTEMA_META>0) return window.SISTEMA_META;
     if(typeof IE_METAS_CASILLA!=='undefined'&&IE_METAS_CASILLA.meta_estatal) return IE_METAS_CASILLA.meta_estatal;
-    return 208717;
+    return 208754;   // [FIX 1 sep] canonico (era 208717)
   }
   function apply(){var f=metaActual().toLocaleString('es-MX');
     var a=document.getElementById('rep-meta-kpi'); if(a)a.textContent=f;
@@ -998,6 +897,26 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
   if(document.readyState!=='loading')apply(); else document.addEventListener('DOMContentLoaded',apply);
 })();
 let MUN_DATA = [];
+
+// [FIX 1 sep] Top/Bottom 3 municipios por % de avance, desde MUN_DATA (RPC).
+function pintarRankingMunicipios(){
+  const top = document.getElementById('rep-top3-mun');
+  const bot = document.getElementById('rep-bottom3-mun');
+  if (!top && !bot) return;
+  const D = (typeof MUN_DATA !== 'undefined' ? MUN_DATA : []).filter(m => m && m.meta > 0);
+  const vacio = '<div style="padding:10px;color:var(--text3);font-size:12px;text-align:center">Sin datos suficientes</div>';
+  if (!D.length) { if(top) top.innerHTML = vacio; if(bot) bot.innerHTML = vacio; return; }
+  const orden = D.map(m => ({ n:m.n, cap:m.cap||0, pct:(m.cap||0)/m.meta*100 }))
+                 .sort((a,b) => b.pct - a.pct);
+  const maxPct = Math.max(0.01, orden[0].pct);
+  const fila = (r, col) => `<div class="bar-row">
+      <div class="bar-label">${r.n}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.min(100, r.pct/maxPct*100).toFixed(1)}%;background:${col}"></div></div>
+      <div class="bar-val">${Number(r.cap).toLocaleString('es-MX')}</div>
+      <div class="bar-pct">${r.pct.toFixed(1)}%</div></div>`;
+  if (top) top.innerHTML = orden.slice(0,3).map(r => fila(r,'var(--green)')).join('');
+  if (bot) bot.innerHTML = orden.slice(-3).reverse().map(r => fila(r,'var(--red)')).join('');
+}
 
 // ── Cargar datos reales de municipios desde Supabase ──────────────────
 async function cargarDatosMunicipios() {
@@ -1059,6 +978,7 @@ async function cargarDatosMunicipios() {
 
     // Guardar los KPIs para el resumen ejecutivo y el diagnóstico.
     window._kpisReportes = kpis;
+  try { pintarRankingMunicipios(); } catch(e){ console.warn('ranking municipios:', e); }
 
     // Normalizar los nombres de municipio (la BD los guarda en MAYÚSCULAS).
     const norm = s => (s || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
@@ -1122,7 +1042,7 @@ function actualizarKPIsResumen(kpis) {
     : ((typeof window.SISTEMA_META === 'number' && window.SISTEMA_META > 0)
         ? window.SISTEMA_META
         : ((typeof IE_METAS_CASILLA !== 'undefined' && IE_METAS_CASILLA.meta_estatal)
-            ? IE_METAS_CASILLA.meta_estatal : 208717));
+            ? IE_METAS_CASILLA.meta_estatal : 208754));
 
   const pct = meta > 0 ? (total / meta * 100) : 0;
 
@@ -1701,19 +1621,40 @@ function exportarExcel(){
     ws['!cols']=[{wch:18},{wch:12},{wch:12},{wch:10},{wch:12},{wch:12},{wch:10},{wch:10}];
     XLSX.utils.book_append_sheet(wb,ws,'Por Municipio');
 
-    const sem=[['Semana','Capturas'],
-      ['9-15 feb',586],['16-22 feb',524],['23 feb-1 mar',614],['2-8 mar',585],
-      ['9-15 mar',561],['16-22 mar',614],['23-29 mar',590],['30 mar-5 abr',579],
-      ['6-12 abr',582],['13-19 abr',573],['20-26 abr',574],['27 abr-3 may',421]
-    ];
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(sem),'Ritmo Semanal');
+    // [FIX 1 sep] Aqui habia DOS bloques inventados que se exportaban a Excel:
+    //  (a) "Ritmo Semanal": 12 semanas con cifras ficticias (586, 524, 614...).
+    //      No existe serie temporal real todavia, asi que la hoja se arma de
+    //      ciudadanos.created_at; si no hay datos, no se incluye la hoja.
+    //  (b) "Resumen Ejecutivo": 10,000 capturados / 5.1% / 4,601 / 2,203 / 408 /
+    //      60 operadores / 392 secciones / 219 criticas / 574 y 4,140 por semana.
+    //      TODOS inventados, y el cliente se los bajaba creyendo que eran suyos.
+    //      Ahora sale de get_war_room_kpis (window._kpisReportes) y de MUN_DATA.
+    const K = window._kpisReportes || {};
+    const totalReal = (typeof MUN_DATA !== 'undefined' && MUN_DATA.length)
+      ? MUN_DATA.reduce((a,m)=>a+(m.cap||0),0) : (Number(K.total)||0);
+    const metaReal  = (Number(K.meta)>0) ? Number(K.meta)
+      : ((typeof window.SISTEMA_META==='number'&&window.SISTEMA_META>0) ? window.SISTEMA_META
+      : ((typeof IE_METAS_CASILLA!=='undefined'&&IE_METAS_CASILLA.meta_estatal) ? IE_METAS_CASILLA.meta_estatal : 208754));
+    const faltanReal  = Math.max(0, metaReal - totalReal);
+    const semanasRest = Math.max(1, Math.ceil((new Date('2027-06-06') - new Date())/(7*24*3600*1000)));
+    const reqSemana   = Math.ceil(faltanReal / semanasRest);
 
     const resumen=[
       ['Indicador','Valor'],
-      ['Meta estatal 2027',(typeof window.SISTEMA_META==='number'&&window.SISTEMA_META>0)?window.SISTEMA_META:((typeof IE_METAS_CASILLA!=='undefined'&&IE_METAS_CASILLA.meta_estatal)?IE_METAS_CASILLA.meta_estatal:208717)],['Total capturados',10000],['% Avance','5.1%'],
-      ['Voto seguro',4601],['En riesgo',2203],['Duplicados',408],['Operadores',60],
-      ['Secciones',392],['Secciones críticas',219],['Promedio diario',84],
-      ['Ritmo semanal actual',574],['Ritmo requerido',4140],
+      ['Meta',                 metaReal],
+      ['Total capturados',     totalReal],
+      ['% Avance',             metaReal>0 ? (totalReal/metaReal*100).toFixed(1)+'%' : '0%'],
+      ['Voto seguro',          Number(K.seguro)||0],
+      ['En riesgo',            Number(K.riesgo)||0],
+      ['Duplicados',           Number(K.depurar)||0],
+      ['Operadores',           Number(K.operadores)||0],
+      ['Secciones',            Number(K.secciones)||0],
+      ['Secciones críticas',   Number(K.criticas)||0],
+      ['Capturas últimos 7 días', Number(K.semana)||0],
+      ['Semanas a la elección',semanasRest],
+      ['Ritmo requerido/semana', reqSemana],
+      ['Alcance',              K.alcance || 'estatal'],
+      ['Generado',             new Date().toLocaleString('es-MX')],
     ];
     XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(resumen),'Resumen Ejecutivo');
     XLSX.writeFile(wb,'Reporte_Inteligencia_Electoral.xlsx');
@@ -3165,7 +3106,7 @@ function diagnosticoHorneado(){
         var metaReal = (typeof window.SISTEMA_META === 'number' && window.SISTEMA_META > 0)
           ? window.SISTEMA_META
           : ((typeof IE_METAS_CASILLA !== 'undefined' && IE_METAS_CASILLA.meta_estatal)
-              ? IE_METAS_CASILLA.meta_estatal : 208717);
+              ? IE_METAS_CASILLA.meta_estatal : 208754);
         var f = function(n){ return Number(n||0).toLocaleString('es-MX'); };
 
         if (!totalReal) {
@@ -3196,8 +3137,29 @@ function diagnosticoHorneado(){
     '</div>',
 
     '<div class="diag-sec">',
-      '<h3>① El hallazgo más importante — Manzanillo</h3>',
-      '<p>Manzanillo concentra la meta más alta del estado (<span class="hl">49,083</span>, una de cada cuatro adhesiones que se necesitan a nivel estatal) pero registra el <span class="hr">avance porcentual más bajo (4.3%)</span>. Es, al mismo tiempo, el mayor riesgo y la mayor palanca: cada punto que se mueva en Manzanillo desplaza la aguja estatal más que en cualquier otro municipio. <b>Es donde primero hay que volcar estructura.</b></p>',
+      // [FIX 1 sep] Decia siempre "Manzanillo · 49,083 · 4.3%" aunque los datos
+      // dijeran otra cosa. Ahora se calcula cual municipio concentra mas meta y
+      // con que avance real va.
+      (function(){
+        var D = (typeof MUN_DATA!=='undefined' && MUN_DATA.length) ? MUN_DATA : [];
+        if(!D.length) return '';
+        var f = function(n){ return Number(n||0).toLocaleString('es-MX'); };
+        var top = D.slice().sort(function(a,b){ return (b.meta||0)-(a.meta||0); })[0];
+        var metaTot = D.reduce(function(a,m){ return a+(m.meta||0); },0);
+        var parte = metaTot>0 ? (top.meta/metaTot*100) : 0;
+        var pct = top.meta>0 ? (top.cap/top.meta*100) : 0;
+        var orden = D.slice().sort(function(a,b){
+          return (a.meta? a.cap/a.meta:0) - (b.meta? b.cap/b.meta:0); });
+        var esElPeor = orden.length && orden[0].n === top.n;
+        return '<h3>① El hallazgo más importante — ' + top.n + '</h3>'
+          + '<p>' + top.n + ' concentra la meta más alta del estado (<span class="hl">' + f(top.meta)
+          + '</span>, el ' + parte.toFixed(0) + '% de la meta estatal) y va en <span class="hr">'
+          + pct.toFixed(1) + '% de avance</span>'
+          + (esElPeor ? ', el porcentaje más bajo de los diez municipios' : '')
+          + '. Es al mismo tiempo el mayor riesgo y la mayor palanca: cada punto que se mueva ahí '
+          + 'desplaza la aguja estatal más que en cualquier otro municipio. '
+          + '<b>Es donde primero hay que volcar estructura.</b></p>';
+      })(),
     '</div>',
 
     '<div class="diag-sec">',
@@ -3207,24 +3169,80 @@ function diagnosticoHorneado(){
     '</div>',
 
     '<div class="diag-sec">',
-      '<h3>③ Calidad del padrón</h3>',
-      '<p><span class="hr">2,203 capturados (22%)</span> están marcados en riesgo y <span class="hr">408 son duplicados</span> que inflan artificialmente el avance — depurarlos es urgente antes de reportar a dirigencia. Hay además <span class="hl">219 secciones críticas</span> (sin captura o por debajo del 5%) que hoy son territorio ciego.</p>',
+      // [FIX 1 sep] 2,203 / 22% / 408 / 219 estaban fijos. Salen de la RPC.
+      (function(){
+        var K = window._kpisReportes || {};
+        var f = function(n){ return Number(n||0).toLocaleString('es-MX'); };
+        var tot = (typeof MUN_DATA!=='undefined'&&MUN_DATA.length)
+          ? MUN_DATA.reduce(function(a,m){return a+(m.cap||0);},0) : (Number(K.total)||0);
+        var rie = Number(K.riesgo)||0, dup = Number(K.depurar)||0;
+        var cri = Number(K.criticas)||0, sec = Number(K.secciones)||0;
+        if(!tot) return '<h3>③ Calidad del padrón</h3><p>Sin registros suficientes para evaluar la calidad del padrón.</p>';
+        return '<h3>③ Calidad del padrón</h3><p>'
+          + '<span class="hr">' + f(rie) + ' capturados (' + (rie/tot*100).toFixed(0) + '%)</span> están marcados en riesgo'
+          + (dup ? ' y <span class="hr">' + f(dup) + ' son duplicados</span> que inflan artificialmente el avance — depurarlos es urgente antes de reportar a dirigencia' : '')
+          + '. ' + (cri ? 'Hay además <span class="hl">' + f(cri) + ' secciones críticas</span> de ' + f(sec)
+              + ' (sin captura o por debajo del 5%) que hoy son territorio ciego.' : '')
+          + '</p>';
+      })(),
     '</div>',
 
     '<div class="diag-sec">',
-      '<h3>④ Base de conversión</h3>',
-      '<p>El <span class="hlg">46% de lo capturado (4,601) es voto seguro</span> (compromiso ≥3): una base sólida en calidad, pero corta en volumen. El esfuerzo debe equilibrar <b>volumen</b> (cerrar la brecha de ritmo) y <b>calidad</b> (subir compromiso de lo ya capturado).</p>',
+      // [FIX 1 sep] "46% (4,601)" estaba fijo. Sale de la RPC.
+      (function(){
+        var K = window._kpisReportes || {};
+        var f = function(n){ return Number(n||0).toLocaleString('es-MX'); };
+        var tot = (typeof MUN_DATA!=='undefined'&&MUN_DATA.length)
+          ? MUN_DATA.reduce(function(a,m){return a+(m.cap||0);},0) : (Number(K.total)||0);
+        var seg = Number(K.seguro)||0;
+        if(!tot) return '';
+        var p = seg/tot*100;
+        return '<h3>④ Base de conversión</h3><p>El <span class="hlg">' + p.toFixed(0)
+          + '% de lo capturado (' + f(seg) + ') es voto seguro</span> (compromiso ≥3): '
+          + (p>=40 ? 'una base sólida en calidad, pero corta en volumen.'
+                   : 'la conversión está por debajo de lo deseable y hay que trabajar el compromiso de lo ya capturado.')
+          + ' El esfuerzo debe equilibrar <b>volumen</b> (cerrar la brecha de ritmo) y '
+          + '<b>calidad</b> (subir compromiso de lo ya capturado).</p>';
+      })(),
     '</div>',
 
     '<div class="diag-sec">',
+      // [FIX 1 sep] Las cinco recomendaciones citaban cifras y municipios fijos
+      // (4,140/semana, 7.2x, 408 duplicados, 219 criticas, "Minatitlan, Comala e
+      // Ixtlahuacan"). Ahora se arman con el dato real; si algo no aplica, no se
+      // recomienda.
       '<h3>⑤ Recomendaciones priorizadas</h3>',
-      '<ol class="diag-rec">',
-        '<li>Volcar estructura adicional sobre <b>Manzanillo</b>: es la mayor palanca estatal por volumen de meta.</li>',
-        '<li>Fijar meta operativa de <b>4,140 capturas/semana</b> (7.2× el ritmo actual). Sin esto, la meta de 2027 es inalcanzable matemáticamente.</li>',
-        '<li>Depuración inmediata de los <b>408 duplicados</b> para reportar avance real a dirigencia.</li>',
-        '<li>Plan de choque para las <b>219 secciones críticas</b>: asignar responsable y primera captura en 30 días.</li>',
-        '<li>Replicar el modelo de <b>Minatitlán, Comala e Ixtlahuacán</b> (los de mejor % de avance) en los municipios rezagados.</li>',
-      '</ol>',
+      (function(){
+        var K = window._kpisReportes || {};
+        var D = (typeof MUN_DATA!=='undefined' && MUN_DATA.length) ? MUN_DATA : [];
+        var f = function(n){ return Number(n||0).toLocaleString('es-MX'); };
+        var tot = D.length ? D.reduce(function(a,m){return a+(m.cap||0);},0) : (Number(K.total)||0);
+        var meta = Number(K.meta)>0 ? Number(K.meta)
+          : (D.length ? D.reduce(function(a,m){return a+(m.meta||0);},0) : 0);
+        var semanas = Math.max(1, Math.ceil((new Date('2027-06-06') - new Date())/(7*24*3600*1000)));
+        var req = Math.ceil(Math.max(0, meta-tot)/semanas);
+        var act = Number(K.semana)||0;
+        var li = [];
+        if(D.length){
+          var top = D.slice().sort(function(a,b){return (b.meta||0)-(a.meta||0);})[0];
+          li.push('<li>Volcar estructura adicional sobre <b>' + top.n + '</b>: es la mayor palanca por volumen de meta.</li>');
+        }
+        if(req>0){
+          li.push('<li>Fijar meta operativa de <b>' + f(req) + ' capturas/semana</b>'
+            + (act>0 ? ' (' + (req/act).toFixed(1) + '× el ritmo actual de ' + f(act) + '/sem)'
+                     : ' — en los últimos 7 días no se registró ninguna captura')
+            + '. Sin esto, la meta de 2027 no se alcanza.</li>');
+        }
+        if(Number(K.depurar)>0) li.push('<li>Depuración inmediata de los <b>' + f(K.depurar) + ' duplicados</b> para reportar avance real a dirigencia.</li>');
+        if(Number(K.criticas)>0) li.push('<li>Plan de choque para las <b>' + f(K.criticas) + ' secciones críticas</b>: asignar responsable y primera captura en 30 días.</li>');
+        var conAvance = D.filter(function(m){ return m.meta>0 && m.cap>0; })
+                         .sort(function(a,b){ return (b.cap/b.meta)-(a.cap/a.meta); }).slice(0,3);
+        if(conAvance.length>=2){
+          li.push('<li>Replicar el modelo de <b>' + conAvance.map(function(m){return m.n;}).join(', ')
+            + '</b> (los de mejor % de avance) en los municipios rezagados.</li>');
+        }
+        return '<ol class="diag-rec">' + (li.join('') || '<li>Aún no hay datos suficientes para priorizar acciones.</li>') + '</ol>';
+      })(),
     '</div>',
 
     '<div class="diag-foot">Diagnóstico generado por IA sobre los agregados de la candidatura · Colima 2027 · VOTERA™<br>Las cifras provienen del tablero de Reportes. Este reporte es orientativo y no sustituye el criterio del equipo de campaña.</div>',
@@ -3321,7 +3339,7 @@ showTab = function(tab) {
   function metaActual(){
     if(typeof window.SISTEMA_META==='number' && window.SISTEMA_META>0) return window.SISTEMA_META;
     if(typeof IE_METAS_CASILLA!=='undefined' && IE_METAS_CASILLA.meta_estatal) return IE_METAS_CASILLA.meta_estatal;
-    return 208717;
+    return 208754;   // [FIX 1 sep] canonico (era 208717)
   }
   function f(n){ return Number(n).toLocaleString('es-MX'); }
   function ap(){
