@@ -246,10 +246,13 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 <!-- TOPBAR -->
 <div class="topbar">
   <div class="tb-left">
-    <div class="tb-av" id="tb-av" style="background:rgba(34,197,94,.15);color:var(--green)">C17</div>
+    <div class="tb-av" id="tb-av" style="background:rgba(34,197,94,.15);color:var(--green)">··</div>
     <div>
-      <div class="tb-name">Capturista 17</div>
-      <div class="tb-id">CAP-017 · Secc. 138 · V. Álvarez</div>
+      <!-- [FIX perfil] Antes estos dos venían escritos a mano ("Capturista 17",
+           "CAP-017 · Secc. 138 · V. Álvarez"): mostraban lo mismo sin importar
+           quién entrara. Ahora los llena pcpPintarIdentidad() desde la sesión. -->
+      <div class="tb-name" id="tb-name">—</div>
+      <div class="tb-id" id="tb-id">—</div>
     </div>
   </div>
   <div class="phase-badge" id="phase-badge">FASE 1</div>
@@ -583,6 +586,78 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 // ── CONFIGURACIÓN SUPABASE ────────────────────────────────────────────────
 const SUPA_URL = 'https://dyirhwwmykskpuvzcafx.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5aXJod3dteWtza3B1dnpjYWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NTk3ODgsImV4cCI6MjA5NTEzNTc4OH0.2xe4cHqORGng1hnYPJ9ZiyT0r87fMijbUEJqBy3-xoI';
+
+// ── [FIX perfil · 1 sep] REFRESCO DEL PERFIL AL CARGAR ────────────────────
+// PROBLEMA: window._sesion es una FOTO tomada en el login y guardada en
+// localStorage con vigencia de 8 horas. Si a media jornada se le cambia el
+// municipio, la seccion o el rol a alguien, su panel sigue mostrando lo viejo
+// hasta que cierre sesion. Con 500 capturistas en campo eso significa capturar
+// en la seccion equivocada sin enterarse. (Caso real: cap017 quedo mostrando
+// COLIMA cuando en la base ya decia VILLA DE ALVAREZ.)
+//
+// FIX: al cargar el panel se relee el perfil de la base y se actualiza la
+// sesion. RLS ya permite que cada quien lea SU propia fila, asi que no hace
+// falta ningun permiso extra. Ademas:
+//   · si la cuenta fue desactivada  -> se cierra sesion
+//   · si el rol dejo de tener acceso -> se cierra sesion
+// Se conservan ts y access_token para no reiniciar la vigencia de 8 horas.
+function pcpPintarIdentidad(){
+  const s = window._sesion || {};
+  const el = id => document.getElementById(id);
+  const nombre = s.nombre || 'Capturista';
+  const partes = [];
+  if (s.seccion)   partes.push('Secc. ' + s.seccion);
+  if (s.municipio) partes.push(s.municipio);
+  if (el('tb-name')) el('tb-name').textContent = nombre;
+  if (el('tb-id'))   el('tb-id').textContent   = partes.join(' · ') || '—';
+  if (el('tb-av'))   el('tb-av').textContent   =
+    nombre.split(' ').filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase() || '··';
+  if (el('kv-municipio')) el('kv-municipio').textContent = s.municipio || '—';
+  if (el('kv-seccion'))   el('kv-seccion').textContent   = (window.SECCION_CAP || s.seccion) || '—';
+}
+
+async function pcpRefrescarPerfil(){
+  const s = window._sesion;
+  const uid = s && (s.usuario_id || s.id);
+  if (!uid || !s.access_token) { pcpPintarIdentidad(); return; }  // sin token: se queda con la foto
+  try {
+    const res = await fetch(
+      SUPA_URL + '/rest/v1/usuarios?select=nombre,rol,municipio,seccion,activo,licencia_id&id=eq.' + encodeURIComponent(uid),
+      { headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + s.access_token } }
+    );
+    if (!res.ok) { pcpPintarIdentidad(); return; }   // red caida: seguimos con lo que hay
+    const fila = (await res.json())[0];
+    if (!fila) { pcpPintarIdentidad(); return; }
+
+    if (fila.activo === false) {
+      localStorage.removeItem('electoral_sesion');
+      alert('Tu cuenta fue desactivada. Contacta a tu coordinador.');
+      window.location.replace('login.html'); return;
+    }
+    if (!['capturista','super_admin'].includes(fila.rol)) {
+      localStorage.removeItem('electoral_sesion');
+      alert('Tu rol cambio y este panel ya no te corresponde.');
+      window.location.replace('login.html'); return;
+    }
+
+    const cambio = ['nombre','rol','municipio','seccion','licencia_id']
+      .some(k => String(s[k] ?? '') !== String(fila[k] ?? ''));
+    if (cambio) {
+      Object.assign(s, {
+        nombre: fila.nombre, rol: fila.rol, municipio: fila.municipio,
+        seccion: fila.seccion, licencia_id: fila.licencia_id,
+      });
+      window._sesion = s;
+      localStorage.setItem('electoral_sesion', JSON.stringify(s));  // ts y access_token intactos
+      console.log('Perfil actualizado desde la base:', fila.municipio, 'secc.', fila.seccion);
+    }
+    pcpPintarIdentidad();
+    if (typeof actualizarKPIs === 'function') actualizarKPIs();
+  } catch(e) {
+    console.warn('No se pudo refrescar el perfil:', e.message);
+    pcpPintarIdentidad();
+  }
+}
 const LICENCIA_ID = window._sesion?.licencia_id || 'a1b2c3d4-0001-0000-0000-000000000001';
 // [FIX 10 jul] Antes eran const congeladas al cargar. Ahora son getters:
 //   1) respetan el MODO SUPERVISIÓN (window._SUP_*) cuando un admin elige
@@ -1164,6 +1239,8 @@ async function guardarRegistroRapidoEnBD(nombre){
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────
+pcpPintarIdentidad();   // pinta ya con la sesion guardada (sin parpadeo)
+pcpRefrescarPerfil();   // y corrige contra la base en cuanto responda
 cargarMisRegistros();
 
 // ── CASILLA ───────────────────────────────────────────────────────────────
@@ -1447,7 +1524,12 @@ setInterval(verificarAlertasCoordinador, 30000);
 })(20);
 
 </script>
-<script src="theme.js">
+<script src="theme.js"></script>
+<!-- [FIX 1 sep] Este bloque venia DENTRO de la etiqueta que carga theme.js.
+     Cuando una etiqueta de script trae atributo src, el navegador ignora su
+     contenido inline: el boton de regreso al menu nunca llegaba a mostrarse.
+     Ahora son dos etiquetas separadas. -->
+<script>
 // Mostrar botón de menú solo si NO está en iframe
 (function() {
   try {
