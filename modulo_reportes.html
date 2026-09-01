@@ -1126,6 +1126,11 @@ async function cargarDatosMunicipios() {
     actualizarKPIsResumen(kpis);   // ← KPIs del resumen ejecutivo, desde la RPC
     // [FIX 1 sep] Va DESPUES de armar MUN_DATA, no antes.
     try { pintarRankingMunicipios(); } catch(e){ console.warn('ranking municipios:', e); }
+    // [FIX 1 sep] Y repintar la gráfica por municipio: si se construyó antes de
+    // que llegara la RPC, quedó vacía y el guard impedía rehacerla.
+    try {
+      if (MUN_DATA.length) { builtCharts['municipal'] = false; buildCharts('municipal'); }
+    } catch(e){ console.warn('gráfica municipal:', e); }
     console.log('✅ Municipios (vía RPC): ' + Number(kpis.total).toLocaleString('es-MX')
       + ' ciudadanos en ' + MUN_DATA.length + ' municipios.');
 
@@ -1661,10 +1666,16 @@ function buildCharts(tab){
   }
 
   if(tab==='municipal'){
+    // [FIX 1 sep] La gráfica se construía UNA sola vez (guard builtCharts). Si el
+    // usuario abría la pestaña antes de que respondiera la RPC, MUN_DATA estaba
+    // vacío y la gráfica se quedaba en blanco con escala 0–1% para siempre.
+    // Ahora la instancia se guarda para poder destruirla y repintar cuando
+    // lleguen los datos (ver el final de cargarDatosMunicipios).
     const sorted=[...MUN_DATA].sort((a,b)=>(b.cap/b.meta)-(a.cap/a.meta));
     const pcts=sorted.map(m=>parseFloat((m.cap/m.meta*100).toFixed(1)));
     const cols=pcts.map(p=>p>=10?'#22c55e':p>=5?'#f59e0b':'#ef4444');
-    new Chart(document.getElementById('ch-municipios'),{
+    if (window._chartMunicipios) { try { window._chartMunicipios.destroy(); } catch(e){} }
+    window._chartMunicipios = new Chart(document.getElementById('ch-municipios'),{
       type:'bar',
       data:{
         labels:sorted.map(m=>m.n),
