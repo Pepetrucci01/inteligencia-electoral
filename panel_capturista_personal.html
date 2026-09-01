@@ -275,12 +275,8 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 <!-- ══ SCREEN: INICIO ══ -->
 <div class="screen active" id="sc-inicio">
 
-  <!-- Demo: selector de fase -->
-  <div class="fase-selector">
-    <span>Demo — Simular fase:</span>
-    <label><input type="radio" name="fase" value="1" checked onchange="setFase(1)"> Fase 1 (captura)</label>
-    <label><input type="radio" name="fase" value="2" onchange="setFase(2)"> Fase 2 (elección)</label>
-  </div>
+  <!-- [FIX fase · 1 sep] Aqui vivia el selector "Demo — Simular fase". Eliminado:
+       la fase se calcula sola con licencias.fecha_eleccion (ver pcpCalcularFase). -->
 
   <!-- Banner alerta coordinador -->
   <div id="banner-alerta-coord" style="display:none;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px;animation:pulse-red 2s infinite">
@@ -900,6 +896,52 @@ function setFase(f){
   }
 }
 
+// ── [FIX fase · 1 sep] FASE AUTOMÁTICA POR FECHA DE ELECCIÓN ──────────────
+// Regla (misma que dice el banner): Fase 1 = captura, activa hasta 3 dias antes
+// de la eleccion. Fase 2 = eleccion, desde 3 dias antes en adelante.
+// La fecha se lee de licencias.fecha_eleccion (RLS: cada quien lee su licencia).
+// Si no se puede leer, se queda en Fase 1 y se avisa en consola.
+const FASE2_DIAS_ANTES = 3;
+window._FECHA_ELECCION = null;
+
+function pcpDiasParaEleccion(){
+  if (!window._FECHA_ELECCION) return null;
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const [y,m,d] = window._FECHA_ELECCION.split('-').map(Number);
+  const elec = new Date(y, m-1, d);
+  return Math.round((elec - hoy) / 86400000);
+}
+
+function pcpCalcularFase(){
+  const dias = pcpDiasParaEleccion();
+  const f = (dias != null && dias <= FASE2_DIAS_ANTES) ? 2 : 1;
+  setFase(f);
+  // Dias restantes en el badge, para que el capturista sepa cuanto falta
+  const pb = document.getElementById('phase-badge');
+  if (pb && dias != null) {
+    if (dias > 0)       pb.textContent += ' · ' + dias.toLocaleString('es-MX') + (dias === 1 ? ' día' : ' días');
+    else if (dias === 0) pb.textContent += ' · HOY';
+  }
+}
+
+async function pcpCargarFase(){
+  try {
+    const token = window._sesion?.access_token;
+    if (token && LICENCIA_ID) {
+      const res = await fetch(
+        SUPA_URL + '/rest/v1/licencias?select=fecha_eleccion&id=eq.' + encodeURIComponent(LICENCIA_ID),
+        { headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + token } }
+      );
+      if (res.ok) {
+        const fila = (await res.json())[0];
+        if (fila && fila.fecha_eleccion) window._FECHA_ELECCION = String(fila.fecha_eleccion).slice(0,10);
+      }
+    }
+  } catch(e) { console.warn('No se pudo leer fecha_eleccion:', e.message); }
+  if (!window._FECHA_ELECCION) console.warn('Sin fecha de elección: se asume Fase 1.');
+  pcpCalcularFase();
+}
+
 // ── TABS ──────────────────────────────────────────────────────────────────
 // [T12] Al cargar, seleccionar la primera pestaña VISIBLE para el rol (algunas
 // se ocultan por CSS según la matriz). Evita que un rol arranque sin panel si
@@ -1297,6 +1339,7 @@ async function guardarRegistroRapidoEnBD(nombre){
 // ── INIT ──────────────────────────────────────────────────────────────────
 pcpPintarIdentidad();   // pinta ya con la sesion guardada (sin parpadeo)
 pcpRefrescarPerfil();   // y corrige contra la base en cuanto responda
+pcpCargarFase();        // fase real por fecha de eleccion (ya no la elige el usuario)
 cargarMisRegistros();
 
 // ── CASILLA ───────────────────────────────────────────────────────────────
