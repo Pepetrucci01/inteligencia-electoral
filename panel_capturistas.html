@@ -677,13 +677,19 @@ function mostrarCredencialGenerada(id, p, res, texto, urlWA, abrio){
         '<b style="color:#c4a5f7;letter-spacing:.04em">' + esc(res.password) + '</b>' +
       '</div>' +
       (abrio ? '' : '<div style="font-size:10px;color:var(--amber);font-family:var(--mono);margin-top:2px">' +
-        'El navegador bloqueó la pestaña de WhatsApp. Copia el mensaje o vuelve a abrirla.</div>') +
+        'El navegador bloqueó la pestaña. Usa el botón verde de al lado, o permite las ventanas ' +
+        'emergentes de este sitio (icono en la barra de direcciones) para que se abra sola.</div>') +
     '</div>' +
     '<button onclick="copiarMensajeCred(\'' + id + '\')" style="background:var(--bg4);border:1px solid var(--border2);' +
       'color:var(--text2);font-family:var(--mono);font-size:11px;padding:5px 11px;border-radius:5px;cursor:pointer">Copiar</button>' +
-    '<button onclick="window.open(window._TEXTOS_CRED[\'' + id + '\'].url,\'_blank\',\'noopener\')" ' +
+    // [FIX 1 sep] Antes era un <button> con window.open(): Chrome lo bloquea si el
+    // sitio tiene restringidas las ventanas emergentes, y el coordinador se
+    // quedaba sin poder mandar el mensaje. Un <a target="_blank"> es una
+    // navegacion normal, no un popup: el navegador nunca la bloquea.
+    '<a href="' + urlWA.replace(/"/g,'&quot;') + '" target="_blank" rel="noopener" ' +
       'style="background:rgba(34,197,94,.13);border:1px solid rgba(34,197,94,.3);color:var(--green);' +
-      'font-family:var(--mono);font-size:11px;padding:5px 11px;border-radius:5px;cursor:pointer;white-space:nowrap">WhatsApp</button>';
+      'font-family:var(--mono);font-size:11px;padding:5px 11px;border-radius:5px;cursor:pointer;' +
+      'white-space:nowrap;text-decoration:none;display:inline-block">WhatsApp</a>';
 }
 
 function copiarMensajeCred(id){
