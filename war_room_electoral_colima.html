@@ -948,6 +948,20 @@ function munSecIds(munId){
 // ══════════════════════════════════════════════════
 let f1s={nivel:'candidato',df:null,mun:null,dl:null,sec:null,cap:null};
 
+// [AISLAMIENTO · cuadrantes] Municipio del usuario cuando es coordinador
+// municipal; null para roles estatales. Se usa para que los cuadrantes de
+// ambas fases arranquen en SU municipio en vez de mostrar Estado / DF1 / DF2.
+function wrAlcanceMun(){
+  try{
+    const rol=(window._sesion&&window._sesion.rol)||'';
+    const munU=(window._sesion&&window._sesion.municipio)||'';
+    if(['super_admin','admin','coordinador_estatal','consulta'].includes(rol)) return null;
+    if(!munU) return null;
+    const norm=x=>(x||'').toString().trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    return MUNS.find(m=>norm(m.n)===norm(munU)||norm(m.nombre)===norm(munU))||null;
+  }catch(_e){ return null; }
+}
+
 // [AISLAMIENTO] Reetiqueta el encabezado de KPIs y la meta según el alcance.
 // Coordinador municipal: "Meta de mi municipio" + la meta de su municipio.
 // Roles estatales: se deja "Meta estatal" + meta estatal (no toca nada).
@@ -1196,6 +1210,9 @@ function syncFiltrosDesdeDrillF1(){
   window._capSecPend=f1s.sec||'';
 }
 function drillF1(nivel,id){
+  // [AISLAMIENTO] El coordinador municipal no tiene "vista estatal": regresar
+  // al inicio es regresar a su municipio.
+  if(nivel==='candidato'||nivel==='df'){const _am=wrAlcanceMun(); if(_am){nivel='mun'; id=_am.id;}}
   if(nivel==='candidato')f1s={nivel:'candidato',df:null,mun:null,dl:null,sec:null,cap:null};
   else if(nivel==='df')f1s={...f1s,nivel:'df',df:id,mun:null,dl:null,sec:null,cap:null};
   else if(nivel==='mun'){f1s={...f1s,nivel:'mun',mun:id,dl:null,sec:null,cap:null};
@@ -1225,6 +1242,20 @@ function renderCuadF1(){
       +`<div class="sub">${fmt(o.cap)} / ${fmt(o.meta)}</div>`
       +(o.hint?`<div class="hint">${o.hint}</div>`:'')+`</div>`;};
   const capTot=MUNS.reduce((s,m)=>s+m.cap,0), metaTot=MUNS.reduce((s,m)=>s+m.meta,0);
+  // [AISLAMIENTO] Coordinador municipal: su municipio ES su nivel superior.
+  // Una sola tarjeta en el primer renglón, sin Estado ni distritos federales.
+  const _am=wrAlcanceMun();
+  if(_am){
+    if(f1s.mun!==_am.id){
+      f1s={...f1s,nivel:'mun',df:_am.df||null,mun:_am.id,dl:null,sec:null,cap:null};
+      if(typeof syncFiltrosDesdeDrillF1==='function') syncFiltrosDesdeDrillF1();
+      if(typeof renderMunF1==='function') renderMunF1();
+      if(typeof renderTablaCapturistas==='function') renderTablaCapturistas();
+    }
+    html+='<div class="uq-grid">';
+    html+=card({lbl:'MI MUNICIPIO',nom:_am.n,cap:_am.cap,meta:_am.meta,sel:!f1s.dl&&!f1s.sec,fixed:true,click:`drillF1('mun','${_am.id}')`,hint:`${_am.secs} secc. · ${capsMun(_am.id)} activistas · Ver secciones ↓`,tip:'Tu alcance territorial. Clic: regresa al municipio completo.'});
+    html+='</div>';
+  } else {
   html+='<div class="uq-grid">';
   html+=card({lbl:'ESTADO COMPLETO',nom:'Colima',cap:capTot,meta:metaTot,sel:!f1s.df&&!f1s.mun,click:`drillF1('candidato',null)`,hint:(f1s.df||f1s.mun)?'← Clic para regresar a la vista estatal':'',tip:'Avance total del estado contra la meta 2027. Clic: regresa el War Room a la vista inicial.'});
   DFS.forEach(df=>{const p=pct(df.cap,df.meta);if(!okSem(p))return;
@@ -1237,6 +1268,7 @@ function renderCuadF1(){
       html+=card({lbl:'MUNICIPIO',nom:m.n,cap:m.cap,meta:m.meta,sel:f1s.mun===m.id,click:`drillF1('mun','${m.id}')`,hint:`${m.secs} secc. · ${capsMun(m.id)} activistas · Ver secciones ↓`,tip:'Clic: la tabla de abajo salta directo a las secciones de este municipio.'});
     });
     html+='</div>';}
+  } // fin roles estatales
   if(f1s.mun){const mun=MUNS.find(m=>m.id===f1s.mun);
     html+=`<div class="uq-regla">Distritos locales en ${mun.n} <span class="uq-regla-nota">· opcional — la tabla ya muestra las secciones; clic en un DL para recortarla (clic de nuevo para quitarlo)</span></div><div class="uq-grid">`;
     DLS.filter(dl=>dl.mun===f1s.mun).forEach(dl=>{const p=pct(dl.cap,dl.meta);if(!okSem(p))return;
@@ -1320,10 +1352,13 @@ function detalleSecF1(sec){
 
 function updateBcF1(){
   const el=document.getElementById('bc-f1'); if(!el) return;
-  let h=`<a onclick="drillF1('candidato',null)" class="${!f1s.df&&!f1s.mun?'act':''}">🏛 Candidato · Colima</a>`;
-  if(f1s.df){const df=DFS.find(d=>d.id===f1s.df);
+  const _am=wrAlcanceMun();
+  let h=_am
+    ? `<a onclick="drillF1('mun','${_am.id}')" class="${!f1s.dl&&!f1s.sec?'act':''}">📍 ${_am.n}</a>`
+    : `<a onclick="drillF1('candidato',null)" class="${!f1s.df&&!f1s.mun?'act':''}">🏛 Candidato · Colima</a>`;
+  if(f1s.df&&!_am){const df=DFS.find(d=>d.id===f1s.df);
     h+=`<span class="sep">›</span><a onclick="drillF1('df','${f1s.df}')" class="${!f1s.mun?'act':''}">${df?df.n.replace('Distrito Federal ','DF ')+(df.id==='DF1'?' · Norte':' · Sur'):f1s.df}</a>`;}
-  if(f1s.mun){const m=MUNS.find(x=>x.id===f1s.mun);
+  if(f1s.mun&&!_am){const m=MUNS.find(x=>x.id===f1s.mun);
     h+=`<span class="sep">›</span><a onclick="drillF1('mun','${f1s.mun}')" class="${!f1s.dl&&!f1s.sec?'act':''}">${m?m.n:''}</a>`;}
   if(f1s.dl){const dl=DLS.find(d=>d.id===f1s.dl);
     h+=`<span class="sep">›</span><a onclick="drillF1('dl','${f1s.dl}')" class="${!f1s.sec?'act':''}">${dl?dl.n:''}</a>`;}
@@ -1626,6 +1661,7 @@ function renderTablaActF2(){
   }).join('');
 }
 function drillF2(nivel,id){
+  if(nivel==='candidato'||nivel==='df'){const _am=wrAlcanceMun(); if(_am){nivel='mun'; id=_am.id;}}
   if(nivel==='candidato')f2s={nivel:'candidato',df:null,mun:null,dl:null,sec:null,cas:null};
   else if(nivel==='df')f2s={...f2s,nivel:'df',df:id,mun:null,dl:null,sec:null,cas:null};
   else if(nivel==='mun')f2s={...f2s,nivel:'mun',mun:id,dl:null,sec:null,cas:null};
@@ -1655,6 +1691,15 @@ function renderCuadF2(){
   const allSecIds=Object.values(SECS).flat().map(s=>s.id);
   const stE=casStats(allSecIds);
   const pcasE=Math.round((stE.ab+stE.ce)/Math.max(stE.total,1)*100);
+  // [AISLAMIENTO] Coordinador municipal: una sola tarjeta con su municipio.
+  const _am=wrAlcanceMun();
+  if(_am){
+    if(f2s.mun!==_am.id){ f2s={...f2s,nivel:'mun',df:_am.df||null,mun:_am.id,dl:null,sec:null,cas:null}; }
+    const stM=casStats(munSecIds(_am.id));const pM=Math.round((stM.ab+stM.ce)/Math.max(stM.total,1)*100);
+    html+='<div class="uq-grid">';
+    html+=card2({lbl:'MI MUNICIPIO',nom:_am.n,p:pM,votos:stM.votos,inc:stM.inc,extra:`${stM.inc} incid. · ${stM.sr} s/rep.`,sel:!f2s.dl&&!f2s.sec,fixed:true,click:`drillF2('mun','${_am.id}')`,hint:'Ver secciones ↓',tip:'Tu alcance territorial en la jornada. Clic: regresa al municipio completo.'});
+    html+='</div>';
+  } else {
   html+='<div class="uq-grid">';
   html+=card2({lbl:'ESTADO COMPLETO',nom:'Jornada estatal',p:pcasE,votos:stE.votos,inc:stE.inc,extra:`${stE.inc} incid. · ${stE.sr} s/reporte · ${fmt(stE.nuevos)} nuevos`,sel:!f2s.df&&!f2s.mun,click:`drillF2('candidato',null)`,hint:(f2s.df||f2s.mun)?'← Clic para regresar a la vista estatal':'',tip:'Casillas activas y votos confirmados en todo el estado. Clic: regresa el War Room a la vista inicial.'});
   DFS.forEach(df=>{
@@ -1672,6 +1717,7 @@ function renderCuadF2(){
       html+=card2({lbl:'MUNICIPIO',nom:m.n,p:p,votos:st.votos,inc:st.inc,extra:`${st.inc} incid. · ${st.sr} s/rep.`,sel:f2s.mun===m.id,click:`drillF2('mun','${m.id}')`,hint:'Ver secciones ↓',tip:'Clic: la tabla de abajo salta directo a las secciones de este municipio.'});
     });
     html+='</div>';}
+  } // fin roles estatales
   if(f2s.mun){const mun=MUNS.find(m=>m.id===f2s.mun);
     html+=`<div class="uq-regla">Distritos locales en ${mun.n} <span class="uq-regla-nota">· opcional — la tabla ya muestra las secciones; clic en un DL para recortarla (clic de nuevo para quitarlo)</span></div><div class="uq-grid">`;
     DLS.filter(dl=>dl.mun===f2s.mun).forEach(dl=>{
@@ -2024,10 +2070,13 @@ function actualizarHistorialAlertas(){
 
 function updateBcF2(){
   const el=document.getElementById('bc-f2'); if(!el) return;
-  let h=`<a onclick="drillF2('candidato',null)" class="${!f2s.df&&!f2s.mun?'act':''}">🏛 Candidato · Jornada estatal</a>`;
-  if(f2s.df){const df=DFS.find(d=>d.id===f2s.df);
+  const _am=wrAlcanceMun();
+  let h=_am
+    ? `<a onclick="drillF2('mun','${_am.id}')" class="${!f2s.dl&&!f2s.sec?'act':''}">📍 ${_am.n} · Jornada</a>`
+    : `<a onclick="drillF2('candidato',null)" class="${!f2s.df&&!f2s.mun?'act':''}">🏛 Candidato · Jornada estatal</a>`;
+  if(f2s.df&&!_am){const df=DFS.find(d=>d.id===f2s.df);
     h+=`<span class="sep">›</span><a onclick="drillF2('df','${f2s.df}')" class="${!f2s.mun?'act':''}">${df?df.n.replace('Distrito Federal ','DF ')+(df.id==='DF1'?' · Norte':' · Sur'):f2s.df}</a>`;}
-  if(f2s.mun){const m=MUNS.find(x=>x.id===f2s.mun);
+  if(f2s.mun&&!_am){const m=MUNS.find(x=>x.id===f2s.mun);
     h+=`<span class="sep">›</span><a onclick="drillF2('mun','${f2s.mun}')" class="${!f2s.dl&&!f2s.sec?'act':''}">${m?m.n:''}</a>`;}
   if(f2s.dl){const dl=DLS.find(d=>d.id===f2s.dl);
     h+=`<span class="sep">›</span><a onclick="drillF2('dl','${f2s.dl}')" class="${!f2s.sec?'act':''}">${dl?dl.n:''}</a>`;}
@@ -2815,6 +2864,11 @@ async function cargarDesdeRPC() {
     // ── 5. Re-render con datos reales ──────────────────────────────
     renderMunF1();
     renderTablaCapturistas();
+    // [FIX 31/08] Los cuadrantes también se pintan con m.cap: sin esto se
+    // quedaban con el capturado horneado (Colima 1,620) mientras la tabla ya
+    // decía el real. La migaja se actualiza por si el alcance movió el drill.
+    if(typeof renderCuadF1==='function') renderCuadF1();
+    if(typeof updateBcF1==='function')   updateBcF1();
 
     // Guardar el bloque de KPIs por si otra parte del código lo necesita
     window._kpisRPC = data;
