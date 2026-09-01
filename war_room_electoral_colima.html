@@ -2228,6 +2228,10 @@ async function confirmarEnvioAlerta(destinatarios, mensaje){
       destinatario_nombre: d.nombre || null,
       mensaje: mensaje,
       leida: false,
+      // [FIX 1 sep] `enviada_por` se quedaba en null: no había registro de quién
+      // mandó cada alerta. Con varios coordinadores trabajando hace falta, y la
+      // política de RLS lo usa para que el remitente siempre vea sus envíos.
+      enviada_por: (window._sesion && (window._sesion.usuario_id || window._sesion.id)) || null,
     }));
 
   if (!filas.length) {
