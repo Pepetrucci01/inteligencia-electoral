@@ -978,7 +978,6 @@ async function cargarDatosMunicipios() {
 
     // Guardar los KPIs para el resumen ejecutivo y el diagnóstico.
     window._kpisReportes = kpis;
-  try { pintarRankingMunicipios(); } catch(e){ console.warn('ranking municipios:', e); }
 
     // Normalizar los nombres de municipio (la BD los guarda en MAYÚSCULAS).
     const norm = s => (s || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
@@ -1008,6 +1007,10 @@ async function cargarDatosMunicipios() {
     buildMunTable();
     actualizarKPIsMunicipio();
     actualizarKPIsResumen(kpis);   // ← KPIs del resumen ejecutivo, desde la RPC
+    // [FIX 1 sep · ORDEN] Esta llamada estaba ANTES de armar MUN_DATA: pintaba
+    // "Sin datos suficientes" en Top/Bottom 3 y ya no se volvia a ejecutar.
+    // Va aqui, cuando MUN_DATA ya tiene los municipios.
+    try { pintarRankingMunicipios(); } catch(e){ console.warn('ranking municipios:', e); }
     console.log('✅ Municipios (vía RPC): ' + Number(kpis.total).toLocaleString('es-MX')
       + ' ciudadanos en ' + MUN_DATA.length + ' municipios.');
 
@@ -1605,6 +1608,11 @@ function buildCharts(tab){
 
 buildCharts('resumen');
 
+// [FIX 1 sep] initDescargas() solo corría al abrir el tab "Descargas", así que
+// el indicador de rol del encabezado se quedaba en "Cargando rol..." para
+// siempre si el usuario nunca entraba ahí. Se ejecuta también al cargar.
+try { initDescargas(); } catch(e) { console.warn('initDescargas:', e); }
+
 function imprimirReporte(){
   window.print();
 }
@@ -1795,12 +1803,15 @@ function getSesion() {
 function initDescargas() {
   const sesion = getSesion();
 
-  // Determinar rol — si no hay sesión usar rol demo por defecto
-  let rol      = sesion?.rol      || 'coordinador';
-  let nombre   = sesion?.nombre   || 'Usuario Demo';
-  let municipio= sesion?.municipio|| 'Manzanillo';
-  let id       = sesion?.id       || 'CAP-017';
-  let seccion  = sesion?.seccion  || 138;
+  // [FIX 1 sep] Antes, sin sesión se inventaba "Usuario Demo · coordinador ·
+  // Manzanillo · CAP-017 · sección 138": el módulo se comportaba como si
+  // alguien hubiera entrado. Ahora se usa lo que haya y, si no hay nada, se
+  // dice que no hay sesión en vez de suplantar un rol.
+  let rol      = sesion?.rol      || null;
+  let nombre   = sesion?.nombre   || '—';
+  let municipio= sesion?.municipio|| '';
+  let id       = sesion?.id       || '';
+  let seccion  = sesion?.seccion  || '';
 
   // Actualizar indicador de rol en topbar
   const colores = {
@@ -1809,7 +1820,7 @@ function initDescargas() {
     coordinador: {bg:'rgba(6,182,212,0.12)',color:'#06b6d4',label:' Coordinador'},
     capturista:  {bg:'rgba(34,197,94,0.12)',color:'#22c55e',label:'✏ Capturista'},
   };
-  const rc = colores[rol] || colores.coordinador;
+  const rc = colores[rol] || {bg:'rgba(148,163,184,.12)',color:'#94a3b8',label:'Sin sesión'};
   const ind = document.getElementById('rol-indicator');
   if(ind) {
     ind.textContent = rc.label;
