@@ -1020,11 +1020,39 @@ async function cargarDatosMunicipios() {
     const sesion = JSON.parse(localStorage.getItem('electoral_sesion') || 'null');
     const licenciaId = sesion?.licencia_id || 'a1b2c3d4-0001-0000-0000-000000000001';
 
-    const METAS_MUN = {
-      'TECOMAN': 29211, 'ARMERIA': 8826, 'COLIMA': 22050,
-      'VILLA DE ALVAREZ': 23201, 'MANZANILLO': 49083, 'COMALA': 5971,
-      'CUAUHTEMOC': 8061, 'IXTLAHUACAN': 3286, 'MINATITLAN': 3908, 'COQUIMATLAN': 6700
-    };
+    // [FIX 1 sep] METAS_MUN estaba HORNEADO con metas viejas que sumaban 140,297
+    // (Colima 22,050 · Manzanillo 49,083 · V. Álvarez 23,201...). Las reales
+    // suman 208,754: Colima 48,664 · Manzanillo 58,013 · V. Álvarez 36,937.
+    // Con las viejas, TODOS los % de avance salían inflados —Colima marcaba
+    // 16.2% cuando su avance real es 7.3%— y el semáforo mentía en verde.
+    // Ahora se derivan de ie_metas_casilla_horneado.js (misma fuente que el
+    // resto del sistema, ya cuadrada con casillas), y si ese archivo no
+    // estuviera disponible se cae al mapa viejo solo como último recurso.
+    const METAS_MUN = (function(){
+      const norm = x => String(x||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+      const out = {};
+      try {
+        if (typeof IE_METAS_CASILLA !== 'undefined' && IE_METAS_CASILLA.secciones) {
+          for (const sec in IE_METAS_CASILLA.secciones) {
+            const o = IE_METAS_CASILLA.secciones[sec];
+            const k = norm(o.mun);
+            if (!k) continue;
+            out[k] = (out[k] || 0) + Math.round(Number(o.meta_proyectada) || 0);
+          }
+        }
+      } catch(e) { console.warn('METAS_MUN desde horneado:', e); }
+      if (Object.keys(out).length) {
+        const tot = Object.values(out).reduce((a,b)=>a+b,0);
+        console.log('✅ Metas por municipio derivadas del horneado. Total:', tot.toLocaleString('es-MX'));
+        return out;
+      }
+      console.warn('⚠ No se pudo derivar METAS_MUN; usando el mapa de respaldo (desactualizado).');
+      return {
+        'TECOMAN': 29884, 'ARMERIA': 8432, 'COLIMA': 48664,
+        'VILLA DE ALVAREZ': 36937, 'MANZANILLO': 58013, 'COMALA': 6403,
+        'CUAUHTEMOC': 8351, 'IXTLAHUACAN': 2594, 'MINATITLAN': 4426, 'COQUIMATLAN': 5050
+      };
+    })();
 
     const SUPA_URL = 'https://dyirhwwmykskpuvzcafx.supabase.co';
     const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5aXJod3dteWtza3B1dnpjYWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NTk3ODgsImV4cCI6MjA5NTEzNTc4OH0.2xe4cHqORGng1hnYPJ9ZiyT0r87fMijbUEJqBy3-xoI';
