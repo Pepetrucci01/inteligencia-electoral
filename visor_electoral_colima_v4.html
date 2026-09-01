@@ -276,8 +276,9 @@ async function cargarAvanceSupabase() {
   <button id="btn-stats-toggle" onclick="toggleStatsBar()" title="Mostrar/ocultar estadísticas">📊 <span id="stats-toggle-arrow">▲</span></button>
   <div id="stats-bar">
     <div class="stat">Capa: <span id="sLayer">GOBERNADOR</span></div>
-    <div class="stat">Casillas: <span id="sCasillas">1032</span></div>
-    <div class="stat">Secciones: <span>430</span></div>
+    <!-- [FIX 1 sep] "1032" y "430" estaban escritos a mano. Los llena vrStats(). -->
+    <div class="stat">Casillas: <span id="sCasillas">—</span></div>
+    <div class="stat">Secciones: <span id="sSecciones">—</span></div>
     <div class="stat green">Meta Total: <span id="sMetaTotal">—</span></div>
     <div class="stat green">Avance: <span id="sAvance">0%</span></div>
     <div class="stat">Fácil: <span id="sFacil" style="color:#00cc66;">—</span></div>
@@ -348,22 +349,72 @@ const MUN_COLORS = {"COLIMA": "#e94560", "COMALA": "#0f9b8e", "COQUIMATLAN": "#f
 const DL_COLORS = {"DL-1 COLIMA": "#e94560", "DL-2 COLIMA": "#ff6b35", "DL-3 COLIMA": "#f7c59f", "DL-4 COLIMA": "#c8a2c8", "DL-5 COQUIMATLAN": "#004e89", "DL-6 CUAUHTEMOC": "#1a936f", "DL-7 VILLA DE ALVAREZ": "#88d498", "DL-8 VILLA DE ALVAREZ": "#45b7d1", "DL-9 ARMERIA": "#ffd93d", "DL-10 TECOMAN": "#ff6b6b", "DL-11 MANZANILLO": "#4ecdc4", "DL-12 MANZANILLO": "#96ceb4", "DL-13 MANZANILLO": "#7b68ee", "DL-14 MINATITLAN": "#50c878", "DL-15 TECOMAN": "#f5a623", "DL-16 TECOMAN": "#0f9b8e"};
 const DF_COLORS = {"COLIMA": "#e94560", "VALLE DE LAS GARZAS": "#0f9b8e"};
 
-// Compute stats
-const metaTotal = CASILLAS.reduce((a,c)=>a+(c.meta||0),0);
-let facil=0,medio=0,dificil=0;
-const secSeen={};
-CASILLAS.forEach(c=>{
-  if(!secSeen[c.seccion]){
-    secSeen[c.seccion]=true;
-    if(c.estatus==='FACIL') facil++;
-    else if(c.estatus==='MEDIO') medio++;
-    else if(c.estatus==='DIFICIL') dificil++;
-  }
-});
-document.getElementById('sMetaTotal').textContent = Math.round(metaTotal/CASILLAS.length*430).toLocaleString();
-document.getElementById('sFacil').textContent = facil;
-document.getElementById('sMedio').textContent = medio;
-document.getElementById('sDificil').textContent = dificil;
+// ══════════════════════════════════════════════════════════════════════════
+// [FIX 1 sep] ESTADÍSTICAS DE LA BARRA SUPERIOR
+// ANTES:
+//   const metaTotal = CASILLAS.reduce((a,c)=>a+(c.meta||0),0);
+//   ... Math.round(metaTotal/CASILLAS.length*430)
+// Dos errores encadenados:
+//   1. `c.meta` NO es la meta de la casilla: es la meta de su SECCIÓN repetida
+//      en cada una de sus casillas. Sumarlas da 998,575 — cada sección contada
+//      tantas veces como casillas tiene.
+//   2. Ese total se promediaba por casilla y se multiplicaba por 430 (número
+//      escrito a mano). Resultado en pantalla: 416,073 — el doble de la meta
+//      real del estado, y sin ningún significado.
+// AHORA: la meta sale de ie_metas_casilla_horneado.js (misma fuente que el
+// resto del sistema, cuadrada en 208,754 sobre 388 secciones), que este archivo
+// ya carga. Si no estuviera, se cae a sumar la meta por sección ÚNICA del JSON
+// del mapa — que es lo correcto aunque sus datos sean más viejos.
+// Todo respeta el filtro de municipio activo.
+// ══════════════════════════════════════════════════════════════════════════
+function vrMetaDeSecciones(secciones){
+  // secciones: Set/array de números de sección
+  const lista = Array.from(secciones);
+  try {
+    if (typeof IE_METAS_CASILLA !== 'undefined' && IE_METAS_CASILLA.secciones) {
+      let t = 0, hallados = 0;
+      for (const n of lista) {
+        const o = IE_METAS_CASILLA.secciones[String(n)];
+        if (o) { t += Number(o.meta_proyectada) || 0; hallados++; }
+      }
+      if (hallados) return { meta: Math.round(t), fuente: 'horneado', cubiertas: hallados };
+    }
+  } catch(e) { console.warn('Meta desde horneado:', e); }
+  // Respaldo: meta por sección única del propio JSON del mapa
+  const vistas = {};
+  let t = 0;
+  CASILLAS.forEach(c => {
+    if (lista.indexOf(c.seccion) < 0) return;
+    if (vistas[c.seccion]) return;
+    vistas[c.seccion] = true;
+    t += Number(c.meta) || 0;
+  });
+  return { meta: Math.round(t), fuente: 'mapa', cubiertas: Object.keys(vistas).length };
+}
+
+function vrStats(data){
+  const arr = Array.isArray(data) ? data : CASILLAS;
+  const secSeen = {};
+  let facil=0, medio=0, dificil=0;
+  arr.forEach(c=>{
+    if(!secSeen[c.seccion]){
+      secSeen[c.seccion]=true;
+      if(c.estatus==='FACIL') facil++;
+      else if(c.estatus==='MEDIO') medio++;
+      else if(c.estatus==='DIFICIL') dificil++;
+    }
+  });
+  const secciones = Object.keys(secSeen).map(Number);
+  const r = vrMetaDeSecciones(secciones);
+  const set = (id,v)=>{ const e=document.getElementById(id); if(e) e.textContent=v; };
+  set('sCasillas',   arr.length.toLocaleString('es-MX'));
+  set('sSecciones',  secciones.length.toLocaleString('es-MX'));
+  set('sMetaTotal',  r.meta.toLocaleString('es-MX'));
+  set('sFacil', facil); set('sMedio', medio); set('sDificil', dificil);
+  if (r.fuente === 'mapa') console.warn('Meta del mapa calculada con el JSON local (más viejo que la base).');
+  return r;
+}
+vrStats(CASILLAS);
 
 const map = L.map('map',{zoomControl:true}).setView([19.09,-103.9],9);
 const street = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OSM',maxZoom:19}).addTo(map);
@@ -738,7 +789,10 @@ function renderCasillas(data){
     });
     casillasLayer.addLayer(m);
   });
-  document.getElementById('sCasillas').textContent=data.length;
+  document.getElementById('sCasillas').textContent=data.length.toLocaleString('es-MX');
+  // [FIX 1 sep] Las estadísticas siguen al filtro: meta, secciones y dificultad
+  // del municipio que se esté viendo, no siempre las del estado.
+  try { vrStats(data); } catch(e){ console.warn('vrStats:', e); }
 }
 
 function filtrarCasillas(){
