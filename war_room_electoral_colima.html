@@ -2821,9 +2821,28 @@ function renderTablaCapturistas(){
     });
   }
 
+  // ══════════════════════════════════════════════════════════════════════
+  // [FIX 1 sep] CORTE A 50 — el War Room es tablero de MANDO, no directorio.
+  // Antes pintaba a los 124 (o a los 514 del estado) en una tabla que se
+  // duplicaba con el módulo Activistas. Aquí interesan los que van peor y a
+  // quienes hay que alertar; el listado completo, con búsqueda, score y ficha
+  // individual, vive en Activistas. Si el usuario ya filtró (municipio,
+  // sección, semáforo) o pidió un orden, se respeta lo suyo y solo se corta.
+  // ══════════════════════════════════════════════════════════════════════
+  const CAP_TOPE = 50;
+  const totalSinCortar = todos.length;
+  if(!CAP_SORT.col){
+    // Sin orden explícito: los más rezagados primero (menor % de avance).
+    todos = [...todos].sort((a,b) => pct(a.cap,a.meta) - pct(b.cap,b.meta));
+  }
+  const recortado = totalSinCortar > CAP_TOPE;
+  if(recortado) todos = todos.slice(0, CAP_TOPE);
+
   // Actualizar contador
   const count = document.getElementById('cap-tabla-count');
-  if(count) count.textContent = todos.length + ' activistas';
+  if(count) count.textContent = recortado
+    ? `${CAP_TOPE} de ${totalSinCortar} activistas`
+    : totalSinCortar + ' activistas';
 
   // Render filas
   const tbody = document.getElementById('cap-tbody');
@@ -2834,6 +2853,17 @@ function renderTablaCapturistas(){
   }
   // Set para controlar qué filas están expandidas
   if(!window.CAP_EXPANDED) window.CAP_EXPANDED = new Set();
+
+  // [FIX 1 sep] Pie que explica el corte y lleva al listado completo.
+  const wrPieTabla = () => {
+    if(!recortado) return '';
+    return `<tr><td colspan="10" style="padding:9px 12px;text-align:center;background:rgba(255,255,255,.02);
+              border-top:1px solid var(--border2);font-size:11px;color:var(--text3);font-family:var(--mono)">
+        Mostrando los ${CAP_TOPE} de menor avance de ${totalSinCortar}.
+        <span onclick="wrIrAActivistas()" style="color:var(--accent);cursor:pointer;text-decoration:underline;margin-left:6px">
+          Ver todos en Activistas →</span>
+      </td></tr>`;
+  };
 
   tbody.innerHTML = todos.map(cap=>{
     const p=pct(cap.cap,cap.meta); const c=semC(p);
@@ -2912,7 +2942,19 @@ function renderTablaCapturistas(){
     </tr>` : '';
 
     return mainRow + expandRow;
-  }).join('');
+  }).join('') + wrPieTabla();
+}
+
+// [FIX 1 sep] Ir al módulo Activistas desde el War Room. Funciona dentro del hub
+// (iframe) y con el módulo abierto directo.
+function wrIrAActivistas(){
+  try {
+    if (window.parent && window.parent !== window && typeof window.parent.load === 'function') {
+      window.parent.load('act','panel_capturistas.html','Activistas','Gestión de estructura de campo');
+      return;
+    }
+  } catch(e) { /* distinto origen: se navega el propio frame */ }
+  window.location.href = 'panel_capturistas.html';
 }
 
 async function toggleCapExpand(capId, event) {

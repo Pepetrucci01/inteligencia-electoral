@@ -422,18 +422,24 @@ async function cargarDatosSupabase() {
 
     aplicarFiltros();
 
-    // Poblar selector de municipio con los municipios presentes
-    const munsSet = new Set(DATOS.map(d => d.MUNICIPIO).filter(m => m && m !== '—'));
-    const sel = document.getElementById('filtro-municipio');
+    // [FIX 1 sep] Este bloque buscaba 'filtro-municipio' pero el select se llama
+    // 'fil-municipio': nunca hizo nada. Y el menú traía los 10 municipios fijos,
+    // así que un coordinador municipal veía opciones que no puede consultar.
+    // Ahora se arma con los municipios que REALMENTE trae la RPC (su alcance) y,
+    // si es uno solo, se deja fijo.
+    const sel = document.getElementById('fil-municipio');
     if (sel) {
-      const existing = new Set([...sel.options].map(o => o.value));
-      munsSet.forEach(m => {
-        if (!existing.has(m)) {
-          const opt = document.createElement('option');
-          opt.value = m; opt.textContent = m;
-          sel.appendChild(opt);
-        }
-      });
+      const muns = [...new Set(DATOS.map(d => d.MUNICIPIO).filter(m => m && m !== '—'))].sort();
+      if (muns.length === 1) {
+        sel.innerHTML = `<option value="${muns[0]}">${muns[0]}</option>`;
+        sel.value = muns[0];
+        sel.disabled = true;
+      } else if (muns.length) {
+        const previo = sel.value;
+        sel.innerHTML = '<option value="">Todos</option>' +
+          muns.map(m => `<option value="${m}">${m}</option>`).join('');
+        if (muns.includes(previo)) sel.value = previo;
+      }
     }
 
     const sa = data.sin_asignar?.total || 0;
@@ -535,7 +541,10 @@ function renderTable(d){
       <td style="text-align:center"><span class="rank-num">${i+1}</span></td>
       <td style="text-align:center">
         <div class="cap-name">${r.CAPTURADO_POR}</div>
-        <div class="cap-id">${r.ID_CAPTURISTA}</div>
+        <!-- [FIX 1 sep] Aquí salía el UUID crudo (8248c876-b640-48b5-8c87-...):
+             no le sirve a nadie y ensucia la tabla. Se muestra la sección y la
+             meta, que es lo que el coordinador necesita para ubicar a su gente. -->
+        <div class="cap-id">${r.SECCION ? 'Secc. ' + r.SECCION : 'sin sección'}${r.meta ? ' · meta ' + Number(r.meta).toLocaleString('es-MX') : ''}</div>
       </td>
       <td style="text-align:center"><div class="cap-mun" style="color:var(--cyan)">${r.MUNICIPIO}</div></td>
       <td style="text-align:center;color:${mc};font-weight:600">${fmt(r.total)}</td>
@@ -571,7 +580,8 @@ function seleccionar(id, mun){
       <div class="detail-header">
         <div class="detail-avatar">${initials}</div>
         <div class="detail-name">${r.CAPTURADO_POR}</div>
-        <div class="detail-id">${r.ID_CAPTURISTA}</div>
+        <!-- [FIX 1 sep] También aquí salía el UUID. Se cambia por la sección. -->
+        <div class="detail-id">${r.SECCION ? 'Sección ' + r.SECCION : 'Sin sección asignada'}</div>
         <div class="detail-mun">📍 ${r.MUNICIPIO}</div>
         <div class="detail-score-row">
           <div>
