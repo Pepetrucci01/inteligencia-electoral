@@ -677,9 +677,22 @@ function buildLegend(layer){
   document.getElementById('leg-items').innerHTML=html;
 }
 
+// [FIX 1 sep · ALCANCE] Los polígonos de sección se dibujaban SIEMPRE para todo
+// el estado. Aunque los marcadores de casillas ya salían filtrados, un
+// coordinador municipal podía hacer clic en cualquier sección de Colima y ver su
+// meta, su ganador 2024 y el desglose de sus casillas: fuga de datos de
+// municipios ajenos. Ahora la capa se recorta al alcance del usuario.
+function vrSeccionesEnAlcance(){
+  const mun = window._munAcotado || (window._esLider ? window._municipioLider : null);
+  if (!mun || !SECCIONES || !Array.isArray(SECCIONES.features)) return SECCIONES;
+  const norm = x => String(x||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+  const munN = norm(mun);
+  return { ...SECCIONES, features: SECCIONES.features.filter(f => norm(f.properties && f.properties.nom_municipio) === munN) };
+}
+
 function renderSecciones(layer){
   if(seccionLayer) map.removeLayer(seccionLayer);
-  seccionLayer=L.geoJSON(SECCIONES,{
+  seccionLayer=L.geoJSON(vrSeccionesEnAlcance(),{
     style:f=>{
       const c=getColor(f.properties,layer);
       return{color:'#fff',weight:0.5,fillColor:c,fillOpacity:0.55};
@@ -789,7 +802,8 @@ function renderCasillas(data){
     m.on('click',e=>{
       L.DomEvent.stopPropagation(e);
       // Find section props
-      const sec=SECCIONES.features.find(f=>f.properties.seccion==c.seccion);
+      // [FIX 1 sep] Se busca en el alcance, no en todo el estado.
+      const sec=vrSeccionesEnAlcance().features.find(f=>f.properties.seccion==c.seccion);
       if(sec) showSeccionInfo(sec.properties);
     });
     casillasLayer.addLayer(m);
