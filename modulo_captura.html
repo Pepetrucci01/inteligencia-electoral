@@ -591,12 +591,9 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 <!-- ============ SCREEN: LISTA SECCIÓN ============ -->
 <div class="screen" id="screen-lista">
   <div class="sec-filter-bar">
-    <select id="lista-sec" onchange="renderLista()">
-      <option value="138">Mi sección: 138</option>
-      <option value="139">Sección 139</option>
-      <option value="140">Sección 140</option>
-      <option value="141">Sección 141</option>
-    </select>
+    <!-- [FIX 1 sep] Traía 138/139/140/141 fijas: le salían igual a cualquiera,
+         sin relación con su asignación. Las llena poblarSelectorSeccion(). -->
+    <select id="lista-sec" onchange="renderLista()"></select>
   </div>
   <div id="lista-header"></div>
   <div id="lista-cards"></div>
@@ -1034,6 +1031,47 @@ function _pintarMunicipio(sec, mun) {
   }
 }
 
+// [FIX 1 sep] Helpers de la pestaña "Mi Sección": municipio y meta reales.
+window._META_SEC = window._META_SEC || {};
+
+async function resolverMunicipioLista(sec){
+  if (!sec || !navigator.onLine) return;
+  try {
+    const { data } = await SDB.municipioDeSeccion(sec);
+    CACHE_SEC_MUN[sec] = (data && data.municipio) || null;
+    if (document.getElementById('lista-header')) renderLista();
+  } catch(e) { console.warn('Municipio de la sección', sec, e.message); }
+}
+
+async function cargarMetaSeccionLista(sec){
+  if (!sec) return;
+  window._META_SEC[sec] = 0;   // evita reintentos en bucle
+  try {
+    const token = window._sesion?.access_token;
+    if (!token) return;
+    const r = await (window.supaFetch || fetch)(SUPA_URL + '/rest/v1/rpc/get_meta_seccion', {
+      method:'POST',
+      headers:{ apikey: SUPA_KEY, Authorization:'Bearer '+token, 'Content-Type':'application/json' },
+      body: JSON.stringify({ p_seccion: Number(sec) })
+    });
+    if (!r.ok) return;
+    const v = await r.json();
+    window._META_SEC[sec] = Math.round(Number(v) || 0);
+    if (document.getElementById('lista-header')) renderLista();
+  } catch(e) { console.warn('Meta de la sección', sec, e.message); }
+}
+
+function poblarSelectorSeccion(){
+  const el = document.getElementById('lista-sec');
+  if (!el) return;
+  const s = window._sesion || {};
+  const propia = Number(s.seccion) || Number(CAPTURISTA.seccion) || null;
+  const opts = [];
+  if (propia) opts.push(`<option value="${propia}">Mi sección: ${propia}</option>`);
+  el.innerHTML = opts.join('') ||
+    '<option value="">Sin sección asignada</option>';
+}
+
 function _municipioProvisional() {
   const munEl = document.getElementById('f-municipio');
   const errEl = document.getElementById('sec-error');
@@ -1383,18 +1421,28 @@ function marcarDuplicado(id){
 function renderLista(){
   const sec    = parseInt(document.getElementById('lista-sec').value);
   const sesion = window._sesion || {};
-  const capId  = sesion.id       || CAPTURISTA.id;
-  const capMun = sesion.municipio|| CAPTURISTA.municipio;
+  // [FIX 1 sep] El municipio venía de la SESIÓN, no de la sección: a un
+  // coordinador de Manzanillo le mostraba "Sección 138 · MANZANILLO" cuando la
+  // 138 es de VILLA DE ALVAREZ. Una sección pertenece a UN municipio; se toma
+  // del cache que ya alimenta el formulario de captura.
+  const capMun = (CACHE_SEC_MUN && CACHE_SEC_MUN[sec]) || '—';
+  if (!CACHE_SEC_MUN || CACHE_SEC_MUN[sec] === undefined) resolverMunicipioLista(sec);
+  // [FIX 1 sep] "Responsable: <uuid>" no le dice nada a nadie; se usa el nombre.
+  const capNom = sesion.nombre || CAPTURISTA.nombre || '—';
   const enSec  = CIUDADANOS.filter(c=>c.sec===sec);
   const seguros= enSec.filter(c=>c.comp>=3).length;
-  const pct    = enSec.length?Math.round(enSec.length/50*100):0;
+  // [FIX 1 sep] La meta era 50 fija para toda sección. La real sale de
+  // get_meta_seccion (la 138 son 2,200, no 50).
+  const metaSec = (window._META_SEC && window._META_SEC[sec]) || 0;
+  if (!window._META_SEC || window._META_SEC[sec] === undefined) cargarMetaSeccionLista(sec);
+  const pct    = metaSec > 0 ? Math.min(100, Math.round(enSec.length/metaSec*100)) : 0;
 
   document.getElementById('lista-header').innerHTML=`
     <div class="sec-header-card">
       <div style="font-size:13px;font-weight:600;">Sección ${sec} · ${capMun||'—'}</div>
-      <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px;">Responsable: ${capId}</div>
+      <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px;">Responsable: ${capNom}</div>
       <div class="progress-bar" style="margin-top:10px"><div class="progress-fill" style="width:${pct}%;background:var(--accent)"></div></div>
-      <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:4px;">${enSec.length} / 50 meta · ${pct}%</div>
+      <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:4px;">${enSec.length} / ${metaSec ? metaSec.toLocaleString('es-MX') : '—'} meta · ${pct}%</div>
       <div class="sec-stats">
         <div class="sec-stat"><div class="sec-stat-val" style="color:var(--green)">${seguros}</div><div class="sec-stat-lbl">Seg. votan</div></div>
         <div class="sec-stat"><div class="sec-stat-val" style="color:var(--red)">${enSec.filter(c=>c.riesgo).length}</div><div class="sec-stat-lbl">En riesgo</div></div>
@@ -1435,6 +1483,8 @@ function renderLista(){
 
 // ── INIT ──────────────────────────────────────────────────────────────────
 buscar();
+// [FIX 1 sep] Llenar el selector con la sección real antes del primer render.
+try { poblarSelectorSeccion(); } catch(e){ console.warn('poblarSelectorSeccion:', e); }
 renderLista();
 // Cargar registros reales. [FIX 15 jul] cargarCiudadanosCapturista ya llama a
 // esperarSupabase internamente (garantiza sesión aplicada en el SDK), así que

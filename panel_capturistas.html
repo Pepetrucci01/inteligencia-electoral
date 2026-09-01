@@ -195,7 +195,9 @@ table.cap-table tr.selected{background:rgba(59,130,246,0.1);}
   </div>
   <div class="topbar-right">
     <a class="back-btn" href="#">← WAR ROOM</a>
-    <div class="live-badge"><div class="live-dot"></div>60 OPERADORES</div>
+    <!-- [FIX 1 sep] Decía "60 OPERADORES" escrito a mano, sin importar cuántos hubiera
+         ni el alcance del usuario. Lo llena actualizarKPIs() con DATOS.length. -->
+    <div class="live-badge"><div class="live-dot"></div><span id="pc-badge-oper">—</span> OPERADORES</div>
   </div>
 </div>
 
@@ -517,6 +519,9 @@ function renderKPIs(d){
   document.getElementById('results-count').textContent = d.length+' activistas';
   const totalEl = document.getElementById('kpi-total');
   if(totalEl) totalEl.textContent = DATOS.length;
+  // [FIX 1 sep] El badge del encabezado sigue el mismo número (y el mismo alcance).
+  const badgeOper = document.getElementById('pc-badge-oper');
+  if(badgeOper) badgeOper.textContent = Number(DATOS.length).toLocaleString('es-MX');
 }
 
 function renderTable(d){
