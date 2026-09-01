@@ -35,6 +35,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 .kpi-lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-top:4px;}
 .kpi.ok .kpi-val{color:var(--green);}
 .kpi.bad .kpi-val{color:var(--red);}
+.kpi-base{font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:6px;}
 .tipos{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0;font-family:var(--mono);font-size:12px;}
 .chip{background:var(--bg4);border:1px solid var(--border);border-radius:99px;padding:4px 12px;}
 .btn{border:none;border-radius:9px;padding:12px 20px;font-size:13px;font-weight:600;font-family:var(--sans);cursor:pointer;transition:all .2s;}
@@ -50,6 +51,18 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 .spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;display:inline-block;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px;}
 @keyframes spin{to{transform:rotate(360deg);}}
 .actions{display:flex;gap:10px;margin-top:8px;}
+.tabs{display:flex;gap:8px;margin-bottom:18px;}
+.tab{padding:10px 16px;border-radius:9px;border:1px solid var(--border2);background:var(--bg2);color:var(--text2);font-size:13px;font-weight:600;cursor:pointer;}
+.tab.on{background:rgba(59,130,246,.15);border-color:var(--accent);color:#fff;}
+.tab .n{display:inline-block;width:20px;height:20px;border-radius:50%;background:var(--bg4);font-family:var(--mono);font-size:11px;line-height:20px;text-align:center;margin-right:8px;}
+.tab.on .n{background:var(--accent);}
+.prog{height:8px;background:var(--bg4);border-radius:99px;overflow:hidden;margin:10px 0;}
+.prog i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s;}
+table.res{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px;}
+table.res th,table.res td{padding:6px 8px;border-bottom:1px solid var(--border);text-align:left;}
+table.res th{color:var(--text3);font-family:var(--mono);font-size:10px;text-transform:uppercase;}
+.pill{display:inline-block;padding:2px 8px;border-radius:99px;font-family:var(--mono);font-size:11px;}
+.pill.c{background:rgba(34,197,94,.15);color:#86efac;} .pill.a{background:rgba(59,130,246,.15);color:#93c5fd;} .pill.e{background:rgba(239,68,68,.15);color:#fca5a5;}
 </style>
 </head>
 <body>
@@ -58,32 +71,42 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
   <div class="logo-mark">📥</div>
   <div>
     <div class="topbar-title">Importador de Carga Maestra</div>
-    <div class="topbar-sub">CARGA-01 · casillas + metas seccionales</div>
+    <div class="topbar-sub">① Metas · ② Estructura · ③ Representantes · ④ Ciudadanos</div>
   </div>
 </div>
 
 <div class="wrap">
 
+  <div class="tabs">
+    <div class="tab on" id="tab-btn-metas" onclick="verTab('metas')"><span class="n">1</span>Metas · casillas</div>
+    <div class="tab" id="tab-btn-estr" onclick="verTab('estr')"><span class="n">2</span>Estructura · capturistas</div>
+    <div class="tab" id="tab-btn-repr" onclick="verTab('repr')"><span class="n">3</span>Representantes de casilla</div>
+    <div class="tab" id="tab-btn-ciud" onclick="verTab('ciud')"><span class="n">4</span>Ciudadanos</div>
+  </div>
+  <div id="estado-base" class="msg" style="display:none"></div>
+
+<div id="tab-metas">
   <div class="card">
     <h2>1 · Seleccionar el archivo</h2>
-    <p>Sube el Excel de carga plana (una hoja <b>CARGA</b>, llave <b>CASILLA_COMPLETA</b>).
-       El importador valida los totales antes de escribir nada — no se guarda hasta que confirmes.</p>
+    <p>Sube el Excel de carga plana (hoja <b>CARGA</b>) o el archivo dorado completo (hoja <b>BASE DATOS INE</b>).
+       La llave es <b>CASILLA_COMPLETA</b>. La base valida que quede exactamente igual al archivo antes de
+       confirmar; si algo no cuadra, no se escribe nada.</p>
     <label class="drop" style="margin-top:14px;display:block">
       <input type="file" id="file" accept=".xlsx,.xls">
       <div class="drop-icon">📄</div>
       <div><b>Haz clic para elegir</b> o arrastra el .xlsx aquí</div>
-      <div class="drop-hint">COLIMA_CARGA_PLANA_v1.xlsx</div>
+      <div class="drop-hint">COLIMA_CARGA_PLANA.xlsx · COLIMA_ELECTORAL_2024 (dorado)</div>
     </label>
   </div>
 
   <div class="card hidden" id="preview">
     <h2>2 · Revisión previa</h2>
-    <p>Estos son los totales leídos del archivo. Deben cuadrar con la validación de cierre
-       antes de importar.</p>
+    <p>Totales leídos del <b>archivo</b> y lo que hay <b>hoy en la base</b> para tu licencia.
+       Al importar, la base quedará exactamente como el archivo.</p>
     <div class="kpis">
-      <div class="kpi" id="k-casillas"><div class="kpi-val">–</div><div class="kpi-lbl">Casillas</div></div>
-      <div class="kpi" id="k-meta"><div class="kpi-val">–</div><div class="kpi-lbl">Meta proyectada</div></div>
-      <div class="kpi" id="k-estruct"><div class="kpi-val">–</div><div class="kpi-lbl">Estructura real</div></div>
+      <div class="kpi" id="k-casillas"><div class="kpi-val">–</div><div class="kpi-lbl">Casillas · archivo</div><div class="kpi-base" id="b-casillas"></div></div>
+      <div class="kpi" id="k-meta"><div class="kpi-val">–</div><div class="kpi-lbl">Meta proyectada · archivo</div><div class="kpi-base" id="b-meta"></div></div>
+      <div class="kpi" id="k-estruct"><div class="kpi-val">–</div><div class="kpi-lbl">Estructura real · archivo</div><div class="kpi-base" id="b-estruct"></div></div>
     </div>
     <div class="tipos" id="tipos"></div>
     <div id="preview-msg"></div>
@@ -97,6 +120,129 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
     <h2>3 · Resultado</h2>
     <div id="result-msg"></div>
   </div>
+</div><!-- /tab-metas -->
+
+<div id="tab-estr" class="hidden">
+  <div class="card">
+    <h2>1 · Seleccionar la Carga Maestra de estructura</h2>
+    <p>Excel con las pestañas <b>CAPTURISTAS</b> y <b>ESTRUCTURA</b> (coordinadores). Cada persona recibe cuenta de acceso
+       con contraseña temporal. Si el correo ya existe, se actualiza su asignación y <b>no</b> se le cambia la contraseña.
+       Requiere que la carga de metas (pestaña 1) ya esté hecha: las secciones se validan contra ella.</p>
+    <label class="drop" style="margin-top:14px;display:block">
+      <input type="file" id="file-estr" accept=".xlsx,.xls">
+      <div class="drop-icon">👥</div>
+      <div><b>Haz clic para elegir</b> o arrastra el .xlsx aquí</div>
+      <div class="drop-hint">Carga_Maestra_500_Colima.xlsx</div>
+    </label>
+  </div>
+
+  <div class="card hidden" id="e-preview">
+    <h2>2 · Revisión previa</h2>
+    <div class="kpis">
+      <div class="kpi" id="e-k-caps"><div class="kpi-val">–</div><div class="kpi-lbl">Capturistas</div></div>
+      <div class="kpi" id="e-k-coords"><div class="kpi-val">–</div><div class="kpi-lbl">Coordinadores</div></div>
+      <div class="kpi" id="e-k-meta"><div class="kpi-val">–</div><div class="kpi-lbl">Suma meta individual</div><div class="kpi-base" id="e-b-meta"></div></div>
+    </div>
+    <div class="tipos" id="e-tipos"></div>
+    <div id="e-preview-msg"></div>
+    <div class="actions">
+      <button class="btn btn-primary" id="e-btn-import" disabled onclick="importarEstructura()">Dar de alta a la estructura</button>
+      <button class="btn btn-ghost" onclick="location.reload()">Cancelar</button>
+    </div>
+  </div>
+
+  <div class="card hidden" id="e-result">
+    <h2>3 · Resultado</h2>
+    <div class="prog" id="e-prog"><i></i></div>
+    <div id="e-result-msg"></div>
+    <div class="actions hidden" id="e-cred-actions">
+      <button class="btn btn-primary" onclick="descargarCredenciales()">⬇ Descargar credenciales (CSV)</button>
+      <button class="btn btn-ghost" onclick="descargarErrores()">⬇ Descargar errores (CSV)</button>
+    </div>
+    <div id="e-tabla"></div>
+  </div>
+</div><!-- /tab-estr -->
+
+<div id="tab-repr" class="hidden">
+  <div class="card">
+    <h2>1 · Lista de representantes de casilla</h2>
+    <p>Excel con una fila por representante. Columnas: <b>NOMBRE</b>, <b>EMAIL</b>, <b>SECCION</b> y opcionalmente
+       TELEFONO y MUNICIPIO. Cada uno recibe cuenta con rol <code>repr_casilla</code> y su asignación de sección.
+       Mismo comportamiento que estructura: si el correo ya existe, se actualiza sin cambiar su contraseña.</p>
+    <label class="drop" style="margin-top:14px;display:block">
+      <input type="file" id="file-repr" accept=".xlsx,.xls">
+      <div class="drop-icon">🗳️</div>
+      <div><b>Haz clic para elegir</b> o arrastra el .xlsx aquí</div>
+      <div class="drop-hint">REPRESENTANTES_COLIMA.xlsx</div>
+    </label>
+  </div>
+  <div class="card hidden" id="r-preview">
+    <h2>2 · Revisión previa</h2>
+    <div class="kpis">
+      <div class="kpi" id="r-k-total"><div class="kpi-val">–</div><div class="kpi-lbl">Representantes</div></div>
+      <div class="kpi" id="r-k-secs"><div class="kpi-val">–</div><div class="kpi-lbl">Secciones cubiertas</div><div class="kpi-base" id="r-b-secs"></div></div>
+      <div class="kpi" id="r-k-err"><div class="kpi-val">–</div><div class="kpi-lbl">Con problemas</div></div>
+    </div>
+    <div id="r-preview-msg"></div>
+    <div class="actions">
+      <button class="btn btn-primary" id="r-btn-import" disabled onclick="importarRepr()">Dar de alta a los representantes</button>
+      <button class="btn btn-ghost" onclick="location.reload()">Cancelar</button>
+    </div>
+  </div>
+  <div class="card hidden" id="r-result">
+    <h2>3 · Resultado</h2>
+    <div class="prog" id="r-prog"><i></i></div>
+    <div id="r-result-msg"></div>
+    <div class="actions hidden" id="r-cred-actions">
+      <button class="btn btn-primary" onclick="descargarCredenciales()">⬇ Descargar credenciales (CSV)</button>
+      <button class="btn btn-ghost" onclick="descargarErrores()">⬇ Descargar errores (CSV)</button>
+    </div>
+    <div id="r-tabla"></div>
+  </div>
+</div><!-- /tab-repr -->
+
+<div id="tab-ciud" class="hidden">
+  <div class="card">
+    <h2>1 · Padrón de ciudadanos</h2>
+    <p>Excel con una fila por ciudadano. Obligatorias: <b>nombre</b>, <b>apellido_paterno</b>, <b>curp</b>,
+       <b>municipio</b>, <b>seccion_electoral</b>. Opcionales: apellido_materno, clave_elector, edad, sexo,
+       telefono, domicilio, compromiso, origen, es_apoyo, es_influencia, es_riesgo, notas.
+       Se validan contra la carga maestra y se descartan las CURP ya registradas.</p>
+    <label class="drop" style="margin-top:14px;display:block">
+      <input type="file" id="file-ciud" accept=".xlsx,.xls,.csv">
+      <div class="drop-icon">🧑‍🤝‍🧑</div>
+      <div><b>Haz clic para elegir</b> o arrastra el archivo aquí</div>
+      <div class="drop-hint">PADRON_SIMPATIZANTES.xlsx</div>
+    </label>
+  </div>
+  <div class="card hidden" id="c-preview">
+    <h2>2 · Revisión previa</h2>
+    <div class="kpis">
+      <div class="kpi" id="c-k-ok"><div class="kpi-val">–</div><div class="kpi-lbl">Listas para cargar</div></div>
+      <div class="kpi" id="c-k-dup"><div class="kpi-val">–</div><div class="kpi-lbl">CURP ya registrada</div></div>
+      <div class="kpi" id="c-k-err"><div class="kpi-val">–</div><div class="kpi-lbl">Con errores</div></div>
+    </div>
+    <div id="c-preview-msg"></div>
+    <div class="msg msg-warn" style="display:flex;gap:10px;align-items:flex-start">
+      <input type="checkbox" id="c-consent" style="margin-top:3px" onchange="document.getElementById('c-btn-import').disabled = !this.checked || !C_OK.length">
+      <label for="c-consent">Confirmo que estos datos personales se recabaron con el <b>consentimiento</b> de cada
+        ciudadano y que su tratamiento cumple la LFPDPPP. Se guardará la marca de consentimiento con fecha de hoy.</label>
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" id="c-btn-import" disabled onclick="importarCiudadanos()">Cargar al padrón</button>
+      <button class="btn btn-ghost" onclick="location.reload()">Cancelar</button>
+    </div>
+  </div>
+  <div class="card hidden" id="c-result">
+    <h2>3 · Resultado</h2>
+    <div class="prog" id="c-prog"><i></i></div>
+    <div id="c-result-msg"></div>
+    <div class="actions hidden" id="c-err-actions">
+      <button class="btn btn-ghost" onclick="descargarErroresCiud()">⬇ Descargar filas rechazadas (CSV)</button>
+    </div>
+    <div id="c-tabla"></div>
+  </div>
+</div><!-- /tab-ciud -->
 
 </div>
 
@@ -116,7 +262,20 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 // Mapeo de columnas Excel → campos que espera la función. El tipo se manda como
 // LETRA (tipo_letra); la función lo traduce y truena si no mapea.
 let FILAS = null;   // array listo para la función
-const ESPERADO = { casillas:1033, meta:208748, estruct:500.00 };
+// [31/08] Antes: ESPERADO = {1033, 208748, 500} quemado. Ahora la referencia es
+// lo que hay HOY en la base para la licencia del usuario (get_estado_carga_maestra).
+// La validacion real vive en la funcion (base == archivo); esto es solo contexto.
+let BASE = null;
+async function cargarEstadoBase(){
+  try{
+    const token = (await window.supabase.auth.getSession()).data.session?.access_token || SUPA_KEY;
+    const r = await fetch(`${SUPA_URL}/rest/v1/rpc/get_estado_carga_maestra`, {
+      method:'POST', headers:{ 'apikey':SUPA_KEY, 'Authorization':'Bearer '+token, 'Content-Type':'application/json' }, body:'{}'
+    });
+    if(r.ok){ BASE = await r.json(); pintarEstadoBase(); }
+  }catch(e){ console.warn('estado base:', e); }
+}
+cargarEstadoBase();
 
 function num(v){ const n = parseFloat(v); return isNaN(n)?null:n; }
 
@@ -132,8 +291,20 @@ function leerArchivo(f){
   reader.onload = ev => {
     try{
       const wb = XLSX.read(ev.target.result, { type:'array' });
-      const hoja = wb.Sheets['CARGA'] || wb.Sheets[wb.SheetNames[0]];
+      // [31/08] Buscar la hoja correcta: CARGA (carga plana) o BASE DATOS INE
+      // (archivo dorado). Si no, la primera hoja que tenga CASILLA_COMPLETA.
+      // Antes tomaba la primera hoja del libro, que en el dorado es la tabla
+      // dinamica TD y daba "0 casillas".
+      let nombreHoja = ['CARGA','BASE DATOS INE'].find(n => wb.Sheets[n]);
+      if(!nombreHoja){
+        nombreHoja = wb.SheetNames.find(n => {
+          const h = XLSX.utils.sheet_to_json(wb.Sheets[n], { header:1, range:0 })[0] || [];
+          return h.some(c => String(c||'').trim().toUpperCase() === 'CASILLA_COMPLETA');
+        }) || wb.SheetNames[0];
+      }
+      const hoja = wb.Sheets[nombreHoja];
       const rows = XLSX.utils.sheet_to_json(hoja, { defval:null });
+      window._hojaLeida = nombreHoja;
       procesar(rows);
     }catch(err){
       mostrarPreviewMsg('err', 'No se pudo leer el Excel: ' + err.message);
@@ -195,20 +366,31 @@ function procesar(rows){
     });
   }
 
-  // Pintar KPIs
+  // Pintar KPIs del archivo, y debajo lo que hay hoy en la base
   const n = FILAS.length;
-  setKpi('k-casillas', n, n===ESPERADO.casillas);
-  setKpi('k-meta', Math.round(sumMeta).toLocaleString('es-MX'), Math.abs(sumMeta-ESPERADO.meta)<=2);
-  setKpi('k-estruct', sumEstruct.toFixed(2), Math.abs(sumEstruct-ESPERADO.estruct)<=0.01);
+  const fmtN = v => Number(v||0).toLocaleString('es-MX');
+  const bCas = BASE ? Number(BASE.casillas||0) : null;
+  const bMeta = BASE ? Number(BASE.meta_proyectada||0) : null;
+  const bEst = BASE ? Number(BASE.estructura_real||0) : null;
+  const metaRed = FILAS.reduce((s,f)=>s+(f.meta_proyectada!=null?Math.round(f.meta_proyectada):0),0);
+  setKpi('k-casillas', n, true);
+  setKpi('k-meta', fmtN(metaRed), true);
+  setKpi('k-estruct', sumEstruct.toFixed(2), true);
+  const pintaBase = (id, actual, nuevo, fmt) => {
+    const el = document.getElementById(id); if(!el) return;
+    if(actual==null){ el.textContent = 'base: sin datos'; return; }
+    const d = nuevo - actual;
+    el.textContent = 'hoy en base: ' + fmt(actual) + (d===0 ? ' · sin cambio' : ' · ' + (d>0?'+':'') + fmt(d));
+  };
+  pintaBase('b-casillas', bCas, n, fmtN);
+  pintaBase('b-meta', bMeta, metaRed, fmtN);
+  pintaBase('b-estruct', bEst, sumEstruct, v=>Number(v).toFixed(2));
+  const hojaTxt = window._hojaLeida ? ' (hoja <b>'+window._hojaLeida+'</b>)' : '';
+  const cambioGrande = bCas!=null && bCas>0 && n < bCas*0.75;
 
   document.getElementById('tipos').innerHTML =
     ['B','C','E','S'].map(t=>`<span class="chip">${t}: <b>${tipos[t]}</b></span>`).join('') +
     (tipos['?']>0 ? `<span class="chip" style="color:var(--red)">Sin mapear: <b>${tipos['?']}</b></span>` : '');
-
-  const cuadra = n===ESPERADO.casillas
-    && Math.abs(sumMeta-ESPERADO.meta)<=2
-    && Math.abs(sumEstruct-ESPERADO.estruct)<=0.01
-    && tipos['?']===0;
 
   if(n===0){
     // 0 filas con CASILLA_COMPLETA → hoja equivocada o columnas mal nombradas.
@@ -217,18 +399,18 @@ function procesar(rows){
       + 'Revisa que sea el Excel correcto, que la hoja se llame CARGA y que exista '
       + 'la columna CASILLA_COMPLETA.');
     document.getElementById('btn-import').disabled = true;
-  } else if(cuadra){
-    mostrarPreviewMsg('ok', '✅ Todo cuadra con la validación de cierre. Puedes importar.');
-    document.getElementById('btn-import').disabled = false;
   } else if(tipos['?']>0){
     mostrarPreviewMsg('err', '❌ Hay '+tipos['?']+' casilla(s) con TIPO_CASILLA no reconocido (no es B/C/E/S). '
       + 'Corrige el archivo — el importador no aceptará letras sin mapear.');
     document.getElementById('btn-import').disabled = true;
+  } else if(cambioGrande){
+    mostrarPreviewMsg('warn', '⚠️ El archivo trae <b>'+n+'</b> casillas y la base tiene <b>'+fmtN(bCas)
+      +'</b> activas'+hojaTxt+'. Parece un archivo parcial: la base lo va a rechazar (deja fuera más del 25%). '
+      +'Si es intencional, primero desactiva casillas a mano.');
+    document.getElementById('btn-import').disabled = true;
   } else {
-    mostrarPreviewMsg('warn', '⚠️ Los totales no cuadran con lo esperado ('+ESPERADO.casillas
-      +' / '+ESPERADO.meta.toLocaleString('es-MX')+' / '+ESPERADO.estruct.toFixed(2)
-      +'). Revisa el archivo. La base rechazará el import si no cuadra, así que no se escribirá nada a medias.');
-    // Se deja habilitado para que el usuario pueda intentar: la función valida y hace ROLLBACK si falla.
+    const dif = bCas==null ? '' : (bCas===n && bMeta===metaRed ? ' Coincide con lo que ya hay en base (recarga idempotente).' : ' Al importar, la base quedará con estos totales.');
+    mostrarPreviewMsg('ok', '✅ '+n+' casillas leídas'+hojaTxt+'.'+dif);
     document.getElementById('btn-import').disabled = false;
   }
   document.getElementById('preview').classList.remove('hidden');
@@ -243,6 +425,339 @@ function setKpi(id, val, ok){
 function mostrarPreviewMsg(tipo, txt){
   document.getElementById('preview-msg').innerHTML =
     '<div class="msg msg-'+(tipo==='err'?'err':tipo==='warn'?'warn':'ok')+'">'+txt+'</div>';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PESTAÑA 2 · ESTRUCTURA — capturistas + coordinadores → cuentas + asignaciones
+// Llama a la Edge Function importar-estructura en lotes de 50 (crea la cuenta en
+// Auth, la fila en usuarios y la asignación territorial). La licencia la pone
+// la función a partir del usuario que importa; nunca viaja en el archivo.
+// ═══════════════════════════════════════════════════════════════════════════
+const TABS = ['metas','estr','repr','ciud'];
+function verTab(t){
+  TABS.forEach(x => {
+    document.getElementById('tab-'+x).classList.toggle('hidden', x!==t);
+    document.getElementById('tab-btn-'+x).classList.toggle('on', x===t);
+  });
+}
+// Resumen de lo que ya hay cargado, visible en todas las pestañas.
+function pintarEstadoBase(){
+  const el = document.getElementById('estado-base'); if(!el || !BASE) return;
+  const f = v => Number(v||0).toLocaleString('es-MX');
+  el.className = 'msg msg-ok'; el.style.display = 'block';
+  el.innerHTML = 'Licencia <b>'+(BASE.estado||'—')+'</b> · casillas <b>'+f(BASE.casillas)+'</b> · meta <b>'+f(BASE.meta_proyectada)
+    +'</b> · estructura dada de alta <b>'+f(BASE.estructura_alta)+'</b> · ciudadanos <b>'+f(BASE.ciudadanos)+'</b>';
+}
+let E_FILAS = null, E_RES = [];
+const LOTE = 50;
+// Lectura tolerante de encabezados: SECCIÓN/SECCION, TELÉFONO/TELEFONO, etc.
+const colDe = (r, ...nombres) => {
+  const keys = Object.keys(r);
+  const N = s => String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+  for(const n of nombres){ const k = keys.find(k => N(k)===N(n)); if(k!==undefined && r[k]!==null && r[k]!=='') return r[k]; }
+  return null;
+};
+
+function leerEstructura(f){
+  if(!f) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try{
+      const wb = XLSX.read(ev.target.result, { type:'array' });
+      const hoja = n => { const k = wb.SheetNames.find(x => x.toUpperCase().includes(n)); return k ? XLSX.utils.sheet_to_json(wb.Sheets[k], { defval:null }) : null; };
+      const caps = hoja('CAPTUR'), coords = hoja('ESTRUC');
+      if(!caps && !coords) throw new Error('No se encontraron las pestañas CAPTURISTAS ni ESTRUCTURA');
+      E_FILAS = [];
+      // Coordinadores primero (así existen cuando lleguen sus capturistas)
+      (coords||[]).forEach(r => {
+        const id = String(colDe(r,'COORDINADOR_ID','ID')||'').trim().toUpperCase();
+        if(!id || id==='TOTAL') return;                       // fila TOTAL o vacía
+        E_FILAS.push({ rol:'coordinador', nombre:colDe(r,'NOMBRE'), email:colDe(r,'EMAIL','CORREO'),
+          telefono:colDe(r,'TELEFONO','TEL'), municipio:colDe(r,'MUNICIPIO'), seccion:null, meta_individual:colDe(r,'META_MUNICIPAL') });
+      });
+      (caps||[]).forEach(r => {
+        const em = colDe(r,'EMAIL','CORREO'); if(!em) return;
+        E_FILAS.push({ rol:'capturista', nombre:colDe(r,'NOMBRE'), email:em, telefono:colDe(r,'TELEFONO','TEL'),
+          municipio:colDe(r,'MUNICIPIO'), seccion:colDe(r,'SECCION','SECCION_BASE'), meta_individual:colDe(r,'META_INDIVIDUAL','META') });
+      });
+      previewEstructura();
+    }catch(err){
+      document.getElementById('e-preview').classList.remove('hidden');
+      document.getElementById('e-preview-msg').innerHTML = '<div class="msg msg-err">❌ '+err.message+'</div>';
+    }
+  };
+  reader.readAsArrayBuffer(f);
+}
+document.getElementById('file-estr').addEventListener('change', e => leerEstructura(e.target.files[0]));
+(function(){
+  const z = document.querySelector('#tab-estr .drop'); if(!z) return;
+  ['dragenter','dragover'].forEach(ev => z.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); z.style.borderColor='var(--accent)'; }));
+  ['dragleave','drop'].forEach(ev => z.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); z.style.borderColor=''; }));
+  z.addEventListener('drop', e => leerEstructura(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]));
+})();
+
+function previewEstructura(){
+  const caps = E_FILAS.filter(f => f.rol==='capturista'), coords = E_FILAS.filter(f => f.rol==='coordinador');
+  const fmtN = v => Number(v||0).toLocaleString('es-MX');
+  const sumMeta = caps.reduce((s,f) => s + (Number(f.meta_individual)||0), 0);
+  const emails = E_FILAS.map(f => String(f.email||'').trim().toLowerCase());
+  const dup = emails.filter((e,i) => e && emails.indexOf(e)!==i);
+  const sinEmail = E_FILAS.filter(f => !f.email || !String(f.email).includes('@')).length;
+  const sinSec = caps.filter(f => f.seccion==null || f.seccion==='').length;
+  const bMeta = BASE ? Number(BASE.meta_proyectada||0) : null;
+  setKpi('e-k-caps', caps.length, caps.length>0);
+  setKpi('e-k-coords', coords.length, true);
+  setKpi('e-k-meta', fmtN(sumMeta), bMeta==null || sumMeta===bMeta);
+  const bm = document.getElementById('e-b-meta');
+  if(bm) bm.textContent = bMeta==null ? 'base: sin metas cargadas' : 'meta de la carga de casillas: '+fmtN(bMeta)+(sumMeta===bMeta?' · cuadra':' · dif '+fmtN(sumMeta-bMeta));
+  const munCnt = {}; caps.forEach(f => { const m=String(f.municipio||'?').toUpperCase(); munCnt[m]=(munCnt[m]||0)+1; });
+  document.getElementById('e-tipos').innerHTML = Object.entries(munCnt).sort().map(([m,n]) => `<span class="chip">${m}: <b>${n}</b></span>`).join('');
+  const btn = document.getElementById('e-btn-import'); const msg = [];
+  let bloquea = false;
+  if(!caps.length && !coords.length){ msg.push('❌ No hay filas válidas.'); bloquea = true; }
+  if(sinEmail){ msg.push('❌ '+sinEmail+' fila(s) sin correo válido. Cada persona necesita correo para su cuenta.'); bloquea = true; }
+  if(dup.length){ msg.push('❌ Correos repetidos en el archivo: '+[...new Set(dup)].slice(0,5).join(', ')+(dup.length>5?'…':'')); bloquea = true; }
+  if(sinSec){ msg.push('❌ '+sinSec+' capturista(s) sin sección.'); bloquea = true; }
+  if(bMeta!=null && bMeta>0 && sumMeta!==bMeta) msg.push('⚠️ La suma de metas individuales ('+fmtN(sumMeta)+') no coincide con la meta cargada ('+fmtN(bMeta)+'). Se puede importar, pero revisa el archivo.');
+  if(!bloquea) msg.push('✅ '+caps.length+' capturistas y '+coords.length+' coordinadores listos. Se crearán cuentas para los correos nuevos.');
+  document.getElementById('e-preview-msg').innerHTML = msg.map(m => '<div class="msg '+(m.startsWith('❌')?'msg-err':m.startsWith('⚠')?'msg-warn':'msg-ok')+'">'+m+'</div>').join('');
+  btn.disabled = bloquea;
+  document.getElementById('e-preview').classList.remove('hidden');
+}
+
+// ── Pestaña 3 · Representantes ──────────────────────────────────────────────
+let R_FILAS = null;
+function leerRepr(f){
+  if(!f) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try{
+      const wb = XLSX.read(ev.target.result, { type:'array' });
+      const k = wb.SheetNames.find(x => x.toUpperCase().includes('REPRESENT')) || wb.SheetNames[0];
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[k], { defval:null });
+      R_FILAS = rows.map(r => ({
+        rol:'repr_casilla', nombre:colDe(r,'NOMBRE'), email:colDe(r,'EMAIL','CORREO'),
+        telefono:colDe(r,'TELEFONO','TEL','CELULAR'), municipio:colDe(r,'MUNICIPIO'),
+        seccion:colDe(r,'SECCION','SECCION_ELECTORAL'), meta_individual:null
+      })).filter(x => x.email || x.nombre);
+      previewRepr();
+    }catch(err){
+      document.getElementById('r-preview').classList.remove('hidden');
+      document.getElementById('r-preview-msg').innerHTML = '<div class="msg msg-err">❌ '+err.message+'</div>';
+    }
+  };
+  reader.readAsArrayBuffer(f);
+}
+document.getElementById('file-repr').addEventListener('change', e => leerRepr(e.target.files[0]));
+function previewRepr(){
+  const SEC = new Set((BASE && BASE.secciones || []).map(Number));
+  const emails = R_FILAS.map(f => String(f.email||'').trim().toLowerCase());
+  const problemas = R_FILAS.filter(f => !f.email || !String(f.email).includes('@') || !f.nombre
+    || f.seccion==null || (SEC.size && !SEC.has(Number(f.seccion))));
+  const dup = emails.filter((e,i) => e && emails.indexOf(e)!==i);
+  const secs = new Set(R_FILAS.map(f => Number(f.seccion)).filter(n => !isNaN(n)));
+  setKpi('r-k-total', R_FILAS.length, R_FILAS.length>0);
+  setKpi('r-k-secs', secs.size, true);
+  setKpi('r-k-err', problemas.length + dup.length, problemas.length===0 && dup.length===0);
+  const bs = document.getElementById('r-b-secs');
+  if(bs && BASE) bs.textContent = 'secciones de la carga maestra: '+(BASE.secciones||[]).length;
+  const msg = [];
+  if(dup.length) msg.push('❌ Correos repetidos: '+[...new Set(dup)].slice(0,5).join(', '));
+  if(problemas.length) msg.push('❌ '+problemas.length+' fila(s) sin correo, sin nombre o con sección que no existe en la carga maestra.');
+  if(!msg.length) msg.push('✅ '+R_FILAS.length+' representantes en '+secs.size+' secciones, listos para dar de alta.');
+  document.getElementById('r-preview-msg').innerHTML = msg.map(m => '<div class="msg '+(m.startsWith('❌')?'msg-err':'msg-ok')+'">'+m+'</div>').join('');
+  document.getElementById('r-btn-import').disabled = msg[0].startsWith('❌');
+  document.getElementById('r-preview').classList.remove('hidden');
+}
+function importarRepr(){ return correrAltas(R_FILAS, 'r', 'representantes'); }
+
+async function importarEstructura(){ return correrAltas(E_FILAS, 'e', 'estructura'); }
+
+// Motor comun de altas (estructura y representantes): misma Edge Function.
+async function correrAltas(filas, pre, etiqueta){
+  if(!filas || !filas.length) return;
+  const btn = document.getElementById(pre+'-btn-import'); btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Dando de alta…';
+  document.getElementById(pre+'-result').classList.remove('hidden');
+  const prog = document.querySelector('#'+pre+'-prog i'); const msg = document.getElementById(pre+'-result-msg');
+  const E_FILAS = filas;
+  E_RES = []; let creados=0, actualizados=0, errores=0;
+  try{
+    const token = (await window.supabase.auth.getSession()).data.session?.access_token;
+    if(!token) throw new Error('Sesión no válida. Vuelve a iniciar sesión.');
+    for(let i=0; i<E_FILAS.length; i+=LOTE){
+      const lote = E_FILAS.slice(i, i+LOTE);
+      const r = await fetch(`${SUPA_URL}/functions/v1/importar-estructura`, {
+        method:'POST', headers:{ 'apikey':SUPA_KEY, 'Authorization':'Bearer '+token, 'Content-Type':'application/json' },
+        body: JSON.stringify({ filas: lote })
+      });
+      const data = await r.json().catch(() => ({}));
+      if(!r.ok || !data.ok) throw new Error(data.error || ('HTTP '+r.status));
+      E_RES.push(...data.resultados); creados += data.creados; actualizados += data.actualizados; errores += data.errores;
+      prog.style.width = Math.round(Math.min(i+LOTE, E_FILAS.length)/E_FILAS.length*100)+'%';
+      msg.innerHTML = '<div class="msg msg-ok">Procesados <b>'+Math.min(i+LOTE,E_FILAS.length)+'</b> de '+E_FILAS.length+' · creados '+creados+' · actualizados '+actualizados+' · errores '+errores+'</div>';
+    }
+    msg.innerHTML = '<div class="msg '+(errores?'msg-warn':'msg-ok')+'">'+(errores?'⚠️':'✅')+' Terminado: <b>'+creados+'</b> cuentas creadas · <b>'+actualizados+'</b> actualizadas · <b>'+errores+'</b> con error.'
+      + (creados ? '<br><b>Descarga las credenciales ahora</b>: las contraseñas temporales solo se muestran una vez.' : '')+'</div>';
+    document.getElementById(pre+'-cred-actions').classList.remove('hidden');
+    const errs = E_RES.filter(x => x.estado==='error');
+    document.getElementById(pre+'-tabla').innerHTML = errs.length ? '<table class="res"><tr><th>Correo</th><th>Nombre</th><th>Sección</th><th>Error</th></tr>'
+      + errs.map(x => `<tr><td>${x.email}</td><td>${x.nombre||''}</td><td>${x.seccion??''}</td><td><span class="pill e">${x.error}</span></td></tr>`).join('') + '</table>' : '';
+    btn.classList.add('hidden');
+  }catch(e){
+    msg.innerHTML = '<div class="msg msg-err">❌ Se detuvo la carga: '+e.message+'. Las filas ya procesadas quedaron guardadas; puedes volver a subir el archivo — los correos existentes se actualizan, no se duplican.</div>';
+    btn.disabled = false; btn.innerHTML = 'Reintentar';
+  }
+}
+// ── Pestaña 4 · Ciudadanos ──────────────────────────────────────────────────
+// Portado del Configurador de meta (se retira ese modulo). Cambios: municipios y
+// secciones se validan contra la carga maestra en vez de una lista quemada de
+// Colima, y se manda 'consentimiento' (columna NOT NULL que la version anterior
+// nunca enviaba).
+let C_OK = [], C_ERR = [];
+const CURP_RE = /^[A-Z][AEIOUX][A-Z]{2}\d{6}[HM][A-Z]{5}[0-9A-Z]\d$/i;
+const cNorm = v => String(v||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+
+function leerCiudadanos(f){
+  if(!f) return;
+  if(f.size > 20*1024*1024){ alert('El archivo supera los 20 MB.'); return; }
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try{
+      const wb = XLSX.read(ev.target.result, { type:'array' });
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval:'' });
+      if(!rows.length) throw new Error('El archivo no tiene filas de datos.');
+      validarCiudadanos(rows);
+    }catch(err){
+      document.getElementById('c-preview').classList.remove('hidden');
+      document.getElementById('c-preview-msg').innerHTML = '<div class="msg msg-err">❌ '+err.message+'</div>';
+    }
+  };
+  reader.readAsArrayBuffer(f);
+}
+document.getElementById('file-ciud').addEventListener('change', e => leerCiudadanos(e.target.files[0]));
+
+async function validarCiudadanos(rows){
+  C_OK = []; C_ERR = [];
+  const MUN = new Set((BASE && BASE.municipios || []).map(cNorm));
+  const SEC = new Set((BASE && BASE.secciones || []).map(Number));
+  const CURP_EJEMPLO = 'GALM880101MCLRPR05';
+  rows.forEach((r, idx) => {
+    const get = k => { const key = Object.keys(r).find(kk => cNorm(kk).replace(/ \*$/,'') === cNorm(k)); return key ? String(r[key]).trim() : ''; };
+    const nombre = get('nombre'), curp = get('curp').toUpperCase();
+    if((!nombre && !curp) || curp === CURP_EJEMPLO) return;
+    const err = [];
+    const ap = get('apellido_paterno'), mun = cNorm(get('municipio')), sec = get('seccion_electoral');
+    if(!nombre) err.push('falta nombre');
+    if(!ap) err.push('falta apellido paterno');
+    if(!curp) err.push('falta CURP'); else if(!CURP_RE.test(curp)) err.push('CURP inválida');
+    if(!mun) err.push('falta municipio'); else if(MUN.size && !MUN.has(mun)) err.push('municipio fuera de la carga maestra');
+    if(!sec) err.push('falta sección');
+    else if(isNaN(parseInt(sec))) err.push('sección no es número');
+    else if(SEC.size && !SEC.has(parseInt(sec))) err.push('sección no existe en la carga maestra');
+    const fila = { _row: idx+2, nombre, apellido_paterno: ap, apellido_materno: get('apellido_materno'), curp,
+      clave_elector: get('clave_elector'), edad: get('edad') ? parseInt(get('edad')) : null,
+      sexo: cNorm(get('sexo')).charAt(0) || null, telefono: get('telefono'), municipio: mun,
+      seccion_electoral: sec ? parseInt(sec) : null, domicilio: get('domicilio'),
+      compromiso: get('compromiso') ? parseInt(get('compromiso')) : 1, origen: get('origen').toLowerCase() || null,
+      es_apoyo: cNorm(get('es_apoyo'))==='SI', es_influencia: cNorm(get('es_influencia'))==='SI',
+      es_riesgo: cNorm(get('es_riesgo'))==='SI', notas: get('notas'), _errores: err };
+    (err.length ? C_ERR : C_OK).push(fila);
+  });
+  await descartarDuplicados();
+  previewCiudadanos();
+}
+
+// Descarta las CURP que ya existen en la base (por lotes: el filtro in.() topa
+// con el limite de longitud de la URL).
+async function descartarDuplicados(){
+  if(!C_OK.length) return;
+  try{
+    const token = (await window.supabase.auth.getSession()).data.session?.access_token || SUPA_KEY;
+    const curps = [...new Set(C_OK.map(f => f.curp))];
+    const existentes = new Set();
+    for(let i=0; i<curps.length; i+=150){
+      const lista = curps.slice(i,i+150).map(c => '"'+c+'"').join(',');
+      const r = await fetch(`${SUPA_URL}/rest/v1/ciudadanos?select=curp&curp=in.(${encodeURIComponent(lista)})`,
+        { headers:{ 'apikey':SUPA_KEY, 'Authorization':'Bearer '+token } });
+      if(r.ok) (await r.json()).forEach(x => existentes.add(String(x.curp).toUpperCase()));
+    }
+    if(!existentes.size) return;
+    const quedan = [];
+    C_OK.forEach(f => { if(existentes.has(f.curp)){ f._errores=['ya registrada (CURP existe)']; f._dup=true; C_ERR.push(f); } else quedan.push(f); });
+    C_OK = quedan;
+  }catch(e){ console.warn('pre-check duplicados:', e); }
+}
+
+function previewCiudadanos(){
+  const dups = C_ERR.filter(f => f._dup).length;
+  setKpi('c-k-ok', C_OK.length, C_OK.length>0);
+  setKpi('c-k-dup', dups, true);
+  setKpi('c-k-err', C_ERR.length-dups, C_ERR.length-dups===0);
+  const msg = [];
+  if(!BASE || !(BASE.secciones||[]).length) msg.push('⚠️ No hay carga maestra en esta licencia: no se pueden validar municipios ni secciones.');
+  if(C_OK.length) msg.push('✅ '+C_OK.length+' ciudadanos listos para cargar.');
+  else msg.push('❌ No hay filas válidas para cargar.');
+  if(dups) msg.push('ℹ️ '+dups+' CURP ya estaban registradas: se omiten, no se duplican.');
+  document.getElementById('c-preview-msg').innerHTML = msg.map(m => '<div class="msg '+(m.startsWith('❌')?'msg-err':m.startsWith('⚠')?'msg-warn':'msg-ok')+'">'+m+'</div>').join('');
+  const chk = document.getElementById('c-consent');
+  document.getElementById('c-btn-import').disabled = !C_OK.length || !chk.checked;
+  document.getElementById('c-preview').classList.remove('hidden');
+}
+
+async function importarCiudadanos(){
+  if(!C_OK.length) return;
+  const btn = document.getElementById('c-btn-import'); btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Cargando…';
+  document.getElementById('c-result').classList.remove('hidden');
+  const prog = document.querySelector('#c-prog i'), msg = document.getElementById('c-result-msg');
+  const ses = window._sesion || {};
+  const ahora = new Date().toISOString();
+  const payload = C_OK.map(f => {
+    const o = {...f}; delete o._row; delete o._errores; delete o._dup;
+    o.licencia_id = BASE ? BASE.licencia_id : ses.licencia_id;
+    o.capturista_id = ses.id || null; o.responsable_id = ses.id || null;
+    o.origen = o.origen || 'carga_excel';
+    o.consentimiento = true; o.consentimiento_fecha = ahora;
+    Object.keys(o).forEach(k => { if(o[k]==='') o[k]=null; });
+    return o;
+  });
+  let ins=0, fall=0;
+  try{
+    const token = (await window.supabase.auth.getSession()).data.session?.access_token;
+    if(!token) throw new Error('Sesión no válida. Vuelve a iniciar sesión.');
+    for(let i=0; i<payload.length; i+=200){
+      const chunk = payload.slice(i, i+200);
+      const r = await fetch(`${SUPA_URL}/rest/v1/ciudadanos`, {
+        method:'POST', headers:{ 'apikey':SUPA_KEY, 'Authorization':'Bearer '+token, 'Content-Type':'application/json', 'Prefer':'return=minimal' },
+        body: JSON.stringify(chunk) });
+      if(r.ok) ins += chunk.length; else { fall += chunk.length; console.warn('lote falló', r.status, await r.text()); }
+      prog.style.width = Math.round(Math.min(i+200, payload.length)/payload.length*100)+'%';
+      msg.innerHTML = '<div class="msg msg-ok">Guardados <b>'+ins+'</b> de '+payload.length+(fall?' · fallaron '+fall:'')+'</div>';
+    }
+    msg.innerHTML = '<div class="msg '+(fall?'msg-warn':'msg-ok')+'">'+(fall?'⚠️':'✅')+' <b>'+ins+'</b> ciudadanos cargados'
+      + (fall?' · <b>'+fall+'</b> fallaron (revisa la consola)':'') + '.</div>';
+    if(C_ERR.length) document.getElementById('c-err-actions').classList.remove('hidden');
+    btn.classList.add('hidden');
+  }catch(e){
+    msg.innerHTML = '<div class="msg msg-err">❌ '+e.message+'</div>';
+    btn.disabled=false; btn.innerHTML='Reintentar';
+  }
+}
+function descargarErroresCiud(){
+  const rows = [['fila','nombre','apellido_paterno','curp','municipio','seccion','motivo']]
+    .concat(C_ERR.map(f => [f._row,f.nombre,f.apellido_paterno,f.curp,f.municipio,f.seccion_electoral,(f._errores||[]).join(' · ')]));
+  bajar('ciudadanos_rechazados.csv', csv(rows));
+}
+
+function csv(rows){ return rows.map(r => r.map(v => '"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n'); }
+function bajar(nombre, texto){ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob(['\ufeff'+texto],{type:'text/csv;charset=utf-8'})); a.download=nombre; a.click(); }
+function descargarCredenciales(){
+  const rows = [['correo','nombre','rol','seccion','contrasena_temporal','estado']]
+    .concat(E_RES.filter(x => x.estado!=='error').map(x => [x.email, x.nombre, x.rol, x.seccion??'', x.password||'(sin cambio)', x.estado]));
+  bajar('credenciales_estructura_'+new Date().toISOString().slice(0,10)+'.csv', csv(rows));
+}
+function descargarErrores(){
+  const rows = [['correo','nombre','rol','seccion','error']].concat(E_RES.filter(x => x.estado==='error').map(x => [x.email,x.nombre,x.rol,x.seccion??'',x.error]));
+  bajar('errores_estructura.csv', csv(rows));
 }
 
 async function importar(){
@@ -269,7 +784,9 @@ async function importar(){
         + 'Casillas: <b>'+data.casillas+'</b> · '
         + 'Meta proyectada: <b>'+Number(data.meta_proyectada).toLocaleString('es-MX')+'</b> · '
         + 'Estructura real: <b>'+Number(data.estructura_real).toFixed(2)+'</b><br>'
-        + 'Metas seccionales regeneradas. La validación de cierre pasó.</div>';
+        + 'Estado: <b>'+(data.estado||'—')+'</b> · Filas procesadas: <b>'+data.filas_procesadas+'</b>'
+        + (Number(data.desactivadas)>0 ? ' · <span style="color:var(--amber)">Desactivadas (no venían en el archivo): <b>'+data.desactivadas+'</b></span>' : ' · Desactivadas: <b>0</b>')
+        + '<br>La base quedó igual al archivo. Meta de la licencia alineada a <b>'+Number(data.meta_proyectada).toLocaleString('es-MX')+'</b>.</div>';
       btn.classList.add('hidden');
     } else {
       const err = (data && (data.message||data.error||data.hint)) || ('HTTP '+res.status);

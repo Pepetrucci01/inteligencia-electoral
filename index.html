@@ -300,15 +300,19 @@ body.rol-consulta     .kpi-estatal { display:none; }
       <span class="nav-label">Panel Ejecutivo</span>
       <div class="nav-tip">Resumen ejecutivo del candidato</div>
     </div>
-    <div class="nav-item" id="nav-meta" data-rol="super_admin,admin" onclick="load('meta','configurador_meta_estados.html','Configurador de meta','Carga Excel por estado')">
-      <div class="nav-icon" style="background:rgba(245,158,11,.12);color:var(--amber)">⚙</div>
-      <span class="nav-label">Meta / Config</span>
-      <div class="nav-tip">Configurador de meta</div>
-    </div>
-    <div class="nav-item" id="nav-carga" data-rol="super_admin,admin" onclick="load('carga','importador_carga.html','Importador de Carga Maestra','Casillas + metas seccionales desde Excel')">
+    <!-- [01/09] Configurador de meta retirado de la vista. El archivo
+         configurador_meta_estados.html se conserva en el repo: es la
+         calculadora que genera la meta desde los votos del estado y hara falta
+         para el siguiente estado (Sinaloa). Se saco del menu porque (a) las
+         cuatro cargas por Excel ya viven en el modulo Cargas y tener dos
+         entradas confundia, y (b) esa pantalla muestra los factores de
+         afluencia y la meta por capturista, que son metodologia propietaria y
+         no deben quedar a la vista de un cliente con rol admin.
+         Para reactivarlo: restaurar el bloque con data-rol="super_admin". -->
+    <div class="nav-item" id="nav-carga" data-rol="super_admin,admin" onclick="load('carga','importador_carga.html','Cargas','Metas · estructura · representantes · ciudadanos')">
       <div class="nav-icon" style="background:rgba(59,130,246,.12);color:var(--accent)">📥</div>
-      <span class="nav-label">Carga Maestra</span>
-      <div class="nav-tip">Importador de Carga Maestra</div>
+      <span class="nav-label">Cargas</span>
+      <div class="nav-tip">Cargas por Excel</div>
     </div>
     <div class="nav-item" data-rol="super_admin,admin,coordinador,coordinador_estatal,consulta" id="nav-rep" onclick="load('rep','modulo_reportes.html','Reportes y análisis','Datos reales · PDF y Excel')">
       <div class="nav-icon" style="background:rgba(168,85,247,.12);color:var(--purple)">📈</div>
@@ -411,7 +415,7 @@ body.rol-consulta     .kpi-estatal { display:none; }
     <div class="hub-head">
       <div>
         <div class="hub-title">Bienvenido al sistema</div>
-        <div class="hub-sub"><span data-theme="sistema-titulo">Colima 2027</span> · <strong>9 módulos</strong> operativos</div>
+        <div class="hub-sub"><span data-theme="sistema-titulo">Colima 2027</span> · <strong><span id="mod-count">8</span> módulos</strong> operativos</div>
       </div>
       <div class="hub-date" id="hub-date">--</div>
     </div>
@@ -434,7 +438,7 @@ body.rol-consulta     .kpi-estatal { display:none; }
       <div class="kpi re" data-tip="Secciones con avance menor al 5% de su meta. Son las que más urgen para no perder terreno."><div class="kv" id="hub-kpi-crit">218</div><div class="kl">Sec. críticas</div></div>
     </div>
 
-    <div class="mod-title">9 módulos del sistema — clic para abrir</div>
+    <div class="mod-title"><span id="mod-count2">8</span> módulos del sistema — clic para abrir</div>
     <div class="modules-grid">
 
       <div class="mc war" data-rol="super_admin,admin,coordinador,coordinador_estatal,jefe_seccion,consulta" onclick="load('war','war_room_electoral_colima.html','War Room','Control de avance estatal')">
@@ -473,10 +477,10 @@ body.rol-consulta     .kpi-estatal { display:none; }
         <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(168,85,247,.1);color:var(--purple)">KPIs licencia</span><span class="tag" style="background:rgba(168,85,247,.1);color:var(--purple)">Solo admin</span></div><span class="arr">→</span></div>
       </div>
 
-      <div class="mc meta" data-rol="super_admin,admin" onclick="load('meta','configurador_meta_estados.html','Configurador de meta','Carga Excel por estado')">
-        <div class="mc-head"><div class="mc-icon" style="background:rgba(245,158,11,.15)">⚙</div><div><div class="mc-name">Configurador de meta</div><div class="mc-sub">Multi-estado · Excel</div></div></div>
-        <div class="mc-desc">Carga Excel de secciones de cualquier estado, detecta columnas automáticamente, aplica factores de afluencia y exporta.</div>
-        <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(245,158,11,.1);color:var(--amber)">32 estados</span><span class="tag" style="background:rgba(245,158,11,.1);color:var(--amber)">Exporta .xlsx</span></div><span class="arr">→</span></div>
+      <div class="mc carga" data-rol="super_admin,admin" onclick="load('carga','importador_carga.html','Cargas','Metas · estructura · representantes · ciudadanos')">
+        <div class="mc-head"><div class="mc-icon" style="background:rgba(59,130,246,.15)">📥</div><div><div class="mc-name">Cargas</div><div class="mc-sub">Todo lo que entra por Excel</div></div></div>
+        <div class="mc-desc">Cuatro cargas en un solo lugar: metas por casilla, estructura de capturistas, representantes de casilla y padrón de ciudadanos. Cada una se valida contra la carga maestra antes de escribir nada.</div>
+        <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(59,130,246,.1);color:var(--accent)">4 pestañas</span><span class="tag" style="background:rgba(34,197,94,.1);color:var(--green)">Valida y revierte</span></div><span class="mc-arrow">→</span></div>
       </div>
 
       <div class="mc rep" data-rol="super_admin,admin,coordinador,coordinador_estatal,consulta" onclick="load('rep','modulo_reportes.html','Reportes y análisis','Datos reales · PDF y Excel')">
@@ -550,7 +554,17 @@ body.rol-consulta     .kpi-estatal { display:none; }
 <script>
 // APP_BUILD: versin de build para cache-busting de los mdulos en iframe.
 // ⚠️ SUBE este nmero en cada deploy con cambios en los mdulos.
-const APP_BUILD = '20260831'; // [31/08] subir esta cadena cada vez que se actualice un modulo: es el rompe-cache de los iframes
+// [01/09] Contador de modulos calculado, no quemado: decia 9 aunque la
+// cuadricula ya no tuviera 9 visibles para ese rol. Cuenta las tarjetas que
+// realmente ve el usuario despues del filtrado por data-rol.
+function actualizarContadorModulos(){
+  try{
+    const n = [...document.querySelectorAll('.mc')].filter(el => el.offsetParent !== null).length;
+    ['mod-count','mod-count2'].forEach(id => { const e=document.getElementById(id); if(e) e.textContent = n; });
+  }catch(_e){}
+}
+
+const APP_BUILD = '20260901'; // [31/08] subir esta cadena cada vez que se actualice un modulo: es el rompe-cache de los iframes
 
 let collapsed = false;
 
@@ -655,6 +669,7 @@ document.addEventListener('keydown', e=>{
           (card || elx).style.display = 'none';
         }
       });
+      actualizarContadorModulos();
     }
   } catch(e){}
 })();
