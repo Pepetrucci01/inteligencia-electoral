@@ -555,7 +555,7 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
         <div class="card">
           <div class="card-h"><span class="card-title" data-tip="Manda un mensaje urgente a tu estructura en campo.">⚡ Enviar alerta a activistas</span></div>
           <div class="card-b">
-            <div style="font-size:11px;color:var(--text2);margin-bottom:10px">Notifica a los activistas que van en rojo o sin reporte. El mensaje llega dentro del sistema y por WhatsApp.</div>
+            <div style="font-size:11px;color:var(--text2);margin-bottom:10px">Notifica a los activistas que van en rojo o sin reporte. El mensaje aparece en el panel de cada uno. En el historial puedes ver quién ya lo leyó y escribirle por WhatsApp a quien falte.</div>
 
             <!-- Destinatarios -->
             <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Destinatarios</div>
@@ -2271,15 +2271,108 @@ async function confirmarEnvioAlerta(destinatarios, mensaje){
 // [FIX 1 sep] El historial también salía de localStorage: cada coordinador veía
 // solo lo que él mismo había enviado desde ESE navegador, y se perdía al limpiar
 // la caché. Ahora se lee de la tabla, agrupando por mensaje y fecha.
+//
+// [FIX 1 sep · ACUSE] Además, "1 de 124 leídas" decía que había un problema pero
+// no A QUIÉN llamarle. Cada línea del historial se despliega y muestra el
+// desglose: pendientes primero (con su sección, su nombre y cuánto llevan sin
+// leer) y luego las leídas con su hora. Cada pendiente trae botón de WhatsApp
+// que abre el chat con el mensaje ya escrito — el teléfono ya está en la ficha
+// del usuario, así que no hace falta nada más.
+window._ALERTAS_DETALLE = {};   // clave de grupo -> filas
+window._TEL_ACTIVISTAS  = null; // nombre normalizado -> teléfono
+
+const wrEscAl = t => String(t ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const wrNomKey = t => String(t||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
+
+function wrTelefonoDe(nombre){
+  if (!window._TEL_ACTIVISTAS) {
+    window._TEL_ACTIVISTAS = {};
+    try {
+      Object.values(CAPS).flat().forEach(c => {
+        const t = String(c.tel || '').replace(/\D/g, '');
+        if (t.length >= 10) window._TEL_ACTIVISTAS[wrNomKey(c.nombre)] = t;
+      });
+    } catch(e) { /* CAPS aún no cargado */ }
+  }
+  return window._TEL_ACTIVISTAS[wrNomKey(nombre)] || null;
+}
+
+function wrHaceCuanto(iso){
+  if (!iso) return '';
+  const min = Math.floor((Date.now() - new Date(iso)) / 60000);
+  if (min < 1)  return 'hace un momento';
+  if (min < 60) return `hace ${min} min`;
+  const h = Math.floor(min/60);
+  if (h < 24) return `hace ${h} h`;
+  const d = Math.floor(h/24);
+  return `hace ${d} día${d !== 1 ? 's' : ''}`;
+}
+
+function wrAbrirWhatsApp(tel, mensaje, nombre){
+  const t = String(tel||'').replace(/\D/g,'');
+  if (t.length < 10) { alert('Este activista no tiene teléfono registrado.'); return; }
+  const num = t.length === 10 ? '52' + t : t;
+  const texto = (nombre ? `Hola ${String(nombre).split(' ')[0]}, ` : '') + mensaje;
+  window.open('https://wa.me/' + num + '?text=' + encodeURIComponent(texto), '_blank', 'noopener');
+}
+
+function wrToggleDetalleAlerta(clave){
+  const box = document.getElementById('det-' + clave);
+  const chev = document.getElementById('chev-' + clave);
+  if (!box) return;
+  const abierto = box.style.display !== 'none';
+  box.style.display = abierto ? 'none' : 'block';
+  if (chev) chev.textContent = abierto ? '▾' : '▴';
+  if (!abierto && !box.dataset.pintado) { wrPintarDetalleAlerta(clave); box.dataset.pintado = '1'; }
+}
+
+function wrPintarDetalleAlerta(clave){
+  const box = document.getElementById('det-' + clave);
+  const g = window._ALERTAS_DETALLE[clave];
+  if (!box || !g) return;
+  const pend = g.filas.filter(f => !f.leida)
+    .sort((a,b) => (Number(a.seccion)||0) - (Number(b.seccion)||0));
+  const leidas = g.filas.filter(f => f.leida)
+    .sort((a,b) => new Date(b.leida_at||0) - new Date(a.leida_at||0));
+
+  const filaPend = f => {
+    const tel = wrTelefonoDe(f.destinatario_nombre);
+    const wa = tel
+      ? `<span onclick="event.stopPropagation();wrAbrirWhatsApp('${tel}', ${JSON.stringify(g.mensaje).replace(/"/g,'&quot;')}, '${wrEscAl(f.destinatario_nombre)}')"
+             title="Escribirle por WhatsApp"
+             style="cursor:pointer;color:var(--green);font-size:12px;padding:0 4px">✆</span>`
+      : `<span title="Sin teléfono registrado" style="color:var(--text3);font-size:11px;padding:0 4px">—</span>`;
+    return `<div style="display:flex;align-items:center;gap:8px;padding:4px 8px;border-bottom:1px solid rgba(255,255,255,.04);font-size:11px">
+      <span style="font-family:var(--mono);color:var(--text3);width:62px;flex-shrink:0">Secc. ${wrEscAl(f.seccion)}</span>
+      <span style="flex:1;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${wrEscAl(f.destinatario_nombre || '—')}</span>
+      ${wa}
+    </div>`;
+  };
+  const filaLeida = f => `<div style="display:flex;align-items:center;gap:8px;padding:4px 8px;border-bottom:1px solid rgba(255,255,255,.04);font-size:11px">
+      <span style="font-family:var(--mono);color:var(--text3);width:62px;flex-shrink:0">Secc. ${wrEscAl(f.seccion)}</span>
+      <span style="flex:1;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${wrEscAl(f.destinatario_nombre || '—')}</span>
+      <span style="font-family:var(--mono);color:var(--green);font-size:10px">${f.leida_at ? new Date(f.leida_at).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}) : ''} ✓</span>
+    </div>`;
+
+  box.innerHTML =
+    (pend.length ? `<div style="font-family:var(--mono);font-size:10px;color:var(--amber);padding:6px 8px 3px;letter-spacing:.05em">
+         PENDIENTES (${pend.length}) · ${wrHaceCuanto(g.fecha)}</div>
+       <div style="max-height:200px;overflow-y:auto">${pend.map(filaPend).join('')}</div>` : '')
+    + (leidas.length ? `<div style="font-family:var(--mono);font-size:10px;color:var(--green);padding:8px 8px 3px;letter-spacing:.05em">
+         LEÍDAS (${leidas.length})</div>
+       <div style="max-height:140px;overflow-y:auto">${leidas.map(filaLeida).join('')}</div>` : '')
+    + (!pend.length && leidas.length ? '<div style="padding:6px 8px;font-size:11px;color:var(--green)">Todos confirmaron ✓</div>' : '');
+}
+
 async function actualizarHistorialAlertas(){
   const cont  = document.getElementById('alerta-historial');
   const count = document.getElementById('alerta-hist-count');
   if (!cont && !count) return;
   try {
     const r = await wrFetch(`${SUPA_URL}/rest/v1/alertas`
-      + `?select=mensaje,seccion,leida,created_at,destinatario_nombre`
+      + `?select=mensaje,seccion,leida,leida_at,created_at,destinatario_nombre`
       + `&licencia_id=eq.${encodeURIComponent(LICENCIA_ID)}`
-      + `&order=created_at.desc&limit=400`);
+      + `&order=created_at.desc&limit=1000`);
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const filas = await r.json();
     if (!Array.isArray(filas)) throw new Error('respuesta inesperada');
@@ -2288,9 +2381,8 @@ async function actualizarHistorialAlertas(){
     const grupos = {};
     filas.forEach(f => {
       const k = (f.mensaje || '') + '|' + String(f.created_at || '').slice(0, 16);
-      if (!grupos[k]) grupos[k] = { mensaje: f.mensaje || '', fecha: f.created_at, n: 0, leidas: 0 };
-      grupos[k].n++;
-      if (f.leida) grupos[k].leidas++;
+      if (!grupos[k]) grupos[k] = { mensaje: f.mensaje || '', fecha: f.created_at, filas: [] };
+      grupos[k].filas.push(f);
     });
     const lista = Object.values(grupos).sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
@@ -2300,18 +2392,29 @@ async function actualizarHistorialAlertas(){
       cont.innerHTML = '<div style="font-size:11px;color:var(--text3);padding:10px;text-align:center">Sin alertas enviadas</div>';
       return;
     }
-    const esc = t => String(t ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    cont.innerHTML = lista.slice(0, 5).map(a => {
+
+    window._ALERTAS_DETALLE = {};
+    cont.innerHTML = lista.slice(0, 5).map((a, idx) => {
+      const clave = 'a' + idx;
+      window._ALERTAS_DETALLE[clave] = a;
+      const n = a.filas.length;
+      const leidas = a.filas.filter(f => f.leida).length;
+      const pct = n ? Math.round(leidas / n * 100) : 0;
       const f = a.fecha ? new Date(a.fecha).toLocaleString('es-MX', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
-      const pct = a.n ? Math.round(a.leidas / a.n * 100) : 0;
-      return `<div style="padding:8px 12px;border-bottom:1px solid var(--border2);font-size:11px">
-        <div style="display:flex;justify-content:space-between;margin-bottom:2px">
-          <span style="color:var(--red);font-family:var(--mono)">🚨 ${a.n} activista${a.n !== 1 ? 's' : ''}</span>
-          <span style="color:var(--text3);font-size:10px">${f}</span>
+      const col = leidas === n ? 'var(--green)' : (pct >= 50 ? 'var(--amber)' : 'var(--text3)');
+      return `<div style="border-bottom:1px solid var(--border2)">
+        <div onclick="wrToggleDetalleAlerta('${clave}')" style="padding:8px 12px;cursor:pointer" title="Clic para ver quién la leyó y quién no">
+          <div style="display:flex;justify-content:space-between;margin-bottom:2px">
+            <span style="color:var(--red);font-family:var(--mono);font-size:11px">🚨 ${n} activista${n !== 1 ? 's' : ''}</span>
+            <span style="color:var(--text3);font-size:10px">${f}</span>
+          </div>
+          <div style="color:var(--text2);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${wrEscAl(a.mensaje).slice(0,70)}</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:3px">
+            <span style="color:${col};font-size:10px;font-family:var(--mono)">${leidas} de ${n} leídas · ${pct}%</span>
+            <span id="chev-${clave}" style="color:var(--accent);font-size:11px">▾</span>
+          </div>
         </div>
-        <div style="color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(a.mensaje).slice(0,70)}</div>
-        <div style="color:${a.leidas === a.n ? 'var(--green)' : 'var(--text3)'};font-size:10px;font-family:var(--mono);margin-top:3px">
-          ${a.leidas} de ${a.n} leídas · ${pct}%</div>
+        <div id="det-${clave}" style="display:none;background:rgba(0,0,0,.18)"></div>
       </div>`;
     }).join('');
   } catch (e) {
