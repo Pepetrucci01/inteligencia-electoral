@@ -170,6 +170,11 @@ select{background:#0f3460;color:#eee;border:1px solid #444;border-radius:4px;pad
     window._esLider = (s.rol === 'jefe_seccion');
     window._seccionLider = s.seccion || null;
     window._municipioLider = s.municipio || null;
+    // [FIX 1 sep · ALCANCE] El aislamiento del mapa solo se aplicaba a
+    // jefe_seccion: un coordinador municipal veía las 1,032 casillas de todo
+    // Colima y podía elegir cualquier municipio en el selector. Ahora también
+    // queda acotado a su municipio, como en el resto del sistema.
+    window._munAcotado = (s.rol === 'coordinador' && s.municipio) ? s.municipio : null;
   } catch(e) { window.location.replace('login.html'); }
 })();
 </script>
@@ -832,29 +837,47 @@ cargarAvanceSupabase();
 cargarMetasCasillaSupabase();   // T18: metas por casilla (fallback = horneado)
 
 // ── MODO LÍDER: zoom y filtro automático ──────────────────────────
-(function initLider(){
-  if (!window._esLider) return;
+(function initAlcance(){
+  // [FIX 1 sep] Antes: `if (!window._esLider) return;` — solo el jefe de sección
+  // quedaba acotado. Ahora también el coordinador municipal.
+  const acotado = window._esLider || !!window._munAcotado;
+  if (!acotado) return;
 
   // Ocultar tabs estratégicos (ya tienen la clase CSS, solo como seguro)
-  document.querySelectorAll('.tab-lider-ocultar').forEach(el => el.classList.add('oculto-lider'));
+  if (window._esLider) {
+    document.querySelectorAll('.tab-lider-ocultar').forEach(el => el.classList.add('oculto-lider'));
+  }
 
-  const sec   = window._seccionLider;
-  const mun   = window._municipioLider;
+  const sec   = window._esLider ? window._seccionLider : null;
+  const mun   = window._municipioLider || window._munAcotado;
 
   // Fijar selector de municipio si hay municipio en sesión
   if (mun) {
     const sel = document.getElementById('filtMunicipio');
     if (sel) {
-      // Intentar seleccionar el municipio (nombre en mayúsculas en los datos)
-      const munUpper = mun.toUpperCase();
+      // [FIX 1 sep] El cotejo era sensible a acentos: los datos del mapa traen
+      // ARMERIA / COQUIMATLAN sin tilde y la ficha del usuario ARMERÍA con
+      // tilde, así que a esos municipios NO les fijaba nada y se quedaban
+      // viendo todo el estado. Ahora se comparan sin acentos.
+      const norm = x => String(x||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+      const munN = norm(mun);
+      let hallado = false;
       for (let i = 0; i < sel.options.length; i++) {
-        if (sel.options[i].value.toUpperCase() === munUpper) {
+        if (norm(sel.options[i].value) === munN) {
           sel.selectedIndex = i;
-          sel.disabled = true; // lider no puede cambiar municipio
+          hallado = true;
           break;
         }
       }
-      filtrarCasillas();
+      if (hallado) {
+        // Quitar los municipios ajenos del menú: no tiene caso ofrecer algo
+        // que el usuario no puede ver.
+        Array.from(sel.options).forEach(o => { if (norm(o.value) !== munN) o.remove(); });
+        sel.disabled = true;
+        filtrarCasillas();
+      } else {
+        console.warn('Municipio de la sesión no encontrado en el mapa:', mun);
+      }
     }
   }
 
