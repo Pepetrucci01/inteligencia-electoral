@@ -229,7 +229,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
 <!-- ═══════════ RESUMEN EJECUTIVO ═══════════ -->
 <div class="screen active" id="sc-resumen">
   <div class="kpi-row">
-    <div class="kpi bl" data-tip="Total de simpatizantes que la candidatura se propuso captar en todo el estado para 2027."><div class="kpi-lbl">Meta estatal 2027</div><div class="kpi-val" id="rep-meta-kpi">—</div><div class="kpi-trend">votos proyectados</div></div>
+    <div class="kpi bl" data-tip="Total de simpatizantes que la candidatura se propuso captar en todo el estado para 2027."><div class="kpi-lbl" id="rep-meta-lbl">Meta 2027</div><div class="kpi-val" id="rep-meta-kpi">—</div><div class="kpi-trend">votos proyectados</div></div>
     <div class="kpi gr" data-tip="Simpatizantes registrados hasta hoy en el padrón de la campaña."><div class="kpi-lbl">Total capturados</div><div class="kpi-val" id="rep-total-cap">—</div><div class="kpi-trend" style="opacity:.5">registros activos</div></div>
     <div class="kpi bl" data-tip="Qué porcentaje de la meta estatal se ha alcanzado con los registros capturados hasta hoy."><div class="kpi-lbl">Avance estatal</div><div class="kpi-val" id="rep-avance-est">—</div><div class="kpi-trend" style="opacity:.5">sobre la meta estatal</div></div>
     <div class="kpi gr" data-tip="Simpatizantes con nivel de compromiso alto (3 o 4): se considera que su voto está asegurado."><div class="kpi-lbl">Voto seguro</div><div class="kpi-val" id="rep-voto-seguro">—</div><div class="kpi-trend" id="rep-voto-seguro-pct">—</div></div>
@@ -975,6 +975,12 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
 (function(){
   // [T20/21] Fuente única de meta: Supabase viva -> horneado -> 208717.
   function metaActual(){
+    // [FIX 1 sep · ALCANCE] Estos bloques pisaban la tarjeta de meta con la meta
+    // ESTATAL horneada, sin importar quién estuviera dentro: el coordinador de
+    // Manzanillo veía "META ESTATAL 2027: 208,754" arriba y "58,013 meta" en la
+    // barra de abajo, contradiciéndose. La meta de la RPC ya respeta el alcance,
+    // así que manda; el horneado queda de respaldo.
+    if (window._kpisReportes && Number(window._kpisReportes.meta) > 0) return Number(window._kpisReportes.meta);
     if(typeof window.SISTEMA_META==='number'&&window.SISTEMA_META>0) return window.SISTEMA_META;
     if(typeof IE_METAS_CASILLA!=='undefined'&&IE_METAS_CASILLA.meta_estatal) return IE_METAS_CASILLA.meta_estatal;
     return 208754;   // [FIX 1 sep] canonico (era 208717)
@@ -1126,6 +1132,21 @@ async function cargarDatosMunicipios() {
     actualizarKPIsResumen(kpis);   // ← KPIs del resumen ejecutivo, desde la RPC
     // [FIX 1 sep] Va DESPUES de armar MUN_DATA, no antes.
     try { pintarRankingMunicipios(); } catch(e){ console.warn('ranking municipios:', e); }
+    // [FIX 1 sep] La meta y su etiqueta, ya con el alcance del usuario.
+    try {
+      const alc = String(kpis.alcance || 'estatal');
+      const esMun = alc.indexOf('municipio:') === 0;
+      const lbl = document.getElementById('rep-meta-lbl');
+      if (lbl) lbl.textContent = esMun
+        ? 'Meta ' + alc.slice(10).replace('VILLA DE ALVAREZ','V. Álvarez') + ' 2027'
+        : 'Meta estatal 2027';
+      const mm = Number(kpis.meta) || 0;
+      if (mm > 0) {
+        const f = mm.toLocaleString('es-MX');
+        const a = document.getElementById('rep-meta-kpi'); if (a) a.textContent = f;
+        const b = document.getElementById('rep-meta-bar'); if (b) b.textContent = f + ' meta';
+      }
+    } catch(e){ console.warn('meta por alcance:', e); }
     // [FIX 1 sep] Y repintar la gráfica por municipio: si se construyó antes de
     // que llegara la RPC, quedó vacía y el guard impedía rehacerla.
     try {
@@ -3461,6 +3482,12 @@ showTab = function(tab) {
 (function(){
   // [T20/21] Fuente única de meta: Supabase viva -> horneado -> 208717.
   function metaActual(){
+    // [FIX 1 sep · ALCANCE] Estos bloques pisaban la tarjeta de meta con la meta
+    // ESTATAL horneada, sin importar quién estuviera dentro: el coordinador de
+    // Manzanillo veía "META ESTATAL 2027: 208,754" arriba y "58,013 meta" en la
+    // barra de abajo, contradiciéndose. La meta de la RPC ya respeta el alcance,
+    // así que manda; el horneado queda de respaldo.
+    if (window._kpisReportes && Number(window._kpisReportes.meta) > 0) return Number(window._kpisReportes.meta);
     if(typeof window.SISTEMA_META==='number' && window.SISTEMA_META>0) return window.SISTEMA_META;
     if(typeof IE_METAS_CASILLA!=='undefined' && IE_METAS_CASILLA.meta_estatal) return IE_METAS_CASILLA.meta_estatal;
     return 208754;   // [FIX 1 sep] canonico (era 208717)
