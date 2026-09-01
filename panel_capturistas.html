@@ -600,6 +600,22 @@ async function generarYEnviar(id){
   if(!p) return;
   const fila = document.getElementById('rep-f-'+id);
   const btn = fila ? fila.querySelector('button') : null;
+
+  // [FIX 1 sep · POPUP] La pestaña de WhatsApp se abría DESPUÉS de esperar al
+  // servidor, así que Chrome la bloqueaba por no venir de un clic directo: la
+  // contraseña se generaba pero el mensaje nunca salía, y como solo se muestra
+  // una vez, se perdía. Ahora la pestaña se abre YA (en el clic) y se le pone la
+  // dirección cuando llega la respuesta. Y pase lo que pase, la contraseña se
+  // pinta en pantalla con botón de copiar: nunca se pierde.
+  const tel = String(p.telefono||'').replace(/\D/g,'');
+  let win = null;
+  try { win = window.open('', '_blank'); } catch(e) { win = null; }
+  if (win) {
+    win.document.write('<title>Abriendo WhatsApp…</title>' +
+      '<body style="background:#0a0e1a;color:#8a9ab5;font-family:system-ui;padding:40px;text-align:center">' +
+      'Generando la credencial…</body>');
+  }
+
   if(btn){ btn.disabled = true; btn.textContent = 'Generando…'; }
   try{
     const token = window._sesion?.access_token;
@@ -614,7 +630,6 @@ async function generarYEnviar(id){
     const res = (d.resultados||[])[0];
     if(!res || !res.ok) throw new Error(res?.error || 'No se pudo generar');
 
-    // Mensaje con su usuario y su contraseña nueva
     const liga = location.origin + '/index.html';
     const nombre1 = String(p.nombre||'').split(' ')[0];
     const texto =
@@ -627,16 +642,56 @@ async function generarYEnviar(id){
         (p.meta ? ', con una meta de ' + Number(p.meta).toLocaleString('es-MX') + ' simpatizantes' : '') + '.\n\n' : '') +
       'Entra desde tu celular y cambia tu contraseña. Cualquier duda, escríbeme.';
 
-    const tel = String(p.telefono||'').replace(/\D/g,'');
     const num = tel.length === 10 ? '52'+tel : tel;
-    window.open('https://wa.me/'+num+'?text='+encodeURIComponent(texto), '_blank', 'noopener');
+    const urlWA = 'https://wa.me/'+num+'?text='+encodeURIComponent(texto);
 
+    if (win && !win.closed) { win.location.href = urlWA; }
+
+    // La contraseña queda a la vista pase lo que pase con la pestaña.
+    mostrarCredencialGenerada(id, p, res, texto, urlWA, !!(win && !win.closed));
     p.ultima_cred = new Date().toISOString();
-    if(btn){ btn.textContent = 'Enviada ✓'; btn.style.opacity = '.55'; }
   }catch(e){
+    if (win && !win.closed) win.close();
     alert('No se pudo generar la credencial: ' + e.message);
     if(btn){ btn.disabled = false; btn.textContent = 'Generar y enviar'; }
   }
+}
+
+// [FIX 1 sep] Deja la credencial visible en la fila: usuario, contraseña, botón
+// para copiar el mensaje completo y otro para reintentar WhatsApp si la pestaña
+// se bloqueó. Así una contraseña generada nunca se pierde por un popup.
+function mostrarCredencialGenerada(id, p, res, texto, urlWA, abrio){
+  const fila = document.getElementById('rep-f-'+id);
+  if(!fila) return;
+  const esc = t => String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  window._TEXTOS_CRED = window._TEXTOS_CRED || {};
+  window._TEXTOS_CRED[id] = { texto: texto, url: urlWA };
+  fila.style.background = 'rgba(168,85,247,.06)';
+  fila.innerHTML =
+    '<span style="font-family:var(--mono);color:var(--text3);width:70px;flex-shrink:0">' +
+      (p.seccion?('Secc. '+esc(p.seccion)):'—') + '</span>' +
+    '<div style="flex:1;min-width:0">' +
+      '<div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(p.nombre) + '</div>' +
+      '<div style="font-size:11px;font-family:var(--mono);margin-top:2px">' +
+        '<span style="color:var(--text3)">' + esc(res.email||p.email) + '</span> · ' +
+        '<b style="color:#c4a5f7;letter-spacing:.04em">' + esc(res.password) + '</b>' +
+      '</div>' +
+      (abrio ? '' : '<div style="font-size:10px;color:var(--amber);font-family:var(--mono);margin-top:2px">' +
+        'El navegador bloqueó la pestaña de WhatsApp. Copia el mensaje o vuelve a abrirla.</div>') +
+    '</div>' +
+    '<button onclick="copiarMensajeCred(\'' + id + '\')" style="background:var(--bg4);border:1px solid var(--border2);' +
+      'color:var(--text2);font-family:var(--mono);font-size:11px;padding:5px 11px;border-radius:5px;cursor:pointer">Copiar</button>' +
+    '<button onclick="window.open(window._TEXTOS_CRED[\'' + id + '\'].url,\'_blank\',\'noopener\')" ' +
+      'style="background:rgba(34,197,94,.13);border:1px solid rgba(34,197,94,.3);color:var(--green);' +
+      'font-family:var(--mono);font-size:11px;padding:5px 11px;border-radius:5px;cursor:pointer;white-space:nowrap">WhatsApp</button>';
+}
+
+function copiarMensajeCred(id){
+  const o = (window._TEXTOS_CRED||{})[id];
+  if(!o) return;
+  navigator.clipboard.writeText(o.texto)
+    .then(function(){ alert('Mensaje copiado. Pégalo en el chat de esa persona.'); })
+    .catch(function(){ prompt('Copia el mensaje:', o.texto); });
 }
 
 // [FIX 1 sep] Contacto del activista y de su coordinador municipal.
