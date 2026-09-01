@@ -677,7 +677,60 @@ Object.defineProperty(window, 'SECCION_CAP', {
     return window._sesion?.seccion || null;
   }, configurable: true
 });
-const META_CAP    = 50; // meta por capturista
+// ── [FIX meta · 1 sep] META REAL POR CAPTURISTA ───────────────────────────
+// ANTES: `const META_CAP = 50` — la misma meta para los 500 capturistas, sin
+// importar la seccion. La meta real ya vive en asignaciones_seccion.meta_individual
+// (calculada por Hamilton al cargar la estructura) y va de ~15 a ~2,000
+// simpatizantes segun la seccion. Con el 50 fijo, el "ME FALTAN" y la barra
+// de avance mentian para todos.
+//
+// AHORA: META_CAP es un getter. Lee la meta real cuando ya se cargo y, si no
+// (sin token, red caida, capturista sin asignacion), cae al 50 de siempre para
+// que el panel nunca se quede sin numero. Como es getter, las 3 lineas que ya
+// usaban META_CAP siguen funcionando sin tocarlas.
+// En modo supervision (window._SUP_CAP_ID) se pide la meta de ESE capturista.
+const META_CAP_DEFAULT = 50;
+window._META_REAL = null;            // meta_individual traida de la base
+window._META_REAL_UID = null;        // de que capturista es
+Object.defineProperty(window, 'META_CAP', {
+  get: function(){
+    if (window._META_REAL != null && window._META_REAL_UID === CAP_ID) return window._META_REAL;
+    return META_CAP_DEFAULT;
+  }, configurable: true
+});
+
+async function pcpCargarMeta(){
+  const uid = CAP_ID;
+  if (!uid) { window._META_REAL = null; return; }
+  if (window._META_REAL_UID === uid && window._META_REAL != null) return;  // ya la tengo
+  try {
+    const token = window._sesion?.access_token;
+    if (!token) return;
+    const res = await fetch(
+      SUPA_URL + '/rest/v1/asignaciones_seccion?select=meta_individual,numero_seccion'
+        + '&usuario_id=eq.' + encodeURIComponent(uid)
+        + '&activo=is.true&order=fecha_inicio.desc&limit=1',
+      { headers: { apikey: SUPA_KEY, Authorization: 'Bearer ' + token } }
+    );
+    if (!res.ok) return;
+    const fila = (await res.json())[0];
+    if (fila && fila.meta_individual != null) {
+      window._META_REAL = Math.round(Number(fila.meta_individual));
+      window._META_REAL_UID = uid;
+      // Si la asignacion trae seccion y la sesion no, tomarla (los capturistas
+      // de la carga masiva tienen su seccion aqui, no siempre en usuarios.seccion)
+      if (fila.numero_seccion != null && window._sesion && !window._sesion.seccion && !window._SUP_CAP_ID) {
+        window._sesion.seccion = String(fila.numero_seccion);
+        localStorage.setItem('electoral_sesion', JSON.stringify(window._sesion));
+      }
+      console.log('Meta real cargada:', window._META_REAL, 'secc.', fila.numero_seccion);
+    } else {
+      window._META_REAL = null; window._META_REAL_UID = uid;   // sin asignacion -> 50
+    }
+  } catch(e) {
+    console.warn('No se pudo cargar la meta real, se usa', META_CAP_DEFAULT, e.message);
+  }
+}
 
 // [FIX 10 jul] RENOMBRADO de supaFetch → supaGet.
 // COLISIÓN DE NOMBRES: theme.js hace `window.supaFetch = supaFetch` con una
@@ -759,6 +812,9 @@ async function cargarMisRegistros() {
       return;
     }
 
+    // [FIX meta] La meta real del capturista (o del supervisado) antes de pintar
+    await pcpCargarMeta();
+
     // Filtrar por capturista_id si está disponible, sino por licencia
     let query = `ciudadanos?select=id,nombre,apellido_paterno,apellido_materno,edad,sexo,seccion_electoral,municipio,telefono,domicilio,curp,clave_elector,compromiso,origen,es_riesgo,es_apoyo,es_influencia,validado,duplicado,notas,created_at,licencia_id,capturista_id&licencia_id=eq.${LICENCIA_ID}&order=created_at.desc&limit=500`;
     if (CAP_ID) query += `&capturista_id=eq.${CAP_ID}`;
@@ -805,7 +861,7 @@ function actualizarKPIs() {
   if(el('kv-municipio')) el('kv-municipio').textContent = window._sesion?.municipio || '—';
   if(el('prog-capturas'))el('prog-capturas').style.width = pctMeta + '%';
   if(el('pct-capturas')) el('pct-capturas').textContent = `${pctMeta}% de mi meta`;
-  if(el('meta-faltan'))  el('meta-faltan').textContent  = `para llegar a ${META_CAP}`;
+  if(el('meta-faltan'))  el('meta-faltan').textContent  = `para llegar a ${META_CAP.toLocaleString('es-MX')}`;
   if(total > 0 && el('pct-validados')) {
     el('pct-validados').textContent = `${Math.round((validados/total)*100)}% de mis registros`;
   }
