@@ -1038,7 +1038,9 @@ function ajustarEncabezadoAlcance(esEstatal, munsPermitidos){
       setTxt('wr-meta-pb', fmt(metaMun));
       setTxt('wr-meta-sub', fmt(metaMun));
       // Recalcular el % de avance de la barra con la meta municipal.
-      const cap = Number((window._kpisRPC && window._kpisRPC.total) || 0);
+      // [FIX 1 sep] Respaldo: si la RPC de KPIs aun no llega, usar el capturado
+      // real del municipio (que el territorio ya calculo). Nunca cae a 0.
+      const cap = Number((window._kpisRPC && window._kpisRPC.total) || mun.cap || 0);
       const pct = metaMun>0 ? Math.min(100, (cap/metaMun*100)) : 0;
       const fill = document.getElementById('pb-fill');
       const pctEl = document.getElementById('pb-pct');
@@ -3023,6 +3025,14 @@ async function cargarDesdeRPC() {
     });
 
     // ── 5. Re-render con datos reales ──────────────────────────────
+    // [FIX 1 sep · ORDEN] _kpisRPC se asignaba DESPUES de renderMunF1(), pero
+    // ajustarEncabezadoAlcance() —que corre dentro de ese render— lee
+    // window._kpisRPC.total para recalcular la barra. Como todavia era
+    // undefined, escribia 0 y 0.0% encima del dato bueno: el encabezado decia
+    // "0 / 58,013" mientras el cuadrante de abajo decia "2,526 / 58,013".
+    // Se asigna ANTES de repintar.
+    window._kpisRPC = data;
+
     renderMunF1();
     renderTablaCapturistas();
     // [FIX 31/08] Los cuadrantes también se pintan con m.cap: sin esto se
@@ -3030,9 +3040,6 @@ async function cargarDesdeRPC() {
     // decía el real. La migaja se actualiza por si el alcance movió el drill.
     if(typeof renderCuadF1==='function') renderCuadF1();
     if(typeof updateBcF1==='function')   updateBcF1();
-
-    // Guardar el bloque de KPIs por si otra parte del código lo necesita
-    window._kpisRPC = data;
     // [FIX 1 sep] Panel derecho de F1 (alertas, compromiso, origen) con datos reales
     if (typeof wrPintarPanelF1 === 'function') wrPintarPanelF1(data);
     // [FIX 1 sep] Avisar a los bloques que dependen de la meta del alcance
