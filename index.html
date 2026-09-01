@@ -123,8 +123,9 @@ iframe{width:100%;height:100%;border:none;display:block;}
    numeros (meta 48,664 / 14 operadores / 97 secciones / 50 criticas) en vez
    de los del estado. Se ocultaban porque antes eran valores estatales
    quemados y le habrian mentido.
-   El bloque .alerts SI conserva la clase: todavia trae numeros horneados
-   (408 duplicados, 183 secciones criticas). Quitarsela cuando se arreglen. */
+   [FIX 01/09] El bloque .alerts ya NO lleva la clase: sus alertas vienen de
+   get_alertas_hub(), acotadas al alcance del usuario; para roles de campo la
+   RPC devuelve vacio y el bloque se oculta solo. */
 body.rol-coordinador  .kpi-estatal,
 body.rol-jefe_seccion .kpi-estatal,
 body.rol-capturista   .kpi-estatal,
@@ -274,13 +275,13 @@ body.rol-consulta     .kpi-estatal { display:none; }
     <div class="nav-item" data-rol="super_admin,admin,coordinador,coordinador_estatal" id="nav-cap" onclick="load('cap','panel_capturistas.html','Activistas','Gestión de estructura de campo')">
       <div class="nav-icon" style="background:rgba(168,85,247,.12);color:var(--purple)">👥</div>
       <span class="nav-label">Activistas</span>
-      <span class="nav-badge" style="background:rgba(168,85,247,.12);color:var(--purple)">60</span>
+      <span class="nav-badge" id="nav-badge-oper" style="background:rgba(168,85,247,.12);color:var(--purple)">—</span>
       <div class="nav-tip">Activistas</div>
     </div>
     <div class="nav-item" data-rol="super_admin,admin,coordinador,coordinador_estatal,jefe_seccion,consulta" id="nav-map" onclick="load('map','visor_electoral_colima_v4.html','Mapa Electoral','Inteligencia por sección')">
       <div class="nav-icon" style="background:rgba(6,182,212,.12);color:var(--cyan)">🗺️</div>
       <span class="nav-label">Mapa</span>
-      <span class="nav-badge" style="background:rgba(6,182,212,.12);color:var(--cyan)">392</span>
+      <span class="nav-badge" id="nav-badge-secc" style="background:rgba(6,182,212,.12);color:var(--cyan)">—</span>
       <div class="nav-tip">Mapa territorial</div>
     </div>
     <div class="nav-item" id="nav-captura" data-rol="super_admin,admin,coordinador,coordinador_estatal,jefe_seccion,capturista" onclick="load('captura','modulo_captura.html','Captura ciudadana','Registro y búsqueda de ciudadanos')">
@@ -391,7 +392,7 @@ body.rol-consulta     .kpi-estatal { display:none; }
         <a onclick="cerrarSesion()" style="color:var(--red);cursor:pointer;text-decoration:none;font-size:10px;" title="Cerrar sesión">⏻ Salir</a>
       </span>
       <span class="tb-badge" style="background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.25)">● Sistema activo</span>
-      <span class="tb-badge" style="background:var(--bg3);color:var(--text3);border:1px solid var(--border2)" id="tb-dias">334 días</span>
+      <span class="tb-badge" style="background:var(--bg3);color:var(--text3);border:1px solid var(--border2)" id="tb-dias">—</span>
       <span class="clock" id="clock">--:--:--</span>
     </div>
   </div>
@@ -422,20 +423,20 @@ body.rol-consulta     .kpi-estatal { display:none; }
 
     <div class="prog-bar">
       <div class="pb-label">Avance vs meta <span data-theme="sistema-anio">2027</span></div>
-      <div class="pb-track"><div class="pb-fill" id="hub-pb-fill" style="width:5.1%"></div></div>
-      <div class="pb-pct" id="hub-pb-pct">5.1%</div>
-      <div class="pb-nums" id="hub-pb-nums"><span id="hub-pb-cap">10,000</span> / <span data-theme="sistema-meta">208,754</span></div>
+      <div class="pb-track"><div class="pb-fill" id="hub-pb-fill" style="width:0%"></div></div>
+      <div class="pb-pct" id="hub-pb-pct">—</div>
+      <div class="pb-nums" id="hub-pb-nums"><span id="hub-pb-cap">—</span> / <span data-theme="sistema-meta">208,754</span></div>
     </div>
 
     <div class="kpi-row">
       <div class="kpi bl" id="hub-card-meta" data-tip="Total de simpatizantes que se propuso captar en tu alcance territorial para 2027."><div class="kv" data-theme="sistema-meta" id="ix-meta-kpi">208,754</div><div class="kl" id="hub-kl-meta">Meta estatal</div></div>
-      <div class="kpi gr" data-tip="Simpatizantes registrados hasta hoy en el padrón de la campaña."><div class="kv" id="hub-kpi-total">10,000</div><div class="kl">Capturados</div></div>
-      <div class="kpi gr" data-tip="Simpatizantes con nivel de compromiso alto (3 o 4): se considera que su voto está asegurado."><div class="kv" id="hub-kpi-seguro">4,601</div><div class="kl">Voto seguro</div></div>
-      <div class="kpi am" data-tip="Simpatizantes marcados como posible fuga de voto. Requieren visita o seguimiento para no perderlos."><div class="kv" id="hub-kpi-riesgo">2,203</div><div class="kl">En riesgo</div></div>
-      <div class="kpi re" data-tip="Registros repetidos en el padrón. Inflan artificialmente el avance y hay que depurarlos."><div class="kv" id="hub-kpi-dup">408</div><div class="kl">Duplicados</div></div>
-      <div class="kpi cy" data-tip="Personas de la estructura de campo dadas de alta en el sistema (capturistas, coordinadores y líderes)."><div class="kv" id="hub-kpi-oper">17</div><div class="kl">Operadores</div></div>
-      <div class="kpi cy" data-tip="Secciones electorales con casilla sobre las que se organiza el trabajo territorial."><div class="kv" id="hub-kpi-secc">388</div><div class="kl">Secciones</div></div>
-      <div class="kpi re" data-tip="Secciones con avance menor al 5% de su meta. Son las que más urgen para no perder terreno."><div class="kv" id="hub-kpi-crit">218</div><div class="kl">Sec. críticas</div></div>
+      <div class="kpi gr" data-tip="Simpatizantes registrados hasta hoy en el padrón de la campaña."><div class="kv" id="hub-kpi-total">—</div><div class="kl">Capturados</div></div>
+      <div class="kpi gr" data-tip="Simpatizantes con nivel de compromiso alto (3 o 4): se considera que su voto está asegurado."><div class="kv" id="hub-kpi-seguro">—</div><div class="kl">Voto seguro</div></div>
+      <div class="kpi am" data-tip="Simpatizantes marcados como posible fuga de voto. Requieren visita o seguimiento para no perderlos."><div class="kv" id="hub-kpi-riesgo">—</div><div class="kl">En riesgo</div></div>
+      <div class="kpi re" data-tip="Registros repetidos en el padrón. Inflan artificialmente el avance y hay que depurarlos."><div class="kv" id="hub-kpi-dup">—</div><div class="kl">Duplicados</div></div>
+      <div class="kpi cy" data-tip="Personas de la estructura de campo dadas de alta en el sistema (capturistas, coordinadores y líderes)."><div class="kv" id="hub-kpi-oper">—</div><div class="kl">Operadores</div></div>
+      <div class="kpi cy" data-tip="Secciones electorales con casilla sobre las que se organiza el trabajo territorial."><div class="kv" id="hub-kpi-secc">—</div><div class="kl">Secciones</div></div>
+      <div class="kpi re" data-tip="Secciones con avance menor al 5% de su meta. Son las que más urgen para no perder terreno."><div class="kv" id="hub-kpi-crit">—</div><div class="kl">Sec. críticas</div></div>
     </div>
 
     <div class="mod-title"><span id="mod-count2">8</span> módulos del sistema — clic para abrir</div>
@@ -449,13 +450,13 @@ body.rol-consulta     .kpi-estatal { display:none; }
 
       <div class="mc cap" data-rol="super_admin,admin,coordinador,coordinador_estatal" onclick="load('cap','panel_capturistas.html','Activistas','Gestión de estructura de campo')">
         <div class="mc-head"><div class="mc-icon" style="background:rgba(168,85,247,.15)">👥</div><div><div class="mc-name">Activistas</div><div class="mc-sub">Gestión de estructura</div></div></div>
-        <div class="mc-desc">60 operadores con score de calidad, avance individual vs meta y ficha detallada con nivel de compromiso.</div>
-        <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(168,85,247,.1);color:var(--purple)">60 operadores</span><span class="tag" style="background:rgba(168,85,247,.1);color:var(--purple)">Score</span></div><span class="arr">→</span></div>
+        <div class="mc-desc"><span class="hub-n-oper">—</span> operadores con score de calidad, avance individual vs meta y ficha detallada con nivel de compromiso.</div>
+        <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(168,85,247,.1);color:var(--purple)"><span class="hub-n-oper">—</span> operadores</span><span class="tag" style="background:rgba(168,85,247,.1);color:var(--purple)">Score</span></div><span class="arr">→</span></div>
       </div>
 
       <div class="mc map" data-rol="super_admin,admin,coordinador,coordinador_estatal,jefe_seccion,consulta" onclick="load('map','visor_electoral_colima_v4.html','Mapa territorial','Inteligencia por sección electoral')">
         <div class="mc-head"><div class="mc-icon" style="background:rgba(6,182,212,.15)">🗺️</div><div><div class="mc-name">Mapa territorial</div><div class="mc-sub">Inteligencia por sección</div></div></div>
-        <div class="mc-desc">392 secciones coloreadas por avance, ganador 2024 o dificultad. Zoom, filtros y ficha completa por sección.</div>
+        <div class="mc-desc"><span class="hub-n-secc">—</span> secciones coloreadas por avance, ganador 2024 o dificultad. Zoom, filtros y ficha completa por sección.</div>
         <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(6,182,212,.1);color:var(--cyan)">3 vistas</span><span class="tag" style="background:rgba(6,182,212,.1);color:var(--cyan)">Sin internet</span></div><span class="arr">→</span></div>
       </div>
 
@@ -497,7 +498,7 @@ body.rol-consulta     .kpi-estatal { display:none; }
       <div class="mc adm" data-rol="super_admin,admin" onclick="load('adm','modulo_admin.html','Administración','Usuarios · licencias · auditoría · seguridad')">
         <div class="mc-head"><div class="mc-icon" style="background:rgba(239,68,68,.15)">🔒</div><div><div class="mc-name">Administración</div><div class="mc-sub">Solo super admin</div></div></div>
         <div class="mc-desc">Usuarios y roles, licencias multi-estado, matriz de permisos, auditoría de actividad y configuración del sistema.</div>
-        <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(239,68,68,.1);color:var(--red)">Restringido</span><span class="tag" style="background:rgba(239,68,68,.1);color:var(--red)">6 licencias</span></div><span class="arr">→</span></div>
+        <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(239,68,68,.1);color:var(--red)">Restringido</span><span class="tag" style="background:rgba(239,68,68,.1);color:var(--red)">Multi-licencia</span></div><span class="arr">→</span></div>
       </div>
 
       <div class="mc" style="border-color:rgba(6,182,212,.2)" onclick="load('soporte','modulo_soporte.html','Soporte técnico','Levanta un ticket con el equipo')">
@@ -515,36 +516,17 @@ body.rol-consulta     .kpi-estatal { display:none; }
     </div>
 
     <!-- ALERTAS -->
-    <div class="alerts kpi-estatal">
+    <!-- [FIX 1 sep] ALERTAS REALES. Antes: 5 alertas escritas a mano (36 secciones,
+         408 duplicados, "Licencia Jalisco vence en 4 dias", x7.2 ritmo...) iguales
+         para todos. Ahora las calcula get_alertas_hub() con el alcance del usuario
+         (estatal o municipal). Oculto hasta que la RPC responda; si no hay alertas
+         o el rol es de campo, no se muestra nada. -->
+    <div class="alerts" id="alertas-hub" style="display:none">
       <div class="al-head">
         <span class="al-title">Alertas activas</span>
-        <span class="tb-badge" style="background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.2)">3 críticas · 2 avisos</span>
+        <span class="tb-badge" id="al-badge" style="background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.2)">—</span>
       </div>
-      <div class="al-item">
-        <div class="al-dot" style="background:var(--red)"></div>
-        <div class="al-body"><div class="al-text">36 secciones sin ningún registro capturado</div><div class="al-meta">Comala · Coquimatlán · Manzanillo · Colima norte · Tecomán sur</div></div>
-        <span class="al-act" onclick="load('map','visor_electoral_colima_v4.html','Mapa territorial','Inteligencia por sección electoral')">Ver mapa →</span>
-      </div>
-      <div class="al-item">
-        <div class="al-dot" style="background:var(--red)"></div>
-        <div class="al-body"><div class="al-text">408 registros duplicados pendientes de depuración</div><div class="al-meta">4.1% de la base · CURP o clave de elector repetida</div></div>
-        <span class="al-act" onclick="load('captura','modulo_captura.html','Captura ciudadana','Registro y búsqueda de ciudadanos')">Depurar →</span>
-      </div>
-      <div class="al-item">
-        <div class="al-dot" style="background:var(--red)"></div>
-        <div class="al-body"><div class="al-text">Licencia Jalisco vence en 4 días — requiere renovación urgente</div><div class="al-meta">Plan prueba · $2,000 USD/mes plan estándar · contactar antes del 18 mayo</div></div>
-        <span class="al-act" onclick="load('adm','modulo_admin.html','Administración','Usuarios · licencias · auditoría')">Gestionar →</span>
-      </div>
-      <div class="al-item">
-        <div class="al-dot" style="background:var(--amber)"></div>
-        <div class="al-body"><div class="al-text">183 secciones en estado crítico — avance menor a 5%</div><div class="al-meta">Requieren refuerzo de estructura en campo esta semana</div></div>
-        <span class="al-act" onclick="load('war','war_room_electoral_colima.html','War Room','Control de avance estatal')">War Room →</span>
-      </div>
-      <div class="al-item">
-        <div class="al-dot" style="background:var(--amber)"></div>
-        <div class="al-body"><div class="al-text">Ritmo actual insuficiente — se necesita ×7.2 más capturas por semana</div><div class="al-meta">Actual: 574/sem · Requerido: 4,140/sem · Proyección: 18.0% a jun 2027</div></div>
-        <span class="al-act" onclick="load('rep','modulo_reportes.html','Reportes y análisis','Datos reales · PDF y Excel')">Ver proyección →</span>
-      </div>
+      <div id="al-lista"></div>
     </div>
 
   </div><!-- /hub -->
@@ -564,7 +546,7 @@ function actualizarContadorModulos(){
   }catch(_e){}
 }
 
-const APP_BUILD = '20260901'; // [31/08] subir esta cadena cada vez que se actualice un modulo: es el rompe-cache de los iframes
+const APP_BUILD = '20260901b'; // [01/09 b] panel_capturista_personal sin datos horneados // [31/08] subir esta cadena cada vez que se actualice un modulo: es el rompe-cache de los iframes
 
 let collapsed = false;
 
@@ -804,6 +786,12 @@ function cerrarSesion(){
       // devuelve acotados al alcance territorial del usuario.
       if(kpis.operadores !== undefined) set('hub-kpi-oper', fmt(Number(kpis.operadores) || 0));
       if(kpis.secciones  !== undefined) set('hub-kpi-secc', fmt(Number(kpis.secciones)  || 0));
+      // [FIX 1 sep] Los badges del menu (Activistas / Mapa) y los textos de las
+      // tarjetas venian quemados (60 / 392). Ahora siguen a la RPC.
+      if(kpis.operadores !== undefined){ set('nav-badge-oper', fmt(Number(kpis.operadores)||0));
+        document.querySelectorAll('.hub-n-oper').forEach(e=>e.textContent=fmt(Number(kpis.operadores)||0)); }
+      if(kpis.secciones !== undefined){ set('nav-badge-secc', fmt(Number(kpis.secciones)||0));
+        document.querySelectorAll('.hub-n-secc').forEach(e=>e.textContent=fmt(Number(kpis.secciones)||0)); }
       if(kpis.criticas   !== undefined) set('hub-kpi-crit', fmt(Number(kpis.criticas)   || 0));
       // La etiqueta de la tarjeta de meta sigue al alcance: un coordinador
       // municipal no ve una "meta estatal", ve la de su municipio.
@@ -836,10 +824,80 @@ function cerrarSesion(){
       if(fill) fill.style.width = pct + '%';
       console.log(`✅ Hub KPIs: ${total} capturados (RPC)`);
     } else {
-      console.warn('⚠ Hub KPIs: total=0 (RLS/sin sesión); se conservan los valores simulados.');
+      // [FIX 1 sep] Antes aqui se "conservaban los valores simulados" (10,000 /
+      // 4,601 / 2,203...). Ya no hay simulados: si el alcance esta en cero, se
+      // muestra cero, que es la verdad.
+      ['hub-kpi-total','hub-kpi-seguro','hub-kpi-riesgo','hub-kpi-dup','hub-pb-cap'].forEach(id=>set(id,'0'));
+      set('hub-pb-pct','0%');
+      if(kpis.operadores !== undefined){ set('hub-kpi-oper', fmt(Number(kpis.operadores)||0)); set('nav-badge-oper', fmt(Number(kpis.operadores)||0));
+        document.querySelectorAll('.hub-n-oper').forEach(e=>e.textContent=fmt(Number(kpis.operadores)||0)); }
+      if(kpis.secciones !== undefined){ set('hub-kpi-secc', fmt(Number(kpis.secciones)||0)); set('nav-badge-secc', fmt(Number(kpis.secciones)||0));
+        document.querySelectorAll('.hub-n-secc').forEach(e=>e.textContent=fmt(Number(kpis.secciones)||0)); }
+      if(kpis.criticas !== undefined) set('hub-kpi-crit', fmt(Number(kpis.criticas)||0));
+      console.log('Hub KPIs: alcance sin capturas todavía (total=0).');
     }
   } catch(e) {
     console.warn('Hub KPIs error:', e);
+  }
+})();
+</script>
+<script>
+// ── [FIX 1 sep] ALERTAS REALES DESDE SUPABASE ─────────────────────────────
+(async function cargarAlertasHub(){
+  const box = document.getElementById('alertas-hub');
+  if(!box) return;
+  try{
+    const SUPA_URL = 'https://dyirhwwmykskpuvzcafx.supabase.co';
+    const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5aXJod3dteWtza3B1dnpjYWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NTk3ODgsImV4cCI6MjA5NTEzNTc4OH0.2xe4cHqORGng1hnYPJ9ZiyT0r87fMijbUEJqBy3-xoI';
+    for(let i=0;i<30 && !window._sesion?.access_token;i++) await new Promise(r=>setTimeout(r,100));
+    const token = window._sesion?.access_token;
+    if(!token) return;
+    const doFetch = () => fetch(SUPA_URL + '/rest/v1/rpc/get_alertas_hub', {
+      method:'POST', headers:{ apikey:SUPA_KEY, Authorization:'Bearer '+token, 'Content-Type':'application/json' }, body:'{}' });
+    let r = await doFetch();
+    if((r.status===401||r.status===403) && typeof window.refrescarTokenSupabase==='function'){
+      if(await window.refrescarTokenSupabase()) r = await doFetch();
+    }
+    if(!r.ok) throw new Error('get_alertas_hub HTTP '+r.status);
+    const d = await r.json();
+    const lista = Array.isArray(d?.alertas) ? d.alertas : [];
+    if(!lista.length){ box.style.display='none'; return; }
+
+    // A que modulo manda cada accion (mismos load() que el menu)
+    const RUTA = {
+      map:     ['map','visor_electoral_colima_v4.html','Mapa territorial','Inteligencia por sección electoral'],
+      captura: ['captura','modulo_captura.html','Captura ciudadana','Registro y búsqueda de ciudadanos'],
+      adm:     ['adm','modulo_admin.html','Administración','Usuarios · licencias · auditoría'],
+      war:     ['war','war_room_electoral_colima.html','War Room','Control de avance estatal'],
+      rep:     ['rep','modulo_reportes.html','Reportes y análisis','Datos reales · PDF y Excel'],
+    };
+    const COLOR = { critica:'var(--red)', aviso:'var(--amber)', ok:'var(--green)' };
+    const esc = t => String(t??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+    document.getElementById('al-lista').innerHTML = lista.map(a => {
+      const ruta = RUTA[a.modulo];
+      const act = ruta ? `<span class="al-act" onclick="load('${ruta[0]}','${ruta[1]}','${esc(ruta[2])}','${esc(ruta[3])}')">${esc(a.accion||'Abrir')} →</span>` : '';
+      return `<div class="al-item">
+        <div class="al-dot" style="background:${COLOR[a.nivel]||'var(--text3)'}"></div>
+        <div class="al-body"><div class="al-text">${esc(a.texto)}</div>${a.meta?`<div class="al-meta">${esc(a.meta)}</div>`:''}</div>
+        ${act}</div>`;
+    }).join('');
+
+    const c = Number(d.criticos)||0, v = Number(d.avisos)||0;
+    const badge = document.getElementById('al-badge');
+    const partes = [];
+    if(c) partes.push(c + (c===1?' crítica':' críticas'));
+    if(v) partes.push(v + (v===1?' aviso':' avisos'));
+    badge.textContent = partes.join(' · ') || 'Sin pendientes';
+    if(!c){ badge.style.background='rgba(245,158,11,.1)'; badge.style.color='var(--amber)'; badge.style.border='1px solid rgba(245,158,11,.25)'; }
+    if(!c && !v){ badge.style.background='rgba(34,197,94,.1)'; badge.style.color='var(--green)'; badge.style.border='1px solid rgba(34,197,94,.25)'; }
+
+    // Ocultar a roles de campo (RPC ya devuelve vacio, pero por si acaso)
+    box.style.display = 'block';
+    console.log(`✅ Hub alertas: ${lista.length} (${d.alcance})`);
+  }catch(e){
+    console.warn('Hub alertas error:', e);
+    box.style.display='none';   // sin datos reales, nada inventado
   }
 })();
 </script>
