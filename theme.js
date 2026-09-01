@@ -15,7 +15,7 @@
  *    partido-slogan   → slogan o subtítulo
  *    logo-img         → <img> del logo
  *    logo-inicial     → div con iniciales
- *    sistema-meta     → meta estatal (ej. "208,717")
+ *    sistema-meta     → meta estatal (ej. "208,754")
  *    sistema-anio     → año de elección (ej. "2027")
  *    sistema-titulo   → "NombreSoftware · Estado AÑO"
  *    dias-eleccion    → cuenta regresiva en días
@@ -117,7 +117,7 @@ function applyTheme(theme) {
   // Meta estatal (formateada con comas)
   // [SWAP LUIS ✓ Fase 4] Prioridad de fuentes para la meta estatal:
   //   1. _META_SUPABASE  → valor vivo de configuracion_sistema.sistema_meta (si ya se cargó)
-  //   2. IE_METAS_CASILLA.meta_estatal → JSON horneado (208,717)
+  //   2. IE_METAS_CASILLA.meta_estatal → JSON horneado (208,754)
   //   3. theme.sistemaMeta → default del tema (fallback final)
   // La carga desde Supabase es asíncrona (cargarMetaEstatalSupabase); mientras
   // llega, se pinta el horneado para que no haya parpadeo ni cero.
@@ -169,7 +169,7 @@ function applyTheme(theme) {
 //  META ESTATAL DINÁMICA — Fase 4 (T20)
 //  Lee configuracion_sistema.sistema_meta con el access_token de la sesión.
 //  Fallback obligatorio: si el fetch/RLS falla, NO toca nada y se conserva
-//  el valor horneado (208,717) que applyTheme ya pintó. Nunca deja la meta
+//  el valor horneado (208,754) que applyTheme ya pintó. Nunca deja la meta
 //  en blanco ni en cero por un error de red o de sesión.
 // ══════════════════════════════════════════════════════════════════
 let _META_SUPABASE = null; // se llena solo si Supabase responde con un número válido
