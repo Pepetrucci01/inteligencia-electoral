@@ -557,7 +557,7 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
         </div>
       </div>
 
-        <div class="card">
+        <div class="card" id="card-alertas-f1" data-solo-mando="1">
           <div class="card-h"><span class="card-title" data-tip="Manda un mensaje urgente a tu estructura en campo.">⚡ Enviar alerta a activistas</span></div>
           <div class="card-b">
             <div style="font-size:11px;color:var(--text2);margin-bottom:10px">Notifica a los activistas que van en rojo o sin reporte. El mensaje aparece en el panel de cada uno. En el historial puedes ver quién ya lo leyó y escribirle por WhatsApp a quien falte.</div>
@@ -798,7 +798,7 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
              movilización, incidencias, cierre). Comparten la misma tabla
              `alertas` y el mismo historial; solo cambian los ids (-f2) y los
              mensajes rápidos. -->
-        <div class="card">
+        <div class="card" id="card-alertas-f2" data-solo-mando="1">
           <div class="card-h"><span class="card-title" data-tip="Manda un mensaje urgente a tu estructura durante la jornada.">⚡ Enviar alerta a activistas</span></div>
           <div class="card-b">
             <div style="font-size:11px;color:var(--text2);margin-bottom:10px">Avisos de jornada para tu estructura en campo. El mensaje aparece en el panel de cada uno; en el historial ves quién ya lo leyó y puedes escribirle por WhatsApp a quien falte.</div>
@@ -2200,7 +2200,36 @@ function alertarCas(id){
   abrirModalAlerta([{nombre:c.rep, seccion:c.secNum, municipio:c.munNombre, tel:'312-000-0000'}], `⚠️ ALERTA: La casilla ${c.id} (Secc.${c.secNum}, ${c.munNombre}) requiere atención inmediata. ${c.incidencia||'Sin reporte de apertura'}. Reporta tu situación de inmediato.`);
 }
 
+// [FIX 2 sep · B4] Roles con permiso de MANDAR alertas. Debe coincidir con la
+// política RLS alertas_insert de Supabase (super_admin, admin, coordinador,
+// coordinador_estatal). El rol 'consulta' es de solo lectura y queda fuera.
+const WR_ROLES_ALERTA = ['super_admin','admin','coordinador','coordinador_estatal'];
+function wrPuedeEnviarAlertas(){
+  const rol = (window._sesion && window._sesion.rol) || '';
+  return WR_ROLES_ALERTA.includes(rol);
+}
+
+// [FIX 2 sep · B4] Oculta el panel de alertas a quien no puede usarlo. El
+// backend YA lo bloqueaba (alertas_insert), así que nunca hubo fuga real; pero
+// el Observador veía el formulario completo con "500 activistas recibirán esta
+// alerta" y un botón de enviar. Enseñarle a un cliente un control que no le
+// toca —y que trueno si lo pica— es un problema de confianza, no de seguridad.
+function wrAplicarPermisosAlertas(){
+  try{
+    if (wrPuedeEnviarAlertas()) return;
+    document.querySelectorAll('[data-solo-mando="1"]').forEach(el => { el.style.display = 'none'; });
+  }catch(e){ console.warn('wrAplicarPermisosAlertas:', e); }
+}
+document.addEventListener('DOMContentLoaded', wrAplicarPermisosAlertas);
+wrAplicarPermisosAlertas();
+
 function enviarAlertaMasiva(){
+  // Segundo candado: aunque alguien reactive el panel desde el inspector, aquí
+  // se detiene. El tercero y definitivo es la RLS en la base.
+  if(!wrPuedeEnviarAlertas()){
+    alert('Tu perfil es de consulta: puedes ver la información, pero no enviar alertas a la estructura.');
+    return;
+  }
   const dest=wrElAlerta('alerta-dest').value;
   const mun=wrElAlerta('alerta-mun').value;
   const msg=wrElAlerta('alerta-msg').value.trim();

@@ -298,12 +298,18 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 <div class="screen active" id="screen-captura">
 
   <!-- Capturista activo -->
+  <!-- [FIX 2 sep · B3/B1-04] Estos 4 divs estaban ESCRITOS A MANO con los datos
+       demo (Capturista 17 / CAP-017 / 138 / Villa de Álvarez) y ninguna función
+       los tocaba nunca. El const CAPTURISTA sí traía la sesión correcta, por eso
+       los registros se guardaban bien en la BD (280/TECOMÁN) mientras la pantalla
+       decía Villa de Álvarez. Era cosmético, pero hacía desconfiar del sistema al
+       capturista. Ahora los llena pintarBarraCapturista() desde window._sesion. -->
   <div class="capturista-bar">
-    <div class="cap-avatar">C17</div>
+    <div class="cap-avatar" id="cap-avatar">··</div>
     <div>
-      <div class="cap-name">Capturista 17</div>
-      <div class="cap-id">CAP-017 · Sección base: 138</div>
-      <div class="cap-mun">Villa de Álvarez</div>
+      <div class="cap-name" id="cap-name">Cargando…</div>
+      <div class="cap-id" id="cap-id">—</div>
+      <div class="cap-mun" id="cap-mun">—</div>
     </div>
   </div>
 
@@ -733,7 +739,18 @@ async function cargarCiudadanosCapturista() {
         .eq('licencia_id', sesion.licencia_id);
       // Solo los capturistas quedan acotados a SUS propios registros.
       // (La RLS ya impide ver otra licencia; esto es el filtro de alcance por rol.)
-      if (!esMando) qq = qq.eq('capturista_id', sesion.id);
+      //
+      // [FIX 2 sep · BUG-B3-02] Antes: .eq('capturista_id', sesion.id) a secas.
+      // Eso tiraba TODO el padrón asignado. En Colima los ciudadanos precargados
+      // traen responsable_id = el capturista y capturista_id = NULL (nadie los ha
+      // capturado todavía: están asignados, no capturados). Gerardo tenía 755
+      // registros asignados en la sección 280 y la pantalla le decía "0 registros
+      // — captura el primero". La RLS ciudadanos_capturista_select YA permite
+      // (responsable_id = auth.uid() OR capturista_id = auth.uid()), o sea la BD
+      // sí se los entregaba; era el front el que los descartaba.
+      if (!esMando) {
+        qq = qq.or(`capturista_id.eq.${sesion.id},responsable_id.eq.${sesion.id}`);
+      }
       return qq.order('created_at', { ascending: false });
     };
 
@@ -920,16 +937,44 @@ function extraerDatosINE(fotoBase64){
 
 function aplicarDatosINE(d){
   cerrarEscanerINE();
+  d = d || {};
+
+  // [FIX 2 sep · C5] El backend responde success:true aunque el modelo no haya
+  // podido leer NADA: por diseño devuelve "" en vez de inventar datos. El front
+  // solo miraba d.success y gritaba "✓ Credencial leída" con el formulario en
+  // blanco — el usuario aceptaba, volvía a captura vacía y no entendía qué pasó.
+  // Ahora se mide si la lectura trae sustancia antes de cantar victoria.
+  const utiles = ['nombre','paterno','materno','curp','clave_elector','seccion','domicilio']
+    .filter(k => d[k] !== undefined && d[k] !== null && String(d[k]).trim() !== '');
+  if (utiles.length === 0) {
+    alert('No se pudo leer la credencial (la foto salió borrosa o con reflejo).\n\nVuelve a intentarlo con más luz y la INE plana, o captura los datos a mano.');
+    return;
+  }
+
   const set=function(id,v){ const el=document.getElementById(id); if(el&&v!==undefined&&v!==null&&v!=='') el.value=v; };
   set('f-nombre',d.nombre); set('f-paterno',d.paterno); set('f-materno',d.materno);
-  set('f-edad',d.edad); set('f-sexo',d.sexo); set('f-curp',d.curp);
+  set('f-edad',d.edad);
+  // [FIX 2 sep] La Edge Function devuelve sexo como 'H'/'M' (lo que trae impreso
+  // la credencial), pero el <select> del formulario usa HOMBRE/MUJER. Sin este
+  // mapeo el valor no empataba con ninguna opción y el campo quedaba vacío.
+  const _sx = String(d.sexo || '').trim().toUpperCase();
+  set('f-sexo', _sx === 'H' ? 'HOMBRE' : _sx === 'M' ? 'MUJER' : d.sexo);
+  set('f-curp',d.curp);
   set('f-clave',d.clave_elector); set('f-domicilio',d.domicilio);
   // [v90] La seccion PRIMERO: el municipio ya no se toma de la credencial,
   // se deriva de la seccion contra `casillas`. El municipio impreso en la INE
   // puede venir abreviado o sin acentos y no empata con el catalogo.
   set('f-seccion',d.seccion);
   if(typeof alCambiarSeccion==='function') alCambiarSeccion();
-  alert('✓ Credencial leída. Verifica los datos antes de guardar'+(DEMO_MODE_INE?' (modo demo)':'')+'.');
+  // [FIX 2 sep · C5] Aviso honesto: si la lectura fue parcial, decir CUÁLES
+  // campos hay que completar a mano en vez de un "✓" que da falsa confianza.
+  const _faltantes = [['nombre','Nombre'],['paterno','A. paterno'],['curp','CURP'],
+                      ['clave_elector','Clave de elector'],['seccion','Sección']]
+    .filter(([k]) => !d[k] || String(d[k]).trim() === '')
+    .map(([,etiqueta]) => etiqueta);
+  alert(_faltantes.length
+    ? ('Credencial leída parcialmente'+(DEMO_MODE_INE?' (modo demo)':'')+'.\n\nCompleta a mano: ' + _faltantes.join(', ') + '.\nRevisa también lo que sí se llenó.')
+    : ('✓ Credencial leída'+(DEMO_MODE_INE?' (modo demo)':'')+'. Verifica los datos antes de guardar.'));
 }
 
 
@@ -1486,7 +1531,35 @@ function renderLista(){
     </div>`).join('');
 }
 
+// [FIX 2 sep · BUG-B3-01] Pinta la barra con la identidad REAL del usuario
+// autenticado. Antes el marcado era estático: cualquiera que entrara veía
+// "Capturista 17 · 138 · Villa de Álvarez", sin importar quién fuera.
+// Las iniciales del avatar salen del nombre; si no hay nombre, del rol.
+function pintarBarraCapturista(){
+  try{
+    const s = window._sesion || {};
+    const nombre = s.nombre || CAPTURISTA.nombre || 'Usuario';
+    const sec    = s.seccion || CAPTURISTA.seccion_base || null;
+    const mun    = s.municipio || CAPTURISTA.municipio || '';
+    const rol    = s.rol || '';
+
+    const iniciales = nombre.trim().split(/\s+/).slice(0,2)
+      .map(p => p.charAt(0).toUpperCase()).join('') || '··';
+
+    const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+    set('cap-avatar', iniciales);
+    set('cap-name', nombre);
+    // Un rol de mando no tiene "sección base": mostrarle una es engañoso.
+    const ROLES_MANDO_BARRA = ['super_admin','admin','coordinador','coordinador_estatal'];
+    set('cap-id', ROLES_MANDO_BARRA.includes(rol)
+      ? (rol.replace(/_/g,' ').toUpperCase())
+      : (sec ? ('Sección base: ' + sec) : 'Sin sección asignada'));
+    set('cap-mun', mun || '—');
+  }catch(e){ console.warn('pintarBarraCapturista:', e); }
+}
+
 // ── INIT ──────────────────────────────────────────────────────────────────
+pintarBarraCapturista();
 buscar();
 // [FIX 1 sep] Llenar el selector con la sección real antes del primer render.
 try { poblarSelectorSeccion(); } catch(e){ console.warn('poblarSelectorSeccion:', e); }
