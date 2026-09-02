@@ -595,10 +595,10 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
 <!-- ═══════════ ESTRUCTURA DE CAMPO ═══════════ -->
 <div class="screen" id="sc-estructura">
   <div class="kpi-row">
-    <div class="kpi bl"><div class="kpi-lbl">Operadores activos</div><div class="kpi-val" id="ec-total">60</div><div class="kpi-trend">en 10 municipios</div></div>
-    <div class="kpi gr"><div class="kpi-lbl">Superaron meta</div><div class="kpi-val" id="ec-meta">42</div><div class="kpi-trend">≥50 capturas</div></div>
-    <div class="kpi am"><div class="kpi-lbl">Score prom. calidad</div><div class="kpi-val" id="ec-score">61.2</div><div class="kpi-trend">de 100 posibles</div></div>
-    <div class="kpi cy"><div class="kpi-lbl">Top municipio</div><div class="kpi-val" id="ec-topmun">Manzanillo</div><div class="kpi-trend" id="ec-topmun-pct">38% de estructura</div></div>
+    <div class="kpi bl"><div class="kpi-lbl">Operadores activos</div><div class="kpi-val" id="ec-total">—</div><div class="kpi-trend">en 10 municipios</div></div>
+    <div class="kpi gr"><div class="kpi-lbl">Superaron meta</div><div class="kpi-val" id="ec-meta">—</div><div class="kpi-trend">≥50 capturas</div></div>
+    <div class="kpi am"><div class="kpi-lbl">Score prom. calidad</div><div class="kpi-val" id="ec-score">—</div><div class="kpi-trend">de 100 posibles</div></div>
+    <div class="kpi cy"><div class="kpi-lbl">Top municipio</div><div class="kpi-val" id="ec-topmun">—</div><div class="kpi-trend" id="ec-topmun-pct">—</div></div>
   </div>
 
   <!-- FILTROS -->
@@ -2060,6 +2060,8 @@ function initDescargas() {
     admin:       {bg:'rgba(59,130,246,0.12)',color:'#3b82f6',label:'ø Admin Estatal'},
     coordinador: {bg:'rgba(6,182,212,0.12)',color:'#06b6d4',label:' Coordinador'},
     capturista:  {bg:'rgba(34,197,94,0.12)',color:'#22c55e',label:'✏ Capturista'},
+    coordinador_estatal: {bg:'rgba(59,130,246,0.12)',color:'#3b82f6',label:'Coord. Estatal'},
+    consulta:    {bg:'rgba(148,163,184,.12)',color:'#94a3b8',label:'👁 Observador'},   // [FIX 2 sep · B4] decía "Sin sesión"
   };
   const rc = colores[rol] || {bg:'rgba(148,163,184,.12)',color:'#94a3b8',label:'Sin sesión'};
   const ind = document.getElementById('rol-indicator');

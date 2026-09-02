@@ -1237,7 +1237,7 @@ async function guardarRegistro() {
   if(!origenSel) { document.getElementById('paso2-errors').textContent='Selecciona el origen de contacto'; return; }
   document.getElementById('paso2-errors').textContent='';
   const sec = parseInt(document.getElementById('f-seccion').value);
-  const resp = RESPONSABLES[sec] || CAPTURISTA.id;
+  let resp = RESPONSABLES[sec] || CAPTURISTA.id;   // provisional: la BD decide el real (ver guardarEnSupabase)
   const esOtraSeccion = sec !== CAPTURISTA.seccion_base && resp !== CAPTURISTA.id;
   const nombre = document.getElementById('f-nombre').value.trim() + ' ' +
                  document.getElementById('f-paterno').value.trim() + ' ' +
@@ -1272,6 +1272,11 @@ async function guardarRegistro() {
   document.getElementById('sc3').className='step-circle done';
   document.getElementById('sl3').className='step-label active';
   const compLabels={1:'Contacto',2:'Simpatiza',3:'Seguro vota',4:'Moviliza'};
+  // [FIX 2 sep · B3] `resp` se calculó ANTES de guardar con el mapa demo
+  // RESPONSABLES; el real lo decide la BD. Se re-lee de `nuevo` (ya actualizado).
+  resp = nuevo.resp || resp;
+  const _yo = (window._sesion && window._sesion.id) || CAPTURISTA.id;
+  const respNombre = (resp === _yo) ? ((window._sesion && window._sesion.nombre) || 'Yo') : nombreUsuario(resp);
   document.getElementById('success-sub').textContent = nuevo.nombre;
   document.getElementById('success-card').innerHTML=`
     <div class="success-row"><span class="success-label">ID</span><span class="success-val">${nuevo.id}</span></div>
@@ -1279,11 +1284,15 @@ async function guardarRegistro() {
     <div class="success-row"><span class="success-label">Compromiso</span><span class="success-val">${nuevo.comp} — ${compLabels[nuevo.comp]}</span></div>
     <div class="success-row"><span class="success-label">Origen</span><span class="success-val">${nuevo.origen}</span></div>
     <div class="success-row"><span class="success-label">Capturado por</span><span class="success-val" title="${CAPTURISTA.id}">${(window._sesion&&window._sesion.nombre)||nombreUsuario(CAPTURISTA.id)}</span></div>
-    <div class="success-row"><span class="success-label">Asignado a</span><span class="success-val" style="color:${esOtraSeccion?'var(--cyan)':'var(--green)'}">${resp}</span></div>`;
-  if(esOtraSeccion){
+    <div class="success-row"><span class="success-label">Asignado a</span><span class="success-val" title="${resp}" style="color:${(resp!==_yo)?'var(--cyan)':'var(--green)'}">${respNombre}</span></div>`;
+  // [FIX 2 sep · B3] El aviso de reasignación se decide con el responsable REAL
+  // que devolvió la BD, no con el mapa demo.
+  if(resp && resp !== _yo){
     document.getElementById('asign-box').style.display='block';
     document.getElementById('asign-box-desc').textContent=
-      `Ciudadano en sección ${sec} → asignado a ${nombreUsuario(resp)} (responsable territorial). Tú recibes crédito de captura.`;
+      `Ciudadano en sección ${sec} → asignado a ${respNombre} (responsable territorial). Tú recibes crédito de captura.`;
+  } else {
+    const ab=document.getElementById('asign-box'); if(ab) ab.style.display='none';
   }
   window.scrollTo(0,0);
 }
@@ -2052,6 +2061,18 @@ async function guardarEnSupabase(nuevo) {
     }
 
     if(errCiudadano) throw new Error('Error al guardar: ' + errCiudadano.message);
+
+    // [FIX 2 sep · B3] La BD corrige municipio (trg_ciudadanos_municipio) y asigna
+    // responsable (trg_asignar_responsable) AL INSERTAR. Antes se pintaba lo que
+    // traía el formulario: "280 · COLIMA" y un UUID crudo en "Asignado a". Se
+    // toma lo que devolvió el INSERT y se escribe de vuelta en `nuevo`, que es lo
+    // que usa la tarjeta de éxito.
+    if (ciudadano) {
+      if (ciudadano.municipio)       { ciudadanoData.municipio = ciudadano.municipio; nuevo.mun = ciudadano.municipio; }
+      if (ciudadano.responsable_id)  { ciudadanoData.responsable_id = ciudadano.responsable_id; nuevo.resp = ciudadano.responsable_id; }
+      if (ciudadano.capturista_id)   { ciudadanoData.capturista_id = ciudadano.capturista_id; nuevo.cap_por = ciudadano.capturista_id; }
+      try { await cargarNombresUsuarios([nuevo.resp, nuevo.cap_por]); } catch(e) {}
+    }
 
     // Agregar al array local inmediatamente
     _ciudadanosCargados = true;
