@@ -38,7 +38,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 .tab-icon{font-size:16px;display:block;margin-bottom:2px;}
 
 /* SCREENS */
-.screen{display:none;padding:16px;padding-bottom:100px;}
+.screen{display:none;padding:16px;padding-bottom:150px;} /* [FIX 2 sep · C4] 100→150: el shell superpone un footer fixed y el FAB tapaba el final de la tarjeta */
 .screen.active{display:block;}
 
 /* CAPTURA ID del capturista */
@@ -143,10 +143,10 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 .success-title{font-size:20px;font-weight:600;color:var(--green);margin-bottom:6px;}
 .success-sub{font-size:13px;color:var(--text2);margin-bottom:24px;}
 .success-card{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:14px;text-align:left;margin-bottom:16px;}
-.success-row{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px solid var(--border);}
+.success-row{display:flex;justify-content:space-between;gap:10px;font-size:12px;padding:5px 0;border-bottom:1px solid var(--border);}
 .success-row:last-child{border-bottom:none;}
 .success-label{color:var(--text3);}
-.success-val{font-family:var(--mono);color:var(--text);}
+.success-val{font-family:var(--mono);color:var(--text);text-align:right;overflow-wrap:anywhere;min-width:0;} /* [FIX 2 sep · C4] los valores se salían de la tarjeta en 360px */
 .asign-box{background:rgba(6,182,212,0.08);border:1px solid rgba(6,182,212,0.25);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;}
 .asign-box-title{color:var(--cyan);font-weight:600;margin-bottom:4px;}
 .asign-box-desc{color:var(--text2);font-family:var(--mono);}
@@ -210,7 +210,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 .progress-fill{height:100%;border-radius:99px;}
 
 /* FAB */
-.fab{position:fixed;bottom:24px;right:20px;width:56px;height:56px;background:var(--accent);border-radius:50%;border:none;font-size:26px;color:#fff;cursor:pointer;box-shadow:0 4px 20px rgba(59,130,246,0.4);z-index:300;display:flex;align-items:center;justify-content:center;}
+.fab{position:fixed;bottom:72px;right:16px;width:56px;height:56px;background:var(--accent);border-radius:50%;border:none;font-size:26px;color:#fff;cursor:pointer;box-shadow:0 4px 20px rgba(59,130,246,0.4);z-index:300;display:flex;align-items:center;justify-content:center;}
 
 /* ── Back button (solo visible fuera del iframe) ── */
 #btn-back-menu {
@@ -250,6 +250,19 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 .ine-procesando{display:none;flex-direction:column;align-items:center;gap:12px;color:#cbd5e1;font-family:var(--mono);font-size:13px;}
 .ine-spinner{width:36px;height:36px;border:3px solid rgba(59,130,246,.25);border-top-color:#3b82f6;border-radius:50%;animation:inespin .8s linear infinite;}
 @keyframes inespin{to{transform:rotate(360deg)}}
+/* [FIX 2 sep · C4] Ajustes para pantallas ≤400px (celulares comunes de campo) */
+@media (max-width:400px){
+  .topbar{padding:10px 12px;gap:8px;}
+  .topbar-title{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .topbar-sub{font-size:9px;}
+  .topbar-info{min-width:0;flex:1;}
+  .tab{font-size:12px;padding:10px 4px;}
+  .tab-icon{font-size:14px;}
+  .capturista-bar{padding:10px 12px;}
+  .step-label{font-size:10px;}
+  .success-card{padding:12px 10px;}
+  .success-row{font-size:11px;}
+}
 </style>
 </head>
 <script>
@@ -611,7 +624,10 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 </div>
 
 <!-- FAB -->
-<button class="fab" onclick="showTab('captura');nuevoRegistro()" title="Nuevo registro">+</button>
+<!-- [FIX 2 sep · C4] El FAB se encimaba sobre la tarjeta "¡Registro guardado!" y sobre el
+     formulario. En la pestaña Capturar no aporta nada (ya estás capturando): se muestra
+     solo en Buscar y Mi Sección. Ver showTab(). -->
+<button class="fab" id="fab-nuevo" onclick="showTab('captura');nuevoRegistro()" title="Nuevo registro" style="display:none">+</button>
 
 <script>
 // ─── DATOS SIMULADOS ───────────────────────────────────────────────────────
@@ -984,6 +1000,8 @@ function showTab(tab) {
     document.getElementById('tab-'+t).classList.toggle('active',t===tab);
     document.getElementById('screen-'+t).classList.toggle('active',t===tab);
   });
+  // [FIX 2 sep · C4] FAB solo fuera de la pestaña de captura.
+  const _fab = document.getElementById('fab-nuevo'); if (_fab) _fab.style.display = (tab==='captura') ? 'none' : 'flex';
   if(tab==='buscar'){ buscar(); }
   if(tab==='lista'){ renderLista(); }
 }
@@ -1260,7 +1278,7 @@ async function guardarRegistro() {
     <div class="success-row"><span class="success-label">Sección</span><span class="success-val">${nuevo.sec} · ${nuevo.mun}</span></div>
     <div class="success-row"><span class="success-label">Compromiso</span><span class="success-val">${nuevo.comp} — ${compLabels[nuevo.comp]}</span></div>
     <div class="success-row"><span class="success-label">Origen</span><span class="success-val">${nuevo.origen}</span></div>
-    <div class="success-row"><span class="success-label">Capturado por</span><span class="success-val">${CAPTURISTA.id}</span></div>
+    <div class="success-row"><span class="success-label">Capturado por</span><span class="success-val" title="${CAPTURISTA.id}">${(window._sesion&&window._sesion.nombre)||nombreUsuario(CAPTURISTA.id)}</span></div>
     <div class="success-row"><span class="success-label">Asignado a</span><span class="success-val" style="color:${esOtraSeccion?'var(--cyan)':'var(--green)'}">${resp}</span></div>`;
   if(esOtraSeccion){
     document.getElementById('asign-box').style.display='block';
