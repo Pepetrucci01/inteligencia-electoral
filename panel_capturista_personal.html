@@ -25,11 +25,22 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 
 /* ── TOPBAR ── */
 .topbar{background:var(--bg2);border-bottom:1px solid var(--border2);padding:0 16px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;}
-.tb-left{display:flex;align-items:center;gap:10px;}
+.tb-left{display:flex;align-items:center;gap:10px;min-width:0;flex:1;} /* [FIX 2 sep · C4] min-width:0 para que el texto pueda recortarse */
+.tb-left > div:last-child{min-width:0;}
 .tb-av{width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:600;flex-shrink:0;}
-.tb-name{font-size:13px;font-weight:600;}
-.tb-id{font-size:10px;font-family:var(--mono);color:var(--text3);}
-.phase-badge{font-size:11px;font-family:var(--mono);padding:4px 12px;border-radius:99px;font-weight:600;}
+.tb-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tb-id{font-size:10px;font-family:var(--mono);color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;} /* [FIX 2 sep · C4] 'Secc. 280 · TECOMÁN' se desbordaba por abajo del header en 360px */
+.phase-badge{font-size:11px;font-family:var(--mono);padding:4px 12px;border-radius:99px;font-weight:600;white-space:nowrap;flex-shrink:0;}
+/* [FIX 2 sep · C4] Celular: el header de 52px no cabía con nombre + 'FASE 1 · 277 días' + Salir.
+   Se compacta el badge y el botón; el nombre se recorta con puntos suspensivos. */
+@media (max-width:420px){
+  .topbar{padding:0 10px;gap:6px;}
+  .tb-av{width:28px;height:28px;font-size:11px;}
+  .tb-name{font-size:12px;}
+  .tb-id{font-size:9px;}
+  .phase-badge{font-size:9px;padding:3px 7px;}
+  .topbar > button{padding:4px 7px !important;font-size:10px !important;margin-left:4px !important;}
+}
 
 /* ── TABS ── */
 .tabs{display:flex;background:var(--bg3);border-bottom:1px solid var(--border);position:sticky;top:52px;z-index:199;}
@@ -57,7 +68,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 .rol-consulta    #tab-eleccion { display:none; }
 
 /* ── SCREENS ── */
-.screen{display:none;padding:14px 16px 100px;}
+.screen{display:none;padding:14px 16px 150px;} /* [FIX 2 sep · C4] 100→150: el shell superpone un crédito fixed abajo */
 .screen.active{display:block;}
 
 /* ── FASE BANNER ── */

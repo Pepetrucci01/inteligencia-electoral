@@ -480,6 +480,9 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
       <div class="bar-row"><div class="bar-label">Referido</div><div class="bar-track"><div class="bar-fill origen-bar-fill" style="width:0%;background:var(--purple)"></div></div><div class="bar-val origen-bar-val">—</div><div class="bar-pct origen-bar-pct">—</div></div>
       <div class="bar-row"><div class="bar-label">Evento</div><div class="bar-track"><div class="bar-fill origen-bar-fill" style="width:0%;background:var(--amber)"></div></div><div class="bar-val origen-bar-val">—</div><div class="bar-pct origen-bar-pct">—</div></div>
       <div class="bar-row"><div class="bar-label">Digital</div><div class="bar-track"><div class="bar-fill origen-bar-fill" style="width:0%;background:var(--cyan)"></div></div><div class="bar-val origen-bar-val">—</div><div class="bar-pct origen-bar-pct">—</div></div>
+      <!-- [FIX 2 sep] 'Otro' / sin dato: la carga inicial por Excel entra así. Sin este
+           renglón el 99% de la semilla no aparecía en ningún lado. -->
+      <div class="bar-row"><div class="bar-label">Otro / sin dato</div><div class="bar-track"><div class="bar-fill origen-bar-fill" style="width:0%;background:var(--text3)"></div></div><div class="bar-val origen-bar-val">—</div><div class="bar-pct origen-bar-pct">—</div></div>
     </div>
   </div>
 </div>
@@ -975,6 +978,66 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
 </div><!-- /main -->
 
 <script>
+// ═══════════════════════════════════════════════════════════════════════════
+// [FIX 2 sep · B1/B2 · #9] NORMALIZADOR CANÓNICO DE MUNICIPIO (front)
+// ---------------------------------------------------------------------------
+// Espejo de normaliza_municipio() de la base. Mayúsculas, sin acentos, y
+// expande las abreviaturas que este módulo usa en sus <select> y chips
+// ('Villa de Álv.', 'V. Álvarez') a la forma canónica 'VILLA DE ALVAREZ'.
+// Con esto 'Tecomán' === 'TECOMÁN' === 'TECOMAN', que era la raíz de:
+//   · Por municipio → Manzanillo: 0 secciones / 0 capturas / 0 meta
+//   · Estructura de campo → Villa de Álvarez: 0 operadores
+// La BD mezcla 'VILLA DE ALVAREZ' (sin acento) con 'TECOMÁN' (con), así que
+// comparar sin normalizar NUNCA va a empatar de forma confiable.
+// ═══════════════════════════════════════════════════════════════════════════
+function repN(x){
+  let v = String(x == null ? '' : x).toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+  v = v.replace(/\s+/g,' ');
+  if (/^(V\.?|VILLA)( DE)? ?ALV(\.|AREZ)?$/.test(v)) v = 'VILLA DE ALVAREZ';
+  return v;
+}
+function repMunDisplay(x){
+  const CANON = {
+    'TECOMAN':'Tecomán','COLIMA':'Colima','VILLA DE ALVAREZ':'Villa de Álvarez',
+    'MANZANILLO':'Manzanillo','ARMERIA':'Armería','COMALA':'Comala','CUAUHTEMOC':'Cuauhtémoc',
+    'MINATITLAN':'Minatitlán','IXTLAHUACAN':'Ixtlahuacán','COQUIMATLAN':'Coquimatlán'
+  };
+  const k = repN(x);
+  return CANON[k] || String(x||'').toLowerCase().replace(/(^|\s)\S/g, t => t.toUpperCase());
+}
+
+// [FIX 2 sep · B1/B2] ALCANCE TERRITORIAL DEL MÓDULO.
+// Un coordinador MUNICIPAL no debe ver ni siquiera los NOMBRES de los otros
+// municipios en filtros, chips o gráficas. La base ya le devuelve solo lo suyo
+// (RLS + RPCs SECURITY INVOKER); esto quita del front lo que no le toca.
+function repAlcance(){
+  const s = (typeof getSesion === 'function' ? getSesion() : null) || {};
+  const municipal = (s.rol === 'coordinador') && !!s.municipio;
+  return { municipal, municipio: municipal ? repN(s.municipio) : null, display: municipal ? repMunDisplay(s.municipio) : null, rol: s.rol || '' };
+}
+function repAplicarAlcanceTerritorial(){
+  const a = repAlcance();
+  if (!a.municipal) return;
+  // 1) <select> de municipio: dejar solo el propio, seleccionado y bloqueado.
+  ['fil-municipio','ec-fil-mun','diae-mun-sel'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    let propia = null;
+    [...sel.options].forEach(o => {
+      if (repN(o.value || o.textContent) === a.municipio) propia = o; else o.remove();
+    });
+    if (!propia) { propia = new Option(a.display, a.display); sel.appendChild(propia); }
+    sel.value = propia.value;
+    sel.disabled = true;
+    sel.title = 'Tu alcance es ' + a.display;
+  });
+  // 2) Textos "en 10 municipios"
+  document.querySelectorAll('.kpi-trend').forEach(el => {
+    if (/en 10 municipios/i.test(el.textContent)) el.textContent = 'en ' + a.display;
+  });
+}
+document.addEventListener('DOMContentLoaded', repAplicarAlcanceTerritorial);
+
 // [SWAP LUIS] Sincroniza las 2 tarjetas de META ESTATAL visibles con IE_METAS_CASILLA (demo sin sesión).
 // Narrativa de proyección recalculada y coherente: meta 208,717 / 4.8% / 48 sem / req 4,140 / brecha x7.2 / proy 37,552 (18.0%).
 (function(){
@@ -990,9 +1053,17 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
     if(typeof IE_METAS_CASILLA!=='undefined'&&IE_METAS_CASILLA.meta_estatal) return IE_METAS_CASILLA.meta_estatal;
     return 208754;   // [FIX 1 sep] canonico (era 208717)
   }
-  function apply(){var f=metaActual().toLocaleString('es-MX');
+  function apply(){
+    // [FIX 2 sep · BUG-B2-04] A un coordinador MUNICIPAL no se le pinta la meta
+    // estatal horneada mientras carga: veía "Meta 2027: 208,754" un instante y
+    // luego 29,884. Ese parpadeo huele a fuga aunque no lo sea. Si aún no llegó
+    // su RPC, se muestra "…" y ya. Un rol estatal sí ve 208,754 de entrada.
+    var esMunicipal = false;
+    try { var _s = JSON.parse(localStorage.getItem('electoral_sesion')||'null'); esMunicipal = !!(_s && _s.rol==='coordinador' && _s.municipio); } catch(e){}
+    var tieneRPC = !!(window._kpisReportes && Number(window._kpisReportes.meta) > 0);
+    var f = (esMunicipal && !tieneRPC) ? '…' : metaActual().toLocaleString('es-MX');
     var a=document.getElementById('rep-meta-kpi'); if(a)a.textContent=f;
-    var b=document.getElementById('rep-meta-bar'); if(b)b.textContent=f+' meta';
+    var b=document.getElementById('rep-meta-bar'); if(b)b.textContent=(f==='…'?'… meta':f+' meta');
   }
   if(document.readyState!=='loading')apply(); else document.addEventListener('DOMContentLoaded',apply);
 })();
@@ -1505,7 +1576,7 @@ function aplicarFiltroSecciones() {
   }
 
   let data = [...SEC_DATA];
-  if(mun) data = data.filter(s => s.municipio === mun);
+  if(mun) data = data.filter(s => repN(s.municipio) === repN(mun));   // [FIX 2 sep · #9]
   if(df)  data = data.filter(s => s.df === df);
   if(dl)  data = data.filter(s => s.dl === dl);
   if(sem) {
@@ -1606,7 +1677,7 @@ function exportarSecciones() {
   const dl   = document.getElementById('fil-dl').value;
 
   let data = [...SEC_DATA];
-  if(mun) data = data.filter(s => s.municipio === mun);
+  if(mun) data = data.filter(s => repN(s.municipio) === repN(mun));   // [FIX 2 sep · #9]
   if(df)  data = data.filter(s => s.df === df);
   if(dl)  data = data.filter(s => s.dl === dl);
 
@@ -1677,18 +1748,20 @@ function buildCharts(tab){
       type:'doughnut',
       data:{
         labels:['Validado','Pendiente','Incompleto','Duplicado'],
-        datasets:[{data:[7193,1763,636,408],backgroundColor:['#22c55e','#f59e0b','#3b82f6','#ef4444'],borderWidth:0,hoverOffset:4}]
+        datasets:[{data:[0,0,0,0], /* [FIX 2 sep] era [7193,1763,636,408] horneado; lo llena filtrarCalidad() */ backgroundColor:['#22c55e','#f59e0b','#3b82f6','#ef4444'],borderWidth:0,hoverOffset:4}]
       },
       options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false}}}
     });
     window._chartCompromiso = new Chart(document.getElementById('ch-compromiso'),{
       type:'doughnut',
       data:{
-        labels:['4 Moviliza','3 Seg. vota','2 Simpatiza','1 Contacto'],
-        datasets:[{data:[1169,3432,3219,2180],backgroundColor:['#a855f7','#22c55e','#3b82f6','#64748b'],borderWidth:0,hoverOffset:4}]
+        labels:['1 Contacto','2 Simpatiza','3 Seg. vota','4 Moviliza'],   // [FIX 2 sep] orden 1→4 = comp[] de la RPC
+        datasets:[{data:[0,0,0,0],backgroundColor:['#64748b','#3b82f6','#22c55e','#a855f7'], /* [FIX 2 sep] orden 1→4 = comp[] de la RPC; era [1169,3432,3219,2180] horneado */ borderWidth:0,hoverOffset:4}]
       },
       options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false}}}
     });
+    // [FIX 2 sep] Repintar con los datos reales ya cargados (o ceros si aún no llegan).
+    if (typeof filtrarCalidad === 'function') filtrarCalidad(CAL_SEL);
   }
 
   if(tab==='municipal'){
@@ -1734,7 +1807,15 @@ function buildCharts(tab){
   }
 
   if(tab==='estructura'){
-    const munEst={Manzanillo:23,Colima:12,'V. Álvarez':8,Tecomán:6,Armería:4,Comala:3,Cuauhtémoc:2,Minatitlán:1,Coquimatlán:1};
+    // [FIX 2 sep · BUG-B1/B2-03] munEst era un objeto HORNEADO (Manzanillo 23,
+    // Colima 12, ...): el coordinador de Tecomán veía la estructura de los 10
+    // municipios. Ahora se agrupa desde CAPTURISTAS_DATA (RPC real), que ya
+    // viene acotada por RLS: un municipal solo tendrá su barra.
+    const munEst = {};
+    (typeof getCapturistasRanking === 'function' ? getCapturistasRanking() : []).forEach(c => {
+      const k = repMunDisplay(c.municipio || 'Sin municipio');
+      munEst[k] = (munEst[k] || 0) + 1;
+    });
     window.chartEstructuraMun = new Chart(document.getElementById('ch-estructura-mun'),{
       type:'bar',
       data:{
@@ -2497,7 +2578,7 @@ function limpiarFiltroEstructura() {
 
 function filtrarCapturistas() {
   let data = getCapturistasRanking();
-  if(EC_FILTRO_MUN)    data = data.filter(c => c.municipio === EC_FILTRO_MUN);
+  if(EC_FILTRO_MUN)    data = data.filter(c => repN(c.municipio) === repN(EC_FILTRO_MUN));   // [FIX 2 sep · #9]
   if(EC_FILTRO_STATUS) data = data.filter(c => c.status === EC_FILTRO_STATUS);
   if(EC_FILTRO_REND) {
     data = data.filter(c => {
@@ -3152,23 +3233,69 @@ renderPerfil(PERFIL_DATA);
 // ══════════════════════════════════════════════════════
 // CALIDAD DEL PADRÓN — FILTRO POR MUNICIPIO
 // ══════════════════════════════════════════════════════
-const CALIDAD_MUN = {
-  'todos':        {val:7193, pen:1763, inc:636, dup:408, comp:[1169,3432,3219,2180], origen:[4538,2519,1711,1232]},
-  'Tecomán':      {val:1105, pen:302,  inc:88,  dup:42,  comp:[180,526,493,338],    origen:[697,388,263,189]},
-  'Colima':       {val:1166, pen:286,  inc:103, dup:65,  comp:[190,556,522,352],    origen:[736,409,277,198]},
-  'Villa de Álv.':{val:1003, pen:246,  inc:89,  dup:55,  comp:[163,477,446,307],    origen:[633,351,238,171]},
-  'Manzanillo':   {val:1516, pen:372,  inc:134, dup:86,  comp:[212,722,674,500],    origen:[957,531,361,259]},
-  'Armería':      {val:495,  pen:122,  inc:44,  dup:27,  comp:[82,234,219,153],     origen:[313,174,118,83]},
-  'Comala':       {val:454,  pen:112,  inc:40,  dup:25,  comp:[74,215,201,141],     origen:[287,159,108,77]},
-  'Cuauhtémoc':   {val:446,  pen:109,  inc:39,  dup:25,  comp:[72,211,197,139],     origen:[281,156,106,76]},
-  'Minatitlán':   {val:450,  pen:110,  inc:40,  dup:25,  comp:[73,213,199,140],     origen:[283,157,107,77]},
-  'Ixtlahuacán':  {val:223,  pen:55,   inc:20,  dup:12,  comp:[36,106,99,69],       origen:[140,78,53,39]},
-  'Coquimatlán':  {val:335,  pen:82,   inc:30,  dup:19,  comp:[55,159,148,104],     origen:[211,116,78,56]},
-};
+// [FIX 2 sep · BUG-B1/B2-01 · el "crítico" de la guía de pruebas]
+// CALIDAD_MUN era una tabla HORNEADA con 10 municipios inventados (Colima
+// val:1166/pen:286/inc:103/dup:65 — los números exactos que vio el coordinador
+// de Tecomán al picar "Colima"). No era fuga de datos reales: eran cifras demo
+// que se le enseñaban a cualquiera. Ahora se llena desde get_calidad_padron(),
+// RPC SECURITY INVOKER: un municipal recibe SOLO su municipio desde la base.
+// Las llaves se guardan normalizadas (repN) para que 'Tecomán'/'TECOMÁN' empaten.
+let CALIDAD_MUN = {};
+let CAL_SEL = 'todos';
+let _calidadCargada = false;
+
+function _calVacio(){ return {val:0,pen:0,inc:0,dup:0,comp:[0,0,0,0],origen:[0,0,0,0,0]}; }
+
+function construirChipsCalidad(){
+  const cont = document.getElementById('cal-mun-btns');
+  if (!cont) return;
+  const a = repAlcance();
+  const tot = k => { const d=CALIDAD_MUN[k]; return d ? d.val+d.pen+d.inc+d.dup : 0; };
+  const keys = Object.keys(CALIDAD_MUN).filter(k => k !== 'todos').sort((x,y) => tot(y)-tot(x));
+  const estilo = 'font-family:var(--mono);font-size:10px;padding:4px 10px;border-radius:5px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;';
+  let html = '';
+  if (!a.municipal) html += '<button class="cal-mun-btn" onclick="filtrarCalidad(\'todos\')" data-mun="todos" style="'+estilo+'">Todos</button>';
+  keys.forEach(k => {
+    html += '<button class="cal-mun-btn" onclick="filtrarCalidad(\''+k+'\')" data-mun="'+k+'" style="'+estilo+'">'+repMunDisplay(k)+'</button>';
+  });
+  cont.innerHTML = html;
+  // Un municipal solo tiene un chip: no tiene caso mostrárselo como "filtro".
+  if (a.municipal && keys.length <= 1 && cont.parentElement) cont.parentElement.style.display = 'none';
+}
+
+async function cargarCalidadPadron(){
+  try{
+    if (typeof esperarSupabase === 'function') { try { await esperarSupabase(8000); } catch(e){} }
+    if (!window.supabase) return;
+    const { data, error } = await window.supabase.rpc('get_calidad_padron');
+    if (error) { console.warn('get_calidad_padron:', error); return; }
+    const out = {}; const todos = _calVacio();
+    (data || []).forEach(r => {
+      const k = repN(r.municipio);
+      const d = { val:+r.val||0, pen:+r.pen||0, inc:+r.inc||0, dup:+r.dup||0,
+                  comp:(r.comp||[0,0,0,0]).map(Number), origen:(r.origen||[0,0,0,0,0]).map(Number) };
+      out[k] = d;
+      todos.val+=d.val; todos.pen+=d.pen; todos.inc+=d.inc; todos.dup+=d.dup;
+      d.comp.forEach((v,i)=>{ todos.comp[i]=(todos.comp[i]||0)+v; });
+      d.origen.forEach((v,i)=>{ todos.origen[i]=(todos.origen[i]||0)+v; });
+    });
+    out['todos'] = todos;
+    CALIDAD_MUN = out;
+    _calidadCargada = true;
+    construirChipsCalidad();
+    const a = repAlcance();
+    CAL_SEL = (a.municipal && out[a.municipio]) ? a.municipio : 'todos';
+    filtrarCalidad(CAL_SEL);
+  }catch(e){ console.warn('cargarCalidadPadron:', e); }
+}
+cargarCalidadPadron();
 
 function filtrarCalidad(mun) {
-  const d = CALIDAD_MUN[mun] || CALIDAD_MUN['todos'];
+  mun = (mun === 'todos') ? 'todos' : repN(mun);
+  CAL_SEL = mun;
+  const d = CALIDAD_MUN[mun] || CALIDAD_MUN['todos'] || _calVacio();
   const total = d.val + d.pen + d.inc + d.dup;
+  const pct = (n) => total > 0 ? (n/total*100).toFixed(1)+'%' : '—';
 
   // Actualizar botones
   document.querySelectorAll('.cal-mun-btn').forEach(b => {
@@ -3179,13 +3306,14 @@ function filtrarCalidad(mun) {
   });
 
   // Actualizar KPIs
-  document.getElementById('cal-kpi-val').textContent = d.val.toLocaleString();
-  document.getElementById('cal-kpi-val-pct').textContent = (d.val/total*100).toFixed(1)+'% de la base';
-  document.getElementById('cal-kpi-pen').textContent = d.pen.toLocaleString();
-  document.getElementById('cal-kpi-pen-pct').textContent = (d.pen/total*100).toFixed(1)+'%';
-  document.getElementById('cal-kpi-inc').textContent = d.inc.toLocaleString();
-  document.getElementById('cal-kpi-inc-pct').textContent = (d.inc/total*100).toFixed(1)+'%';
-  document.getElementById('cal-kpi-dup').textContent = d.dup.toLocaleString();
+  const _setT = (id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
+  _setT('cal-kpi-val', d.val.toLocaleString());
+  _setT('cal-kpi-val-pct', total>0 ? pct(d.val)+' de la base' : (_calidadCargada?'sin registros':'cargando…'));
+  _setT('cal-kpi-pen', d.pen.toLocaleString());
+  _setT('cal-kpi-pen-pct', pct(d.pen));
+  _setT('cal-kpi-inc', d.inc.toLocaleString());
+  _setT('cal-kpi-inc-pct', pct(d.inc));
+  _setT('cal-kpi-dup', d.dup.toLocaleString());
 
   // Actualizar gráficas si ya fueron construidas
   if (window._chartValidacion) {
@@ -3196,8 +3324,10 @@ function filtrarCalidad(mun) {
     window._chartCompromiso.data.datasets[0].data = d.comp;
     window._chartCompromiso.update();
   }
-  if (window._chartOrigen) {
-    const maxOrigen = Math.max(...d.origen);
+  // [FIX 2 sep] Antes: if (window._chartOrigen) {...} — ese chart NUNCA se crea,
+  // así que las barras de origen jamás se pintaban. Son barras HTML, no Chart.js.
+  {
+    const maxOrigen = Math.max(1, ...d.origen);
     // Actualizar barras de origen
     const origenEls = document.querySelectorAll('.origen-bar-fill');
     const origenVals = document.querySelectorAll('.origen-bar-val');

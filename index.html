@@ -197,6 +197,24 @@ body.rol-consulta     .kpi-estatal { display:none; }
   .hamburger{display:flex;}
   .collapse-btn{display:none;}
   .pb-nums{display:none;}
+  /* [FIX 2 sep · C4] Topbar del shell en celular: "Registro y búsqueda de ciudadanos"
+     se partía en 4 renglones y "Administrador Principal" en 2, empujando todo.
+     Ahora título/subtítulo van en una línea con puntos suspensivos, y los
+     badges secundarios (Sistema activo, días, reloj) se ocultan: en 360px no caben. */
+  .topbar{padding:0 12px;gap:8px;}
+  .topbar-left{min-width:0;flex:1;}
+  .topbar-left > div:last-child{min-width:0;}
+  .tb-title,.tb-sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .tb-sub{font-size:10px;}
+  .topbar-right{gap:6px;flex-shrink:0;}
+  #tb-sistema,#tb-dias{display:none;}   /* solo estos dos; el badge de alcance (Vista Estatal) se queda */
+  .topbar-right .clock{display:none;}
+  #tb-usuario{display:none !important;}
+  .breadcrumb{padding:0 12px;white-space:nowrap;overflow:hidden;}
+  .breadcrumb .bc-cur{overflow:hidden;text-overflow:ellipsis;}
+  #votera-credito{font-size:9px;right:8px;bottom:4px;}
+  #votera-credito .credito-largo{display:none;}
+  #votera-credito .credito-corto{display:inline !important;}
 }
 
 /* ── [T25.2] Tooltips descriptivos en tarjetas KPI ──────────────────────────
@@ -396,7 +414,7 @@ body.rol-consulta     .kpi-estatal { display:none; }
         <span style="color:var(--text3)">·</span>
         <a onclick="cerrarSesion()" style="color:var(--red);cursor:pointer;text-decoration:none;font-size:10px;" title="Cerrar sesión">⏻ Salir</a>
       </span>
-      <span class="tb-badge" style="background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.25)">● Sistema activo</span>
+      <span class="tb-badge" id="tb-sistema" style="background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.25)">● Sistema activo</span>
       <span class="tb-badge" style="background:var(--bg3);color:var(--text3);border:1px solid var(--border2)" id="tb-dias">—</span>
       <span class="clock" id="clock">--:--:--</span>
     </div>
@@ -562,7 +580,7 @@ function actualizarContadorModulos(){
   }catch(_e){}
 }
 
-const APP_BUILD = '20260901d'; // [01/09 b] panel_capturista_personal sin datos horneados // [31/08] subir esta cadena cada vez que se actualice un modulo: es el rompe-cache de los iframes
+const APP_BUILD = '20260902a'; // [02/09] captura (identidad real, Mi Sección, scan INE, responsive) · reportes (calidad en vivo, alcance municipal) · war room (alertas por rol) · panel capturista (header móvil) // [31/08] subir esta cadena cada vez que se actualice un modulo: es el rompe-cache de los iframes
 
 let collapsed = false;
 
@@ -971,8 +989,12 @@ function cerrarSesion(){
 })();
 </script>
 <!-- Credito de propiedad - VOTERA / MEFT Consulting -->
-<div aria-hidden="true" style="position:fixed;right:10px;bottom:8px;z-index:9999;pointer-events:none;font-family:'IBM Plex Mono',monospace;font-size:10px;color:rgba(138,154,181,0.45);letter-spacing:.02em;user-select:none;">
-  VOTERA™ · © 2026 MEFT Consulting · Todos los derechos reservados
+<!-- [FIX 2 sep · C4] Este crédito es position:fixed con z-index 9999: en celular se
+     partía en 2 renglones y quedaba ENCIMA del contenido de todos los módulos
+     (era el 80% de lo "encimado" en las capturas de prueba). En móvil se reduce
+     a una línea corta, sin envolver, pegada abajo a la derecha. -->
+<div id="votera-credito" aria-hidden="true" style="position:fixed;right:10px;bottom:8px;z-index:9999;pointer-events:none;font-family:'IBM Plex Mono',monospace;font-size:10px;color:rgba(138,154,181,0.45);letter-spacing:.02em;user-select:none;white-space:nowrap;">
+  <span class="credito-largo">VOTERA™ · © 2026 MEFT Consulting · Todos los derechos reservados</span><span class="credito-corto" style="display:none">VOTERA™ · © 2026 MEFT</span>
 </div>
 </body>
 </html>
