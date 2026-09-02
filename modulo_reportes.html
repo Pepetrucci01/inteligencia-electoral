@@ -2043,7 +2043,26 @@ function getSesion() {
 }
 
 // Inicializar panel de descargas según rol
+// [FIX 2 sep · decisión José] El Observador (consulta) NO descarga. Ocultamos
+// TODO botón marcado como accion-escritura (los ⬇ Excel de Estructura y Ranking,
+// y "Descargar datos"). La pestaña Descargas ya le queda vacía porque no cae en
+// ningún bloque de rol; esto cierra los botones que viven en otras pestañas.
+function aplicarCandadoDescargas(){
+  try{
+    const rol = (getSesion() && getSesion().rol) || '';
+    const soloLectura = (rol === 'consulta');
+    document.querySelectorAll('.accion-escritura').forEach(el => {
+      el.style.display = soloLectura ? 'none' : '';
+    });
+    // Ocultar también la pestaña Descargas al observador (por claridad).
+    const tabDesc = document.getElementById('tab-descargas');
+    if (tabDesc && soloLectura) tabDesc.style.display = 'none';
+  }catch(e){ console.warn('aplicarCandadoDescargas:', e); }
+}
+document.addEventListener('DOMContentLoaded', aplicarCandadoDescargas);
+
 function initDescargas() {
+  aplicarCandadoDescargas();
   const sesion = getSesion();
 
   // [FIX 1 sep] Sin sesión se inventaba "Usuario Demo · coordinador · Manzanillo
@@ -2073,7 +2092,8 @@ function initDescargas() {
   }
 
   // Mostrar bloque según rol
-  if (rol === 'super_admin' || rol === 'admin' || rol === 'coordinador') {
+  // [FIX 2 sep] coordinador_estatal también puede descargar (alcance estatal).
+  if (rol === 'super_admin' || rol === 'admin' || rol === 'coordinador_estatal' || rol === 'coordinador') {
     document.getElementById('bloque-coordinador').style.display = 'block';
     // También mostrar bloque líder si es coordinador municipal
     if (rol === 'coordinador') {
