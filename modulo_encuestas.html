@@ -132,6 +132,16 @@ input:focus,select:focus,textarea:focus{border-color:var(--cyan);}
 .legend{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:12px;font-size:11px;color:var(--text2);}
 .legend span{display:inline-flex;align-items:center;gap:6px;}
 .dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+
+/* ── CARGA DE RESULTADOS ── */
+.cin{width:78px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);
+     font-family:var(--mono);font-size:11.5px;padding:6px 8px;outline:none;text-align:right;}
+.cin:focus{border-color:var(--cyan);}
+.cin.bad{border-color:var(--red);color:var(--red);}
+.cin::-webkit-outer-spin-button,.cin::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+.cin[type=number]{-moz-appearance:textfield;}
+#cg-body td{padding:7px 8px;}
+#cg-body td:first-child{font-weight:500;white-space:nowrap;}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
@@ -149,6 +159,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--cyan);}
   <div class="tabs">
     <div class="tab active" data-pane="lista" onclick="verTab('lista')">📚 Mis encuestas</div>
     <div class="tab" data-pane="nueva" onclick="verTab('nueva')">➕ Nueva encuesta</div>
+    <div class="tab" data-pane="carga" id="tab-carga" onclick="verTab('carga')">📥 Cargar resultados</div>
     <div class="tab" data-pane="levantar" onclick="verTab('levantar')">📋 Levantar entrevista</div>
     <div class="tab" data-pane="cruce" onclick="verTab('cruce')">🎯 Territorio vs Opinión</div>
     <div class="tab" data-pane="vivo" onclick="verTab('vivo')">📊 Resultados en vivo <span style="font-size:8px;font-weight:700;color:#2dd4bf;background:rgba(20,184,166,.15);padding:1px 5px;border-radius:6px;margin-left:2px;">DEMO</span></div>
@@ -258,6 +269,57 @@ input:focus,select:focus,textarea:focus{border-color:var(--cyan);}
   </div>
 
   <!-- ══════════ TAB 3: LEVANTAR ══════════ -->
+  <!-- ══════════ TAB 3: CARGAR RESULTADOS DE LA BRIGADA ══════════ -->
+  <!-- La brigada levanta en campo con su propio medio y entrega un
+       consolidado por municipio. Aqui se captura: 10 renglones y listo.
+       [SWAP LUIS] Fase 4+: guardarResultados() debe llamar al RPC
+       guardar_resultados_municipio(p_encuesta_id, p_filas) que ya existe
+       en Supabase; y renderCarga() precargar de v_opinion_municipio. -->
+  <div class="pane" id="pane-carga">
+    <div class="card">
+      <div class="card-title">📥 Cargar resultados de la brigada</div>
+      <div class="card-sub">Un renglón por municipio. Los porcentajes de intención deben sumar 100 en cada renglón; si no cuadran, el renglón se marca en rojo antes de que lo guardes.</div>
+      <div class="frow f3">
+        <div class="fitem"><label>Encuesta</label><select id="cg-encuesta" onchange="renderCarga()"></select></div>
+        <div class="fitem"><label>Tu candidato (alimenta el cruce)</label><select id="cg-propia" onchange="onCargaInput()"></select></div>
+        <div class="fitem"><label>Los números vienen en</label><select id="cg-unidad" onchange="onCargaInput()">
+          <option value="porcentaje">Porcentaje (%)</option>
+          <option value="conteo">Conteo de entrevistas</option>
+        </select></div>
+      </div>
+    </div>
+
+    <div class="kpi-row">
+      <div class="kpi pu"><div class="kl">Municipios con dato</div><div class="kv" id="cg-k-mun">0</div><div class="ks">de 10</div></div>
+      <div class="kpi"><div class="kl">Entrevistas totales</div><div class="kv" id="cg-k-n">0</div><div class="ks">suma de los 10</div></div>
+      <div class="kpi gr"><div class="kl">Margen estatal</div><div class="kv" id="cg-k-margen">±—</div><div class="ks">95% de confianza</div></div>
+      <div class="kpi am"><div class="kl">Renglones con error</div><div class="kv" id="cg-k-err">0</div><div class="ks">no suman 100</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Consolidado por municipio</div>
+      <div class="card-sub" id="cg-sub">—</div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead id="cg-head"></thead>
+          <tbody id="cg-body"></tbody>
+        </table>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;align-items:center;">
+        <button class="btn primary" onclick="guardarResultados()">💾 Guardar resultados</button>
+        <button class="btn ghost" onclick="limpiarCarga()">Limpiar renglones</button>
+        <span id="cg-estado" class="mono" style="font-size:11px;color:var(--text3);"></span>
+      </div>
+    </div>
+
+    <div class="aviso">
+      <b>Sobre el margen de error:</b> se calcula por municipio al 95% de confianza con p=0.5.
+      Un municipio con menos de 150 entrevistas se marca BAJA: el dato sirve de referencia
+      interna pero no aguanta una rueda de prensa. Para llegar a ±5% se necesitan ~384
+      entrevistas en ese municipio.
+    </div>
+  </div>
+
   <div class="pane" id="pane-levantar">
     <div class="phone">
       <div class="ph-head">
@@ -293,16 +355,16 @@ input:focus,select:focus,textarea:focus{border-color:var(--cyan);}
          `encuestas` tiene 0 filas, no existe ningun levantamiento real todavia.
          El tab de Resultados en vivo ya venia rotulado como simulacion; este no,
          y se leia como dato real de campo. Se rotula igual. -->
-    <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:8px;
+    <div id="cr-banner" style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:8px;
                 padding:9px 13px;margin-bottom:10px;font-size:11px;color:#fcd34d;font-family:var(--mono,monospace)">
-      ⚠ EJEMPLO DEMOSTRATIVO — cifras de muestra. Aún no hay levantamientos cargados;
-      al capturar entrevistas reales este tablero las reemplazará.
+      ⚠ EJEMPLO DEMOSTRATIVO — cifras de muestra. Aún no hay resultados cargados;
+      en cuanto captures un consolidado en "Cargar resultados" este tablero lo reemplaza.
     </div>
     <div class="kpi-row">
-      <div class="kpi pu"><div class="kl">Entrevistas</div><div class="kv">2,847</div><div class="ks">ejemplo · no es un dato real</div></div>
-      <div class="kpi"><div class="kl">Intención de voto</div><div class="kv">37.8%</div><div class="ks">promedio estatal</div></div>
-      <div class="kpi am"><div class="kl">Indecisos</div><div class="kv">22%</div><div class="ks">bolsa por disputar</div></div>
-      <div class="kpi gr"><div class="kl">Voto firme</div><div class="kv">61%</div><div class="ks">de quienes declaran</div></div>
+      <div class="kpi pu"><div class="kl">Entrevistas</div><div class="kv" id="cr-k-entrev">2,847</div><div class="ks" id="cr-k-entrev-s">ejemplo · no es un dato real</div></div>
+      <div class="kpi"><div class="kl">Intención de voto</div><div class="kv" id="cr-k-int">37.8%</div><div class="ks">promedio estatal ponderado</div></div>
+      <div class="kpi am"><div class="kl">Indecisos</div><div class="kv" id="cr-k-indec">22%</div><div class="ks">bolsa por disputar</div></div>
+      <div class="kpi gr"><div class="kl">Margen estatal</div><div class="kv" id="cr-k-margen">±1.8%</div><div class="ks">al 95% de confianza</div></div>
     </div>
 
     <div class="card">
@@ -486,9 +548,9 @@ function fichaMetodo(m){
   const modos = {Vivienda:'Vivienda', Afluencia:'Afluencia', 'Telefónica':'Telefónica'};
   return `${modos[m.modo] || m.modo} · ${m.diseno}` + (e ? ` · ±${e.toFixed(1)}%` : '');
 }
-function cuadrante(m){
-  const eAlta = m.estructura >= MEDIA_ESTRUCTURA;
-  const oAlta = m.intencion  >= MEDIA_INTENCION;
+function cuadrante(m, mediaE, mediaI){
+  const eAlta = m.estructura >= (mediaE === undefined ? MEDIA_ESTRUCTURA : mediaE);
+  const oAlta = m.intencion  >= (mediaI === undefined ? MEDIA_INTENCION : mediaI);
   if(eAlta && oAlta)  return {t:'Consolidar',  c:'q-verde'};
   if(eAlta && !oAlta) return {t:'Voto blando', c:'q-ambar'};
   if(!eAlta && oAlta) return {t:'Oportunidad', c:'q-cyan'};
@@ -612,7 +674,7 @@ async function crearEncuesta(){
     preguntas: _nueva.preguntas
   });
   CUSTOM_TEMP = [];
-  renderCustom(); renderLista(); poblarSelectorEncuestas();
+  renderCustom(); renderLista(); poblarSelectorEncuestas(); poblarSelectorCarga();
   document.getElementById('n-nombre').value = '';
   document.getElementById('n-desc').value = '';
   verTab('lista');
@@ -684,10 +746,293 @@ function mostrarToast(msg){
   setTimeout(() => t.classList.remove('show'), 2200);
 }
 
+/* ══════════════════════════════════════════════════════════
+   TAB 3: CARGA DE RESULTADOS AGREGADOS POR MUNICIPIO
+   ══════════════════════════════════════════════════════════ */
+
+// Avance territorial real, horneado desde la BD (1 sep 2026).
+// meta = SUM(casillas.meta_proyectada); cap = ciudadanos capturados.
+// La suma de meta da 208,754 (cifra canonica del estado).
+// [SWAP LUIS] Fase 4+: leer de v_opinion_municipio, que ya entrega
+// meta, capturados y pct_avance por municipio en una sola consulta.
+const TERRITORIO = [
+  {mun:'Manzanillo',       meta:58013, cap:2526},
+  {mun:'Colima',           meta:48664, cap:3572},
+  {mun:'Villa de Álvarez', meta:36937, cap:2349},
+  {mun:'Tecomán',          meta:29884, cap:4476},
+  {mun:'Armería',          meta:8432,  cap:653},
+  {mun:'Cuauhtémoc',       meta:8351,  cap:218},
+  {mun:'Comala',           meta:6403,  cap:246},
+  {mun:'Coquimatlán',      meta:5050,  cap:94},
+  {mun:'Minatitlán',       meta:4426,  cap:66},
+  {mun:'Ixtlahuacán',      meta:2594,  cap:76},
+];
+
+// RESULTADOS[encuestaId] = {propia, unidad, filas:{Municipio:{n, v:{opcion:num}}}}
+let RESULTADOS = {};
+
+function confiabilidad(n){
+  if(!n || n < 1) return null;
+  if(n >= 384) return {t:'ALTA',  c:'q-verde'};
+  if(n >= 150) return {t:'MEDIA', c:'q-ambar'};
+  return {t:'BAJA', c:'q-rojo'};
+}
+function opcionesIntencion(e){
+  if(!e) return [];
+  const q = e.preguntas.find(p => p.clave === 'intencion');
+  return q && q.opciones.length ? q.opciones.slice() : [];
+}
+function encuestaCarga(){
+  const sel = document.getElementById('cg-encuesta');
+  return sel ? ENCUESTAS.find(x => x.id === sel.value) : null;
+}
+function bolsaEncuesta(id){
+  if(!RESULTADOS[id]) RESULTADOS[id] = {propia:'', unidad:'porcentaje', filas:{}};
+  return RESULTADOS[id];
+}
+function idMun(m){ return 'cg_' + m.replace(/[^A-Za-zÁÉÍÓÚÑáéíóúñ]/g,''); }
+
+function poblarSelectorCarga(){
+  const sel = document.getElementById('cg-encuesta');
+  if(!sel) return;
+  const prev = sel.value;
+  // Se cargan resultados de cualquier estudio: la brigada entrega el
+  // consolidado cuando el levantamiento ya termino (estado 'cerrada').
+  sel.innerHTML = ENCUESTAS.map(e =>
+    `<option value="${e.id}">${e.nombre} · ${e.estado.toUpperCase()}</option>`).join('')
+    || '<option value="">— no hay encuestas creadas —</option>';
+  if(prev && ENCUESTAS.some(e => e.id === prev)) sel.value = prev;
+  renderCarga();
+}
+
+function renderCarga(){
+  const head = document.getElementById('cg-head');
+  const body = document.getElementById('cg-body');
+  if(!head || !body) return;
+  const e = encuestaCarga();
+  const ops = opcionesIntencion(e);
+  const selP = document.getElementById('cg-propia');
+
+  if(!e || ops.length === 0){
+    head.innerHTML = '';
+    body.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:22px 0;font-size:12px">'
+      + (e ? 'Esta encuesta no tiene la pregunta de intención de voto, que es la que alimenta el cruce.'
+           : 'Crea una encuesta primero.') + '</td></tr>';
+    selP.innerHTML = '<option value="">—</option>';
+    document.getElementById('cg-sub').textContent = '—';
+    resumenCarga();
+    return;
+  }
+
+  const bolsa = bolsaEncuesta(e.id);
+  document.getElementById('cg-unidad').value = bolsa.unidad || 'porcentaje';
+
+  selP.innerHTML = ops.map(o => `<option value="${o}">${o}</option>`).join('');
+  if(!bolsa.propia || !ops.includes(bolsa.propia)) bolsa.propia = ops[0];
+  selP.value = bolsa.propia;
+
+  document.getElementById('cg-sub').textContent =
+    'Muestra objetivo del estudio: ' + fmt(e.metodologia?.n || 0) + ' entrevistas · '
+    + ops.length + ' opciones de intención';
+
+  head.innerHTML = '<tr><th>Municipio</th><th class="tR">Entrevistas</th>'
+    + ops.map(o => `<th class="tR">${o}</th>`).join('')
+    + '<th class="tR">Suma</th><th class="tR">Margen</th><th>Confiabilidad</th></tr>';
+
+  body.innerHTML = TERRITORIO.map(t => {
+    const f = bolsa.filas[t.mun] || {n:'', v:{}};
+    return `<tr>
+      <td>${t.mun}<div style="font-size:9px;color:var(--text3);font-family:var(--mono)">meta ${fmt(t.meta)}</div></td>
+      <td class="tR"><input class="cin" type="number" min="0" step="1" id="${idMun(t.mun)}_n"
+           value="${f.n === '' || f.n === undefined ? '' : f.n}" oninput="onCargaInput()" placeholder="0"></td>
+      ${ops.map((o,i) => `<td class="tR"><input class="cin" type="number" min="0" step="0.1"
+           id="${idMun(t.mun)}_o${i}" value="${f.v[o] === undefined ? '' : f.v[o]}"
+           oninput="onCargaInput()" placeholder="—"></td>`).join('')}
+      <td class="tR mono" id="${idMun(t.mun)}_sum" style="color:var(--text3)">—</td>
+      <td class="tR mono" id="${idMun(t.mun)}_me" style="color:var(--text3)">—</td>
+      <td id="${idMun(t.mun)}_cf">—</td>
+    </tr>`;
+  }).join('');
+
+  onCargaInput();
+}
+
+function onCargaInput(){
+  const e = encuestaCarga();
+  if(!e) { resumenCarga(); return; }
+  const ops = opcionesIntencion(e);
+  const bolsa = bolsaEncuesta(e.id);
+  bolsa.propia = document.getElementById('cg-propia').value;
+  bolsa.unidad = document.getElementById('cg-unidad').value;
+  const esPct = bolsa.unidad === 'porcentaje';
+
+  let errores = 0, totalN = 0, conDato = 0;
+
+  TERRITORIO.forEach(t => {
+    const base = idMun(t.mun);
+    const inN  = document.getElementById(base + '_n');
+    if(!inN) return;
+    const n = parseInt(inN.value, 10);
+    const fila = {n: isNaN(n) ? '' : n, v:{}};
+    let suma = 0, algo = false;
+
+    ops.forEach((o,i) => {
+      const el = document.getElementById(base + '_o' + i);
+      const val = parseFloat(el.value);
+      if(!isNaN(val)){ fila.v[o] = val; suma += val; algo = true; }
+    });
+
+    const objetivo = esPct ? 100 : (isNaN(n) ? 0 : n);
+    const cuadra = !algo || Math.abs(suma - objetivo) <= (esPct ? 0.6 : 0);
+    const elSum = document.getElementById(base + '_sum');
+    elSum.textContent = algo ? (esPct ? suma.toFixed(1) : fmt(Math.round(suma))) : '—';
+    elSum.style.color = !algo ? 'var(--text3)' : (cuadra ? 'var(--green)' : 'var(--red)');
+    ops.forEach((o,i) => document.getElementById(base + '_o' + i)
+      .classList.toggle('bad', algo && !cuadra));
+    if(algo && !cuadra) errores++;
+
+    const me = margenError(fila.n);
+    document.getElementById(base + '_me').textContent = me ? '±' + me.toFixed(1) + '%' : '—';
+    const cf = confiabilidad(fila.n);
+    document.getElementById(base + '_cf').innerHTML =
+      cf ? `<span class="chip ${cf.c}">${cf.t}</span>` : '<span style="color:var(--text3)">—</span>';
+
+    if(fila.n || algo){ bolsa.filas[t.mun] = fila; } else { delete bolsa.filas[t.mun]; }
+    if(fila.n > 0){ totalN += fila.n; conDato++; }
+  });
+
+  document.getElementById('cg-k-mun').textContent = conDato;
+  document.getElementById('cg-k-n').textContent   = fmt(totalN);
+  const meEst = margenError(totalN);
+  document.getElementById('cg-k-margen').textContent = meEst ? '±' + meEst.toFixed(1) + '%' : '±—';
+  const elErr = document.getElementById('cg-k-err');
+  elErr.textContent = errores;
+  elErr.style.color = errores ? 'var(--red)' : 'var(--green)';
+  resumenCarga();
+}
+
+function resumenCarga(){
+  const e = encuestaCarga();
+  const el = document.getElementById('cg-estado');
+  if(!el) return;
+  if(!e){ el.textContent = ''; return; }
+  const b = RESULTADOS[e.id];
+  const n = b ? Object.keys(b.filas).length : 0;
+  el.textContent = n ? n + ' renglón(es) listos para guardar' : 'sin capturar';
+}
+
+function limpiarCarga(){
+  const e = encuestaCarga();
+  if(!e) return;
+  if(!confirm('¿Borrar los renglones capturados de "' + e.nombre + '"?')) return;
+  RESULTADOS[e.id] = {propia:'', unidad:'porcentaje', filas:{}};
+  renderCarga();
+  mostrarToast('Renglones limpiados');
+}
+
+async function guardarResultados(){
+  const e = encuestaCarga();
+  if(!e){ alert('Selecciona una encuesta.'); return; }
+  const bolsa = bolsaEncuesta(e.id);
+  const filas = Object.keys(bolsa.filas)
+    .filter(m => bolsa.filas[m].n > 0)
+    .map(m => ({
+      municipio: m,
+      entrevistas: bolsa.filas[m].n,
+      unidad: bolsa.unidad,
+      resultados: { intencion: Object.assign({}, bolsa.filas[m].v) }
+    }));
+
+  if(filas.length === 0){ alert('Captura al menos un municipio con entrevistas mayores a cero.'); return; }
+  if(parseInt(document.getElementById('cg-k-err').textContent,10) > 0){
+    if(!confirm('Hay renglones cuya intención no cuadra. ¿Guardar de todas formas?')) return;
+  }
+
+  // [SWAP LUIS ✓] RPC guardar_resultados_municipio(p_encuesta_id, p_filas).
+  // Hace upsert por (encuesta_id, municipio_id): recapturar actualiza,
+  // no duplica. El match de municipio ignora acentos y mayusculas.
+  if(window.T21 && typeof window.T21.guardarResultadosMunicipio === 'function'){
+    const ok = await window.T21.guardarResultadosMunicipio(e.id, filas);
+    if(ok === false){ mostrarToast('No se pudo guardar (sin conexión)'); return; }
+  }
+
+  e.entrevistas = filas.reduce((s,f) => s + f.entrevistas, 0);
+  renderLista(); renderCruce();
+  mostrarToast('Guardado: ' + filas.length + ' municipio(s) ✓');
+}
+
+/* Datos que alimentan el cruce: reales si hay carga, ejemplo si no. */
+function datosCruce(){
+  const ids = Object.keys(RESULTADOS).filter(id => {
+    const b = RESULTADOS[id];
+    return b && Object.keys(b.filas).some(m => b.filas[m].n > 0);
+  });
+  if(ids.length === 0) return {rows:CRUCE, real:false, nombre:''};
+
+  const id = ids[ids.length - 1];
+  const b  = RESULTADOS[id];
+  const enc = ENCUESTAS.find(x => x.id === id);
+  const esPct = b.unidad === 'porcentaje';
+
+  const rows = TERRITORIO.filter(t => b.filas[t.mun] && b.filas[t.mun].n > 0).map(t => {
+    const f = b.filas[t.mun];
+    const aPct = v => (v === undefined ? 0 : (esPct ? v : (f.n ? v / f.n * 100 : 0)));
+    return {
+      n: t.mun,
+      estructura: t.meta ? t.cap / t.meta * 100 : 0,
+      intencion: +aPct(f.v[b.propia]).toFixed(1),
+      indecisos: +aPct(f.v['Indeciso']).toFixed(1),
+      entrev: f.n
+    };
+  });
+  return {rows, real:true, nombre: enc ? enc.nombre : '', propia: b.propia};
+}
+
 /* ── TAB 4: Cruce ────────────────────────────────────────── */
 function renderCruce(){
-  document.getElementById('tbl-cruce').innerHTML = CRUCE.map(m => {
-    const q = cuadrante(m);
+  const D = datosCruce();
+  const rows = D.rows;
+
+  // Medias de referencia: con datos reales se recalculan ponderando
+  // por entrevistas, no promediando municipios (Ixtlahuacan con 40
+  // entrevistas no puede pesar igual que Manzanillo con 500).
+  const totalN = rows.reduce((s,m) => s + m.entrev, 0);
+  const mediaE = D.real
+    ? TERRITORIO.reduce((s,t)=>s+t.cap,0) / TERRITORIO.reduce((s,t)=>s+t.meta,0) * 100
+    : MEDIA_ESTRUCTURA;
+  const mediaI = D.real && totalN
+    ? rows.reduce((s,m) => s + m.intencion * m.entrev, 0) / totalN
+    : MEDIA_INTENCION;
+  const mediaInd = D.real && totalN
+    ? rows.reduce((s,m) => s + m.indecisos * m.entrev, 0) / totalN
+    : 22;
+
+  const banner = document.getElementById('cr-banner');
+  if(banner){
+    if(D.real){
+      banner.style.background = 'rgba(34,197,94,.08)';
+      banner.style.borderColor = 'rgba(34,197,94,.3)';
+      banner.style.color = '#86efac';
+      banner.innerHTML = '✔ DATO REAL — ' + D.nombre + ' · ' + rows.length
+        + ' municipio(s) cargados · intención de <b>' + D.propia + '</b>';
+    } else {
+      banner.style.background = 'rgba(245,158,11,.08)';
+      banner.style.borderColor = 'rgba(245,158,11,.3)';
+      banner.style.color = '#fcd34d';
+      banner.innerHTML = '⚠ EJEMPLO DEMOSTRATIVO — cifras de muestra. Aún no hay resultados cargados; '
+        + 'en cuanto captures un consolidado en "Cargar resultados" este tablero lo reemplaza.';
+    }
+  }
+  const setK = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
+  setK('cr-k-entrev', fmt(D.real ? totalN : 2847));
+  setK('cr-k-entrev-s', D.real ? 'suma de los municipios cargados' : 'ejemplo · no es un dato real');
+  setK('cr-k-int',    mediaI.toFixed(1) + '%');
+  setK('cr-k-indec',  mediaInd.toFixed(1) + '%');
+  const meEst = D.real ? margenError(totalN) : 1.8;
+  setK('cr-k-margen', meEst ? '±' + meEst.toFixed(1) + '%' : '±—');
+
+  document.getElementById('tbl-cruce').innerHTML = rows.map(m => {
+    const q = cuadrante(m, mediaE, mediaI);
     return `<tr>
       <td style="font-weight:500">${m.n}</td>
       <td><div class="bar"><div class="bar-track"><div class="bar-fill" style="width:${Math.min(m.estructura/20*100,100)}%;background:var(--accent)"></div></div><span class="bar-pct" style="color:var(--accent)">${m.estructura.toFixed(1)}%</span></div></td>
@@ -696,8 +1041,19 @@ function renderCruce(){
       <td class="tR mono" style="color:var(--text2)">${fmt(m.entrev)}</td>
       <td><span class="chip ${q.c}">${q.t.toUpperCase()}</span></td>
     </tr>`;
-  }).join('');
+  }).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:20px 0">Sin municipios cargados.</td></tr>';
 }
+
+/* ── Carga: solo estrategia ──────────────────────────────────
+   Coincide con el RLS de resultados_encuesta_municipio: escriben
+   super_admin, admin y coordinador_estatal. El coordinador municipal
+   entra a Encuestas pero no captura el consolidado del estado. */
+(function(){
+  const rol = (window._sesion && window._sesion.rol) || '';
+  if(['super_admin','admin','coordinador_estatal'].includes(rol)) return;
+  const t = document.getElementById('tab-carga');
+  if(t) t.style.display = 'none';
+})();
 
 /* ── Selector de municipios ──────────────────────────────── */
 document.getElementById('e-mun').innerHTML = MUNICIPIOS.map(m => `<option>${m}</option>`).join('');
@@ -723,7 +1079,7 @@ document.getElementById('e-mun').innerHTML = MUNICIPIOS.map(m => `<option>${m}</
 })();
 
 /* ── Init ────────────────────────────────────────────────── */
-renderStd(); renderCustom(); renderLista(); poblarSelectorEncuestas(); renderCruce();
+renderStd(); renderCustom(); renderLista(); poblarSelectorEncuestas(); poblarSelectorCarga(); renderCruce();
 
 /* ═══════════════════════════════════════════════════════════
    TAB 5: RESULTADOS EN VIVO — simulación de levantamiento
