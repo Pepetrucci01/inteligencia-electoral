@@ -3,36 +3,29 @@
 ============================================================
   VOTERA(TM) - Inteligencia Electoral
   (c) 2026 MEFT Consulting - RFC: CUOJ7808208Z2
-  Villa de Alvarez, Colima, Mexico - votera.mx
-  Todos los derechos reservados.
+  Modulo: Panel de soporte (observabilidad)
+  ------------------------------------------------------------
+  Exclusivo para soporte@votera.mx y super_admin. Cuatro
+  bloques: salud, errores del frontend, consumo del escaner
+  por licencia, y actividad de audit_log.
 
-  Software propietario bajo licencia. Su uso, copia,
-  modificacion, distribucion o ingenieria inversa sin
-  autorizacion expresa de MEFT Consulting esta prohibido.
-============================================================
+  PRINCIPIO: soporte ve SALUD, no PERSONAS. Este panel no
+  muestra ni puede mostrar un solo dato de ciudadanos: las
+  funciones soporte_* del backend solo devuelven agregados,
+  y la cuenta de soporte tiene RLS que le da cero filas de
+  ciudadanos. "Nuestro soporte puede ver que tu sistema esta
+  sano, pero no puede ver a tu gente."
 
-  MODULO DE SOPORTE TECNICO  ·  v90  ·  22 ago 2026
-
-  Los 9 roles pueden levantar un ticket. El ticket viaja con
-  un CONTEXTO automatico (build, modulo, rol, red, errores de
-  consola) que es lo que convierte "no me deja guardar" en
-  "capturista v90, offline, RLS 42501 en ciudadanos".
-
-  TODA escritura pasa por las RPC del SQL 60 (crear_ticket,
-  agregar_mensaje_ticket, reabrir_ticket). El modulo NUNCA
-  escribe directo a las tablas: asi, si manana el almacen se
-  mueve a otro proyecto o a una herramienta externa, se cambia
-  el cuerpo de las RPC y esto no se entera.
+  Sin sesion: modo ejemplo con datos ficticios, cero red.
 ============================================================
 -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Soporte técnico · VOTERA</title>
-<link rel="icon" href="data:,">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Soporte · VOTERA</title>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
 :root{
   --bg:#0a0e1a;--bg2:#0f1526;--bg3:#141b2e;--bg4:#1a2238;
   --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.14);
@@ -41,521 +34,253 @@
   --amber:#f59e0b;--cyan:#06b6d4;--purple:#a855f7;
   --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
 }
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;}
-
-.topbar{background:var(--bg2);border-bottom:1px solid var(--border2);padding:0 16px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;}
-.tb-left{display:flex;align-items:center;gap:10px;}
-.tb-av{width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:600;flex-shrink:0;background:rgba(6,182,212,.15);color:var(--cyan);}
-.tb-name{font-size:13px;font-weight:600;}
-.tb-id{font-size:10px;font-family:var(--mono);color:var(--text3);}
-
-.tabs{display:flex;background:var(--bg3);border-bottom:1px solid var(--border);position:sticky;top:52px;z-index:199;}
-.tab{flex:1;padding:11px 4px;text-align:center;font-size:11px;font-family:var(--mono);color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;}
-.tab.active{color:var(--cyan);border-bottom-color:var(--cyan);}
-
-.wrap{padding:16px;max-width:860px;margin:0 auto;}
-.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px;}
-.card h3{font-size:13px;font-weight:600;margin-bottom:4px;}
-.hint{font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:12px;line-height:1.5;}
-
-.fg{margin-bottom:12px;}
-.lbl{font-size:11px;font-family:var(--mono);color:var(--text2);margin-bottom:5px;display:block;}
-.req{color:var(--red);}
-.inp,.sel,.txt{width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:7px;padding:10px 11px;color:var(--text);font-family:var(--sans);font-size:14px;}
-.txt{min-height:110px;resize:vertical;line-height:1.5;}
-.inp:focus,.sel:focus,.txt:focus{outline:none;border-color:var(--cyan);}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-
-.btn{background:var(--bg4);border:1px solid var(--border2);color:var(--text);border-radius:7px;padding:10px 14px;font-size:13px;font-family:var(--sans);cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
-.btn:disabled{opacity:.5;cursor:not-allowed;}
-.btn.primary{background:var(--cyan);border-color:var(--cyan);color:#04202a;font-weight:600;}
-.btn.ghost{background:transparent;}
-.btn.full{width:100%;justify-content:center;}
-
-.err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.35);color:#fca5a5;border-radius:7px;padding:10px 12px;font-size:12px;margin-bottom:12px;display:none;line-height:1.5;}
-.ok{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.35);color:#86efac;border-radius:7px;padding:10px 12px;font-size:12px;margin-bottom:12px;display:none;line-height:1.5;}
-
-.tk{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--border);border-radius:10px;padding:13px;margin-bottom:10px;cursor:pointer;transition:border-color .15s;}
-.tk:hover{border-color:var(--border2);}
-/* Franja de prioridad. Solo se colorea alta y critica A PROPOSITO: si las
-   cuatro tuvieran color, ninguna resaltaria. Y va en el borde izquierdo, no
-   en otra pastilla, para no competir con el color del estado. */
-.tk.p-critica{border-left-color:var(--red);}
-.tk.p-alta{border-left-color:var(--amber);}
-.urg{font-family:var(--mono);font-size:10px;font-weight:600;margin-right:7px;}
-.urg.critica{color:var(--red);}
-.urg.alta{color:var(--amber);}
-.tk-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;}
-.tk-folio{font-family:var(--mono);font-size:11px;color:var(--text3);}
-.tk-asunto{font-size:14px;font-weight:500;margin-bottom:4px;}
-.tk-meta{font-family:var(--mono);font-size:10px;color:var(--text3);}
-.pill{font-family:var(--mono);font-size:10px;padding:3px 9px;border-radius:99px;font-weight:600;white-space:nowrap;}
-.e-nuevo{background:rgba(59,130,246,.15);color:#93c5fd;}
-.e-asignado,.e-en_proceso{background:rgba(245,158,11,.15);color:#fcd34d;}
-.e-esperando_cliente{background:rgba(168,85,247,.15);color:#d8b4fe;}
-.e-resuelto{background:rgba(34,197,94,.15);color:#86efac;}
-.e-cerrado{background:rgba(255,255,255,.07);color:var(--text3);}
-.e-reabierto{background:rgba(239,68,68,.15);color:#fca5a5;}
-
-.msg{border-radius:9px;padding:11px 13px;margin-bottom:9px;font-size:14px;line-height:1.55;white-space:pre-wrap;word-break:break-word;}
-.msg.cliente{background:var(--bg3);border:1px solid var(--border);}
-.msg.soporte{background:rgba(6,182,212,.08);border:1px solid rgba(6,182,212,.25);}
-.msg-head{font-family:var(--mono);font-size:10px;color:var(--text3);margin-bottom:5px;}
-
-.vacio{text-align:center;padding:40px 16px;color:var(--text3);font-size:13px;}
-.cargando{text-align:center;padding:26px;color:var(--text3);font-family:var(--mono);font-size:12px;}
-.oculto{display:none;}
-.ctx{font-family:var(--mono);font-size:10px;color:var(--text3);background:var(--bg);border:1px dashed var(--border2);border-radius:7px;padding:9px 11px;line-height:1.6;word-break:break-all;}
-.adj{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11px;color:var(--cyan);margin-top:4px;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.5;
+     -webkit-font-smoothing:antialiased;}
+.wrap{max-width:1400px;margin:0 auto;padding:20px 24px 80px;}
+.head{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:6px;}
+.h-title{font-size:20px;font-weight:600;}
+.h-sub{font-size:12px;color:var(--text2);margin-top:2px;}
+.h-badge{font-size:10px;font-family:var(--mono);padding:4px 12px;border-radius:99px;
+         background:rgba(6,182,212,.12);color:var(--cyan);border:1px solid rgba(6,182,212,.25);white-space:nowrap;}
+.principio{font-size:11px;color:var(--text3);border-left:3px solid var(--purple);
+           padding:8px 12px;margin:12px 0 18px;background:var(--bg2);border-radius:0 8px 8px 0;}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:9px;margin-bottom:16px;}
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:11px 13px;position:relative;overflow:hidden;}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--cyan);}
+.kpi.gr::before{background:var(--green);} .kpi.gr .kv{color:var(--green);}
+.kpi.am::before{background:var(--amber);} .kpi.am .kv{color:var(--amber);}
+.kpi.rd::before{background:var(--red);}   .kpi.rd .kv{color:var(--red);}
+.kpi.pu::before{background:var(--purple);}.kpi.pu .kv{color:var(--purple);}
+.kl{font-size:9px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
+.kv{font-size:19px;font-weight:600;font-family:var(--mono);color:var(--cyan);}
+.ks{font-size:10px;color:var(--text3);margin-top:2px;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:14px;}
+.card-title{font-size:13px;font-weight:600;margin-bottom:4px;}
+.card-sub{font-size:11px;color:var(--text3);margin-bottom:12px;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{font-size:9px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.05em;
+   text-align:left;padding:7px 8px;border-bottom:1px solid var(--border2);}
+td{padding:9px 8px;border-bottom:1px solid var(--border);vertical-align:middle;}
+tr:hover td{background:rgba(255,255,255,0.02);}
+.mono{font-family:var(--mono);} .tR{text-align:right;}
+.chip{font-size:9px;font-family:var(--mono);padding:3px 9px;border-radius:99px;white-space:nowrap;display:inline-block;}
+.chip.rojo{background:rgba(239,68,68,.12);color:var(--red);}
+.chip.ambar{background:rgba(245,158,11,.12);color:var(--amber);}
+.chip.gris{background:rgba(90,106,133,.18);color:var(--text2);}
+.btn{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:500;font-family:var(--sans);
+     padding:8px 16px;border-radius:7px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);
+     cursor:pointer;}
+.btn:hover{border-color:var(--cyan);color:var(--cyan);}
+.btn:focus-visible{outline:2px solid var(--cyan);outline-offset:2px;}
+.bar{display:flex;align-items:center;gap:8px;min-width:120px;}
+.bar-track{flex:1;height:7px;background:rgba(255,255,255,0.06);border-radius:99px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:99px;background:var(--cyan);}
+.bar-pct{font-family:var(--mono);font-size:11px;width:48px;text-align:right;flex-shrink:0;}
+.negado{text-align:center;padding:70px 20px;}
+.negado .ic{font-size:36px;opacity:.35;margin-bottom:12px;}
+.negado .t{font-size:15px;font-weight:600;margin-bottom:6px;}
+.negado .s{font-size:12px;color:var(--text3);}
+@media(max-width:640px){.wrap{padding:14px 14px 60px;}}
 </style>
 </head>
 <body>
+<div class="wrap">
 
-<div class="topbar">
-  <div class="tb-left">
-    <div class="tb-av" id="tb-av">··</div>
+  <div class="head">
     <div>
-      <div class="tb-name">Soporte técnico</div>
-      <div class="tb-id" id="tb-id">—</div>
+      <div class="h-title">Panel de soporte</div>
+      <div class="h-sub">Salud del sistema, errores y consumo — sin acceso a datos de ciudadanos</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <div class="h-badge" id="badge">MODO EJEMPLO</div>
+      <button class="btn" onclick="cargarTodo()">↻ Actualizar</button>
     </div>
   </div>
-  <button onclick="cerrarSesion()" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;font-family:monospace;margin-left:6px;" title="Cerrar sesión">⏻ Salir</button>
-</div>
 
-<div class="tabs">
-  <div class="tab active" id="tab-nuevo" onclick="verTab('nuevo')">＋ Levantar ticket</div>
-  <div class="tab" id="tab-mis" onclick="verTab('mis')">📋 Mis tickets</div>
-</div>
+  <div class="principio">
+    Este panel solo muestra conteos y agregados. Las funciones del servidor que lo alimentan
+    no pueden devolver nombres, teléfonos ni secciones de ningún ciudadano, y la cuenta de
+    soporte tiene cero acceso al padrón. Es por diseño, no por cortesía.
+  </div>
 
-<!-- ─────────────── LEVANTAR TICKET ─────────────── -->
-<div class="wrap" id="v-nuevo">
-  <div class="err" id="nv-err"></div>
-  <div class="ok"  id="nv-ok"></div>
+  <div id="contenido">
 
-  <div class="card">
-    <h3>Reportar un problema</h3>
-    <div class="hint">Se envía automáticamente la versión del sistema, tu rol y los errores técnicos recientes. No hace falta que los describas.</div>
-
-    <div class="fg">
-      <label class="lbl">Asunto <span class="req">*</span></label>
-      <input class="inp" id="f-asunto" maxlength="120" placeholder="Ej. No puedo guardar un simpatizante">
+    <div class="kpi-row">
+      <div class="kpi"><div class="kl">Usuarios activos</div><div class="kv" id="k-usuarios">—</div><div class="ks">dados de alta</div></div>
+      <div class="kpi gr"><div class="kl">Entraron esta semana</div><div class="kv" id="k-logins">—</div><div class="ks" id="k-logins-s">y hoy: —</div></div>
+      <div class="kpi pu"><div class="kl">Capturas 7 días</div><div class="kv" id="k-capturas">—</div><div class="ks" id="k-capturas-s">hoy: —</div></div>
+      <div class="kpi am"><div class="kl">Errores 24 h</div><div class="kv" id="k-errores">—</div><div class="ks" id="k-errores-s">7 días: —</div></div>
+      <div class="kpi rd"><div class="kl">Atorado</div><div class="kv" id="k-atorado">—</div><div class="ks">reservas de llamada vencidas</div></div>
     </div>
 
-    <div class="row2">
-      <div class="fg">
-        <label class="lbl">¿De qué se trata? <span class="req">*</span></label>
-        <select class="sel" id="f-categoria">
-          <option value="acceso">No puedo entrar / permisos</option>
-          <option value="captura">Captura de simpatizantes</option>
-          <option value="dia_eleccion">Día de la elección</option>
-          <option value="datos">Datos incorrectos o faltantes</option>
-          <option value="rendimiento">Lento o se traba</option>
-          <option value="bug">Algo no funciona</option>
-          <option value="duda">Duda de uso</option>
-          <option value="otro" selected>Otro</option>
-        </select>
-      </div>
-      <div class="fg">
-        <label class="lbl">¿Qué tanto te bloquea?</label>
-        <select class="sel" id="f-prioridad">
-          <option value="baja">Puedo seguir trabajando</option>
-          <option value="media" selected>Me estorba</option>
-          <option value="alta">No puedo avanzar</option>
-          <option value="critica">Urgente, es hoy</option>
-        </select>
+    <div class="card">
+      <div class="card-title">Errores del frontend</div>
+      <div class="card-sub">Lo que ha tronado en el navegador de los usuarios, agrupado por error. Muchas repeticiones del mismo = un bug real; uno suelto = probablemente su conexión.</div>
+      <div style="overflow-x:auto;">
+        <table><thead><tr>
+          <th>Última vez</th><th>Módulo</th><th>Rol</th><th>Error</th><th class="tR">Veces</th>
+        </tr></thead><tbody id="tbl-errores"></tbody></table>
       </div>
     </div>
 
-    <div class="fg">
-      <label class="lbl">Cuéntanos qué pasó <span class="req">*</span></label>
-      <textarea class="txt" id="f-descripcion" maxlength="4000" placeholder="Qué estabas haciendo, qué esperabas que pasara y qué pasó en su lugar."></textarea>
+    <div class="card">
+      <div class="card-title">Escáner de credenciales — mes en curso</div>
+      <div class="card-sub">Consumo de la API de visión por licencia, contra su cuota. Esto es lo que cuesta dinero.</div>
+      <div style="overflow-x:auto;">
+        <table><thead><tr>
+          <th>Licencia</th><th class="tR">Escaneos</th><th class="tR">Exitosos</th>
+          <th class="tR">Tokens</th><th>Cuota usada</th>
+        </tr></thead><tbody id="tbl-escaner"></tbody></table>
+      </div>
     </div>
 
-    <div class="fg">
-      <label class="lbl">Captura de pantalla (opcional, máx 5 MB)</label>
-      <input class="inp" id="f-archivo" type="file" accept="image/png,image/jpeg,image/webp,application/pdf,text/plain">
+    <div class="card">
+      <div class="card-title">Actividad — últimos 14 días</div>
+      <div class="card-sub">Qué se está haciendo en el sistema, día por día, según la bitácora de auditoría.</div>
+      <div style="overflow-x:auto;">
+        <table><thead><tr>
+          <th>Día</th><th>Acción</th><th class="tR">Veces</th>
+        </tr></thead><tbody id="tbl-actividad"></tbody></table>
+      </div>
     </div>
 
-    <div class="fg">
-      <label class="lbl">Información técnica que se enviará</label>
-      <div class="ctx" id="f-ctx">—</div>
-    </div>
-
-    <button class="btn primary full" id="btn-enviar" onclick="enviarTicket()">Enviar ticket</button>
   </div>
-</div>
 
-<!-- ─────────────── MIS TICKETS ─────────────── -->
-<div class="wrap oculto" id="v-mis">
-  <div class="err" id="ls-err"></div>
-  <div id="ls-cont"><div class="cargando">Cargando tickets…</div></div>
-</div>
-
-<!-- ─────────────── DETALLE / HILO ─────────────── -->
-<div class="wrap oculto" id="v-detalle">
-  <button class="btn ghost" onclick="verTab('mis')" style="margin-bottom:12px;">← Volver</button>
-  <div class="err" id="dt-err"></div>
-  <div class="card" id="dt-cab"></div>
-  <div id="dt-hilo"></div>
-  <div class="card" id="dt-responder">
-    <label class="lbl">Responder</label>
-    <textarea class="txt" id="f-respuesta" maxlength="4000" placeholder="Escribe tu respuesta…"></textarea>
-    <button class="btn primary full" id="btn-responder" onclick="responder()" style="margin-top:10px;">Enviar respuesta</button>
+  <div id="negado" class="negado" style="display:none">
+    <div class="ic">🔒</div>
+    <div class="t">Este panel es solo para soporte</div>
+    <div class="s">Entra con la cuenta de soporte o con un super administrador.</div>
   </div>
+
 </div>
 
-<script src="theme.js"></script>
 <script>
-/* ════════════════════════════════════════════════════════════
-   GUARD — defensa en profundidad ademas del ocultado del hub.
-   A diferencia de otros modulos, aqui entran LOS 9 ROLES: si
-   alguien no puede usar el sistema, tiene que poder decirlo.
-   ════════════════════════════════════════════════════════════ */
-(function guardSoporte(){
-  try {
-    const s = JSON.parse(localStorage.getItem('electoral_sesion') || 'null');
-    if (!s || !s.ts) { window.location.replace('login.html'); return; }
-    if ((Date.now() - s.ts) / 3600000 >= 8) { localStorage.removeItem('electoral_sesion'); window.location.replace('login.html'); return; }
-    const rolesPermitidos = ['super_admin','admin','coordinador_estatal','coordinador',
-                             'jefe_seccion','capturista','operador_cc','repr_casilla','consulta'];
-    if (!rolesPermitidos.includes(s.rol)) { window.location.replace('login.html'); return; }
-    window._sesion = s;
-  } catch(e) { window.location.replace('login.html'); }
-})();
+var SUPA_URL = 'https://dyirhwwmykskpuvzcafx.supabase.co';
+var SUPA_ANON = window.SUPABASE_KEY ||
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5aXJod3dteWtza3B1dnpjYWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NTk3ODgsImV4cCI6MjA5NTEzNTc4OH0.2xe4cHqORGng1hnYPJ9ZiyT0r87fMijbUEJqBy3-xoI';
 
-const SUPA_URL = 'https://dyirhwwmykskpuvzcafx.supabase.co';
-
-/* ════════════════════════════════════════════════════════════
-   BUFFER DE ERRORES DE CONSOLA
-   Se envuelve console.error para quedarnos con los ultimos 8.
-   Es lo que hace util un ticket: sin esto, el reporte dice
-   "no funciona" y el diagnostico son dos dias de ida y vuelta.
-   Va aqui y NO en theme.js a proposito: theme.js lo cargan los
-   9 modulos y no quiero tocar un archivo compartido por esto.
-   El precio es que solo captura los errores de ESTE modulo; los
-   del modulo donde ocurrio el problema no viajan. Se resuelve
-   despues moviendolo a theme.js, si se decide que vale la pena.
-   ════════════════════════════════════════════════════════════ */
-const _errBuffer = [];
-(function capturarErrores(){
-  const orig = console.error;
-  console.error = function(){
-    try {
-      _errBuffer.push(Array.from(arguments).map(a =>
-        (a && a.message) ? a.message : String(a)).join(' ').slice(0,240));
-      if (_errBuffer.length > 8) _errBuffer.shift();
-    } catch(e) {}
-    orig.apply(console, arguments);
-  };
-  window.addEventListener('error', ev => {
-    try {
-      _errBuffer.push('window.onerror: ' + (ev.message||'') + ' @' + (ev.filename||'').split('/').pop() + ':' + (ev.lineno||''));
-      if (_errBuffer.length > 8) _errBuffer.shift();
-    } catch(e) {}
+function sesion(){
+  try { return JSON.parse(localStorage.getItem('electoral_sesion')) || null; }
+  catch(e){ return null; }
+}
+function token(){
+  var s=sesion();
+  return (window._sesion && window._sesion.access_token) || (s && s.access_token) || SUPA_ANON;
+}
+async function rpc(nombre, params){
+  var res = await fetch(SUPA_URL+'/rest/v1/rpc/'+nombre, {
+    method:'POST',
+    headers:{ 'apikey':SUPA_ANON, 'Authorization':'Bearer '+token(), 'Content-Type':'application/json' },
+    body: JSON.stringify(params||{})
   });
-  window.addEventListener('unhandledrejection', ev => {
-    try {
-      _errBuffer.push('promesa sin catch: ' + String(ev.reason && ev.reason.message || ev.reason).slice(0,200));
-      if (_errBuffer.length > 8) _errBuffer.shift();
-    } catch(e) {}
-  });
-})();
-
-function armarContexto(){
-  const s = window._sesion || {};
-  return {
-    // El hub carga los modulos como iframe con ?v=<APP_BUILD>, asi que el
-    // build viaja en la propia URL. NO se lee window.parent.APP_BUILD: alla
-    // esta declarado con `const` en el ambito del script, y un const de nivel
-    // superior NO se convierte en propiedad de window — daba "desconocido".
-    build:        new URLSearchParams(location.search).get('v') || 'desconocido',
-    modulo_origen: (function(){ try { return window.parent.location.hash || 'hub'; } catch(e){ return 'iframe'; } })(),
-    rol:          s.rol || null,
-    licencia_id:  s.licencia_id || null,
-    municipio:    s.municipio || null,
-    seccion:      s.seccion || null,
-    online:       navigator.onLine,
-    user_agent:   navigator.userAgent.slice(0,220),
-    pantalla:     window.screen.width + 'x' + window.screen.height,
-    idioma:       navigator.language,
-    ts_cliente:   new Date().toISOString(),
-    errores:      _errBuffer.slice()
-  };
+  if (!res.ok) throw new Error(nombre+' -> '+res.status);
+  return await res.json();
 }
 
-function pintarContexto(){
-  const c = armarContexto();
-  const el = document.getElementById('f-ctx');
-  el.textContent =
-    'build ' + c.build + ' · rol ' + (c.rol||'—') +
-    ' · ' + (c.online ? 'con conexión' : 'SIN CONEXIÓN') +
-    ' · pantalla ' + c.pantalla +
-    (c.errores.length ? ' · ' + c.errores.length + ' error(es) técnico(s) recientes'
-                      : ' · sin errores recientes');
-}
+var VIVO = false;
 
-/* ── Utilidades ─────────────────────────────────────────── */
-function escHtml(s){
-  return String(s == null ? '' : s)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-}
-function mostrar(id, texto, ms){
-  const el = document.getElementById(id);
-  if(!el) return;
-  el.textContent = texto;
-  el.style.display = 'block';
-  if (ms) setTimeout(()=>{ el.style.display='none'; }, ms);
-}
-function ocultar(id){ const el=document.getElementById(id); if(el) el.style.display='none'; }
-function cerrarSesion(){ localStorage.removeItem('electoral_sesion'); window.location.href='login.html'; }
-
-const ETIQ_ESTADO = {
-  nuevo:'Nuevo', asignado:'Asignado', en_proceso:'En proceso',
-  esperando_cliente:'Esperando tu respuesta', resuelto:'Resuelto',
-  cerrado:'Cerrado', reabierto:'Reabierto'
+/* Datos ficticios del modo ejemplo */
+var DEMO = {
+  salud: { usuarios_activos:531, logins_24h:4, logins_7d:9, capturas_hoy:12, capturas_7d:118,
+           errores_24h:3, errores_7d:11, reservas_vencidas:1, alertas_abiertas:2, licencias_activas:1 },
+  errores: [
+    { cuando:'2026-09-02T09:14:00Z', modulo:'war_room', rol:'coordinador',
+      mensaje:'TypeError: casillas.forEach is not a function', veces:7 },
+    { cuando:'2026-09-01T18:40:00Z', modulo:'encuestas', rol:'admin',
+      mensaje:'unhandled: rpc guardar_resultados_municipio devolvió 401', veces:2 },
+    { cuando:'2026-09-01T11:02:00Z', modulo:'callcenter', rol:'operador_cc',
+      mensaje:'ReferenceError: pintarKPIs is not defined', veces:1 },
+  ],
+  escaner: [ { licencia:'DEMO-2027', escaneos:37, exitosos:34, tokens:51280, cuota:500, pct_cuota:7.4 } ],
+  actividad: [
+    { dia:'2026-09-01', accion:'CAPTURA_CIUDADANO', veces:14 },
+    { dia:'2026-09-01', accion:'import_carga_maestra', veces:1 },
+    { dia:'2026-08-31', accion:'SYNC_CIUDADANO', veces:22 },
+  ]
 };
 
-// Solo las dos urgentes llevan etiqueta. Baja y media no necesitan gritar.
-const ETIQ_URGENCIA = { critica:'● URGENTE', alta:'● ALTA' };
-
-/* ── Llamadas a la API (siempre via supaFetch de theme.js: es la
-      fuente unica de token y quien reintenta tras un 401) ───── */
-async function rpc(nombre, cuerpo){
-  const r = await supaFetch(SUPA_URL + '/rest/v1/rpc/' + nombre, {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify(cuerpo || {})
-  });
-  const txt = await r.text();
-  if (!r.ok) {
-    let msg = txt;
-    try { msg = JSON.parse(txt).message || txt; } catch(e){}
-    throw new Error(msg);
-  }
-  try { return JSON.parse(txt); } catch(e){ return null; }
+function fmt(n){ return (n===null||n===undefined||isNaN(n)) ? '—' : Number(n).toLocaleString('es-MX'); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+function fecha(x){
+  try {
+    var d = new Date(x);
+    return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short'})+' '+
+           d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+  } catch(e){ return String(x||'—'); }
 }
 
-async function api(ruta){
-  const r = await supaFetch(SUPA_URL + '/rest/v1/' + ruta);
-  if (!r.ok) throw new Error('HTTP ' + r.status + ' al leer ' + ruta.split('?')[0]);
-  return await r.json();
+function pintarSalud(s){
+  var g = function(id,v){ document.getElementById(id).textContent = v; };
+  g('k-usuarios', fmt(s.usuarios_activos));
+  g('k-logins',   fmt(s.logins_7d));
+  g('k-logins-s', 'últimas 24 h: '+fmt(s.logins_24h));
+  g('k-capturas', fmt(s.capturas_7d));
+  g('k-capturas-s','hoy: '+fmt(s.capturas_hoy));
+  g('k-errores',  fmt(s.errores_24h));
+  g('k-errores-s','7 días: '+fmt(s.errores_7d));
+  g('k-atorado',  fmt(s.reservas_vencidas));
 }
 
-/* ── Navegación ─────────────────────────────────────────── */
-function verTab(cual){
-  document.getElementById('v-nuevo').classList.toggle('oculto', cual!=='nuevo');
-  document.getElementById('v-mis').classList.toggle('oculto', cual!=='mis');
-  document.getElementById('v-detalle').classList.add('oculto');
-  document.getElementById('tab-nuevo').classList.toggle('active', cual==='nuevo');
-  document.getElementById('tab-mis').classList.toggle('active', cual==='mis');
-  if (cual==='nuevo') pintarContexto();
-  if (cual==='mis')   cargarTickets();
+function pintarErrores(rows){
+  document.getElementById('tbl-errores').innerHTML = (rows||[]).map(function(e){
+    var chip = e.veces>=5 ? 'rojo' : (e.veces>=2 ? 'ambar' : 'gris');
+    return '<tr><td class="mono" style="color:var(--text2)">'+fecha(e.cuando)+'</td>'+
+      '<td>'+esc(e.modulo||'—')+'</td>'+
+      '<td style="color:var(--text3)">'+esc(e.rol||'—')+'</td>'+
+      '<td class="mono" style="font-size:11px">'+esc(e.mensaje)+'</td>'+
+      '<td class="tR"><span class="chip '+chip+'">'+fmt(e.veces)+'</span></td></tr>';
+  }).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:18px 0">'+
+                 'Sin errores registrados. O todo va bien, o los módulos aún no cargan observabilidad.js.</td></tr>';
 }
 
-/* ── Crear ticket ───────────────────────────────────────── */
-async function enviarTicket(){
-  ocultar('nv-err'); ocultar('nv-ok');
-  const asunto = document.getElementById('f-asunto').value.trim();
-  const desc   = document.getElementById('f-descripcion').value.trim();
+function pintarEscaner(rows){
+  document.getElementById('tbl-escaner').innerHTML = (rows||[]).map(function(x){
+    var pct = Math.min(Number(x.pct_cuota)||0, 100);
+    var color = pct>=90 ? 'var(--red)' : pct>=70 ? 'var(--amber)' : 'var(--cyan)';
+    return '<tr><td>'+esc(x.licencia)+'</td>'+
+      '<td class="tR mono">'+fmt(x.escaneos)+'</td>'+
+      '<td class="tR mono" style="color:var(--green)">'+fmt(x.exitosos)+'</td>'+
+      '<td class="tR mono">'+fmt(x.tokens)+'</td>'+
+      '<td><div class="bar"><div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;background:'+color+'"></div></div>'+
+      '<span class="bar-pct">'+(x.pct_cuota==null?'—':x.pct_cuota+'%')+'</span></div></td></tr>';
+  }).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:18px 0">Sin licencias.</td></tr>';
+}
 
-  if (asunto.length < 5)  { mostrar('nv-err','El asunto necesita al menos 5 caracteres.'); return; }
-  if (desc.length   < 10) { mostrar('nv-err','Cuéntanos un poco más de lo que pasó (mínimo 10 caracteres).'); return; }
+function pintarActividad(rows){
+  document.getElementById('tbl-actividad').innerHTML = (rows||[]).map(function(a){
+    return '<tr><td class="mono" style="color:var(--text2)">'+esc(a.dia)+'</td>'+
+      '<td>'+esc(a.accion)+'</td>'+
+      '<td class="tR mono">'+fmt(a.veces)+'</td></tr>';
+  }).join('') || '<tr><td colspan="3" style="text-align:center;color:var(--text3);padding:18px 0">Sin actividad en el periodo.</td></tr>';
+}
 
-  const archivo = document.getElementById('f-archivo').files[0] || null;
-  if (archivo && archivo.size > 5242880) {
-    mostrar('nv-err','El archivo pesa más de 5 MB. Recorta la captura e inténtalo de nuevo.');
+async function cargarTodo(){
+  if (!VIVO){
+    pintarSalud(DEMO.salud); pintarErrores(DEMO.errores);
+    pintarEscaner(DEMO.escaner); pintarActividad(DEMO.actividad);
     return;
   }
-
-  const btn = document.getElementById('btn-enviar');
-  if (btn.disabled) return;                 // candado anti-doble-clic
-  btn.disabled = true; btn.textContent = 'Enviando…';
-
   try {
-    const res = await rpc('crear_ticket', {
-      p_asunto: asunto,
-      p_descripcion: desc,
-      p_categoria: document.getElementById('f-categoria').value,
-      p_prioridad: document.getElementById('f-prioridad').value,
-      p_contexto: armarContexto()
-    });
-
-    // El adjunto es SECUNDARIO: si falla, el ticket ya existe y no se pierde.
-    let avisoAdj = '';
-    if (archivo && res && res.id) {
-      try { await subirAdjunto(res.id, archivo); }
-      catch(e) {
-        console.error('adjunto:', e.message);
-        avisoAdj = ' (la captura no se pudo subir; puedes adjuntarla respondiendo al ticket)';
-      }
-    }
-
-    // La UI solo avanza DESPUES del exito confirmado.
-    document.getElementById('f-asunto').value = '';
-    document.getElementById('f-descripcion').value = '';
-    document.getElementById('f-archivo').value = '';
-    mostrar('nv-ok','Ticket ' + (res && res.folio ? res.folio : '') +
-                    ' registrado. Te responderemos en este mismo módulo.' + avisoAdj);
-  } catch(e) {
-    mostrar('nv-err','No se pudo registrar el ticket: ' + e.message +
-                     '. Si no hay conexión, inténtalo cuando vuelva la señal.');
-  } finally {
-    btn.disabled = false; btn.textContent = 'Enviar ticket';
+    var salud = await rpc('soporte_salud');
+    pintarSalud(salud);
+    pintarErrores(await rpc('soporte_errores', { p_dias: 7 }));
+    pintarEscaner(await rpc('soporte_escaner'));
+    pintarActividad(await rpc('soporte_actividad', { p_dias: 14 }));
+  } catch(e){
+    // Si soporte_salud truena por permisos, la cuenta no es de soporte.
+    console.warn('Panel de soporte:', e);
+    document.getElementById('contenido').style.display = 'none';
+    document.getElementById('negado').style.display = 'block';
   }
 }
 
-/* La ruta {ticket_id}/{archivo} NO es cosmetica: de ahi sale el permiso
-   en la politica del bucket. Con otra forma, Storage lo rechaza. */
-async function subirAdjunto(ticketId, archivo){
-  const limpio = archivo.name.replace(/[^\w.\-]/g,'_').slice(-80);
-  const ruta   = ticketId + '/' + Date.now() + '-' + limpio;
-
-  const r = await supaFetch(SUPA_URL + '/storage/v1/object/ticket-adjuntos/' + ruta, {
-    method:'POST',
-    headers:{'Content-Type': archivo.type || 'application/octet-stream'},
-    body: archivo
-  });
-  if (!r.ok) throw new Error('Storage HTTP ' + r.status);
-
-  const r2 = await supaFetch(SUPA_URL + '/rest/v1/ticket_adjuntos', {
-    method:'POST',
-    headers:{'Content-Type':'application/json','Prefer':'return=minimal'},
-    body: JSON.stringify({
-      ticket_id: ticketId, storage_path: ruta, nombre_archivo: archivo.name,
-      mime: archivo.type || null, tamano_bytes: archivo.size,
-      subido_por: window._sesion.id
-    })
-  });
-  if (!r2.ok) throw new Error('registro del adjunto HTTP ' + r2.status);
-}
-
-/* ── Lista ──────────────────────────────────────────────── */
-async function cargarTickets(){
-  ocultar('ls-err');
-  const cont = document.getElementById('ls-cont');
-  cont.innerHTML = '<div class="cargando">Cargando tickets…</div>';
-  try {
-    const filas = await api('tickets?select=id,folio,asunto,estado,prioridad,categoria,created_at,actualizado_at&order=created_at.desc&limit=100');
-    if (!filas.length) {
-      cont.innerHTML = '<div class="vacio">Todavía no has levantado ningún ticket.</div>';
-      return;
-    }
-    cont.innerHTML = filas.map(t =>
-      '<div class="tk p-' + escHtml(t.prioridad) + '" onclick="verDetalle(\'' + t.id + '\')">' +
-        '<div class="tk-top">' +
-          '<span class="tk-folio">' + escHtml(t.folio) + '</span>' +
-          '<span class="pill e-' + escHtml(t.estado) + '">' + escHtml(ETIQ_ESTADO[t.estado] || t.estado) + '</span>' +
-        '</div>' +
-        '<div class="tk-asunto">' + escHtml(t.asunto) + '</div>' +
-        '<div class="tk-meta">' +
-          // La etiqueta de texto acompaña al color: quien no distingue rojo de
-          // ambar tambien tiene que poder ordenar sus tickets.
-          (ETIQ_URGENCIA[t.prioridad]
-            ? '<span class="urg ' + escHtml(t.prioridad) + '">' + ETIQ_URGENCIA[t.prioridad] + '</span>' : '') +
-          new Date(t.created_at).toLocaleString('es-MX') +
-          ' · ' + escHtml(t.categoria) + '</div>' +
-      '</div>'
-    ).join('');
-  } catch(e) {
-    cont.innerHTML = '';
-    mostrar('ls-err','No se pudieron cargar tus tickets: ' + e.message);
-  }
-}
-
-/* ── Detalle / hilo ─────────────────────────────────────── */
-let _ticketActual = null;
-
-async function verDetalle(id){
-  ocultar('dt-err');
-  document.getElementById('v-nuevo').classList.add('oculto');
-  document.getElementById('v-mis').classList.add('oculto');
-  document.getElementById('v-detalle').classList.remove('oculto');
-  document.getElementById('dt-cab').innerHTML = '<div class="cargando">Cargando…</div>';
-  document.getElementById('dt-hilo').innerHTML = '';
-  _ticketActual = id;
-
-  try {
-    const t = (await api('tickets?id=eq.' + id + '&select=*'))[0];
-    if (!t) throw new Error('ticket no encontrado');
-
-    const reabrible = (t.estado === 'resuelto' || t.estado === 'cerrado');
-    document.getElementById('dt-cab').innerHTML =
-      '<div class="tk-top">' +
-        '<span class="tk-folio">' + escHtml(t.folio) + '</span>' +
-        '<span class="pill e-' + escHtml(t.estado) + '">' + escHtml(ETIQ_ESTADO[t.estado] || t.estado) + '</span>' +
-      '</div>' +
-      '<div class="tk-asunto">' + escHtml(t.asunto) + '</div>' +
-      '<div class="tk-meta">Abierto el ' + new Date(t.created_at).toLocaleString('es-MX') +
-        ' · ' + escHtml(t.categoria) + ' · prioridad ' + escHtml(t.prioridad) + '</div>' +
-      (reabrible ? '<button class="btn ghost" style="margin-top:11px;" onclick="reabrir()">↻ Reabrir ticket</button>' : '');
-
-    // Si esta cerrado o resuelto, no se responde: se reabre.
-    document.getElementById('dt-responder').classList.toggle('oculto', reabrible);
-
-    const msgs = await api('ticket_mensajes?ticket_id=eq.' + id + '&select=*&order=created_at.asc');
-    document.getElementById('dt-hilo').innerHTML = msgs.map(m =>
-      '<div class="msg ' + (m.autor_tipo === 'soporte' ? 'soporte' : 'cliente') + '">' +
-        '<div class="msg-head">' +
-          (m.autor_tipo === 'soporte' ? '🛠 Soporte' : '👤 ' + escHtml(m.autor_nombre || 'Tú')) +
-          ' · ' + new Date(m.created_at).toLocaleString('es-MX') +
-        '</div>' + escHtml(m.cuerpo) +
-      '</div>'
-    ).join('');
-
-    const adj = await api('ticket_adjuntos?ticket_id=eq.' + id + '&select=nombre_archivo,storage_path');
-    if (adj.length) {
-      document.getElementById('dt-hilo').insertAdjacentHTML('beforeend',
-        '<div class="card"><label class="lbl">Adjuntos</label>' +
-        adj.map(a => '<div class="adj">📎 ' + escHtml(a.nombre_archivo) + '</div>').join('') +
-        '</div>');
-    }
-  } catch(e) {
-    document.getElementById('dt-cab').innerHTML = '';
-    mostrar('dt-err','No se pudo abrir el ticket: ' + e.message);
-  }
-}
-
-async function responder(){
-  ocultar('dt-err');
-  const txt = document.getElementById('f-respuesta').value.trim();
-  if (txt.length < 2) { mostrar('dt-err','Escribe tu respuesta antes de enviarla.'); return; }
-
-  const btn = document.getElementById('btn-responder');
-  if (btn.disabled) return;
-  btn.disabled = true; btn.textContent = 'Enviando…';
-  try {
-    await rpc('agregar_mensaje_ticket', { p_ticket_id: _ticketActual, p_cuerpo: txt, p_interno: false });
-    document.getElementById('f-respuesta').value = '';   // solo tras el exito
-    await verDetalle(_ticketActual);
-  } catch(e) {
-    mostrar('dt-err','No se pudo enviar tu respuesta: ' + e.message);
-  } finally {
-    btn.disabled = false; btn.textContent = 'Enviar respuesta';
-  }
-}
-
-async function reabrir(){
-  const motivo = prompt('¿Por qué necesitas reabrirlo? El equipo lo verá como primer mensaje.');
-  if (!motivo || !motivo.trim()) return;
-  try {
-    await rpc('reabrir_ticket', { p_ticket_id: _ticketActual, p_motivo: motivo.trim() });
-    await verDetalle(_ticketActual);
-  } catch(e) {
-    mostrar('dt-err','No se pudo reabrir: ' + e.message);
-  }
-}
-
-/* ── Arranque ───────────────────────────────────────────── */
 (function init(){
-  const s = window._sesion || {};
-  const ini = (s.nombre || '??').split(' ').map(p=>p[0]||'').join('').slice(0,2).toUpperCase();
-  document.getElementById('tb-av').textContent = ini || '··';
-  document.getElementById('tb-id').textContent =
-    (s.nombre || 'Usuario') + ' · ' + (s.rol || '—') +
-    (s.municipio ? ' · ' + s.municipio : '');
-  pintarContexto();
+  var s = sesion();
+  VIVO = !!(s && s.access_token);
+  document.getElementById('badge').textContent = VIVO ? 'DATOS REALES' : 'MODO EJEMPLO';
+  cargarTodo();
 })();
 </script>
 </body>
