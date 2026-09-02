@@ -2006,6 +2006,32 @@ async function guardarEnSupabase(nuevo) {
       }
     }
 
+    // 1b. [FIX 2 sep · C1/C2] Verificar duplicado por CLAVE DE ELECTOR antes de
+    // insertar. La base tiene UNIQUE (clave_elector, licencia_id) y devolvía el
+    // error crudo "duplicate key value violates unique constraint
+    // ux_ciudadanos_clave_licencia", ilegible para un capturista en la calle.
+    // Nota: bajo RLS un capturista solo ve SUS registros, así que este check no
+    // detecta claves de otros capturistas; para eso está la traducción del error
+    // en el catch de abajo.
+    {
+      const claveNueva = (document.getElementById('f-clave')?.value || '').trim().toUpperCase();
+      if (claveNueva.length >= 10 && window.supabase) {
+        let dupClave = null;
+        try {
+          ({ data: dupClave } = await conTimeout(
+            window.supabase.from('ciudadanos')
+              .select('id, nombre, apellido_paterno, seccion_electoral')
+              .ilike('clave_elector', claveNueva)
+              .limit(1).maybeSingle(), 6000, 'clave'));
+        } catch(e) { console.warn('Verificación clave de elector omitida:', e.message); }
+        if (dupClave) {
+          alert('⚠ CLAVE DE ELECTOR YA CAPTURADA\n\nEsa clave ya está registrada como ' + dupClave.nombre + ' ' + (dupClave.apellido_paterno || '') + ' (sección ' + (dupClave.seccion_electoral || '—') + ').\n\nRevisa la credencial: si es la misma persona, búscala en la pestaña Buscar en vez de capturarla de nuevo.');
+          if(btnGuardar) { btnGuardar.textContent = '✅ Guardar registro'; btnGuardar.disabled = false; }
+          return false;
+        }
+      }
+    }
+
     // 2. Verificar duplicado por teléfono
     if(nuevo.tel && nuevo.tel.length >= 10) {
       let dupTel = null;
@@ -2139,7 +2165,22 @@ async function guardarEnSupabase(nuevo) {
     }
 
     // Error real (validación, datos, permisos): NO se guardó nada.
-    alert('⚠ No se pudo guardar: ' + err.message);
+    // [FIX 2 sep · C1/C2] Traducir los errores de Postgres a algo que un
+    // capturista entienda. El código técnico se conserva en consola.
+    const _m = String(err.message || '');
+    let _msg;
+    if (/ux_ciudadanos_clave_licencia/i.test(_m)) {
+      _msg = 'CLAVE DE ELECTOR YA CAPTURADA.\n\nEsa clave de elector ya existe en el sistema (la capturó alguien de tu equipo). No se guardó nada.\n\nRevisa la credencial y, si es la misma persona, no la vuelvas a capturar.';
+    } else if (/duplicate key/i.test(_m) && /curp/i.test(_m)) {
+      _msg = 'CURP YA CAPTURADA.\n\nEsa CURP ya existe en el sistema. No se guardó nada.';
+    } else if (/duplicate key/i.test(_m)) {
+      _msg = 'REGISTRO DUPLICADO.\n\nYa existe un ciudadano con esos mismos datos. No se guardó nada.';
+    } else if (/row-level security|violates|permission|42501|403/i.test(_m)) {
+      _msg = 'SIN PERMISO PARA GUARDAR.\n\nTu sesión no tiene permiso para capturar en esta sección. Cierra sesión y vuelve a entrar; si sigue, avisa a tu coordinador.';
+    } else {
+      _msg = 'No se pudo guardar: ' + _m;
+    }
+    alert('⚠ ' + _msg);
     if(btnGuardar) { btnGuardar.textContent = '✅ Guardar registro'; btnGuardar.disabled = false; }
     return false;
   }
