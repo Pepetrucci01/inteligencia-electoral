@@ -1,1389 +1,725 @@
 <!DOCTYPE html>
-<!-- ═══ VOTERA · MODULO CALL CENTER · VERSION 2 (AUDITORIA + SUPERVISION) ═══ -->
+<!--
+============================================================
+  VOTERA(TM) - Inteligencia Electoral
+  (c) 2026 MEFT Consulting - RFC: CUOJ7808208Z2
+  Modulo: Centro de llamadas
+  ------------------------------------------------------------
+  Dos pantallas, dos oficios distintos:
+
+  LLAMAR      - el operador. Una llamada a la vez, a pantalla
+                completa. Todo lo que no sea la llamada actual
+                estorba: quien trabaja aqui hace 200 al dia y
+                cada clic de mas se multiplica por 200.
+  CAMPANAS    - el supervisor. Arma la lista y mira el avance.
+                Oculta para operador_cc.
+
+  Backend (ya desplegado y probado):
+    generar_cola_llamadas(campana, municipio, seccion, limite)
+    siguiente_llamada(campana, minutos)   -> reserva una
+    registrar_llamada(cola_id, disposicion, notas, duracion,
+                      reintento, compromiso)
+
+  DEMO: sin sesion con licencia, trabaja con datos de ejemplo
+  y NO toca la red. Consistente con la regla de `main`.
+============================================================
+-->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📞</text></svg>">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Centro de Llamadas · VOTERA</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script>
-// ══ [T-CC 21 jul] GUARD DE ENTRADA ═══════════════════════════════════════
-// El módulo no tenía NINGÚN guard: cualquiera con la URL lo abría.
-// Mismo patrón que el resto de los módulos (war_room, reportes, etc.).
-// Además deja window._sesion listo, que es lo que el módulo ya espera
-// para leer la licencia real (línea del LICENCIA_ID).
-(function(){
-  // Candado de dominio — solo corre en dominios autorizados
-  const ALLOW = ['votera.mx','www.votera.mx','localhost','127.0.0.1'];
-  const h = location.hostname;
-  if(!(ALLOW.includes(h) || h.includes('inteligencia-electoral'))){
-    location.replace('https://inteligencia-electoral.vercel.app/');
-  }
-})();
-(function(){
-  try {
-    const s = JSON.parse(localStorage.getItem('electoral_sesion') || 'null');
-    if (!s || !s.ts) { window.location.replace('login.html'); return; }
-    const horas = (Date.now() - s.ts) / 3600000;
-    if (horas >= 8) { localStorage.removeItem('electoral_sesion'); window.location.replace('login.html'); return; }
-    // operador_cc es el dueño del módulo; el mando entra a supervisar.
-    const rolesPermitidos = ["operador_cc", "coordinador_estatal", "coordinador", "admin", "super_admin"];
-    if (!rolesPermitidos.includes(s.rol)) { window.location.replace('login.html'); return; }
-    window._sesion = s;
-  } catch(e) { window.location.replace('login.html'); }
-})();
-</script>
-<script src="supabase_client.js"></script>
-<script src="theme.js"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Centro de llamadas · VOTERA</title>
 <style>
-  :root{
-    --bg:#0d1321; --panel:#151d2e; --panel2:#1b2438; --border:#26314a;
-    --txt:#e8edf6; --mut:#8fa0bd; --dim:#5f7095;
-    --acc:#3fa7ff; --ok:#2ecc8f; --warn:#f0b543; --bad:#f0566b; --neu:#7d8db0;
-    --radius:12px;
-  }
-  *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;}
-  body{background:var(--bg);color:var(--txt);min-height:100vh;padding:18px;}
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+:root{
+  --bg:#0a0e1a;--bg2:#0f1526;--bg3:#141b2e;--bg4:#1a2238;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.14);
+  --text:#e8edf5;--text2:#8a9ab5;--text3:#5a6a85;
+  --accent:#3b82f6;--green:#22c55e;--red:#ef4444;
+  --amber:#f59e0b;--cyan:#06b6d4;--purple:#a855f7;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.5;
+     -webkit-font-smoothing:antialiased;}
+.wrap{max-width:1600px;margin:0 auto;padding:20px 24px 80px;}
 
-  /* ── Header ─────────────────────────────── */
-  .top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px;}
-  .top h1{font-size:1.25rem;font-weight:700;letter-spacing:.3px;display:flex;align-items:center;gap:10px;}
-  .top h1 .dot{width:10px;height:10px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok);animation:pulse 2s infinite;}
-  @keyframes pulse{50%{opacity:.4;}}
-  .top .sub{color:var(--mut);font-size:.8rem;margin-top:2px;}
-  .kpis{display:flex;gap:10px;flex-wrap:wrap;}
-  .kpi{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:8px 14px;min-width:110px;}
-  .kpi .v{font-size:1.25rem;font-weight:700;}
-  .kpi .l{font-size:.68rem;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;}
-  .kpi.ok .v{color:var(--ok);} .kpi.acc .v{color:var(--acc);} .kpi.warn .v{color:var(--warn);}
+.head{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px;}
+.h-title{font-size:20px;font-weight:600;}
+.h-sub{font-size:12px;color:var(--text2);margin-top:2px;}
+.h-badge{font-size:10px;font-family:var(--mono);padding:4px 12px;border-radius:99px;
+         background:rgba(6,182,212,.12);color:var(--cyan);border:1px solid rgba(6,182,212,.25);white-space:nowrap;}
 
-  /* ── Tabs ───────────────────────────────── */
-  .tabs{display:flex;gap:6px;margin-bottom:16px;border-bottom:1px solid var(--border);}
-  .tab{background:none;border:none;color:var(--mut);padding:10px 16px;font-size:.85rem;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;}
-  .tab.active{color:var(--txt);border-bottom-color:var(--acc);}
-  .view{display:none;} .view.active{display:block;}
+.tabs{display:flex;gap:6px;border-bottom:1px solid var(--border2);margin-bottom:18px;flex-wrap:wrap;}
+.tab{padding:9px 16px;font-size:12px;font-weight:500;color:var(--text2);cursor:pointer;
+     border-bottom:2px solid transparent;user-select:none;white-space:nowrap;}
+.tab:hover{color:var(--text);}
+.tab.active{color:var(--cyan);border-bottom-color:var(--cyan);}
+.tab:focus-visible{outline:2px solid var(--cyan);outline-offset:2px;}
+.pane{display:none;} .pane.active{display:block;}
 
-  /* ── Vista Operador ─────────────────────── */
-  .op-grid{display:grid;grid-template-columns:300px 1fr 280px;gap:14px;align-items:start;}
-  @media(max-width:1100px){.op-grid{grid-template-columns:1fr;}}
-  .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px;}
-  .card h3{font-size:.72rem;text-transform:uppercase;letter-spacing:1px;color:var(--dim);margin-bottom:12px;}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:9px;margin-bottom:16px;}
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:11px 13px;position:relative;overflow:hidden;}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--cyan);}
+.kpi.gr::before{background:var(--green);} .kpi.gr .kv{color:var(--green);}
+.kpi.am::before{background:var(--amber);} .kpi.am .kv{color:var(--amber);}
+.kpi.pu::before{background:var(--purple);} .kpi.pu .kv{color:var(--purple);}
+.kl{font-size:9px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
+.kv{font-size:19px;font-weight:600;font-family:var(--mono);color:var(--cyan);}
+.ks{font-size:10px;color:var(--text3);margin-top:2px;}
 
-  .contacto .nombre{font-size:1.1rem;font-weight:700;margin-bottom:2px;}
-  .contacto .tel{font-size:1.7rem;font-weight:800;color:var(--acc);letter-spacing:1px;margin:8px 0;font-variant-numeric:tabular-nums;}
-  .meta-row{display:flex;justify-content:space-between;font-size:.8rem;padding:6px 0;border-bottom:1px dashed var(--border);}
-  .meta-row .k{color:var(--mut);} .meta-row .v{font-weight:600;}
-  .chip{display:inline-block;font-size:.66rem;font-weight:700;padding:3px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px;}
-  .chip.ok{background:rgba(46,204,143,.15);color:var(--ok);}
-  .chip.warn{background:rgba(240,181,67,.15);color:var(--warn);}
-  .chip.bad{background:rgba(240,86,107,.15);color:var(--bad);}
-  .chip.acc{background:rgba(63,167,255,.15);color:var(--acc);}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:14px;}
+.card-title{font-size:13px;font-weight:600;margin-bottom:4px;}
+.card-sub{font-size:11px;color:var(--text3);margin-bottom:12px;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{font-size:9px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.05em;
+   text-align:left;padding:7px 8px;border-bottom:1px solid var(--border2);}
+td{padding:9px 8px;border-bottom:1px solid var(--border);vertical-align:middle;}
+tr:hover td{background:rgba(255,255,255,0.02);}
+.mono{font-family:var(--mono);} .tR{text-align:right;}
+.chip{font-size:9px;font-family:var(--mono);padding:3px 9px;border-radius:99px;white-space:nowrap;display:inline-block;}
+.chip.activa{background:rgba(34,197,94,.12);color:var(--green);}
+.chip.pausada{background:rgba(245,158,11,.12);color:var(--amber);}
+.chip.cerrada{background:rgba(90,106,133,.18);color:var(--text2);}
+.btn{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:500;font-family:var(--sans);
+     padding:8px 16px;border-radius:7px;border:1px solid var(--border2);background:var(--bg3);color:var(--text);
+     cursor:pointer;transition:all .15s;}
+.btn:hover{border-color:var(--cyan);color:var(--cyan);}
+.btn:focus-visible{outline:2px solid var(--cyan);outline-offset:2px;}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.btn:disabled:hover{border-color:var(--border2);color:var(--text);}
+.btn.primary{background:var(--cyan);border-color:var(--cyan);color:#04222b;font-weight:600;}
+.btn.primary:hover{opacity:.9;color:#04222b;}
+.btn.sm{padding:5px 11px;font-size:11px;}
+.btn.ghost{background:transparent;}
+label{display:block;font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;
+      letter-spacing:.05em;margin-bottom:5px;}
+input[type=text],input[type=number],input[type=datetime-local],select,textarea{
+  width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;color:var(--text);
+  font-family:var(--sans);font-size:13px;padding:9px 12px;outline:none;}
+input:focus,select:focus,textarea:focus{border-color:var(--cyan);}
+textarea{resize:vertical;min-height:64px;}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.frow.f3{grid-template-columns:2fr 1fr 1fr;}
+.fitem{min-width:0;}
+@media(max-width:640px){.frow,.frow.f3{grid-template-columns:1fr;}}
+.aviso{font-size:10px;color:var(--text3);line-height:1.5;background:var(--bg3);border:1px solid var(--border);
+       border-radius:8px;padding:9px 12px;margin-bottom:14px;}
 
-  .guion .apertura{background:var(--panel2);border-left:3px solid var(--acc);border-radius:8px;padding:12px 14px;font-size:.92rem;line-height:1.55;margin-bottom:14px;}
-  .preg{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px;}
-  .preg .q{font-size:.88rem;font-weight:600;margin-bottom:8px;}
-  .opts{display:flex;flex-wrap:wrap;gap:6px;}
-  .opt{background:var(--panel);border:1px solid var(--border);color:var(--txt);border-radius:8px;padding:6px 12px;font-size:.8rem;cursor:pointer;}
-  .opt:hover{border-color:var(--acc);}
-  .opt.sel{background:rgba(63,167,255,.2);border-color:var(--acc);color:var(--acc);font-weight:700;}
-
-  /* Pad de disposiciones */
-  .pad{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
-  .disp{border:none;border-radius:10px;padding:12px 8px;font-size:.78rem;font-weight:700;cursor:pointer;color:#fff;text-align:center;line-height:1.3;transition:transform .08s;}
-  .disp:hover{transform:scale(1.03);}
-  .disp.sel-disp{outline:3px solid rgba(255,255,255,.55);}
-  .d-contactado{background:#1f9e6e;} .d-comprometido{background:#168a5c;}
-  .d-nocontesta{background:#5f7095;} .d-buzon{background:#4a5878;}
-  .d-volver{background:#c98f2a;} .d-equivocado{background:#8a5fb0;}
-  .d-rechazo{background:#c04a5c;} .d-nomolestar{background:#8c2f3e;}
-  textarea{width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--txt);padding:10px;font-size:.82rem;resize:vertical;min-height:64px;}
-  input[type="datetime-local"]{width:100%;background:var(--panel2);border:1px solid var(--border);border-radius:8px;color:var(--txt);padding:8px;font-size:.8rem;margin-top:6px;}
-  .lbl{font-size:.7rem;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;display:block;margin-top:10px;}
-  .btn-next{width:100%;margin-top:14px;background:var(--acc);border:none;border-radius:10px;color:#fff;font-size:.92rem;font-weight:700;padding:13px;cursor:pointer;}
-  .btn-next:disabled{background:var(--border);color:var(--dim);cursor:not-allowed;}
-  .cola-mini{margin-top:12px;font-size:.75rem;color:var(--mut);text-align:center;}
-
-  /* ── Vista Campañas ─────────────────────── */
-  .camp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;}
-  .camp .tipo{font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;}
-  .camp .nom{font-size:1rem;font-weight:700;margin:6px 0 10px;}
-  .bar{height:8px;background:var(--panel2);border-radius:6px;overflow:hidden;margin:8px 0 4px;}
-  .bar i{display:block;height:100%;border-radius:6px;background:var(--acc);}
-  .camp .nums{display:flex;justify-content:space-between;font-size:.75rem;color:var(--mut);}
-  .camp .foot{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);font-size:.75rem;color:var(--mut);}
-
-  /* ── Vista Productividad ────────────────── */
-  .prod-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:14px;margin-bottom:14px;}
-  @media(max-width:900px){.prod-grid{grid-template-columns:1fr;}}
-  .chart-box{position:relative;height:250px;}
-  table{width:100%;border-collapse:collapse;font-size:.82rem;}
-  th{color:var(--dim);text-transform:uppercase;font-size:.66rem;letter-spacing:.8px;text-align:left;padding:8px;border-bottom:1px solid var(--border);}
-  td{padding:9px 8px;border-bottom:1px solid var(--border);}
-  td.num{font-variant-numeric:tabular-nums;font-weight:600;}
-
-  .demo-tag{position:fixed;bottom:12px;right:14px;background:rgba(240,181,67,.12);border:1px solid rgba(240,181,67,.4);color:var(--warn);font-size:.64rem;font-weight:700;letter-spacing:1px;padding:5px 10px;border-radius:20px;pointer-events:none;}
-
-  /* ── Auditoría / Supervisión ────────────── */
-  .timer{font-size:.85rem;font-weight:700;color:var(--warn);font-variant-numeric:tabular-nums;margin-bottom:8px;}
-  .timer::before{content:'⏱ ';}
-  .sup-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:14px;}
-  .sem-card{position:relative;}
-  .sem-dot{position:absolute;top:16px;right:16px;width:14px;height:14px;border-radius:50%;}
-  .sem-verde{background:var(--ok);box-shadow:0 0 8px var(--ok);}
-  .sem-amarillo{background:var(--warn);box-shadow:0 0 8px var(--warn);}
-  .sem-rojo{background:var(--bad);box-shadow:0 0 8px var(--bad);animation:pulse 1.2s infinite;}
-  .sem-card .op-nom{font-size:.98rem;font-weight:700;margin-bottom:2px;}
-  .sem-card .op-est{font-size:.72rem;color:var(--mut);margin-bottom:10px;}
-  .sem-card .op-stats{display:flex;gap:14px;font-size:.75rem;color:var(--mut);margin-bottom:10px;}
-  .sem-card .op-stats b{color:var(--txt);display:block;font-size:.95rem;}
-  .flag{display:block;font-size:.72rem;font-weight:600;padding:5px 9px;border-radius:7px;margin-top:5px;}
-  .flag.roja{background:rgba(240,86,107,.13);color:var(--bad);border:1px solid rgba(240,86,107,.35);}
-  .flag.ambar{background:rgba(240,181,67,.11);color:var(--warn);border:1px solid rgba(240,181,67,.3);}
-  .flag.limpia{background:rgba(46,204,143,.1);color:var(--ok);border:1px solid rgba(46,204,143,.25);}
-  .dur-corta{color:var(--bad);font-weight:700;}
-  .verif-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);font-size:.82rem;flex-wrap:wrap;}
-  .verif-row .info b{display:block;}
-  .verif-row .info span{color:var(--mut);font-size:.74rem;}
-  .verif-btns{display:flex;gap:6px;}
-  .vbtn{border:none;border-radius:8px;padding:7px 12px;font-size:.74rem;font-weight:700;cursor:pointer;color:#fff;}
-  .vbtn.ok{background:#1f9e6e;} .vbtn.bad{background:#c04a5c;}
-  .verif-res{font-size:.76rem;font-weight:700;}
-
-  /* ── Gestión / Carga de cola ────────────── */
-  .gest-grid{display:grid;grid-template-columns:340px 1fr;gap:14px;align-items:start;}
-  @media(max-width:900px){.gest-grid{grid-template-columns:1fr;}}
-  .drop{border:2px dashed var(--border);border-radius:12px;padding:26px 16px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;}
-  .drop:hover,.drop.over{border-color:var(--acc);background:rgba(63,167,255,.06);}
-  .drop .ico{font-size:2rem;}
-  .drop .big{font-weight:700;margin:8px 0 4px;}
-  .drop .small{font-size:.74rem;color:var(--mut);line-height:1.5;}
-  .file-name{font-size:.8rem;color:var(--acc);font-weight:600;margin-top:10px;word-break:break-all;}
-  .sel-camp{width:100%;background:var(--panel2);border:1px solid var(--border);color:var(--txt);border-radius:8px;padding:9px;font-size:.82rem;margin-top:6px;}
-  .sum-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:14px;}
-  .sum{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:12px;}
-  .sum .n{font-size:1.5rem;font-weight:800;font-variant-numeric:tabular-nums;}
-  .sum .t{font-size:.66rem;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;margin-top:2px;}
-  .sum.ok .n{color:var(--ok);} .sum.bad .n{color:var(--bad);} .sum.acc .n{color:var(--acc);}
-  .desglose{font-size:.8rem;color:var(--mut);line-height:1.8;margin-bottom:12px;}
-  .desglose b{color:var(--txt);}
-  .empty-gest{color:var(--dim);font-size:.85rem;text-align:center;padding:44px 10px;line-height:1.6;}
-  .btn-cargar{width:100%;background:var(--ok);border:none;border-radius:10px;color:#fff;font-size:.9rem;font-weight:700;padding:12px;cursor:pointer;margin-top:6px;}
-  .btn-cargar:disabled{background:var(--border);color:var(--dim);cursor:not-allowed;}
+/* ── LA LLAMADA ─────────────────────────────────────────────
+   Esta es la pieza central del modulo. Todo lo demas es quieto
+   para que aqui caiga la vista sin buscar. */
+.llamada{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:22px 24px;margin-bottom:14px;}
+.ll-vacia{text-align:center;padding:44px 20px;}
+.ll-vacia .ic{font-size:34px;opacity:.35;margin-bottom:10px;}
+.ll-vacia .t{font-size:14px;font-weight:500;margin-bottom:4px;}
+.ll-vacia .s{font-size:12px;color:var(--text3);margin-bottom:18px;}
+.ll-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:16px;}
+.ll-nombre{font-size:22px;font-weight:600;line-height:1.25;}
+.ll-meta{font-size:11px;font-family:var(--mono);color:var(--text3);margin-top:4px;}
+.ll-tel{font-family:var(--mono);font-size:27px;font-weight:600;color:var(--cyan);letter-spacing:.02em;
+        text-decoration:none;display:inline-block;}
+.ll-tel:hover{text-decoration:underline;}
+.ll-crono{font-family:var(--mono);font-size:12px;color:var(--text2);text-align:right;margin-top:3px;}
+.ll-guion{background:var(--bg3);border-left:3px solid var(--cyan);border-radius:0 8px 8px 0;
+          padding:12px 14px;font-size:13px;line-height:1.6;color:var(--text2);margin-bottom:16px;white-space:pre-wrap;}
+.disp{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:14px;}
+.d-btn{padding:13px 12px;border-radius:9px;border:1px solid var(--border2);background:var(--bg3);
+       color:var(--text);cursor:pointer;font-family:var(--sans);font-size:13px;font-weight:500;
+       text-align:left;transition:all .12s;}
+.d-btn:hover{border-color:var(--border2);background:var(--bg4);}
+.d-btn:focus-visible{outline:2px solid var(--cyan);outline-offset:2px;}
+.d-btn .dt{display:block;}
+.d-btn .dd{display:block;font-size:10px;color:var(--text3);margin-top:2px;font-family:var(--mono);}
+.d-btn.sel{border-color:var(--cyan);background:rgba(6,182,212,.1);color:var(--cyan);}
+.d-btn.sel.bueno{border-color:var(--green);background:rgba(34,197,94,.1);color:var(--green);}
+.d-btn.sel.malo{border-color:var(--red);background:rgba(239,68,68,.1);color:var(--red);}
+.comp{display:none;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.comp.on{display:flex;}
+.c-btn{padding:8px 14px;border-radius:7px;border:1px solid var(--border2);background:var(--bg3);
+       color:var(--text2);cursor:pointer;font-family:var(--sans);font-size:12px;}
+.c-btn:focus-visible{outline:2px solid var(--cyan);outline-offset:2px;}
+.c-btn.sel{border-color:var(--green);background:rgba(34,197,94,.1);color:var(--green);}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--bg4);
+       border:1px solid var(--cyan);color:var(--cyan);padding:11px 20px;border-radius:9px;font-size:13px;
+       opacity:0;pointer-events:none;transition:opacity .25s;z-index:99;}
+.toast.on{opacity:1;}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;}}
+@media(max-width:640px){
+  .wrap{padding:14px 14px 60px;}
+  .ll-tel{font-size:23px;}
+  .ll-nombre{font-size:19px;}
+  .disp{grid-template-columns:1fr 1fr;}
+}
 </style>
 </head>
 <body>
+<div class="wrap">
 
-<div class="top">
-  <div>
-    <h1><span class="dot"></span>Centro de Llamadas</h1>
-    <div class="sub">Campaña activa: <strong id="camp-activa-nombre">—</strong> · Operador: <strong>María Torres</strong></div>
-  </div>
-  <div class="kpis">
-    <div class="kpi acc"><div class="v" id="kpi-pend">—</div><div class="l">En cola</div></div>
-    <div class="kpi ok"><div class="v" id="kpi-cont">—</div><div class="l">Contactados hoy</div></div>
-    <div class="kpi warn"><div class="v" id="kpi-tasa">—</div><div class="l">Tasa de contacto</div></div>
-    <div class="kpi"><div class="v" id="kpi-reint">—</div><div class="l">Reintentos prog.</div></div>
-    <button onclick="cerrarSesionCC()" title="Cerrar sesión"
-      style="align-self:center;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);color:#ef4444;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;margin-left:6px;">⏻ Salir</button>
-  </div>
-</div>
-
-<div class="tabs">
-  <button class="tab active" onclick="verTab('operador',this)">📞 Pantalla de Operador</button>
-  <button class="tab" onclick="verTab('campanas',this)">📋 Campañas</button>
-  <button class="tab" onclick="verTab('productividad',this)">📊 Productividad</button>
-  <button class="tab" id="tab-supervision" onclick="verTab('supervision',this)">🛡️ Supervisión</button>
-  <button class="tab" id="tab-gestion" onclick="verTab('gestion',this)">📥 Gestión</button>
-</div>
-
-<!-- ══════════ VISTA OPERADOR ══════════ -->
-<div class="view active" id="view-operador">
-  <div class="op-grid">
-
-    <!-- Ficha de contacto -->
-    <div class="card contacto">
-      <h3>Contacto actual</h3>
-      <div class="nombre" id="c-nombre">—</div>
-      <span class="chip acc" id="c-chip">—</span>
-      <div class="tel" id="c-tel">—</div>
-      <div class="timer" id="c-timer">00:00</div>
-      <div class="meta-row"><span class="k">Sección</span><span class="v" id="c-seccion">—</span></div>
-      <div class="meta-row"><span class="k">Municipio</span><span class="v" id="c-municipio">—</span></div>
-      <div class="meta-row"><span class="k">Intentos previos</span><span class="v" id="c-intentos">—</span></div>
-      <div class="meta-row"><span class="k">Consentimiento</span><span class="v" id="c-consent">—</span></div>
-      <div class="cola-mini" id="c-progreso">—</div>
+  <div class="head">
+    <div>
+      <div class="h-title">Centro de llamadas</div>
+      <div class="h-sub">Contacto telefónico con simpatizantes registrados</div>
     </div>
-
-    <!-- Guion y preguntas -->
-    <div class="card guion">
-      <h3>Guion de llamada</h3>
-      <div class="apertura" id="g-apertura">—</div>
-      <div id="g-preguntas"></div>
-    </div>
-
-    <!-- Disposiciones -->
-    <div class="card">
-      <h3>Resultado de la llamada</h3>
-      <div class="pad">
-        <button class="disp d-contactado"  onclick="setDisp('contactado',this)">✓ Contactado</button>
-        <button class="disp d-comprometido" onclick="setDisp('comprometido',this)">★ Comprometido</button>
-        <button class="disp d-nocontesta"  onclick="setDisp('no_contesta',this)">No contesta</button>
-        <button class="disp d-buzon"       onclick="setDisp('buzon',this)">Buzón de voz</button>
-        <button class="disp d-volver"      onclick="setDisp('volver_llamar',this)">↻ Volver a llamar</button>
-        <button class="disp d-equivocado"  onclick="setDisp('numero_equivocado',this)">Núm. equivocado</button>
-        <button class="disp d-rechazo"     onclick="setDisp('rechazo',this)">Rechazo</button>
-        <button class="disp d-nomolestar"  onclick="setDisp('no_molestar',this)">⛔ No molestar</button>
-      </div>
-      <div id="reintento-wrap" style="display:none;">
-        <span class="lbl">Programar reintento</span>
-        <input type="datetime-local" id="reintento-fecha">
-      </div>
-      <span class="lbl">Notas del operador</span>
-      <textarea id="notas" placeholder="Ej. Pide que llamen después de las 6 pm..."></textarea>
-      <button class="btn-next" id="btn-next" disabled onclick="guardarYSiguiente()">Guardar y llamar siguiente →</button>
-    </div>
-
+    <div class="h-badge" id="badge">MODO EJEMPLO</div>
   </div>
-</div>
 
-<!-- ══════════ VISTA CAMPAÑAS ══════════ -->
-<div class="view" id="view-campanas">
-  <div class="camp-grid" id="camp-grid"></div>
-</div>
-
-<!-- ══════════ VISTA PRODUCTIVIDAD ══════════ -->
-<div class="view" id="view-productividad">
-  <div class="prod-grid">
-    <div class="card"><h3>Llamadas por operador (hoy)</h3><div class="chart-box"><canvas id="ch-operadores"></canvas></div></div>
-    <div class="card"><h3>Distribución de disposiciones</h3><div class="chart-box"><canvas id="ch-disposiciones"></canvas></div></div>
+  <div class="tabs">
+    <div class="tab active" data-pane="llamar" tabindex="0" onclick="verTab('llamar')">📞 Llamar</div>
+    <div class="tab" data-pane="campanas" id="tab-campanas" tabindex="0" onclick="verTab('campanas')">🗂 Campañas</div>
   </div>
-  <div class="card">
-    <h3>Detalle por operador</h3>
-    <table>
-      <thead><tr><th>Operador</th><th>Llamadas</th><th>Contactados</th><th>Comprometidos</th><th>Sin respuesta</th><th>Tasa de contacto</th></tr></thead>
-      <tbody id="tabla-operadores"></tbody>
-    </table>
-  </div>
-</div>
 
-<!-- ══════════ VISTA SUPERVISIÓN (coordinador/admin) ══════════ -->
-<div class="view" id="view-supervision">
-  <div class="sup-grid" id="sup-grid"></div>
-  <div class="prod-grid">
-    <div class="card">
-      <h3>Bitácora de llamadas recientes</h3>
-      <table>
-        <thead><tr><th>Hora</th><th>Operador</th><th>Contacto</th><th>Duración</th><th>Disposición</th></tr></thead>
-        <tbody id="tabla-bitacora"></tbody>
-      </table>
-    </div>
-    <div class="card">
-      <h3>Verificación aleatoria de contactos</h3>
-      <p style="font-size:.76rem;color:var(--mut);margin-bottom:8px;">Llamadas marcadas "contactado/comprometido" seleccionadas al azar para re-verificación por un segundo operador.</p>
-      <div id="verif-lista"></div>
-    </div>
-  </div>
-</div>
+  <!-- ══════════ LLAMAR ══════════ -->
+  <div class="pane active" id="pane-llamar">
 
-<!-- ══════════ VISTA GESTIÓN (coordinador/admin) ══════════ -->
-<div class="view" id="view-gestion">
-  <div class="gest-grid">
-
-    <div class="card">
-      <h3>Cargar cola desde Excel externo</h3>
-      <div class="drop" id="drop-zone" onclick="document.getElementById('file-excel').click()">
-        <div class="ico">📥</div>
-        <div class="big">Arrastra o elige tu Excel</div>
-        <div class="small">Plantilla VOTERA (.xlsx). Solo entran filas con teléfono válido y consentimiento = SI. Los duplicados por teléfono se descartan solos.</div>
-        <div class="file-name" id="file-name"></div>
-      </div>
-      <input type="file" id="file-excel" accept=".xlsx,.xls" style="display:none" onchange="leerExcel(this.files[0])">
-      <span class="lbl">Campaña destino</span>
-      <select class="sel-camp" id="sel-camp-destino"></select>
-      <button class="btn-cargar" id="btn-cargar" disabled onclick="confirmarCarga()">Cargar a la cola →</button>
-      <p style="font-size:.72rem;color:var(--mut);margin-top:12px;line-height:1.65;">
-        La base externa entra <b>solo a la cola de llamadas</b> — nunca se mezcla con tu base de simpatizantes.
-        En duplicados se conserva el registro que ya estaba en la cola.
-      </p>
-    </div>
-
-    <div class="card">
-      <h3>Resultado del análisis</h3>
-      <div id="gest-empty" class="empty-gest">Sube un archivo para ver el desglose de deduplicación.</div>
-      <div id="gest-result" style="display:none;">
-        <div class="sum-grid">
-          <div class="sum"><div class="n" id="s-leidos">0</div><div class="t">Filas leídas</div></div>
-          <div class="sum ok"><div class="n" id="s-listos">0</div><div class="t">Listos para cargar</div></div>
-          <div class="sum bad"><div class="n" id="s-desc">0</div><div class="t">Descartados</div></div>
+    <div class="card" style="padding:12px 16px;">
+      <div class="frow" style="margin-bottom:0;">
+        <div class="fitem">
+          <label for="ll-campana">Campaña</label>
+          <select id="ll-campana" onchange="cambiarCampana()"></select>
         </div>
-        <div class="desglose" id="s-desglose"></div>
-        <table>
-          <thead><tr><th>Nombre</th><th>Teléfono</th><th>Sección</th><th>Municipio</th><th>Consent.</th></tr></thead>
-          <tbody id="tabla-preview"></tbody>
-        </table>
-        <p style="font-size:.72rem;color:var(--dim);margin-top:8px;" id="preview-nota"></p>
+        <div class="fitem" style="display:flex;align-items:flex-end;">
+          <div class="aviso" style="margin:0;flex:1;" id="ll-guionaviso">
+            Marca desde tu teléfono o diadema. El sistema no marca solo: registra lo que pasó.
+          </div>
+        </div>
       </div>
     </div>
 
-  </div>
-</div>
+    <div class="kpi-row">
+      <div class="kpi"><div class="kl">Por llamar</div><div class="kv" id="k-pend">—</div><div class="ks">en esta campaña</div></div>
+      <div class="kpi gr"><div class="kl">Contactados hoy</div><div class="kv" id="k-cont">—</div><div class="ks">hablaste con la persona</div></div>
+      <div class="kpi am"><div class="kl">Sin respuesta</div><div class="kv" id="k-nores">—</div><div class="ks">se reintentan solos</div></div>
+      <div class="kpi pu"><div class="kl">Llamadas hechas</div><div class="kv" id="k-hechas">—</div><div class="ks">tu turno de hoy</div></div>
+    </div>
 
-<div class="demo-tag">MODO DEMO · DATOS SIMULADOS</div>
+    <div class="llamada" id="ll-box">
+      <div class="ll-vacia" id="ll-vacia">
+        <div class="ic">📞</div>
+        <div class="t">No tienes ninguna llamada abierta</div>
+        <div class="s">Toma la siguiente de la lista cuando estés listo.</div>
+        <button class="btn primary" id="btn-tomar" onclick="tomarSiguiente()">Tomar siguiente llamada</button>
+      </div>
+
+      <div id="ll-activa" style="display:none">
+        <div class="ll-top">
+          <div>
+            <div class="ll-nombre" id="ll-nombre">—</div>
+            <div class="ll-meta" id="ll-meta">—</div>
+          </div>
+          <div style="text-align:right">
+            <a class="ll-tel" id="ll-tel" href="#">—</a>
+            <div class="ll-crono" id="ll-crono">00:00</div>
+          </div>
+        </div>
+
+        <div class="ll-guion" id="ll-guion"></div>
+
+        <div class="disp" id="ll-disp"></div>
+
+        <div class="comp" id="ll-comp">
+          <span style="font-size:11px;color:var(--text3);align-self:center;font-family:var(--mono)">
+            ¿Qué tanto nos apoya?
+          </span>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label for="ll-notas">Notas</label>
+          <textarea id="ll-notas" placeholder="Lo que convenga recordar para la próxima llamada"></textarea>
+        </div>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <button class="btn primary" id="btn-guardar" onclick="guardarLlamada()">Guardar y tomar la siguiente</button>
+          <button class="btn ghost" onclick="soltarLlamada()">Dejarla para después</button>
+          <span class="mono" id="ll-estado" style="font-size:11px;color:var(--text3);"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Tus últimas llamadas</div>
+      <div class="card-sub">Solo de este turno. Sirve para volver sobre algo que se te haya pasado.</div>
+      <div style="overflow-x:auto;">
+        <table><thead><tr>
+          <th>Hora</th><th>Persona</th><th>Teléfono</th><th>Resultado</th><th class="tR">Duración</th>
+        </tr></thead><tbody id="tbl-hist"></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ CAMPAÑAS ══════════ -->
+  <div class="pane" id="pane-campanas">
+
+    <div class="card">
+      <div class="card-title">Armar la lista de llamadas</div>
+      <div class="card-sub">Toma personas de tu padrón y las pone en la fila de la campaña. Solo entra quien dio permiso de que le llamen y tiene teléfono. Si dos personas comparten número, se llama a una sola.</div>
+      <div class="frow f3">
+        <div class="fitem"><label for="cp-campana">Campaña</label><select id="cp-campana"></select></div>
+        <div class="fitem"><label for="cp-municipio">Municipio</label><select id="cp-municipio"></select></div>
+        <div class="fitem"><label for="cp-limite">Cuántas agregar</label>
+          <input type="number" id="cp-limite" value="300" min="1" max="5000"></div>
+      </div>
+      <button class="btn primary" onclick="generarCola()">Agregar a la lista</button>
+      <span class="mono" id="cp-estado" style="font-size:11px;color:var(--text3);margin-left:10px;"></span>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Campañas</div>
+      <div class="card-sub">Una campaña es un motivo para llamar: identificar simpatizantes, confirmar datos, recordar la fecha de la elección.</div>
+      <div style="overflow-x:auto;">
+        <table><thead><tr>
+          <th>Campaña</th><th>Motivo</th><th>Estado</th>
+          <th class="tR">En lista</th><th class="tR">Por llamar</th><th class="tR">Contactados</th><th>Avance</th>
+        </tr></thead><tbody id="tbl-camp"></tbody></table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Trabajo de los operadores</div>
+      <div class="card-sub">Llamadas hechas y qué tan seguido logran hablar con la persona.</div>
+      <div style="overflow-x:auto;">
+        <table><thead><tr>
+          <th>Operador</th><th class="tR">Llamadas</th><th class="tR">Contactados</th>
+          <th class="tR">Efectividad</th><th class="tR">Duración media</th>
+        </tr></thead><tbody id="tbl-prod"></tbody></table>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
 
 <script>
-/* ═══════════════════════════════════════════════════════════
-   VOTERA™ · Módulo Centro de Llamadas — MODO DEMO
-   Todos los datos son horneados. Cero llamadas de red.
-   Los puntos de conexión real están marcados // [SWAP LUIS]
-   ═══════════════════════════════════════════════════════════ */
+/* ════════════════════════════════════════════════════════════
+   CONEXIÓN — mismo patrón que t21_encuestas_supabase.js
+   ════════════════════════════════════════════════════════════ */
+var SUPA_URL = 'https://dyirhwwmykskpuvzcafx.supabase.co';
+var SUPA_ANON = window.SUPABASE_KEY ||
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5aXJod3dteWtza3B1dnpjYWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NTk3ODgsImV4cCI6MjA5NTEzNTc4OH0.2xe4cHqORGng1hnYPJ9ZiyT0r87fMijbUEJqBy3-xoI';
 
-// [SWAP LUIS] licencia de sesión — en Fase 4 viene de auth
-const LICENCIA_ID = (window._sesion && window._sesion.licencia_id) || 'a1b2c3d4-0001-0000-0000-000000000001';
-
-// Salir del Call Center → login. El operador_cc aterriza directo aquí (no ve
-// hub ni otros módulos), mismo patrón que el kiosco del Día E.
-// Escapa texto para insertar seguro en innerHTML (evita XSS si un nombre/dato
-// trae caracteres HTML). Usar en toda interpolación de datos en innerHTML.
-function escHtml(v){
-  return String(v == null ? '' : v)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+function sesion(){
+  try { return JSON.parse(localStorage.getItem('electoral_sesion')) || null; }
+  catch(e){ return null; }
 }
-
-function cerrarSesionCC() {
-  if (!confirm('¿Cerrar sesión?')) return;
-  localStorage.removeItem('electoral_sesion');
-  window.location.replace('login.html');
+function licenciaId(){ var s=sesion(); return s && s.licencia_id ? String(s.licencia_id) : null; }
+function rolActual(){ var s=sesion(); return (s && s.rol) || ''; }
+function token(){
+  var s=sesion();
+  return (window._sesion && window._sesion.access_token) || (s && s.access_token) || SUPA_ANON;
 }
-
-/* ══════════════════════════════════════════════════════════════════════════
-   [T-CC 21 jul] CAPA DE DATOS REAL — conecta con el esquema del SQL 30
-   (campanas_llamadas · cola_llamadas · siguiente_llamada · vistas).
-
-   Patrón del proyecto:
-     ▸ esperarSupabase(): NO basta con que exista window.supabase; hay que
-       garantizar que la SESIÓN esté aplicada en el SDK, o los RPC salen con
-       auth.uid() null → 401/permission denied (bug ya vivido en panel_cliente).
-     ▸ ccFetch: prefijo PROPIO del módulo. theme.js define un supaFetch global
-       que pisa los locales; cada módulo usa su prefijo (wrFetch, pcFetch...).
-     ▸ Si la BD no responde, se conserva el MODO DEMO como respaldo visible.
-   ══════════════════════════════════════════════════════════════════════════ */
-
-// Cuando hay datos reales, esto pasa a false y se oculta el cartel de demo.
-var CC_DEMO = true;
-
-async function esperarSupabase(ms) {
-  const tokensGuardados = () => {
-    try {
-      const s = JSON.parse(localStorage.getItem('electoral_sesion') || 'null');
-      return (s && s.access_token && s.refresh_token) ? s : null;
-    } catch (e) { return null; }
-  };
-  const sdkTieneSesion = async () => {
-    try {
-      const { data } = await window.supabase.auth.getSession();
-      return !!data?.session?.access_token;
-    } catch (e) { return false; }
-  };
-  const asegurar = async () => {
-    if (!window.supabase) return false;
-    if (await sdkTieneSesion()) return true;
-    const s = tokensGuardados();
-    if (s && window.supabase.auth?.setSession) {
-      try {
-        await window.supabase.auth.setSession({
-          access_token: s.access_token, refresh_token: s.refresh_token,
-        });
-        return await sdkTieneSesion();
-      } catch (e) { /* sigue esperando */ }
+function headers(){
+  return { 'apikey':SUPA_ANON, 'Authorization':'Bearer '+token(), 'Content-Type':'application/json' };
+}
+function _fetch(){ return window.supaFetch || fetch; }
+async function _fetchAuth(url, opts){
+  opts = opts || {};
+  var res = await _fetch()(url, opts);
+  if (res && (res.status===401 || res.status===403)
+      && typeof window.refrescarTokenSupabase === 'function'){
+    var ok = await window.refrescarTokenSupabase();
+    if (ok){
+      if (opts.headers) opts.headers['Authorization'] = 'Bearer '+token();
+      res = await _fetch()(url, opts);
     }
-    return false;
-  };
-  if (await asegurar()) return true;
-  return await new Promise(resolve => {
-    let listo = false;
-    const ok = async () => { if (listo) return; await asegurar(); listo = true; resolve(true); };
-    document.addEventListener('supabase-ready', ok, { once: true });
-    const iv = setInterval(async () => { if (await asegurar()) { clearInterval(iv); ok(); } }, 100);
-    setTimeout(() => {
-      clearInterval(iv);
-      if (!listo) { listo = true; resolve(false); }
-    }, ms || 8000);
-  });
-}
-
-// Fetch propio del módulo: apikey + Authorization con el token del usuario.
-async function ccFetch(path, options) {
-  options = options || {};
-  const token = (await window.supabase.auth.getSession()).data.session?.access_token;
-  const headers = Object.assign(
-    { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + (token || SUPA_KEY) },
-    options.headers || {}
-  );
-  const res = await fetch(SUPA_URL + '/rest/v1/' + path, Object.assign({}, options, { headers }));
-  if (!res.ok) {
-    // Traer el detalle del error de PostgREST, que explica mucho mejor que el código.
-    let detalle = '';
-    try { detalle = ' · ' + (await res.text()); } catch (e) {}
-    throw new Error('HTTP ' + res.status + ' en ' + path + detalle);
   }
-  // [FIX] Con Prefer: return=minimal PostgREST responde 204 SIN cuerpo.
-  // Llamar res.json() sobre un cuerpo vacío lanza "Unexpected end of JSON input".
-  if (res.status === 204) return null;
-  const texto = await res.text();
-  return texto ? JSON.parse(texto) : null;
+  return res;
 }
-
-// ── [SWAP 1] Campañas activas de la licencia ──────────────────────────────
-async function cargarCampanasReales() {
-  const filas = await ccFetch(
-    'campanas_llamadas?select=id,nombre,tipo,estado,guion,encuesta_id' +
-    '&licencia_id=eq.' + LICENCIA_ID + '&estado=eq.activa&order=creado_en.desc'
-  );
-  // Conteos reales por campaña (total en cola y completadas).
-  for (const c of filas) {
-    try {
-      const todos = await ccFetch('cola_llamadas?select=estado&campana_id=eq.' + c.id);
-      c.total       = todos ? todos.length : 0;
-      c.completadas = todos ? todos.filter(function(x){ return x.estado === 'completada'; }).length : 0;
-      c.pendientes  = todos ? todos.filter(function(x){ return x.estado !== 'completada' && x.estado !== 'descartada'; }).length : 0;
-    } catch (e) { c.total = 0; c.completadas = 0; c.pendientes = 0; }
-  }
-  return filas;
-}
-
-// ── [SWAP 2] Siguiente contacto de la cola (con reserva atómica) ───────────
-// Llama al RPC del SQL 30: reserva el registro 15 min para este operador.
-// Dos operadores concurrentes NUNCA reciben el mismo (FOR UPDATE SKIP LOCKED).
-async function siguienteLlamadaReal(campanaId) {
-  const filas = await ccFetch('rpc/siguiente_llamada', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ p_campana_id: campanaId, p_minutos: 15 })
+async function rpc(nombre, params){
+  var res = await _fetchAuth(SUPA_URL+'/rest/v1/rpc/'+nombre, {
+    method:'POST', headers:headers(), body:JSON.stringify(params||{})
   });
-  return (Array.isArray(filas) && filas.length) ? filas[0] : null;
+  if (!res || !res.ok) throw new Error('rpc '+nombre+' devolvió '+(res && res.status));
+  return await res.json();
+}
+async function get(ruta){
+  var res = await _fetchAuth(SUPA_URL+'/rest/v1/'+ruta, { method:'GET', headers:headers() });
+  if (!res || !res.ok) throw new Error('GET '+ruta+' devolvió '+(res && res.status));
+  return await res.json();
 }
 
-// ── [SWAP 3] Guardar el resultado de la llamada ───────────────────────────
-// disposicion + notas + duración + intentos. Si es "volver a llamar",
-// programa el reintento (por defecto en 2 h).
-async function guardarLlamadaReal(colaId, datos) {
-  const cuerpo = {
-    estado: 'completada',
-    disposicion: datos.disposicion,
-    notas: datos.notas || null,
-    intentos: (datos.intentos || 0) + 1,
-    hora_fin: new Date().toISOString(),
-    fecha_llamada: new Date().toISOString(),
-    duracion_segundos: datos.duracion || null
-  };
-  if (datos.disposicion === 'no_contesto' || datos.disposicion === 'buzon') {
-    // Reintento programado: no se pierde el contacto, se reagenda.
-    cuerpo.estado = 'pendiente';
-    cuerpo.operador_id = null;
-    cuerpo.reservado_hasta = null;
-    cuerpo.reintento_programado = new Date(Date.now() + 2 * 3600 * 1000).toISOString();
-  }
-  await ccFetch('cola_llamadas?id=eq.' + colaId + '&licencia_id=eq.' + LICENCIA_ID, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-    body: JSON.stringify(cuerpo)
-  });
+var VIVO = false;   // true cuando hay sesión con licencia
+
+/* ── Datos de ejemplo (modo demo, sin red) ─────────────────── */
+var CAMPANAS_DEMO = [
+  { id:'demo-c1', nombre:'Identificación de simpatizantes', tipo:'identificacion',
+    estado:'activa', guion:'Buenas tardes, ¿hablo con {nombre}?\n\nLe llamo de parte de la campaña. Quería preguntarle si podemos contar con su apoyo el día de la elección.',
+    total:300, pendientes:247, contactados:41 },
+  { id:'demo-c2', nombre:'Confirmación de datos', tipo:'verificacion',
+    estado:'pausada', guion:'Buenas tardes, ¿hablo con {nombre}?\n\nSolo quería confirmar que sus datos estén correctos en nuestro registro.',
+    total:120, pendientes:118, contactados:2 },
+];
+var COLA_DEMO = [
+  { id:'d1', nombre:'MARÍA HERNÁNDEZ LÓPEZ',  telefono:'3120000042', municipio:'COLIMA',     seccion:'201', intentos:0 },
+  { id:'d2', nombre:'JOSÉ TORRES DELGADO',    telefono:'3140000118', municipio:'MANZANILLO', seccion:'060', intentos:1 },
+  { id:'d3', nombre:'ALICIA GUERRERO RÍOS',   telefono:'3130000077', municipio:'TECOMÁN',    seccion:'336', intentos:0 },
+];
+var MUNICIPIOS = ['MANZANILLO','COLIMA','VILLA DE ÁLVAREZ','TECOMÁN','ARMERÍA',
+                  'CUAUHTÉMOC','COMALA','COQUIMATLÁN','MINATITLÁN','IXTLAHUACÁN'];
+
+/* Las siete disposiciones que acepta la base. El texto es el que ve
+   el operador; el valor es el que guarda registrar_llamada(). */
+var DISPOSICIONES = [
+  { v:'comprometido',      t:'Nos apoya',            d:'cierra',            cls:'bueno' },
+  { v:'contactado',        t:'Contesté, sin definir',d:'cierra',            cls:'' },
+  { v:'no_contesto',       t:'No contestó',          d:'reintento en 4 h',  cls:'' },
+  { v:'buzon',             t:'Buzón',                d:'reintento mañana',  cls:'' },
+  { v:'numero_equivocado', t:'Número equivocado',    d:'cierra',            cls:'malo' },
+  { v:'rechazo',           t:'No nos apoya',         d:'cierra',            cls:'malo' },
+  { v:'no_llamar',         t:'No volver a llamar',   d:'lo saca de todo',   cls:'malo' },
+];
+var COMPROMISOS = [
+  { v:1, t:'1 · Nada seguro' }, { v:2, t:'2 · Tal vez' },
+  { v:3, t:'3 · Probable'  },   { v:4, t:'4 · Seguro'  },
+];
+
+var CAMPANAS = CAMPANAS_DEMO.slice();
+var actual = null;        // la llamada abierta
+var disposicion = null;
+var compromiso = null;
+var t0 = null, crono = null;
+var HIST = [];
+var demoIdx = 0;
+
+/* ── Utilidades ───────────────────────────────────────────── */
+function fmt(n){ return (n===null||n===undefined||isNaN(n)) ? '—' : Number(n).toLocaleString('es-MX'); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+function tel10(t){
+  var s = String(t||'').replace(/\D/g,'');
+  return s.length===10 ? s.slice(0,3)+' '+s.slice(3,6)+' '+s.slice(6) : (t||'—');
+}
+function hhmm(seg){
+  var m = Math.floor(seg/60), s = seg%60;
+  return (m<10?'0':'')+m+':'+(s<10?'0':'')+s;
+}
+function mostrarToast(msg){
+  var el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('on');
+  setTimeout(function(){ el.classList.remove('on'); }, 2400);
+}
+function verTab(p){
+  document.querySelectorAll('.tab').forEach(function(t){ t.classList.toggle('active', t.dataset.pane===p); });
+  document.querySelectorAll('.pane').forEach(function(x){ x.classList.toggle('active', x.id==='pane-'+p); });
+}
+function campanaActual(){
+  var sel = document.getElementById('ll-campana');
+  return CAMPANAS.find(function(c){ return c.id === (sel && sel.value); }) || CAMPANAS[0] || null;
 }
 
-// ── [SWAP 4] Productividad por operador (vista v_productividad_callcenter) ─
-async function cargarProductividadReal() {
-  const filas = await ccFetch(
-    'v_productividad_callcenter?select=*&licencia_id=eq.' + LICENCIA_ID
-  );
-  // Adaptar al formato que ya usa la UI (sinResp en camelCase).
-  return (filas || []).map(function (o) {
-    return {
-      operador:      o.operador || 'Sin nombre',
-      llamadas:      Number(o.llamadas || 0),
-      contactados:   Number(o.contactados || 0),
-      comprometidos: Number(o.comprometidos || 0),
-      sinResp:       Number(o.sin_respuesta || 0)
-    };
-  });
-}
-
-// ── [SWAP 5] Supervisión (deriva métricas de v_auditoria_callcenter) ──────
-// La vista devuelve llamadas individuales; aquí se agregan por operador para
-// las señales de alerta que la UI ya sabe pintar (duración promedio,
-// llamadas/hora, racha de no-contesta, minutos sin actividad).
-async function cargarAuditoriaReal() {
-  const filas = await ccFetch(
-    'v_auditoria_callcenter?select=*&licencia_id=eq.' + LICENCIA_ID +
-    '&order=fecha_llamada.desc&limit=500'
-  );
-  if (!filas || !filas.length) return [];
-
-  const porOperador = {};
-  filas.forEach(function (f) {
-    const k = f.operador || 'Sin nombre';
-    if (!porOperador[k]) porOperador[k] = { operador: k, llamadas: [] };
-    porOperador[k].llamadas.push(f);
-  });
-
-  const ahora = Date.now();
-  return Object.keys(porOperador).map(function (k) {
-    const lls  = porOperador[k].llamadas;          // ya vienen de más reciente a más antigua
-    const durs = lls.map(function (l) { return Number(l.duracion_segundos || 0); })
-                    .filter(function (d) { return d > 0; });
-    const durProm = durs.length
-      ? Math.round(durs.reduce(function (a, b) { return a + b; }, 0) / durs.length) : 0;
-
-    // Minutos desde la última llamada registrada.
-    const ultima = lls[0] && lls[0].fecha_llamada ? new Date(lls[0].fecha_llamada).getTime() : null;
-    const inactivoMin = ultima ? Math.max(0, Math.round((ahora - ultima) / 60000)) : 999;
-
-    // Llamadas en la última hora (ritmo real, no promedio de toda la jornada).
-    const haceUnaHora = ahora - 3600000;
-    const llamadasHora = lls.filter(function (l) {
-      return l.fecha_llamada && new Date(l.fecha_llamada).getTime() >= haceUnaHora;
-    }).length;
-
-    // Racha actual de "no contesta"/buzón seguidos (señal de marcado en falso).
-    let rachaNC = 0;
-    for (let i = 0; i < lls.length; i++) {
-      if (lls[i].disposicion === 'no_contesto' || lls[i].disposicion === 'buzon') rachaNC++;
-      else break;
-    }
-
-    // Llamadas marcadas "contactado" pero sospechosamente cortas (<20 s).
-    const cortasContactado = lls.filter(function (l) {
-      return (l.disposicion === 'contactado' || l.disposicion === 'comprometido')
-          && Number(l.duracion_segundos || 0) > 0
-          && Number(l.duracion_segundos) < 20;
-    }).length;
-
-    return { operador: k, durProm: durProm, llamadasHora: llamadasHora,
-             rachaNC: rachaNC, cortasContactado: cortasContactado, inactivoMin: inactivoMin };
-  });
-}
-
-// ── Arranque: intenta datos reales; si no hay, se queda en demo ───────────
-async function iniciarDatosReales() {
+/* ── Carga ────────────────────────────────────────────────── */
+async function cargarCampanas(){
+  if (!VIVO){ CAMPANAS = CAMPANAS_DEMO.slice(); pintarSelectores(); return; }
   try {
-    if (!await esperarSupabase(8000)) {
-      console.warn('Call Center: sin sesión Supabase — se mantiene MODO DEMO.');
-      return;
-    }
-    const camps = await cargarCampanasReales();
-    if (!camps.length) {
-      console.warn('Call Center: no hay campañas activas en la BD — MODO DEMO. ' +
-                   'Crea una en campanas_llamadas para operar con datos reales.');
-      return;
-    }
-    // Hay datos reales: sustituir las campañas demo y salir del modo demo.
-    CAMPANAS.length = 0;
-    camps.forEach(function(c){ CAMPANAS.push(c); });
-    CC_DEMO = false;
-    const tag = document.querySelector('.demo-tag');
-    if (tag) tag.style.display = 'none';
-    console.log('✅ Call Center: ' + camps.length + ' campaña(s) activa(s) desde la BD.');
-    if (typeof pintarCampanas === 'function') pintarCampanas();
-    await cargarSiguienteReal(true);   // true = recuperar reserva previa, no consumir cola
-  } catch (e) {
-    console.warn('Call Center: fallo al cargar datos reales, se mantiene MODO DEMO:', e.message);
-  }
-}
-
-// Pide el siguiente contacto real y lo pinta en la pantalla de operador.
-// [FIX] Al ARRANCAR (recuperar=true) NO consume cola: primero busca si el
-// operador ya tiene un contacto reservado sin terminar y lo retoma. Así
-// recargar la página no quema contactos de la cola.
-async function cargarSiguienteReal(recuperar) {
-  if (CC_DEMO) return;
-  try {
-    const camp = CAMPANAS[0];
-    if (!camp) return;
-    let c = null;
-
-    if (recuperar) {
-      const uid = (window._sesion && window._sesion.id) || null;
-      if (uid) {
-        const míos = await ccFetch(
-          'cola_llamadas?select=*&campana_id=eq.' + camp.id +
-          '&operador_id=eq.' + uid + '&estado=eq.reservada&limit=1'
-        );
-        if (míos && míos.length) c = míos[0];
-      }
-    }
-    if (!c) c = await siguienteLlamadaReal(camp.id);
-
-    if (!c) {
-      console.log('Call Center: no hay contactos pendientes en la cola.');
-      demoState.cola = [];
-      if (typeof pintarContacto === 'function') pintarContacto();
-      return;
-    }
-    // Adaptar al formato que ya usa la UI del módulo.
-    demoState.cola = [{
-      id: c.id, nombre: c.nombre || 'Sin nombre', tel: c.telefono,
-      seccion: c.seccion || '—', municipio: c.municipio || '—',
-      intentos: c.intentos || 0, consent: c.consent
-    }];
-    if (typeof pintarContacto === 'function') pintarContacto();
-  } catch (e) {
-    console.warn('Call Center: no se pudo pedir el siguiente contacto:', e.message);
-  }
-}
-
-
-// [SWAP LUIS] SELECT * FROM campanas_llamadas WHERE licencia_id = ... AND estado='activa'
-const CAMPANAS = [
-  { id:'camp-001', nombre:'Identificación Zona Norte', tipo:'identificacion', estado:'activa',
-    guion:'Buenas tardes, le llamo del equipo de participación ciudadana. Estamos escuchando a los vecinos de su colonia rumbo a las elecciones de 2027. ¿Me regala dos minutos?',
-    total:1200, completadas:487 },
-  { id:'camp-002', nombre:'Encuesta telefónica julio (CATI)', tipo:'encuesta', estado:'activa',
-    guion:'Buen día, realizamos un estudio de opinión pública en Colima. Sus respuestas son anónimas y con fines estadísticos. ¿Acepta participar?',
-    total:800, completadas:214 },
-  { id:'camp-003', nombre:'Movilización simulacro Día E', tipo:'movilizacion', estado:'pausada',
-    guion:'¡Hola! Le recordamos que hoy es día de elección. Su casilla está en su sección. ¿Ya pasó a votar?',
-    total:3500, completadas:0 }
-];
-
-// [SWAP LUIS] SELECT * FROM cola_llamadas WHERE campana_id=... AND operador_id=auth.uid() AND estado<>'completada'
-const COLA_BASE = [
-  { id:'q-01', nombre:'Rosa Elena Gutiérrez', tel:'312 145 0982', seccion:'0087', municipio:'Colima',            intentos:0, consent:true },
-  { id:'q-02', nombre:'Jorge Alberto Ramos',  tel:'312 559 2210', seccion:'0112', municipio:'Villa de Álvarez',  intentos:1, consent:true },
-  { id:'q-03', nombre:'María del Carmen Ávila',tel:'313 887 4431', seccion:'0201', municipio:'Tecomán',           intentos:0, consent:true },
-  { id:'q-04', nombre:'Contacto sin registro', tel:'312 774 6650', seccion:'—',    municipio:'Manzanillo',        intentos:2, consent:false },
-  { id:'q-05', nombre:'Luis Fernando Ochoa',  tel:'314 220 9187', seccion:'0143', municipio:'Manzanillo',        intentos:0, consent:true },
-  { id:'q-06', nombre:'Patricia Rincón',      tel:'312 663 0045', seccion:'0095', municipio:'Comala',            intentos:1, consent:true },
-  { id:'q-07', nombre:'Héctor Manuel Solís',  tel:'313 402 7768', seccion:'0188', municipio:'Armería',           intentos:0, consent:true },
-  { id:'q-08', nombre:'Guadalupe Ceballos',   tel:'312 918 3324', seccion:'0064', municipio:'Cuauhtémoc',        intentos:0, consent:true }
-];
-
-// Preguntas del guion por tipo de campaña.
-// [SWAP LUIS] tipo='encuesta' → cargar preguntas desde el módulo de Encuestas vía encuesta_id
-const PREGUNTAS = {
-  identificacion: [
-    { q:'¿Cómo calificaría la situación actual de su colonia?', opts:['Buena','Regular','Mala'] },
-    { q:'¿Estaría dispuesto(a) a recibir información de propuestas?', opts:['Sí','No','Tal vez'] },
-    { q:'Nivel de simpatía detectado', opts:['Simpatizante','Indeciso','Opositor'] }
-  ],
-  encuesta: [
-    { q:'¿Conoce usted a los aspirantes que suenan para la gubernatura?', opts:['Sí','No'] },
-    { q:'Si hoy fuera la elección, ¿por qué opción votaría?', opts:['Opción A','Opción B','Opción C','Ninguna / no sabe'] },
-    { q:'¿Qué tan firme es su decisión?', opts:['Muy firme','Podría cambiar','Nada firme'] }
-  ],
-  movilizacion: [
-    { q:'¿Ya acudió a votar el día de hoy?', opts:['Sí, ya votó','Va más tarde','No piensa ir'] },
-    { q:'¿Necesita apoyo para llegar a su casilla?', opts:['Sí','No'] }
-  ]
-};
-
-// [SWAP LUIS] SELECT * FROM v_productividad_callcenter WHERE licencia_id=...
-const PRODUCTIVIDAD = [
-  { operador:'María Torres',    llamadas:96, contactados:41, comprometidos:12, sinResp:38 },
-  { operador:'Carlos Mendoza',  llamadas:88, contactados:35, comprometidos:9,  sinResp:40 },
-  { operador:'Ana Sofía Ruiz',  llamadas:74, contactados:33, comprometidos:14, sinResp:24 },
-  { operador:'Roberto Chávez',  llamadas:61, contactados:22, comprometidos:5,  sinResp:31 }
-];
-const DISPOSICIONES_GLOBAL = { contactado:131, comprometido:40, no_contesta:98, buzon:35, volver_llamar:22, numero_equivocado:11, rechazo:19, no_molestar:6 };
-
-/* ── Datos de auditoría (horneados) ──────────────────────────
-   [SWAP LUIS] SELECT * FROM v_auditoria_callcenter WHERE licencia_id=...
-   Umbrales de detección:
-   · DUR_MIN_CONTACTO: contactado con <10s = imposible aplicar guion
-   · RACHA_NC: 5+ "no contesta" consecutivas = tronando la cola
-   · RITMO_MAX: llamadas/hora > 2x promedio del equipo
-   · INACTIVO_MIN: 30+ min sin registrar llamada en turno       */
-const UMBRAL = { DUR_MIN_CONTACTO:10, RACHA_NC:5, RITMO_FACTOR:2, INACTIVO_MIN:30 };
-
-const AUDITORIA = [
-  { operador:'María Torres',   durProm:118, llamadasHora:14, rachaNC:1, cortasContactado:0, inactivoMin:2  },
-  { operador:'Carlos Mendoza', durProm:96,  llamadasHora:16, rachaNC:2, cortasContactado:0, inactivoMin:38 },
-  { operador:'Ana Sofía Ruiz', durProm:134, llamadasHora:12, rachaNC:0, cortasContactado:0, inactivoMin:5  },
-  { operador:'Roberto Chávez', durProm:22,  llamadasHora:34, rachaNC:8, cortasContactado:6, inactivoMin:1  }
-];
-
-// [SWAP LUIS] SELECT ... FROM cola_llamadas WHERE estado='completada' ORDER BY fecha_llamada DESC LIMIT 20
-const BITACORA_BASE = [
-  { hora:'12:41', operador:'Roberto Chávez', contacto:'J. Sánchez',   dur:6,   disp:'contactado' },
-  { hora:'12:40', operador:'Roberto Chávez', contacto:'M. Preciado',  dur:4,   disp:'contactado' },
-  { hora:'12:39', operador:'Ana Sofía Ruiz', contacto:'R. Cárdenas',  dur:187, disp:'comprometido' },
-  { hora:'12:38', operador:'Roberto Chávez', contacto:'L. Ventura',   dur:3,   disp:'no_contesta' },
-  { hora:'12:37', operador:'Roberto Chávez', contacto:'S. Michel',    dur:2,   disp:'no_contesta' },
-  { hora:'12:35', operador:'María Torres',   contacto:'F. Anguiano',  dur:142, disp:'contactado' },
-  { hora:'12:33', operador:'Ana Sofía Ruiz', contacto:'C. Larios',    dur:95,  disp:'volver_llamar' },
-  { hora:'12:31', operador:'María Torres',   contacto:'E. Brizuela',  dur:78,  disp:'buzon' }
-];
-
-// [SWAP LUIS] SELECT * FROM cola_llamadas WHERE verificado=false AND disposicion IN ('contactado','comprometido')
-//             ORDER BY random() LIMIT n  → asignar a segundo operador
-let VERIFICACION = [
-  { id:'v-01', contacto:'J. Sánchez',  tel:'312 401 XXXX', operador:'Roberto Chávez', disp:'contactado',   dur:6,   resultado:null },
-  { id:'v-02', contacto:'M. Preciado', tel:'313 220 XXXX', operador:'Roberto Chávez', disp:'contactado',   dur:4,   resultado:null },
-  { id:'v-03', contacto:'R. Cárdenas', tel:'312 887 XXXX', operador:'Ana Sofía Ruiz', disp:'comprometido', dur:187, resultado:null }
-];
-
-/* ── Estado de sesión demo (persiste en localStorage) ────── */
-const LS_KEY = 'votera_callcenter_demo_' + LICENCIA_ID;
-let demoState;
-try { demoState = JSON.parse(localStorage.getItem(LS_KEY)) || null; } catch(e){ demoState = null; }
-if (!demoState || !Array.isArray(demoState.cola) || demoState.cola.length === 0) {
-  demoState = { campanaId:'camp-001', cola: COLA_BASE.map(function(c){ return Object.assign({}, c); }), hechas:0, contactadasHoy:41, reintentos:22 };
-}
-let dispSel = null;
-let respuestas = {};
-
-/* ── Cronómetro de llamada (auditoría) ───── */
-let llamadaInicio = null;
-let timerInt = null;
-function fmtDur(s){
-  var m = Math.floor(s / 60), r = s % 60;
-  return (m < 10 ? '0' : '') + m + ':' + (r < 10 ? '0' : '') + r;
-}
-function arrancarTimer(){
-  llamadaInicio = Date.now();
-  var el = document.getElementById('c-timer');
-  if (timerInt) clearInterval(timerInt);
-  el.textContent = '00:00';
-  timerInt = setInterval(function(){
-    el.textContent = fmtDur(Math.floor((Date.now() - llamadaInicio) / 1000));
-  }, 1000);
-}
-function detenerTimer(){
-  if (timerInt) { clearInterval(timerInt); timerInt = null; }
-  if (!llamadaInicio) return 0;
-  var dur = Math.floor((Date.now() - llamadaInicio) / 1000);
-  llamadaInicio = null;
-  return dur;
-}
-
-function campActiva(){ return CAMPANAS.find(function(c){ return c.id === demoState.campanaId; }) || CAMPANAS[0]; }
-
-/* ── KPIs y header ───────────────────────── */
-function pintarHeader(){
-  var camp = campActiva();
-  document.getElementById('camp-activa-nombre').textContent = camp.nombre;
-  var pend = demoState.cola.length;
-  var kpiPend = document.getElementById('kpi-pend');
-  // Guardia anti-ceros: nunca sobreescribir con 0 si hay error de datos
-  if (pend >= 0) kpiPend.textContent = pend;
-  document.getElementById('kpi-cont').textContent = demoState.contactadasHoy;
-  var totalHoy = PRODUCTIVIDAD.reduce(function(a,o){ return a + o.llamadas; }, 0);
-  var contHoy  = PRODUCTIVIDAD.reduce(function(a,o){ return a + o.contactados + o.comprometidos; }, 0);
-  if (totalHoy > 0) document.getElementById('kpi-tasa').textContent = Math.round(100 * contHoy / totalHoy) + '%';
-  document.getElementById('kpi-reint').textContent = demoState.reintentos;
-}
-
-/* ── Pantalla de operador ────────────────── */
-function pintarContacto(){
-  var camp = campActiva();
-  var c = demoState.cola[0];
-  var btn = document.getElementById('btn-next');
-  if (!c) {
-    detenerTimer();
-    document.getElementById('c-timer').textContent = '00:00';
-    document.getElementById('c-nombre').textContent = 'Cola completada 🎉';
-    document.getElementById('c-tel').textContent = '—';
-    document.getElementById('c-chip').textContent = 'SIN PENDIENTES';
-    document.getElementById('c-seccion').textContent = '—';
-    document.getElementById('c-municipio').textContent = '—';
-    document.getElementById('c-intentos').textContent = '—';
-    document.getElementById('c-consent').textContent = '—';
-    document.getElementById('c-progreso').textContent = 'Todas las llamadas asignadas fueron completadas.';
-    document.getElementById('g-apertura').textContent = 'No hay más contactos en tu cola. Pide al coordinador una nueva asignación.';
-    document.getElementById('g-preguntas').innerHTML = '';
-    btn.disabled = true;
-    return;
-  }
-  document.getElementById('c-nombre').textContent = c.nombre;
-  document.getElementById('c-tel').textContent = c.tel;
-  arrancarTimer();
-  var chip = document.getElementById('c-chip');
-  chip.textContent = camp.tipo === 'encuesta' ? 'ANÓNIMO · CATI' : ('SECCIÓN ' + c.seccion);
-  chip.className = 'chip ' + (camp.tipo === 'encuesta' ? 'acc' : 'ok');
-  document.getElementById('c-seccion').textContent = c.seccion;
-  document.getElementById('c-municipio').textContent = c.municipio;
-  document.getElementById('c-intentos').textContent = c.intentos;
-  var cons = document.getElementById('c-consent');
-  cons.textContent = c.consent ? 'Registrado ✓' : 'SIN CONSENTIMIENTO';
-  cons.style.color = c.consent ? 'var(--ok)' : 'var(--bad)';
-  document.getElementById('c-progreso').textContent =
-    'Llamada ' + (demoState.hechas + 1) + ' · ' + demoState.cola.length + ' pendientes en tu cola';
-
-  document.getElementById('g-apertura').textContent = camp.guion;
-  var wrap = document.getElementById('g-preguntas');
-  wrap.innerHTML = '';
-  respuestas = {};
-  (PREGUNTAS[camp.tipo] || []).forEach(function(p, i){
-    var div = document.createElement('div');
-    div.className = 'preg';
-    var q = document.createElement('div'); q.className = 'q'; q.textContent = (i+1) + '. ' + p.q;
-    var opts = document.createElement('div'); opts.className = 'opts';
-    p.opts.forEach(function(o){
-      var b = document.createElement('button');
-      b.className = 'opt'; b.textContent = o;
-      b.onclick = function(){
-        opts.querySelectorAll('.opt').forEach(function(x){ x.classList.remove('sel'); });
-        b.classList.add('sel');
-        respuestas['p'+i] = o;
-      };
-      opts.appendChild(b);
+    var rows = await get('campanas_llamadas?select=id,nombre,tipo,estado,guion&order=creado_en.desc');
+    CAMPANAS = (rows||[]).map(function(c){
+      return { id:c.id, nombre:c.nombre, tipo:c.tipo, estado:c.estado,
+               guion:c.guion || '', total:0, pendientes:0, contactados:0 };
     });
-    div.appendChild(q); div.appendChild(opts); wrap.appendChild(div);
-  });
-}
-
-function setDisp(d, btn){
-  dispSel = d;
-  document.querySelectorAll('.disp').forEach(function(b){ b.classList.remove('sel-disp'); });
-  btn.classList.add('sel-disp');
-  document.getElementById('reintento-wrap').style.display = (d === 'volver_llamar') ? 'block' : 'none';
-  document.getElementById('btn-next').disabled = false;
-}
-
-function guardarYSiguiente(){
-  var c = demoState.cola[0];
-  if (!c || !dispSel) return;
-  var dur = detenerTimer();
-  // [FIX auditoría 9 ago] Antes: la UI avanzaba (shift + hechas++) PASE LO QUE
-  // PASE, aunque guardarLlamadaReal fallara → el resultado de la llamada se
-  // perdía en silencio (mismo bug que tenía el Día E). Ahora en modo real la UI
-  // solo avanza TRAS confirmar la escritura; si falla, avisa al operador y NO
-  // consume el contacto (se puede reintentar).
-  if (!CC_DEMO) {
-    var btnNext = document.getElementById('btn-next');
-    if (btnNext) btnNext.disabled = true;               // candado anti-doble-clic
-    guardarLlamadaReal(c.id, {
-      disposicion: dispSel === 'volver_llamar' ? 'no_contesto' : dispSel,
-      notas: (document.getElementById('notas') || {}).value || '',
-      intentos: c.intentos || 0,
-      duracion: dur
-    }).then(function(){
-      _ccAvanzarUI(c, dur);        // éxito → ahora sí avanzar
-      cargarSiguienteReal();
-    }).catch(function(e){
-      console.warn('Call Center: no se pudo guardar la llamada:', e.message);
-      alert('⚠️ No se pudo guardar el resultado de la llamada (revisa tu conexión). '
-          + 'El contacto sigue en tu cola — vuelve a intentarlo.');
-      if (btnNext) btnNext.disabled = false;             // permitir reintento
-    });
-    return;                        // en modo real, la UI espera al .then/.catch
+    await cargarConteos();
+  } catch(e){
+    console.warn('Call center: no se pudieron leer las campañas.', e);
+    CAMPANAS = CAMPANAS_DEMO.slice();
+    VIVO = false;
+    document.getElementById('badge').textContent = 'MODO EJEMPLO';
   }
-  // Modo demo (sin BD): avanza directo.
-  _ccAvanzarUI(c, dur);
+  pintarSelectores();
 }
 
-// Avanza la UI tras una llamada procesada: bitácora, contadores, saca el
-// contacto de la cola y limpia el formulario. Solo se llama cuando la llamada
-// quedó registrada (o en modo demo).
-function _ccAvanzarUI(c, dur){
-  var ahora = new Date();
-  demoState.bitacora = demoState.bitacora || [];
-  demoState.bitacora.unshift({
-    hora: ('0'+ahora.getHours()).slice(-2) + ':' + ('0'+ahora.getMinutes()).slice(-2),
-    operador:'María Torres', contacto: c.nombre, dur: dur, disp: dispSel
-  });
-  if (demoState.bitacora.length > 10) demoState.bitacora.pop();
-  if (dispSel === 'contactado' || dispSel === 'comprometido') demoState.contactadasHoy++;
-  if (dispSel === 'volver_llamar') demoState.reintentos++;
-  demoState.cola.shift();
-  demoState.hechas++;
-  try { localStorage.setItem(LS_KEY, JSON.stringify(demoState)); } catch(e){}
-  dispSel = null;
-  document.querySelectorAll('.disp').forEach(function(b){ b.classList.remove('sel-disp'); });
-  document.getElementById('reintento-wrap').style.display = 'none';
-  document.getElementById('notas').value = '';
-  document.getElementById('btn-next').disabled = true;
-  pintarHeader();
-  pintarContacto();
+async function cargarConteos(){
+  if (!VIVO) return;
+  for (var i=0;i<CAMPANAS.length;i++){
+    var c = CAMPANAS[i];
+    try {
+      var filas = await get('cola_llamadas?select=estado,disposicion&campana_id=eq.'+encodeURIComponent(c.id));
+      c.total       = filas.length;
+      c.pendientes  = filas.filter(function(f){ return f.estado==='pendiente'||f.estado==='reservada'; }).length;
+      c.contactados = filas.filter(function(f){ return f.disposicion==='contactado'||f.disposicion==='comprometido'; }).length;
+      c.sinrespuesta= filas.filter(function(f){ return f.disposicion==='no_contesto'||f.disposicion==='buzon'; }).length;
+    } catch(e){ /* si una campaña falla, las demás siguen */ }
+  }
 }
 
-/* ── Vista Campañas ──────────────────────── */
-var TIPO_META = {
-  identificacion:{ label:'Identificación', color:'var(--acc)' },
-  encuesta:{ label:'Encuesta CATI', color:'var(--warn)' },
-  movilizacion:{ label:'Movilización Día E', color:'var(--ok)' }
-};
+function pintarSelectores(){
+  var opciones = CAMPANAS.map(function(c){
+    return '<option value="'+esc(c.id)+'">'+esc(c.nombre)+(c.estado!=='activa'?' · '+c.estado.toUpperCase():'')+'</option>';
+  }).join('') || '<option value="">— no hay campañas —</option>';
+  document.getElementById('ll-campana').innerHTML = opciones;
+  document.getElementById('cp-campana').innerHTML = opciones;
+  document.getElementById('cp-municipio').innerHTML =
+    '<option value="">Todo el estado</option>' +
+    MUNICIPIOS.map(function(m){ return '<option value="'+esc(m)+'">'+esc(m)+'</option>'; }).join('');
+  pintarKPIs(); pintarCampanas(); pintarProductividad();
+}
+
+function pintarKPIs(){
+  var c = campanaActual();
+  var hechas = HIST.length;
+  var cont = HIST.filter(function(h){ return h.disp==='contactado'||h.disp==='comprometido'; }).length;
+  var nores = HIST.filter(function(h){ return h.disp==='no_contesto'||h.disp==='buzon'; }).length;
+  document.getElementById('k-pend').textContent   = c ? fmt(c.pendientes) : '—';
+  document.getElementById('k-cont').textContent   = fmt(cont);
+  document.getElementById('k-nores').textContent  = fmt(nores);
+  document.getElementById('k-hechas').textContent = fmt(hechas);
+}
+
 function pintarCampanas(){
-  var grid = document.getElementById('camp-grid');
-  grid.innerHTML = '';
-  CAMPANAS.forEach(function(c){
-    var pct = c.total > 0 ? Math.round(100 * c.completadas / c.total) : 0;
-    var m = TIPO_META[c.tipo];
-    var el = document.createElement('div');
-    el.className = 'card camp';
-    el.innerHTML =
-      '<span class="tipo" style="color:' + m.color + '">' + m.label + '</span>' +
-      '<div class="nom">' + c.nombre + '</div>' +
-      '<div class="bar"><i style="width:' + pct + '%;background:' + m.color + '"></i></div>' +
-      '<div class="nums"><span>' + c.completadas.toLocaleString('es-MX') + ' de ' + c.total.toLocaleString('es-MX') + ' llamadas</span><span>' + pct + '%</span></div>' +
-      '<div class="foot"><span class="chip ' + (c.estado === 'activa' ? 'ok' : 'warn') + '">' + c.estado.toUpperCase() + '</span>' +
-      '<span>' + (c.tipo === 'encuesta' ? 'Respuestas anónimas' : 'Vinculada a territorio') + '</span></div>';
-    grid.appendChild(el);
-  });
+  document.getElementById('tbl-camp').innerHTML = CAMPANAS.map(function(c){
+    var pct = c.total ? Math.round((c.total-c.pendientes)/c.total*100) : 0;
+    return '<tr>'+
+      '<td>'+esc(c.nombre)+'</td>'+
+      '<td style="color:var(--text3)">'+esc(c.tipo||'—')+'</td>'+
+      '<td><span class="chip '+esc(c.estado)+'">'+esc((c.estado||'').toUpperCase())+'</span></td>'+
+      '<td class="tR mono">'+fmt(c.total)+'</td>'+
+      '<td class="tR mono">'+fmt(c.pendientes)+'</td>'+
+      '<td class="tR mono" style="color:var(--green)">'+fmt(c.contactados)+'</td>'+
+      '<td class="mono" style="color:var(--text2)">'+pct+'%</td>'+
+    '</tr>';
+  }).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:20px 0">'+
+                 'Aún no hay campañas. Crea una para empezar a llamar.</td></tr>';
 }
 
-/* ── Vista Productividad ─────────────────── */
-var chartsListos = false;
-function pintarProductividad(){
-  // [T-CC 21 jul] Con datos reales, recarga la vista antes de pintar.
-  // El flag _ccProdCargado garantiza que esto ocurra UNA sola vez por
-  // visita al tab: si un error de render se colara en el .catch(), sin
-  // este candado se reintentaría en bucle.
-  if (!CC_DEMO && !window._ccProdCargando && !window._ccProdCargado) {
-    window._ccProdCargando = true;
-    cargarProductividadReal().then(function(filas){
-      window._ccProdCargando = false;
-      window._ccProdCargado  = true;
-      PRODUCTIVIDAD.length = 0;
-      filas.forEach(function(f){ PRODUCTIVIDAD.push(f); });
-      chartsListos = false;   // permitir redibujar las gráficas con datos nuevos
-      try { pintarProductividad(); }
-      catch (err) { console.warn('Call Center: error al pintar productividad:', err.message); }
-    }).catch(function(e){
-      window._ccProdCargando = false;
-      window._ccProdCargado  = true;   // no reintentar en bucle
-      console.warn('Call Center: no se pudo cargar productividad:', e.message);
-    });
-  }
-  var tb = document.getElementById('tabla-operadores');
-  tb.innerHTML = '';
-  PRODUCTIVIDAD.forEach(function(o){
-    var tasa = o.llamadas > 0 ? Math.round(100 * (o.contactados + o.comprometidos) / o.llamadas) : 0;
-    var tr = document.createElement('tr');
-    tr.innerHTML = '<td>' + o.operador + '</td><td class="num">' + o.llamadas + '</td>' +
-      '<td class="num" style="color:var(--ok)">' + o.contactados + '</td>' +
-      '<td class="num" style="color:var(--acc)">' + o.comprometidos + '</td>' +
-      '<td class="num" style="color:var(--dim)">' + o.sinResp + '</td>' +
-      '<td class="num">' + tasa + '%</td>';
-    tb.appendChild(tr);
-  });
-  if (chartsListos || typeof Chart === 'undefined') return;
-  chartsListos = true;
-  Chart.defaults.color = '#8fa0bd';
-  Chart.defaults.borderColor = '#26314a';
-  // [T-CC 21 jul] Al repintar con datos reales hay que destruir la gráfica
-  // anterior: dos Chart sobre el mismo canvas se superponen y parpadean.
-  if (window._chOperadores) { try { window._chOperadores.destroy(); } catch(e){} }
-  window._chOperadores = new Chart(document.getElementById('ch-operadores'), {
-    type:'bar',
-    data:{ labels: PRODUCTIVIDAD.map(function(o){ return o.operador; }),
-      datasets:[
-        { label:'Contactados', data: PRODUCTIVIDAD.map(function(o){ return o.contactados; }), backgroundColor:'#2ecc8f' },
-        { label:'Comprometidos', data: PRODUCTIVIDAD.map(function(o){ return o.comprometidos; }), backgroundColor:'#3fa7ff' },
-        { label:'Sin respuesta', data: PRODUCTIVIDAD.map(function(o){ return o.sinResp; }), backgroundColor:'#5f7095' }
-      ]},
-    options:{ responsive:true, maintainAspectRatio:false,
-      scales:{ x:{ stacked:true }, y:{ stacked:true } } }
-  });
-  if (window._chDisposiciones) { try { window._chDisposiciones.destroy(); } catch(e){} }
-  window._chDisposiciones = new Chart(document.getElementById('ch-disposiciones'), {
-    type:'doughnut',
-    data:{ labels:['Contactado','Comprometido','No contesta','Buzón','Volver a llamar','Núm. equivocado','Rechazo','No molestar'],
-      datasets:[{ data:Object.keys(DISPOSICIONES_GLOBAL).map(function(k){ return DISPOSICIONES_GLOBAL[k]; }),
-        backgroundColor:['#1f9e6e','#168a5c','#5f7095','#4a5878','#c98f2a','#8a5fb0','#c04a5c','#8c2f3e'], borderWidth:0 }]},
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'right' } } }
-  });
-}
-
-/* ── Vista Supervisión (coordinador/admin) ─
-   [SWAP LUIS] esta vista solo se muestra a roles coordinador,
-   admin y superadmin — ocultar tab según rol de sesión         */
-function flagsOperador(a){
-  var ritmoProm = AUDITORIA.reduce(function(s,o){ return s + o.llamadasHora; }, 0) / AUDITORIA.length;
-  var flags = [];
-  if (a.cortasContactado > 0)
-    flags.push({ t:'roja', txt:'⚠ ' + a.cortasContactado + ' llamadas <' + UMBRAL.DUR_MIN_CONTACTO + 's marcadas "contactado"' });
-  if (a.rachaNC >= UMBRAL.RACHA_NC)
-    flags.push({ t:'roja', txt:'⚠ Racha de ' + a.rachaNC + ' "no contesta" consecutivas' });
-  if (a.llamadasHora > ritmoProm * UMBRAL.RITMO_FACTOR)
-    flags.push({ t:'roja', txt:'⚠ Ritmo anormal: ' + a.llamadasHora + ' llamadas/hr (equipo: ' + Math.round(ritmoProm) + ')' });
-  if (a.inactivoMin >= UMBRAL.INACTIVO_MIN)
-    flags.push({ t:'ambar', txt:'⏸ Inactivo desde hace ' + a.inactivoMin + ' min' });
-  return flags;
-}
-var DISP_LABEL = { contactado:'Contactado', comprometido:'Comprometido', no_contesta:'No contesta',
-  buzon:'Buzón', volver_llamar:'Volver a llamar', numero_equivocado:'Núm. equivocado',
-  rechazo:'Rechazo', no_molestar:'No molestar' };
-
-function pintarSupervision(){
-  // [T-CC 21 jul] Con datos reales, recarga la auditoría antes de pintar.
-  // _ccAudCargado evita que un error de render reintente en bucle.
-  if (!CC_DEMO && !window._ccAudCargando && !window._ccAudCargado) {
-    window._ccAudCargando = true;
-    cargarAuditoriaReal().then(function(filas){
-      window._ccAudCargando = false;
-      window._ccAudCargado  = true;
-      AUDITORIA.length = 0;
-      filas.forEach(function(f){ AUDITORIA.push(f); });
-      try { pintarSupervision(); }
-      catch (err) { console.warn('Call Center: error al pintar supervisión:', err.message); }
-    }).catch(function(e){
-      window._ccAudCargando = false;
-      window._ccAudCargado  = true;
-      console.warn('Call Center: no se pudo cargar auditoría:', e.message);
-    });
-  }
-  var grid = document.getElementById('sup-grid');
-  grid.innerHTML = '';
-  AUDITORIA.forEach(function(a){
-    var flags = flagsOperador(a);
-    var rojas = flags.filter(function(f){ return f.t === 'roja'; }).length;
-    var sem = rojas >= 2 ? 'rojo' : (flags.length > 0 ? 'amarillo' : 'verde');
-    var estado = a.inactivoMin >= UMBRAL.INACTIVO_MIN
-      ? 'Inactivo · ' + a.inactivoMin + ' min sin actividad'
-      : 'Activo · última llamada hace ' + a.inactivoMin + ' min';
-    var html =
-      '<span class="sem-dot sem-' + sem + '"></span>' +
-      '<div class="op-nom">' + a.operador + '</div>' +
-      '<div class="op-est">' + estado + '</div>' +
-      '<div class="op-stats">' +
-        '<span><b>' + fmtDur(a.durProm) + '</b>dur. promedio</span>' +
-        '<span><b>' + a.llamadasHora + '</b>llamadas/hr</span>' +
-      '</div>';
-    if (flags.length === 0) {
-      html += '<span class="flag limpia">✓ Sin señales de alerta</span>';
-    } else {
-      flags.forEach(function(f){ html += '<span class="flag ' + f.t + '">' + f.txt + '</span>'; });
-    }
-    var el = document.createElement('div');
-    el.className = 'card sem-card';
-    el.innerHTML = html;
-    grid.appendChild(el);
-  });
-
-  // Bitácora: llamadas de la sesión demo (vivas) + horneadas
-  var vivas = (demoState.bitacora || []);
-  var todas = vivas.concat(BITACORA_BASE).slice(0, 12);
-  var tb = document.getElementById('tabla-bitacora');
-  tb.innerHTML = '';
-  todas.forEach(function(b){
-    var sospechosa = b.dur < UMBRAL.DUR_MIN_CONTACTO && (b.disp === 'contactado' || b.disp === 'comprometido');
-    var tr = document.createElement('tr');
-    tr.innerHTML = '<td class="num">' + b.hora + '</td><td>' + b.operador + '</td><td>' + b.contacto + '</td>' +
-      '<td class="num' + (sospechosa ? ' dur-corta' : '') + '">' + fmtDur(b.dur) + (sospechosa ? ' ⚠' : '') + '</td>' +
-      '<td>' + (DISP_LABEL[b.disp] || b.disp) + '</td>';
-    tb.appendChild(tr);
-  });
-
-  pintarVerificacion();
-}
-
-function pintarVerificacion(){
-  var wrap = document.getElementById('verif-lista');
-  wrap.innerHTML = '';
-  VERIFICACION.forEach(function(v){
-    var row = document.createElement('div');
-    row.className = 'verif-row';
-    var acciones;
-    if (v.resultado === 'confirmada') {
-      acciones = '<span class="verif-res" style="color:var(--ok)">✓ Confirmada</span>';
-    } else if (v.resultado === 'no_coincide') {
-      acciones = '<span class="verif-res" style="color:var(--bad)">✗ No coincide — reportado al coordinador</span>';
-    } else {
-      acciones = '<div class="verif-btns">' +
-        '<button class="vbtn ok" onclick="resolverVerif(\'' + v.id + '\',\'confirmada\')">Confirmada</button>' +
-        '<button class="vbtn bad" onclick="resolverVerif(\'' + v.id + '\',\'no_coincide\')">No coincide</button></div>';
-    }
-    row.innerHTML =
-      '<div class="info"><b>' + v.contacto + ' · ' + v.tel + '</b>' +
-      '<span>Marcada "' + (DISP_LABEL[v.disp] || v.disp) + '" por ' + v.operador + ' · duración ' + fmtDur(v.dur) + '</span></div>' +
-      acciones;
-    wrap.appendChild(row);
-  });
-}
-
-function resolverVerif(id, resultado){
-  // [T-CC 21 jul] Escritura REAL de la verificación de calidad.
-  // [FIX auditoría 9 ago] Igual que guardarYSiguiente: la UI solo se actualiza
-  // TRAS confirmar la escritura; si falla, avisa y no marca como verificada.
-  if (!CC_DEMO) {
-    ccFetch('cola_llamadas?id=eq.' + id + '&licencia_id=eq.' + LICENCIA_ID, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-      body: JSON.stringify({
-        verificado: true,
-        verificado_por: (window._sesion && window._sesion.id) || null,
-        resultado_verificacion: resultado
-      })
-    }).then(function(){
-      var v = VERIFICACION.find(function(x){ return x.id === id; });
-      if (v) v.resultado = resultado;
-      pintarVerificacion();
-    }).catch(function(e){
-      console.warn('Call Center: no se pudo guardar la verificación:', e.message);
-      alert('⚠️ No se pudo guardar la verificación (revisa tu conexión). Inténtalo de nuevo.');
-    });
+async function pintarProductividad(){
+  var cuerpo = document.getElementById('tbl-prod');
+  if (!VIVO){
+    cuerpo.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:20px 0">'+
+      'Se llena cuando los operadores empiecen a llamar.</td></tr>';
     return;
   }
-  // Modo demo: actualiza directo.
-  var v = VERIFICACION.find(function(x){ return x.id === id; });
-  if (v) v.resultado = resultado;
-  pintarVerificacion();
-}
-
-/* ── Gestión: carga de cola desde Excel externo (coordinador/admin) ─
-   [SWAP LUIS] este tab solo se muestra a roles coordinador/admin/superadmin.
-
-   PRINCIPIO ANTI-DUPLICADOS (2 capas):
-   1) La base externa NUNCA se inserta en `ciudadanos` — va directo a
-      `cola_llamadas`. Así no contamina tu base madre ni rompe el
-      anonimato de encuestas CATI.
-   2) Deduplicación por TELÉFONO normalizado (10 dígitos):
-        a) se quitan repetidos dentro del propio archivo
-        b) se descartan los que ya existen en la cola de la campaña
-      En Fase 4 el chequeo fuerte contra la base es por CURP y luego teléfono:
-      [SWAP LUIS] antes de insertar cada fila válida:
-        SELECT id FROM ciudadanos    WHERE curp=$1;                       -- llave 1
-        SELECT id FROM cola_llamadas WHERE campana_id=$2                  -- llave 2
-               AND regexp_replace(telefono,'\D','','g')=$3
-               AND licencia_id=LICENCIA_ID;
-      Si existe → NO insertar (se conserva el registro previo).            */
-
-let cargaPendiente = null;  // resultado analizado, aún sin confirmar
-
-function normTel(v){
-  var d = String(v == null ? '' : v).replace(/\D/g, '');
-  if (d.length > 10 && d.slice(0, 2) === '52') d = d.slice(-10);
-  return d.length === 10 ? d : '';
-}
-function fmtTel(d){ return d.slice(0, 3) + ' ' + d.slice(3, 6) + ' ' + d.slice(6); }
-function normTxt(s){
-  return String(s == null ? '' : s).toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().replace(/\s+/g, ' ');
-}
-function esConsent(v){
-  var t = normTxt(v);
-  return t === 'si' || t === 's' || t === '1' || t === 'true' || t === 'x' || t === 'verdadero';
-}
-
-// Mapea un encabezado libre del Excel al campo canónico
-function mapearCampo(h){
-  var t = normTxt(h);
-  if (t.indexOf('telefono') >= 0 && t.indexOf('alt') >= 0) return 'telefono_alt';
-  if (t.indexOf('telefono') >= 0 || t.indexOf('celular') >= 0 || t === 'tel') return 'telefono';
-  if (t.indexOf('apellido') >= 0 && t.indexOf('paterno') >= 0) return 'apellido_paterno';
-  if (t.indexOf('apellido') >= 0 && t.indexOf('materno') >= 0) return 'apellido_materno';
-  if (t.indexOf('nombre') >= 0) return 'nombre';
-  if (t.indexOf('seccion') >= 0) return 'seccion';
-  if (t.indexOf('municipio') >= 0) return 'municipio';
-  if (t.indexOf('consent') >= 0) return 'consentimiento';
-  if (t.indexOf('folio') >= 0 || t.indexOf('id externo') >= 0) return 'id_externo';
-  if (t.indexOf('nota') >= 0 || t.indexOf('observ') >= 0) return 'notas';
-  return null;
-}
-
-function leerExcel(file){
-  if (!file) return;
-  document.getElementById('file-name').textContent = file.name;
-  document.getElementById('drop-zone').classList.remove('over');
-  var reader = new FileReader();
-  reader.onload = function(e){
-    try {
-      var wb = XLSX.read(new Uint8Array(e.target.result), { type:'array' });
-      // Prefiere la hoja PLANTILLA_CARGA; si no, la primera del libro
-      var hoja = wb.SheetNames.indexOf('PLANTILLA_CARGA') >= 0 ? 'PLANTILLA_CARGA' : wb.SheetNames[0];
-      var filas = XLSX.utils.sheet_to_json(wb.Sheets[hoja], { header:1, defval:'', raw:false });
-      analizarFilas(filas);
-    } catch(err){
-      alert('No se pudo leer el archivo. Verifica que sea un Excel con la estructura de la plantilla VOTERA.');
-    }
-  };
-  reader.readAsArrayBuffer(file);
-}
-
-function analizarFilas(filas){
-  // Localiza la fila de encabezados: la primera (de las 8 primeras) que mapee 'telefono'
-  var hIdx = -1, mapa = null;
-  for (var i = 0; i < Math.min(filas.length, 8); i++){
-    var m = {};
-    (filas[i] || []).forEach(function(cell, col){ var f = mapearCampo(cell); if (f && m[f] == null) m[f] = col; });
-    if (m.telefono != null){ hIdx = i; mapa = m; break; }
+  try {
+    var rows = await get('v_productividad_callcenter?select=*');
+    cuerpo.innerHTML = (rows||[]).map(function(r){
+      var llam = r.llamadas || r.total_llamadas || 0;
+      var cont = r.contactados || 0;
+      var ef = llam ? Math.round(cont/llam*100) : 0;
+      return '<tr><td>'+esc(r.operador||r.nombre||'—')+'</td>'+
+        '<td class="tR mono">'+fmt(llam)+'</td>'+
+        '<td class="tR mono" style="color:var(--green)">'+fmt(cont)+'</td>'+
+        '<td class="tR mono">'+ef+'%</td>'+
+        '<td class="tR mono" style="color:var(--text2)">'+
+          (r.duracion_promedio ? hhmm(Math.round(r.duracion_promedio)) : '—')+'</td></tr>';
+    }).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:20px 0">'+
+                   'Todavía no hay llamadas registradas.</td></tr>';
+  } catch(e){
+    cuerpo.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:20px 0">'+
+      'No se pudo leer la productividad.</td></tr>';
   }
-  if (hIdx < 0){
-    cargaPendiente = null;
-    document.getElementById('gest-result').style.display = 'none';
-    var em = document.getElementById('gest-empty');
-    em.style.display = 'block';
-    em.textContent = 'No se encontró la columna "Teléfono Principal". Usa la plantilla VOTERA sin cambiar los encabezados.';
-    document.getElementById('btn-cargar').disabled = true;
+}
+
+function cambiarCampana(){ pintarKPIs(); }
+
+/* ── Tomar / cerrar llamada ───────────────────────────────── */
+async function tomarSiguiente(){
+  var c = campanaActual();
+  if (!c){ mostrarToast('Primero crea una campaña'); return; }
+  var btn = document.getElementById('btn-tomar');
+  btn.disabled = true;
+
+  try {
+    if (VIVO){
+      var filas = await rpc('siguiente_llamada', { p_campana_id:c.id, p_minutos:15 });
+      actual = (filas && filas.length) ? filas[0] : null;
+    } else {
+      actual = COLA_DEMO[demoIdx % COLA_DEMO.length];
+      demoIdx++;
+    }
+  } catch(e){
+    console.warn(e);
+    mostrarToast('No se pudo tomar la llamada');
+    btn.disabled = false;
     return;
   }
+  btn.disabled = false;
 
-  // Teléfonos que ya están en la cola (llave de deduplicación contra la cola)
-  var enCola = {};
-  demoState.cola.forEach(function(c){ var d = normTel(c.tel); if (d) enCola[d] = true; });
-
-  var res = { leidos:0, listos:[], sinTel:0, sinConsent:0, dupArchivo:0, dupCola:0 };
-  var vistos = {};
-  for (var r = hIdx + 1; r < filas.length; r++){
-    var fila = filas[r] || [];
-    var val = function(f){ return mapa[f] != null ? fila[mapa[f]] : ''; };
-    var telRaw = val('telefono');
-    // Fila totalmente vacía → se ignora (no cuenta como leída)
-    if (String(telRaw).trim() === '' && String(val('nombre')).trim() === '') continue;
-    res.leidos++;
-    var tel = normTel(telRaw);
-    if (!tel){ res.sinTel++; continue; }
-    if (!esConsent(val('consentimiento'))){ res.sinConsent++; continue; }
-    if (vistos[tel]){ res.dupArchivo++; continue; }
-    vistos[tel] = true;
-    if (enCola[tel]){ res.dupCola++; continue; }
-    var nombre = [val('nombre'), val('apellido_paterno'), val('apellido_materno')]
-      .map(function(x){ return String(x).trim(); }).filter(Boolean).join(' ') || 'Sin nombre';
-    res.listos.push({
-      id:'ext-' + tel, nombre:nombre, tel:fmtTel(tel),
-      seccion:String(val('seccion')).trim() || '—',
-      municipio:String(val('municipio')).trim() || '—',
-      intentos:0, consent:true, origen:'externo'
-    });
+  if (!actual){
+    mostrarToast('Ya no hay llamadas pendientes por ahora');
+    return;
   }
-  cargaPendiente = res;
-  pintarResultado(res);
+  abrirLlamada();
 }
 
-function pintarResultado(res){
-  document.getElementById('gest-empty').style.display = 'none';
-  document.getElementById('gest-result').style.display = 'block';
-  var desc = res.sinTel + res.sinConsent + res.dupArchivo + res.dupCola;
-  document.getElementById('s-leidos').textContent = res.leidos;
-  document.getElementById('s-listos').textContent = res.listos.length;
-  document.getElementById('s-desc').textContent = desc;
-  document.getElementById('s-desglose').innerHTML =
-    'Descartados por: <b>' + res.sinTel + '</b> sin teléfono válido · ' +
-    '<b>' + res.sinConsent + '</b> sin consentimiento · ' +
-    '<b>' + res.dupArchivo + '</b> repetidos en el archivo · ' +
-    '<b>' + res.dupCola + '</b> ya estaban en la cola.';
-  var tb = document.getElementById('tabla-preview');
-  tb.innerHTML = '';
-  res.listos.slice(0, 8).forEach(function(c){
-    var tr = document.createElement('tr');
-    tr.innerHTML = '<td>' + escHtml(c.nombre) + '</td><td class="num">' + escHtml(c.tel) + '</td>' +
-      '<td>' + escHtml(c.seccion) + '</td><td>' + escHtml(c.municipio) + '</td>' +
-      '<td><span class="chip ok">SI</span></td>';
-    tb.appendChild(tr);
+function abrirLlamada(){
+  var c = campanaActual();
+  document.getElementById('ll-vacia').style.display = 'none';
+  document.getElementById('ll-activa').style.display = 'block';
+
+  document.getElementById('ll-nombre').textContent = actual.nombre || '(sin nombre)';
+  var partes = [];
+  if (actual.municipio) partes.push(actual.municipio);
+  if (actual.seccion)   partes.push('sección '+actual.seccion);
+  partes.push('intento '+((actual.intentos||0)+1));
+  document.getElementById('ll-meta').textContent = partes.join('  ·  ');
+
+  var tel = document.getElementById('ll-tel');
+  tel.textContent = tel10(actual.telefono);
+  tel.href = 'tel:+52'+String(actual.telefono||'').replace(/\D/g,'');
+
+  var guion = (c && c.guion) ? c.guion : 'Buenas tardes, ¿hablo con {nombre}?';
+  document.getElementById('ll-guion').textContent =
+    guion.replace(/\{nombre\}/g, (actual.nombre||'').split(' ')[0] || 'usted');
+
+  disposicion = null; compromiso = null;
+  document.getElementById('ll-notas').value = '';
+  document.getElementById('ll-estado').textContent = '';
+  pintarDisposiciones();
+  document.getElementById('ll-comp').classList.remove('on');
+
+  t0 = Date.now();
+  if (crono) clearInterval(crono);
+  crono = setInterval(function(){
+    document.getElementById('ll-crono').textContent = hhmm(Math.floor((Date.now()-t0)/1000));
+  }, 1000);
+  document.getElementById('ll-crono').textContent = '00:00';
+}
+
+function pintarDisposiciones(){
+  document.getElementById('ll-disp').innerHTML = DISPOSICIONES.map(function(d){
+    var sel = disposicion===d.v ? ' sel '+d.cls : '';
+    return '<button class="d-btn'+sel+'" onclick="elegirDisposicion(\''+d.v+'\')">'+
+           '<span class="dt">'+esc(d.t)+'</span><span class="dd">'+esc(d.d)+'</span></button>';
+  }).join('');
+}
+
+function elegirDisposicion(v){
+  disposicion = v;
+  pintarDisposiciones();
+  var pideCompromiso = (v==='comprometido' || v==='contactado');
+  var caja = document.getElementById('ll-comp');
+  caja.classList.toggle('on', pideCompromiso);
+  if (pideCompromiso && caja.querySelectorAll('.c-btn').length===0){
+    caja.insertAdjacentHTML('beforeend', COMPROMISOS.map(function(k){
+      return '<button class="c-btn" data-v="'+k.v+'" onclick="elegirCompromiso('+k.v+')">'+esc(k.t)+'</button>';
+    }).join(''));
+  }
+  if (!pideCompromiso) compromiso = null;
+}
+
+function elegirCompromiso(v){
+  compromiso = v;
+  document.querySelectorAll('#ll-comp .c-btn').forEach(function(b){
+    b.classList.toggle('sel', Number(b.dataset.v)===v);
   });
-  document.getElementById('preview-nota').textContent = res.listos.length > 8
-    ? 'Mostrando 8 de ' + res.listos.length + ' contactos listos.'
-    : (res.listos.length + ' contacto(s) listo(s) para cargar.');
-  document.getElementById('btn-cargar').disabled = res.listos.length === 0;
 }
 
-function confirmarCarga(){
-  if (!cargaPendiente || cargaPendiente.listos.length === 0) return;
-  var campId = document.getElementById('sel-camp-destino').value;
-  var camp = CAMPANAS.find(function(x){ return x.id === campId; });
-  var n = cargaPendiente.listos.length;
+async function guardarLlamada(){
+  if (!actual) return;
+  if (!disposicion){ mostrarToast('Elige qué pasó en la llamada'); return; }
 
-  // [T-CC 21 jul] INSERT REAL en cola_llamadas. NADA se escribe en `ciudadanos`:
-  // los contactos externos viven solo en la cola (el padrón no se contamina).
-  // El índice único (campana_id, telefono) del SQL 30 descarta duplicados en BD
-  // aunque se cuelen en el archivo.
-  if (!CC_DEMO && campId) {
-    var filas = cargaPendiente.listos.map(function(c){
-      return {
-        campana_id: campId, licencia_id: LICENCIA_ID,
-        nombre: c.nombre || null, telefono: c.tel,
-        seccion: c.seccion || null, municipio: c.municipio || null,
-        consent: true, origen: 'externo', estado: 'pendiente'
-      };
-    });
-    ccFetch('cola_llamadas', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json',
-                 'Prefer': 'return=minimal,resolution=ignore-duplicates' },
-      body: JSON.stringify(filas)
-    }).then(function(){
-      console.log('✅ Call Center: ' + n + ' contacto(s) cargado(s) a la cola real.');
-      if (typeof pintarCampanas === 'function') cargarCampanasReales().then(function(cs){
-        CAMPANAS.length = 0; cs.forEach(function(c){ CAMPANAS.push(c); }); pintarCampanas();
+  var btn = document.getElementById('btn-guardar');
+  btn.disabled = true;
+  var dur = t0 ? Math.floor((Date.now()-t0)/1000) : null;
+  var notas = document.getElementById('ll-notas').value.trim() || null;
+
+  try {
+    if (VIVO){
+      var r = await rpc('registrar_llamada', {
+        p_cola_id: actual.id, p_disposicion: disposicion, p_notas: notas,
+        p_duracion: dur, p_reintento: null, p_compromiso: compromiso
       });
-    }).catch(function(e){
-      console.warn('Call Center: falló la carga masiva:', e.message);
-      alert('No se pudo cargar a la base: ' + e.message);
-    });
-  } else {
-    // Demo: se agregan a la cola visible del operador
-    cargaPendiente.listos.forEach(function(c){ demoState.cola.push(Object.assign({}, c)); });
-    try { localStorage.setItem(LS_KEY, JSON.stringify(demoState)); } catch(e){}
+      if (r && r.aviso) mostrarToast(r.aviso);
+    }
+  } catch(e){
+    console.warn(e);
+    mostrarToast('No se pudo guardar. Anota los datos antes de continuar.');
+    btn.disabled = false;
+    return;
   }
-  alert(n + ' contacto(s) cargado(s) a la cola' + (camp ? ' de "' + camp.nombre + '"' : '') +
-        '.\nDuplicados y filas sin consentimiento fueron descartados automáticamente.');
-  // Reset del panel
-  cargaPendiente = null;
-  document.getElementById('file-excel').value = '';
-  document.getElementById('file-name').textContent = '';
-  document.getElementById('gest-result').style.display = 'none';
-  var em = document.getElementById('gest-empty');
-  em.style.display = 'block';
-  em.textContent = 'Sube un archivo para ver el desglose de deduplicación.';
-  document.getElementById('btn-cargar').disabled = true;
-  pintarHeader();
-  pintarContacto();
+  btn.disabled = false;
+
+  HIST.unshift({
+    hora: new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}),
+    nombre: actual.nombre, telefono: actual.telefono, disp: disposicion, dur: dur
+  });
+  pintarHistorial();
+
+  var c = campanaActual();
+  if (c && c.pendientes > 0) c.pendientes--;
+  pintarKPIs(); pintarCampanas();
+
+  cerrarLlamada();
+  mostrarToast('Llamada registrada');
+  tomarSiguiente();
 }
 
-function llenarCampDestino(){
-  var sel = document.getElementById('sel-camp-destino');
-  if (!sel || sel.options.length) return;
-  CAMPANAS.forEach(function(c){
-    var o = document.createElement('option');
-    o.value = c.id; o.textContent = c.nombre;
-    sel.appendChild(o);
-  });
+function soltarLlamada(){
+  if (!actual) return;
+  // No se reporta nada: la reserva vence sola en 15 minutos y el
+  // registro vuelve a la cola. Es deliberado: si el operador tuvo
+  // que levantarse, no queremos que eso cuente como intento fallido.
+  cerrarLlamada();
+  mostrarToast('La llamada vuelve a la lista');
 }
 
-/* ── Navegación ──────────────────────────── */
-function verTab(id, btn){
-  // [T-CC 21 jul] Candado por rol: Supervisión y Gestión son solo del mando.
-  // Se valida aquí además de ocultar el botón, para que no baste con llamar
-  // verTab('gestion') desde la consola.
-  if (TABS_MANDO.indexOf(id) !== -1 && !ES_MANDO) return;
-  document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
-  btn.classList.add('active');
-  document.querySelectorAll('.view').forEach(function(v){ v.classList.remove('active'); });
-  document.getElementById('view-' + id).classList.add('active');
-  if (id === 'productividad') { window._ccProdCargado = false; pintarProductividad(); }
-  if (id === 'campanas') pintarCampanas();
-  if (id === 'supervision') { window._ccAudCargado = false; pintarSupervision(); }
-  if (id === 'gestion') llenarCampDestino();
+function cerrarLlamada(){
+  if (crono){ clearInterval(crono); crono = null; }
+  actual = null; disposicion = null; compromiso = null; t0 = null;
+  document.getElementById('ll-activa').style.display = 'none';
+  document.getElementById('ll-vacia').style.display = 'block';
+  document.getElementById('ll-comp').innerHTML =
+    '<span style="font-size:11px;color:var(--text3);align-self:center;font-family:var(--mono)">¿Qué tanto nos apoya?</span>';
 }
 
-/* ── [T-CC 21 jul] Gating de tabs por rol ──────────────────────────────
-   El instructivo marca que Supervisión y Gestión (carga masiva) son solo
-   para coordinador/admin/super_admin. El operador_cc ve únicamente su
-   pantalla de trabajo, Campañas y Productividad. */
-var ROL_CC   = (window._sesion && window._sesion.rol) || '';
-var ES_MANDO = ['coordinador','admin','super_admin'].indexOf(ROL_CC) !== -1;
-var TABS_MANDO = ['supervision','gestion'];
-if (!ES_MANDO) {
-  ['tab-supervision','tab-gestion'].forEach(function(id){
-    var b = document.getElementById(id);
-    if (b) b.style.display = 'none';
-  });
+function pintarHistorial(){
+  var etiqueta = {};
+  DISPOSICIONES.forEach(function(d){ etiqueta[d.v] = d.t; });
+  document.getElementById('tbl-hist').innerHTML = HIST.slice(0,15).map(function(h){
+    var color = (h.disp==='comprometido') ? 'var(--green)'
+              : (h.disp==='no_llamar'||h.disp==='rechazo') ? 'var(--red)' : 'var(--text2)';
+    return '<tr><td class="mono">'+esc(h.hora)+'</td>'+
+      '<td>'+esc(h.nombre)+'</td>'+
+      '<td class="mono" style="color:var(--text2)">'+tel10(h.telefono)+'</td>'+
+      '<td style="color:'+color+'">'+esc(etiqueta[h.disp]||h.disp)+'</td>'+
+      '<td class="tR mono">'+(h.dur!=null?hhmm(h.dur):'—')+'</td></tr>';
+  }).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:18px 0">'+
+                 'Aquí van apareciendo tus llamadas del turno.</td></tr>';
 }
 
-/* ── Init ────────────────────────────────── */
-pintarHeader();
-pintarContacto();
+/* ── Supervisor: armar la lista ───────────────────────────── */
+async function generarCola(){
+  var camp = document.getElementById('cp-campana').value;
+  var mun  = document.getElementById('cp-municipio').value || null;
+  var lim  = parseInt(document.getElementById('cp-limite').value, 10) || 300;
+  var est  = document.getElementById('cp-estado');
 
-// [T-CC 21 jul] Intenta conectar con la BD (SQL 30). Si hay campañas activas,
-// sustituye el demo; si no, el módulo sigue operando en MODO DEMO.
-iniciarDatosReales();
+  if (!camp){ mostrarToast('Elige una campaña'); return; }
+  if (!VIVO){
+    est.textContent = 'En modo ejemplo no se arma la lista.';
+    return;
+  }
+  est.textContent = 'Armando…';
+  try {
+    var r = await rpc('generar_cola_llamadas',
+      { p_campana_id:camp, p_municipio:mun, p_seccion:null, p_limite:lim });
+    est.innerHTML = 'Se agregaron <b>'+fmt(r.insertados)+'</b>. '+
+                    'Quedan '+fmt(r.restantes)+' personas elegibles sin agregar.';
+    await cargarConteos(); pintarKPIs(); pintarCampanas();
+    mostrarToast('Lista actualizada');
+  } catch(e){
+    console.warn(e);
+    est.textContent = 'No se pudo armar la lista.';
+  }
+}
 
-// Drag & drop para la carga de Excel (Gestión)
-(function(){
-  var dz = document.getElementById('drop-zone');
-  if (!dz) return;
-  ['dragenter','dragover'].forEach(function(ev){
-    dz.addEventListener(ev, function(e){ e.preventDefault(); dz.classList.add('over'); });
+/* ── Arranque ─────────────────────────────────────────────── */
+(function init(){
+  VIVO = !!licenciaId();
+  document.getElementById('badge').textContent = VIVO ? 'DATOS REALES' : 'MODO EJEMPLO';
+
+  // La pestaña de campañas es de supervisión: el operador no la ve.
+  // Coincide con el RLS de generar_cola_llamadas.
+  var rol = rolActual();
+  if (['super_admin','admin','coordinador_estatal','coordinador'].indexOf(rol) === -1){
+    var t = document.getElementById('tab-campanas');
+    if (t) t.style.display = 'none';
+  }
+
+  document.querySelectorAll('.tab').forEach(function(t){
+    t.addEventListener('keydown', function(e){
+      if (e.key==='Enter' || e.key===' '){ e.preventDefault(); verTab(t.dataset.pane); }
+    });
   });
-  ['dragleave','drop'].forEach(function(ev){
-    dz.addEventListener(ev, function(e){ e.preventDefault(); dz.classList.remove('over'); });
-  });
-  dz.addEventListener('drop', function(e){
-    var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-    if (f) leerExcel(f);
-  });
+
+  pintarHistorial();
+  cargarCampanas();
 })();
 </script>
 </body>
