@@ -22,6 +22,13 @@
  *       se manda null (columna es nullable) y se conserva el nombre en jsonb.
  *   (C) supaFetch    → este módulo NO carga theme.js; el bloque de auth es
  *       autocontenido. Si más adelante se añade theme.js, usará su supaFetch.
+ *
+ * [1 sep] OJO con `window.ENCUESTAS = ...` en cargarEncuestas(): solo surte
+ * efecto porque en modulo_encuestas.html el arreglo se declara con `var`.
+ * Con `let` (como estaba antes) el binding vive en el ámbito léxico del
+ * script y NO cuelga de window, así que la asignación creaba una propiedad
+ * distinta y el módulo seguía pintando el demo aunque hubiera datos reales.
+ * Si alguien cambia esa línea a `let` o `const`, esto se rompe en silencio.
  * ========================================================================== */
 (function () {
   'use strict';
@@ -290,6 +297,69 @@
     } catch (e) { return null; }
   }
 
+  // ══════════════════════════════════════════════════════════════════════════
+  //  SWAP 7 — Guardar el consolidado de la brigada (agregado por municipio)
+  //
+  //  Llama al RPC guardar_resultados_municipio(p_encuesta_id, p_filas).
+  //  El RPC hace UPSERT por (encuesta_id, municipio_id): recapturar un
+  //  municipio ACTUALIZA su renglón, no lo duplica. El match del nombre
+  //  del municipio ignora acentos y mayúsculas del lado del servidor, así
+  //  que aquí NO hace falta resolver el uuid (a diferencia de SWAP 6).
+  //
+  //  Devuelve:
+  //    false                → falló la llamada (el front conserva lo capturado)
+  //    Array de {municipio, accion}  → resultado renglón por renglón
+  // ══════════════════════════════════════════════════════════════════════════
+  async function guardarResultadosMunicipio(encuestaId, filas) {
+    var lic = licenciaId();
+    if (!lic) return true; // demo sin sesión: el front conserva lo capturado en memoria
+    if (!encuestaId || !Array.isArray(filas) || !filas.length) return false;
+    try {
+      var url = SUPA_URL + '/rest/v1/rpc/guardar_resultados_municipio';
+      var res = await _fetchAuth(url, {
+        method: 'POST',
+        headers: headers(),
+        body: JSON.stringify({ p_encuesta_id: encuestaId, p_filas: filas })
+      });
+      if (!res || !res.ok) {
+        console.warn('T21: no se pudo guardar el consolidado (status ' + (res && res.status) + ').');
+        return false;
+      }
+      var rows = await res.json();
+      return Array.isArray(rows) ? rows : true;
+    } catch (e) {
+      console.warn('T21: excepción guardarResultadosMunicipio:', e);
+      return false;
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  //  SWAP 8 — Releer el consolidado ya guardado de una encuesta
+  //  Lee v_opinion_municipio, que además del resultado de opinión trae el
+  //  lado territorial (meta, capturados, pct_avance) y el margen de error
+  //  calculado en la base. El front solo usa lo que necesita.
+  // ══════════════════════════════════════════════════════════════════════════
+  async function cargarResultadosMunicipio(encuestaId) {
+    var lic = licenciaId();
+    if (!lic || !encuestaId) return null; // demo: no hay nada que releer
+    try {
+      var url = SUPA_URL + '/rest/v1/v_opinion_municipio'
+        + '?select=municipio,entrevistas,unidad,resultados,meta,capturados,pct_avance,'
+        + 'margen_error_pct,confiabilidad,suma_intencion'
+        + '&encuesta_id=eq.' + encodeURIComponent(encuestaId);
+      var res = await _fetchAuth(url, { method: 'GET', headers: headers() });
+      if (!res || !res.ok) {
+        console.warn('T21: no se pudo leer v_opinion_municipio (status ' + (res && res.status) + ').');
+        return null;
+      }
+      var rows = await res.json();
+      return Array.isArray(rows) ? rows : null;
+    } catch (e) {
+      console.warn('T21: excepción cargarResultadosMunicipio:', e);
+      return null;
+    }
+  }
+
   // ── Exponer helpers para que el front los invoque en cada punto SWAP ───────
   window.T21 = {
     moduloHabilitado: moduloHabilitado,
@@ -297,7 +367,9 @@
     actualizarEstado: actualizarEstado,
     insertarEncuesta: insertarEncuesta,
     insertarRespuesta: insertarRespuesta,
-    cargarCruce: cargarCruce
+    cargarCruce: cargarCruce,
+    guardarResultadosMunicipio: guardarResultadosMunicipio,
+    cargarResultadosMunicipio: cargarResultadosMunicipio
   };
 
   // ── Arranque: intentar cargar datos reales; si hay, refrescar la UI ────────
@@ -315,6 +387,8 @@
       // Refrescar las vistas que dependen de ENCUESTAS.
       if (typeof renderLista === 'function') renderLista();
       if (typeof poblarSelectorEncuestas === 'function') poblarSelectorEncuestas();
+      // [1 sep] La pestaña "Cargar resultados" también depende de ENCUESTAS.
+      if (typeof poblarSelectorCarga === 'function') poblarSelectorCarga();
     }
   }
 

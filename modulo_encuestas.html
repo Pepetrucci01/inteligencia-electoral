@@ -485,7 +485,12 @@ const PREGUNTAS_STD = [
 const OPTS_FIJAS_INTENCION = ['Indeciso','Ninguno','Prefiere no responder'];
 
 // Estudios demo (simulan filas de la tabla `encuestas`)
-let ENCUESTAS = [
+// [FIX 1 sep] `var`, NO `let`. t21_encuestas_supabase.js reemplaza el arreglo
+// con `window.ENCUESTAS = [...]` al traer las encuestas reales. Un `let` en el
+// top-level de un script clasico vive en el ambito lexico y NO cuelga de
+// window: la asignacion creaba una propiedad aparte y este modulo seguia
+// pintando los tres estudios demo aunque la BD ya tuviera datos. No cambiar.
+var ENCUESTAS = [
   {id:'demo-01', nombre:'Intención de Voto Estatal — Julio 2026', desc:'Medición estatal, 10 municipios', estado:'activa',
    ini:'2026-07-01', fin:'2026-07-15', entrevistas:2847,
    metodologia:{modo:'Vivienda', diseno:'Estratificado', n:2850, dist:'Proporcional'},
@@ -805,6 +810,30 @@ function poblarSelectorCarga(){
   renderCarga();
 }
 
+// Trae de la BD el consolidado ya guardado de esta encuesta, una sola vez.
+// [SWAP LUIS ✓] T21.cargarResultadosMunicipio -> v_opinion_municipio.
+async function precargarResultados(encId){
+  const bolsa = bolsaEncuesta(encId);
+  if(bolsa._cargado) return false;
+  bolsa._cargado = true;
+  if(!(window.T21 && typeof window.T21.cargarResultadosMunicipio === 'function')) return false;
+  const rows = await window.T21.cargarResultadosMunicipio(encId);
+  if(!Array.isArray(rows) || !rows.length) return false;
+  rows.forEach(r => {
+    const t = TERRITORIO.find(x => normMun(x.mun) === normMun(r.municipio));
+    if(!t) return;
+    const res = r.resultados || {};
+    bolsa.unidad = r.unidad || 'porcentaje';
+    if(res._propia) bolsa.propia = res._propia;
+    bolsa.filas[t.mun] = {n: r.entrevistas || 0, v: Object.assign({}, res.intencion || {})};
+  });
+  return true;
+}
+function normMun(x){
+  return (x||'').toString().trim().toUpperCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
+
 function renderCarga(){
   const head = document.getElementById('cg-head');
   const body = document.getElementById('cg-body');
@@ -825,6 +854,7 @@ function renderCarga(){
   }
 
   const bolsa = bolsaEncuesta(e.id);
+  if(!bolsa._cargado){ precargarResultados(e.id).then(hubo => { if(hubo){ renderCarga(); renderCruce(); } }); }
   document.getElementById('cg-unidad').value = bolsa.unidad || 'porcentaje';
 
   selP.innerHTML = ops.map(o => `<option value="${o}">${o}</option>`).join('');
@@ -925,7 +955,7 @@ function limpiarCarga(){
   const e = encuestaCarga();
   if(!e) return;
   if(!confirm('¿Borrar los renglones capturados de "' + e.nombre + '"?')) return;
-  RESULTADOS[e.id] = {propia:'', unidad:'porcentaje', filas:{}};
+  RESULTADOS[e.id] = {propia:'', unidad:'porcentaje', filas:{}, _cargado:true};
   renderCarga();
   mostrarToast('Renglones limpiados');
 }
@@ -940,7 +970,10 @@ async function guardarResultados(){
       municipio: m,
       entrevistas: bolsa.filas[m].n,
       unidad: bolsa.unidad,
-      resultados: { intencion: Object.assign({}, bolsa.filas[m].v) }
+      // _propia viaja dentro del jsonb para que al releer se sepa cual
+      // opcion es la del candidato. La vista solo lee ->'intencion',
+      // asi que esta clave no interfiere con ningun calculo.
+      resultados: { intencion: Object.assign({}, bolsa.filas[m].v), _propia: bolsa.propia }
     }));
 
   if(filas.length === 0){ alert('Captura al menos un municipio con entrevistas mayores a cero.'); return; }
@@ -951,14 +984,25 @@ async function guardarResultados(){
   // [SWAP LUIS ✓] RPC guardar_resultados_municipio(p_encuesta_id, p_filas).
   // Hace upsert por (encuesta_id, municipio_id): recapturar actualiza,
   // no duplica. El match de municipio ignora acentos y mayusculas.
+  let rechazados = [];
   if(window.T21 && typeof window.T21.guardarResultadosMunicipio === 'function'){
-    const ok = await window.T21.guardarResultadosMunicipio(e.id, filas);
-    if(ok === false){ mostrarToast('No se pudo guardar (sin conexión)'); return; }
+    const r = await window.T21.guardarResultadosMunicipio(e.id, filas);
+    if(r === false){ mostrarToast('No se pudo guardar (sin conexión)'); return; }
+    // El RPC responde renglon por renglon. Un municipio mal escrito no
+    // tumba la operacion: se guardan los demas y aqui se reporta cual fallo.
+    if(Array.isArray(r)) rechazados = r.filter(x => x && /^ERROR/.test(x.accion || ''));
   }
 
   e.entrevistas = filas.reduce((s,f) => s + f.entrevistas, 0);
   renderLista(); renderCruce();
-  mostrarToast('Guardado: ' + filas.length + ' municipio(s) ✓');
+  if(rechazados.length){
+    document.getElementById('cg-estado').innerHTML =
+      '<span style="color:var(--red)">Rechazados: '
+      + rechazados.map(x => x.municipio).join(', ') + '</span>';
+    mostrarToast('Guardado parcial: ' + (filas.length - rechazados.length) + ' de ' + filas.length);
+  } else {
+    mostrarToast('Guardado: ' + filas.length + ' municipio(s) ✓');
+  }
 }
 
 /* Datos que alimentan el cruce: reales si hay carga, ejemplo si no. */
