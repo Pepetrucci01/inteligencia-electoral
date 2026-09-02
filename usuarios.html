@@ -2,6 +2,11 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<!-- Observabilidad: reporta errores a Sentry y a log_errores.
+     Va lo mas arriba posible para alcanzar a atrapar los errores
+     de las librerias externas que cargan en este mismo <head>. -->
+<script>window.VOTERA_MODULO = 'usuarios';</script>
+<script src="observabilidad.js"></script>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👤</text></svg>">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Usuarios — Inteligencia Electoral 2027</title>
@@ -76,7 +81,7 @@ h3{font-size:15px;font-weight:600;margin-bottom:12px;}
       <div class="lic-card">
         <div class="lic-icon">🗳️</div>
         <div class="lic-name">Diputado Local</div>
-        <div class="lic-status inactiva" id="st-local\">● Inactiva</div>
+        <div class="lic-status inactiva" id="st-local">● Inactiva</div>
         <button class="btn-activar" id="btn-local" onclick="activarLicencia('DIPUTADO LOCAL')">Activar Licencia</button>
       </div>
       <div class="lic-card">
@@ -113,7 +118,7 @@ h3{font-size:15px;font-weight:600;margin-bottom:12px;}
 
 <button id="btn-back-menu" onclick="window.location.href='modulo_admin.html'">☰ Volver a Admin</button>
 
-<script src="supabase-client.js"></script>
+<script src="supabase_client.js"></script>
 <script>
 // ── Guard de sesión ──────────────────────────────────────────
 (function() {

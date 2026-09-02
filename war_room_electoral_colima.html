@@ -14,6 +14,11 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<!-- Observabilidad: reporta errores a Sentry y a log_errores.
+     Va lo mas arriba posible para alcanzar a atrapar los errores
+     de las librerias externas que cargan en este mismo <head>. -->
+<script>window.VOTERA_MODULO = 'war_room';</script>
+<script src="observabilidad.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="author" content="MEFT Consulting">
 <meta name="copyright" content="© 2026 MEFT Consulting. Todos los derechos reservados.">

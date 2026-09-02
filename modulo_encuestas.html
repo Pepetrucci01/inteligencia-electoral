@@ -144,6 +144,10 @@ input:focus,select:focus,textarea:focus{border-color:var(--cyan);}
 #cg-body td:first-child{font-weight:500;white-space:nowrap;}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<!-- Observabilidad: reporta errores a Sentry y a log_errores. Va PRIMERO
+     para alcanzar a atrapar errores de los scripts que siguen. -->
+<script>window.VOTERA_MODULO = 'encuestas';</script>
+<script src="observabilidad.js"></script>
 </head>
 <body>
 <div class="wrap">

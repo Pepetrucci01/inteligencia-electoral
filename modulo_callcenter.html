@@ -152,6 +152,10 @@ textarea{resize:vertical;min-height:64px;}
   .disp{grid-template-columns:1fr 1fr;}
 }
 </style>
+<!-- Observabilidad: reporta errores a Sentry y a log_errores. Va PRIMERO
+     para alcanzar a atrapar errores de los scripts que siguen. -->
+<script>window.VOTERA_MODULO = 'callcenter';</script>
+<script src="observabilidad.js"></script>
 </head>
 <body>
 <div class="wrap">

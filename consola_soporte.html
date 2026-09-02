@@ -27,6 +27,11 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<!-- Observabilidad: reporta errores a Sentry y a log_errores.
+     Va lo mas arriba posible para alcanzar a atrapar los errores
+     de las librerias externas que cargan en este mismo <head>. -->
+<script>window.VOTERA_MODULO = 'consola_soporte';</script>
+<script src="observabilidad.js"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <!-- Superficie interna: no debe acabar en resultados de busqueda. -->
 <meta name="robots" content="noindex,nofollow,noarchive">

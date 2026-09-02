@@ -83,6 +83,10 @@ tr:hover td{background:rgba(255,255,255,0.02);}
 .negado .s{font-size:12px;color:var(--text3);}
 @media(max-width:640px){.wrap{padding:14px 14px 60px;}}
 </style>
+<!-- Observabilidad: reporta errores a Sentry y a log_errores. Va PRIMERO
+     para alcanzar a atrapar errores de los scripts que siguen. -->
+<script>window.VOTERA_MODULO = 'soporte';</script>
+<script src="observabilidad.js"></script>
 </head>
 <body>
 <div class="wrap">
