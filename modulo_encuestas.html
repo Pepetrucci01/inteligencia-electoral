@@ -160,7 +160,13 @@ input:focus,select:focus,textarea:focus{border-color:var(--cyan);}
     <div class="tab active" data-pane="lista" onclick="verTab('lista')">📚 Mis encuestas</div>
     <div class="tab" data-pane="nueva" onclick="verTab('nueva')">➕ Nueva encuesta</div>
     <div class="tab" data-pane="carga" id="tab-carga" onclick="verTab('carga')">📥 Cargar resultados</div>
-    <div class="tab" data-pane="levantar" onclick="verTab('levantar')">📋 Levantar entrevista</div>
+    <!-- [1 sep] Oculto: el modelo real es que la brigada levanta en campo con
+         su propio medio y aqui se carga el CONSOLIDADO por municipio. Esta
+         pantalla escribe en respuestas_encuesta (una fila por entrevista), que
+         ninguna vista del cruce lee, y cuyo RLS solo permite a coordinador o
+         superior. Se conserva el codigo por si en el futuro se levanta dentro
+         del sistema; para reactivarla, quitar el style de abajo. -->
+    <div class="tab" data-pane="levantar" id="tab-levantar" style="display:none" onclick="verTab('levantar')">📋 Levantar entrevista</div>
     <div class="tab" data-pane="cruce" onclick="verTab('cruce')">🎯 Territorio vs Opinión</div>
     <div class="tab" data-pane="vivo" onclick="verTab('vivo')">📊 Resultados en vivo <span style="font-size:8px;font-weight:700;color:#2dd4bf;background:rgba(20,184,166,.15);padding:1px 5px;border-radius:6px;margin-left:2px;">DEMO</span></div>
   </div>
@@ -321,6 +327,12 @@ input:focus,select:focus,textarea:focus{border-color:var(--cyan);}
   </div>
 
   <div class="pane" id="pane-levantar">
+    <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:8px;
+                padding:9px 13px;margin-bottom:12px;font-size:11px;color:#fcd34d;font-family:var(--mono,monospace)">
+      ⚠ PANTALLA DESACTIVADA — el levantamiento lo hace la brigada en campo.
+      Lo que se captura aquí no alimenta el cruce Territorio vs Opinión;
+      para eso usa "Cargar resultados".
+    </div>
     <div class="phone">
       <div class="ph-head">
         <div class="ph-title">Entrevista en campo</div>
