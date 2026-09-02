@@ -1113,18 +1113,18 @@ async function resolverMunicipioLista(sec){
 
 async function cargarMetaSeccionLista(sec){
   if (!sec) return;
-  window._META_SEC[sec] = 0;   // evita reintentos en bucle
+  // [FIX 2 sep · C1] Antes: leía window._sesion.access_token y si aún no estaba
+  // (el SDK lo resuelve async) hacía `return` y dejaba la meta en "—" para
+  // siempre — sin reintento. Mi Sección se abre antes de que la sesión termine
+  // de montarse, así que casi siempre caía ahí. Ahora usa supabase.rpc (que ya
+  // gestiona el token internamente) y espera a que el SDK esté listo.
+  window._META_SEC[sec] = window._META_SEC[sec] || 0;   // provisional, permite reintento
   try {
-    const token = window._sesion?.access_token;
-    if (!token) return;
-    const r = await (window.supaFetch || fetch)(SUPA_URL + '/rest/v1/rpc/get_meta_seccion', {
-      method:'POST',
-      headers:{ apikey: SUPA_KEY, Authorization:'Bearer '+token, 'Content-Type':'application/json' },
-      body: JSON.stringify({ p_seccion: Number(sec) })
-    });
-    if (!r.ok) return;
-    const v = await r.json();
-    window._META_SEC[sec] = Math.round(Number(v) || 0);
+    if (typeof esperarSupabase === 'function') { try { await esperarSupabase(8000); } catch(e){} }
+    if (!window.supabase) return;
+    const { data, error } = await window.supabase.rpc('get_meta_seccion', { p_seccion: Number(sec) });
+    if (error) { console.warn('Meta de la sección', sec, error.message); return; }
+    window._META_SEC[sec] = Math.round(Number(data) || 0);
     if (document.getElementById('lista-header')) renderLista();
   } catch(e) { console.warn('Meta de la sección', sec, e.message); }
 }
