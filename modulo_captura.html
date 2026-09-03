@@ -860,10 +860,12 @@ function capturarINE(){
   const video=document.getElementById('ine-video');
   const canvas=document.getElementById('ine-canvas');
 
-  // [T29 · req. José] Redimensionar a máx 1000px lado largo ANTES de mandar.
-  // Una INE se lee perfecto a esa resolución y sube mucho más rápido con señal
-  // mala en campo. Obligatorio, no opcional.
-  const MAX_LADO = 1000;
+  // [T29 · req. José] Redimensionar ANTES de mandar (para subir rápido con señal
+  // mala en campo). [FIX 2 sep · C5] Se sube de 1000 a 1600px: a 1000 el bloque
+  // de CURP / clave de elector / sección (letra chica) quedaba con muy pocos
+  // píxeles y el modelo devolvía esos campos vacíos aunque el nombre (letra
+  // grande) sí se leía. 1600px sigue muy por debajo del límite de 5MB.
+  const MAX_LADO = 1600;
   const vw = video.videoWidth, vh = video.videoHeight;
   let w = vw, h = vh;
   if (Math.max(vw, vh) > MAX_LADO) {
@@ -883,7 +885,7 @@ function capturarINE(){
     return; // no cierra el modal: deja reintentar
   }
 
-  const fotoBase64=canvas.toDataURL('image/jpeg',0.85).split(',')[1];
+  const fotoBase64=canvas.toDataURL('image/jpeg',0.92).split(',')[1];   // [FIX 2 sep · C5] 0.85→0.92: menos compresión JPEG = texto chico más nítido para OCR
   // Detener cámara y mostrar 'leyendo...'
   if(ineStream){ ineStream.getTracks().forEach(function(t){t.stop();}); ineStream=null; }
   document.getElementById('ine-video-wrap').style.display='none';
