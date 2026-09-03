@@ -889,6 +889,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
       <div>
         <div style="font-size:14px;font-weight:600;color:var(--red)">DÍA DE LA ELECCIÓN — MONITOREO EN TIEMPO REAL</div>
         <div style="font-size:11px;font-family:var(--mono);color:var(--text3);margin-top:2px" id="diae-hora-actual">Cargando...</div>
+        <div style="font-size:10px;font-family:var(--mono);color:var(--green);margin-top:2px" id="diae-ultima-actualizacion">conectando a la base…</div>
       </div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -2317,11 +2318,52 @@ async function rpcConReintento(fn, args) {
 // mas peligroso que puede haber. Se deja vacio hasta que existan reportes reales.
 let VOTOS_REALTIME = [];
 
-// [FIX 14 jul] Era casillas pendientes INVENTADOS. Estos datos vienen de
-// reportes_casilla_eleccion, que hoy tiene 0 FILAS: la jornada electoral aun no
-// ocurre (es el 6 jun 2027). Mostrar votos falsos en un panel de Dia E es de lo
-// mas peligroso que puede haber. Se deja vacio hasta que existan reportes reales.
-let PENDIENTES_REALTIME = [];
+let PENDIENTES_REALTIME = [];   // [DÍA E 3 sep] lo llena cargarJornadaReal() desde get_pendientes_votar()
+
+// ══════════════════════════════════════════════════════════════════════════
+// [DÍA E 3 sep · punto 2 backlog] DATOS REALES DE JORNADA
+// Antes VOTOS_REALTIME y PENDIENTES_REALTIME eran arrays vacíos (no existía
+// ya_voto). Ahora:
+//   · VOTOS_REALTIME      ← get_jornada_por_seccion(): padrón / votaron /
+//                            sorpresas por sección (KPIs y tabla en vivo)
+//   · PENDIENTES_REALTIME ← get_pendientes_votar(): la lista para el Excel
+//                            (quién falta, con teléfono y coordinador)
+// El alcance lo da la base según rol. Se refresca cada 30 s y justo antes de
+// cada descarga, para que el corte sea al minuto.
+// ══════════════════════════════════════════════════════════════════════════
+let _diaeCargando = false;
+async function cargarJornadaReal(){
+  if (_diaeCargando) return;
+  _diaeCargando = true;
+  try {
+    if (typeof esperarSupabase === 'function') { try { await esperarSupabase(8000); } catch(e){} }
+    if (!window.supabase) return;
+    const [{ data: sec, error: e1 }, { data: pend, error: e2 }] = await Promise.all([
+      window.supabase.rpc('get_jornada_por_seccion'),
+      window.supabase.rpc('get_pendientes_votar')
+    ]);
+    if (e1) console.warn('get_jornada_por_seccion:', e1.message);
+    if (e2) console.warn('get_pendientes_votar:', e2.message);
+    if (Array.isArray(sec)) {
+      VOTOS_REALTIME = sec.map(r => ({
+        seccion: +r.seccion, municipio: repMunDisplay(r.municipio),
+        total: +r.padron||0, votaron: +r.ya_votaron||0, sorpresas: +r.sorpresas||0,
+        ts: r.ultima_marca ? new Date(r.ultima_marca).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}) : '—'
+      }));
+    }
+    if (Array.isArray(pend)) {
+      PENDIENTES_REALTIME = pend.map(r => ({
+        id: r.id, nombre: r.nombre, tel: r.telefono || null, seccion: +r.seccion,
+        municipio: repMunDisplay(r.municipio), compromiso: +r.compromiso||0,
+        coordinador: r.coordinador || '—', coordinador_tel: r.coordinador_tel || null, es_riesgo: !!r.es_riesgo
+      }));
+    }
+    actualizarKpisDiaE(); renderTablaDiaE();
+    const ult = document.getElementById('diae-ultima-actualizacion');
+    if (ult) ult.textContent = 'Datos reales · ' + new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  } catch(e) { console.warn('cargarJornadaReal:', e); }
+  finally { _diaeCargando = false; }
+}
 
 let autoDescargaActiva = false;
 let autoDescargaTimer  = null;
@@ -2330,7 +2372,8 @@ let diaeLog = [];
 function initDiaE() {
   actualizarKpisDiaE();
   renderTablaDiaE();
-  setInterval(actualizarKpisDiaE, 30000); // refrescar cada 30s
+  cargarJornadaReal();                       // [DÍA E] primera carga real
+  setInterval(cargarJornadaReal, 30000);     // refrescar cada 30s desde la base
   setInterval(() => {
     document.getElementById('diae-hora-actual').textContent =
       'Hora actual: ' + new Date().toLocaleTimeString('es-MX') +
@@ -2412,10 +2455,15 @@ function renderTablaDiaE() {
   }).join('');
 }
 
-function descargarPendientesCoordi(tipo) {
+async function descargarPendientesCoordi(tipo) {
   if(typeof XLSX === 'undefined') {
     alert('Cargando motor Excel, intenta en 2 segundos...');
     return;
+  }
+  // [DÍA E] Corte al minuto: refrescar desde la base antes de generar el archivo.
+  try { await cargarJornadaReal(); } catch(e){}
+  if (!PENDIENTES_REALTIME.length) {
+    if (!confirm('No hay pendientes de votar en tu alcance (o aún no cargaron los datos).\n\n¿Generar el archivo de todos modos?')) return;
   }
 
   let datos = [...PENDIENTES_REALTIME];
@@ -2426,8 +2474,8 @@ function descargarPendientesCoordi(tipo) {
   if(tipo === 'municipio') {
     const mun = document.getElementById('diae-mun-sel').value;
     if(!mun) { alert('Selecciona un municipio.'); return; }
-    datos = datos.filter(r => r.municipio === mun);
-    alcance = mun;
+    datos = datos.filter(r => repN(r.municipio) === repN(mun));   // [DÍA E] acento-insensible
+    alcance = repMunDisplay(mun);
   } else if(tipo === 'seccion') {
     const sec = parseInt(document.getElementById('diae-sec-inp').value);
     if(!sec) { alert('Ingresa el número de sección.'); return; }
@@ -2440,13 +2488,14 @@ function descargarPendientesCoordi(tipo) {
   const wb = XLSX.utils.book_new();
 
   // Hoja principal: solo nombre + tel + sección + coordinador (como pediste)
-  const cols = ['NOMBRE','TELEFONO','SECCION','COORDINADOR','MUNICIPIO','COMPROMISO'];
+  const cols = ['NOMBRE','TELEFONO','SECCION','MUNICIPIO','COMPROMISO','RIESGO','COORDINADOR','TEL. COORDINADOR'];
   const rows = [cols, ...datos.map(r => [
-    r.nombre, r.tel || '—', r.seccion, r.coordinador, r.municipio,
-    ['','Contacto','Simpatiza','Seg. vota','Moviliza'][r.compromiso] || r.compromiso
+    r.nombre, r.tel || '—', r.seccion, r.municipio,
+    ['','Contacto','Simpatiza','Seg. vota','Moviliza'][r.compromiso] || r.compromiso,
+    r.es_riesgo ? 'SÍ' : '', r.coordinador, r.coordinador_tel || '—'
   ])];
   const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [{wch:28},{wch:16},{wch:10},{wch:14},{wch:18},{wch:14}];
+  ws['!cols'] = [{wch:32},{wch:14},{wch:9},{wch:16},{wch:12},{wch:8},{wch:26},{wch:14}];
   XLSX.utils.book_append_sheet(wb, ws, 'PENDIENTES_VOTAR');
 
   // Resumen del corte
@@ -2467,6 +2516,16 @@ function descargarPendientesCoordi(tipo) {
     ['INSTRUCCIÓN: Llamar o enviar WhatsApp para movilizar al voto'],
   ];
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(resumen), 'RESUMEN_CORTE');
+
+  // [DÍA E] Hoja 3: por sección, para repartir el trabajo a cada coordinador.
+  const porSec = {};
+  datos.forEach(r => { const k = r.seccion; porSec[k] = porSec[k] || {sec:k, mun:r.municipio, n:0, seg:0, mov:0, coord:r.coordinador};
+    porSec[k].n++; if (r.compromiso===3) porSec[k].seg++; if (r.compromiso===4) porSec[k].mov++; });
+  const secRows = [['SECCION','MUNICIPIO','PENDIENTES','SEG. VOTA','MOVILIZA','COORDINADOR'],
+    ...Object.values(porSec).sort((a,b)=>b.n-a.n).map(x => [x.sec, x.mun, x.n, x.seg, x.mov, x.coord])];
+  const wsSec = XLSX.utils.aoa_to_sheet(secRows);
+  wsSec['!cols'] = [{wch:9},{wch:16},{wch:11},{wch:10},{wch:10},{wch:26}];
+  XLSX.utils.book_append_sheet(wb, wsSec, 'POR_SECCION');
 
   const fname = tipo === 'auto'
     ? `AutoCorte_${hora}hrs_${fecha}.xlsx`
