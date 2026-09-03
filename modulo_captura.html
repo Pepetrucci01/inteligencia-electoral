@@ -263,6 +263,13 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
   .success-card{padding:12px 10px;}
   .success-row{font-size:11px;}
 }
+.metas-duo{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;}
+.meta-box{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;}
+.meta-lbl{font-size:9px;font-family:var(--mono);color:var(--text3);letter-spacing:.06em;}
+.meta-val{font-size:18px;font-weight:700;margin-top:2px;line-height:1.1;}
+.meta-de{font-size:12px;font-weight:400;color:var(--text3);font-family:var(--mono);}
+.meta-sub{font-size:10px;font-family:var(--mono);color:var(--text3);margin-top:4px;}
+@media (max-width:400px){ .metas-duo{grid-template-columns:1fr;gap:8px;} .meta-val{font-size:16px;} }
 </style>
 </head>
 <script>
@@ -803,6 +810,11 @@ async function cargarCiudadanosCapturista() {
         validado:   !!r.validado,
         duplicado:  !!r.duplicado,
         cap_por:    r.capturista_id || CAPTURISTA.id,
+        // [FIX 2 sep · meta individual] cap_por sustituye los NULL por el usuario
+        // en sesión (para mostrar "Capturado por"), así que NO sirve para contar:
+        // los 755 de la semilla tienen capturista_id NULL y se atribuirían a él.
+        // cap_real guarda el valor tal cual viene de la base.
+        cap_real:   r.capturista_id || null,
         resp:       r.responsable_id || r.capturista_id || CAPTURISTA.id,
         // [T9 16 jul] domicilio/notas ya no vienen en la lista (peso). Se cargan
         // on-demand al abrir el registro (ver verRegistro/editarRegistro).
@@ -1111,6 +1123,32 @@ async function resolverMunicipioLista(sec){
     CACHE_SEC_MUN[sec] = (data && data.municipio) || null;
     if (document.getElementById('lista-header')) renderLista();
   } catch(e) { console.warn('Municipio de la sección', sec, e.message); }
+}
+
+// [FIX 2 sep · punto 2] Meta INDIVIDUAL del capturista (asignaciones_seccion).
+// Es distinta de la meta de la sección: 826 (lo que le toca a él) vs 2,479 (toda
+// la sección entre todos). Mismo origen que usa panel_capturista_personal.
+window._META_IND = window._META_IND || null;
+async function cargarMetaIndividual(){
+  try {
+    const uid = (window._sesion && window._sesion.id) || CAPTURISTA.id;
+    if (!uid || window._META_IND != null) return;
+    if (typeof esperarSupabase === 'function') { try { await esperarSupabase(8000); } catch(e){} }
+    if (!window.supabase) return;
+    const { data, error } = await window.supabase
+      .from('asignaciones_seccion')
+      .select('meta_individual')
+      .eq('usuario_id', uid)
+      .eq('activo', true)
+      .order('fecha_inicio', { ascending:false })
+      .limit(1);
+    if (error) { console.warn('Meta individual:', error.message); return; }
+    const fila = data && data[0];
+    if (fila && fila.meta_individual != null) {
+      window._META_IND = Math.round(Number(fila.meta_individual));
+      if (document.getElementById('lista-header')) renderLista();
+    }
+  } catch(e) { console.warn('Meta individual:', e.message); }
 }
 
 async function cargarMetaSeccionLista(sec){
@@ -1516,12 +1554,36 @@ function renderLista(){
   if (!window._META_SEC || window._META_SEC[sec] === undefined) cargarMetaSeccionLista(sec);
   const pct    = metaSec > 0 ? Math.min(100, Math.round(enSec.length/metaSec*100)) : 0;
 
+  // [FIX 2 sep · punto 2] MI META (capturas propias vs meta individual) junto a
+  // LA SECCIÓN (todo el padrón de la sección vs meta de sección). Se cuenta con
+  // cap_real, NO con cap_por: los registros de la semilla traen capturista_id
+  // NULL y contarlos como propios inflaría el avance de 0% a 91%.
+  const _yoId    = (window._sesion && window._sesion.id) || CAPTURISTA.id;
+  const misCaps  = CIUDADANOS.filter(c => c.cap_real && c.cap_real === _yoId).length;
+  const metaInd  = window._META_IND || 0;
+  if (window._META_IND == null) cargarMetaIndividual();
+  const pctInd   = metaInd > 0 ? Math.min(100, Math.round(misCaps/metaInd*100)) : 0;
+  const colorInd = pctInd >= 100 ? 'var(--green)' : pctInd >= 50 ? 'var(--accent)' : 'var(--amber)';
+
   document.getElementById('lista-header').innerHTML=`
     <div class="sec-header-card">
       <div style="font-size:13px;font-weight:600;">Sección ${sec} · ${capMun||'—'}</div>
       <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px;">Responsable: ${capNom}</div>
-      <div class="progress-bar" style="margin-top:10px"><div class="progress-fill" style="width:${pct}%;background:var(--accent)"></div></div>
-      <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:4px;">${enSec.length} / ${metaSec ? metaSec.toLocaleString('es-MX') : '—'} meta · ${pct}%</div>
+
+      <div class="metas-duo">
+        <div class="meta-box">
+          <div class="meta-lbl">MI META</div>
+          <div class="meta-val" style="color:${colorInd}">${misCaps.toLocaleString('es-MX')} <span class="meta-de">/ ${metaInd ? metaInd.toLocaleString('es-MX') : '—'}</span></div>
+          <div class="progress-bar" style="margin-top:6px"><div class="progress-fill" style="width:${pctInd}%;background:${colorInd}"></div></div>
+          <div class="meta-sub">${pctInd}% capturado por mí</div>
+        </div>
+        <div class="meta-box">
+          <div class="meta-lbl">LA SECCIÓN</div>
+          <div class="meta-val" style="color:var(--cyan)">${enSec.length.toLocaleString('es-MX')} <span class="meta-de">/ ${metaSec ? metaSec.toLocaleString('es-MX') : '—'}</span></div>
+          <div class="progress-bar" style="margin-top:6px"><div class="progress-fill" style="width:${pct}%;background:var(--cyan)"></div></div>
+          <div class="meta-sub">${pct}% de la sección</div>
+        </div>
+      </div>
       <div class="sec-stats">
         <div class="sec-stat"><div class="sec-stat-val" style="color:var(--green)">${seguros}</div><div class="sec-stat-lbl">Seg. votan</div></div>
         <div class="sec-stat"><div class="sec-stat-val" style="color:var(--red)">${enSec.filter(c=>c.riesgo).length}</div><div class="sec-stat-lbl">En riesgo</div></div>
