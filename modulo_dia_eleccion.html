@@ -632,7 +632,7 @@ const VotoOffline = {
       if (s && !s.votó) { s.votó = true; s.hora_voto = _fmtHora(v.ts); s.pendiente_sync = true; s.marcado_por = 'pendiente de subir'; } });
   },
   pintar(){
-    const n = this.pendientes();
+    const n = this.pendientes() + this.pendientesS();
     const online = navigator.onLine;
     const bOff = document.getElementById('barra-offline'), bSync = document.getElementById('barra-sync');
     if (bOff)  { bOff.style.display  = (!online) ? 'block' : 'none'; const e = document.getElementById('offline-pend'); if (e) e.textContent = n; }
@@ -640,10 +640,11 @@ const VotoOffline = {
   },
   async sincronizar(){
     if (this._sync || !navigator.onLine) { this.pintar(); return; }
-    const q = this.leer(); if (!q.length) { this.pintar(); return; }
+    const q = this.leer(); if (!q.length && !this.pendientesS()) { this.pintar(); return; }
     this._sync = true; this.pintar();
     try {
       if (!await esperarSupabase(8000)) return;
+      try { await this.sincronizarS(); } catch(e){}
       for (const v of q) {
         try {
           const { data, error } = await _diaeRpc('marcar_voto', { p_ciudadano: v.id, p_simulacro: !!v.simulacro, p_hora_local: v.ts });
@@ -675,6 +676,46 @@ const VotoOffline = {
       try { renderLista(); } catch(e){}
       try { if (typeof actualizarKPIsJornada === 'function') actualizarKPIsJornada(); } catch(e){}
     }
+  },
+  // ── Votos SORPRESA sin señal (misma filosofía; llave local = idempotencia) ──
+  KEY_S: 'diae_sorpresas_pendientes_' + ((SESION && SESION.id) || 'anon'),
+  leerS(){ try { return JSON.parse(localStorage.getItem(this.KEY_S) || '[]'); } catch(e){ return []; } },
+  escribirS(arr){ try { localStorage.setItem(this.KEY_S, JSON.stringify(arr)); } catch(e){} this.pintar(); },
+  pendientesS(){ return this.leerS().length; },
+  encolarSorpresa(o){
+    const q = this.leerS();
+    const clave = 'S-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,7);
+    q.push(Object.assign({ clave, ts: new Date().toISOString(), simulacro: MODO_SIMULACRO, intentos: 0 }, o));
+    this.escribirS(q);
+    return clave;
+  },
+  quitarS(clave){ this.escribirS(this.leerS().filter(v => v.clave !== clave)); },
+  async sincronizarS(){
+    const q = this.leerS(); if (!q.length) return;
+    for (const v of q) {
+      try {
+        const { data, error } = await _diaeRpc('registrar_voto_sorpresa', {
+          p_nombre: v.p_nombre, p_paterno: v.p_paterno, p_materno: v.p_materno, p_telefono: null,
+          p_simulacro: !!v.simulacro, p_hora_local: v.ts, p_clave_local: v.clave });
+        if (error) {
+          if (/fetch|network|Failed|timeout|503|502|504/i.test(error.message || '')) { v.intentos=(v.intentos||0)+1; this.escribirS(this.leerS().map(x=>x.clave===v.clave?v:x)); continue; }
+          agregarLog('amber', `⚠ No se pudo subir sorpresa ${v.nombre}: ${error.message}`); this.quitarS(v.clave); continue;
+        }
+        const r = data || {};
+        const sp = SORPRESAS.find(x => x.clave === v.clave);
+        const si = SIMPATIZANTES.find(x => x.clave === v.clave);
+        if (r.ok) {
+          if (sp) { sp.id = r.id; sp.pendiente_sync = false; }
+          if (si) { si.id = r.id; si.pendiente_sync = false; si.marcado_por = (SESION && SESION.nombre) || 'yo'; }
+          agregarLog('green', `☁ Sorpresa subida: ${v.nombre}${r.repetido ? ' (ya estaba)' : ''}`);
+        } else {
+          if (sp) sp.pendiente_sync = false;
+          agregarLog('amber', `⚠ Sorpresa ${v.nombre}: ${r.mensaje || 'rechazada'}`);
+        }
+        this.quitarS(v.clave);
+      } catch(e) { v.intentos=(v.intentos||0)+1; this.escribirS(this.leerS().map(x=>x.clave===v.clave?v:x)); }
+    }
+    try { renderSorpresas(); renderLista(); } catch(e){}
   },
   iniciar(){
     window.addEventListener('online',  () => { agregarLog('green', '🌐 Conexión recuperada — subiendo votos pendientes…'); this.sincronizar(); });
@@ -1094,12 +1135,25 @@ function registrarSorpresa() {
   if (partes.length >= 3) { p_materno = partes.pop(); p_paterno = partes.pop(); p_nombre = partes.join(' '); }
   else if (partes.length === 2) { p_paterno = partes[1]; p_nombre = partes[0]; }
   else { p_nombre = nombre; p_paterno = '—'; }
-  (async () => {
+  // [DÍA E OFFLINE] Sin red: a la cola con clave local (idempotente al reintentar).
+  const _sorpresaOffline = () => {
+    const hora = _fmtHora(new Date());
+    const clave = VotoOffline.encolarSorpresa({ nombre, seccion, obs, p_nombre, p_paterno, p_materno });
+    SORPRESAS.push({ id: clave, clave, nombre, seccion, obs, hora, registrado_por: CAPTURISTA_ID, pendiente_sync: true });
+    SIMPATIZANTES.unshift({ id: clave, clave, nombre: nombre.toUpperCase(), tel:'—', seccion, municipio: MUNICIPIO, compromiso: 3,
+      responsable:'—', coordinador:'—', votó:true, hora_voto: hora, marcado_por: 'pendiente de subir', pendiente_sync: true, es_simulacro: MODO_SIMULACRO });
+    agregarLog('amber', `📵 Voto sorpresa SIN SEÑAL: ${nombre} · se subirá al volver la conexión`);
+    renderSorpresas(); renderLista(); guardarEstado();
+  };
+  if (!navigator.onLine) { _sorpresaOffline(); }
+  else (async () => {
     try {
-      if (!await esperarSupabase(8000)) throw new Error('Sin conexión.');
+      if (!await esperarSupabase(8000)) throw Object.assign(new Error('Sin conexión.'), { esRed: true });
+      const clave = 'S-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,7);
       const { data, error } = await _diaeRpc('registrar_voto_sorpresa', {
-        p_nombre, p_paterno, p_materno, p_telefono: null, p_simulacro: MODO_SIMULACRO });
-      if (error) throw new Error(error.message);
+        p_nombre, p_paterno, p_materno, p_telefono: null, p_simulacro: MODO_SIMULACRO,
+        p_hora_local: new Date().toISOString(), p_clave_local: clave });
+      if (error) throw Object.assign(new Error(error.message), { esRed: /fetch|network|Failed|timeout|503|502|504/i.test(error.message||'') });
       const r = data || {};
       if (!r.ok) throw new Error(r.mensaje || 'No se pudo registrar.');
       const hora = _fmtHora(new Date());
@@ -1110,6 +1164,7 @@ function registrarSorpresa() {
       agregarLog('amber', `➕ Voto sorpresa: ${nombre} · Secc. ${seccion} · ${hora}`);
       renderSorpresas(); renderLista(); guardarEstado();
     } catch(e) {
+      if (e && e.esRed) { _sorpresaOffline(); return; }
       msg.style.display = 'block';
       msg.style.cssText += 'background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:var(--red);';
       msg.textContent = '⚠ ' + e.message;
