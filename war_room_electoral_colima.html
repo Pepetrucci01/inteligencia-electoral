@@ -623,6 +623,7 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
       <div class="j-sub"><span id="j-total-casillas">—</span> casillas · 08:00–18:00 hrs · Colima</div>
     </div>
     <div class="j-reloj" id="f2-reloj">--:--:--</div>
+    <div style="font-size:10px;font-family:var(--mono);color:var(--text3);margin-top:2px" id="f2-ultima-marca">sin marcas aún</div>
     <button class="sim-btn" onclick="simActualizar()">⟳ Actualizar</button>
   </div>
 
@@ -1757,20 +1758,72 @@ function alertarCapturista(capId){
 // ══════════════════════════════════════════════════
 let f2s={nivel:'candidato',df:null,mun:null,dl:null,sec:null,cas:null};
 
+// ══════════════════════════════════════════════════════════════════════════
+// [DÍA E 3 sep] JORNADA REAL: ya_voto por sección desde get_jornada_por_seccion().
+// Antes "Votos confirmados" salía de casillas.votos_favor (vacío hasta el
+// cierre) y "% participación" de una fórmula inventada (votos / casillas×32).
+// Ahora: votos = ciudadanos marcados como ya votaron; % = votaron / padrón.
+// El alcance (municipio / estado) lo impone la RPC según el rol.
+// ══════════════════════════════════════════════════════════════════════════
+const JORNADA_SEC = {};        // seccion → {padron, ya_votaron, sorpresas, pct, ultima}
+let   JORNADA_TOT = { padron:0, votaron:0, sorpresas:0, ultima:null };
+async function wrCargarJornada(){
+  const r = await wrFetch(`${SUPA_URL}/rest/v1/rpc/get_jornada_por_seccion`, {
+    method:'POST', headers:{'Content-Type':'application/json'}, body:'{}' });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const filas = await r.json();
+  if (!Array.isArray(filas)) return;
+  Object.keys(JORNADA_SEC).forEach(k => delete JORNADA_SEC[k]);
+  JORNADA_TOT = { padron:0, votaron:0, sorpresas:0, ultima:null };
+  filas.forEach(f => {
+    JORNADA_SEC[Number(f.seccion)] = { padron:+f.padron||0, ya_votaron:+f.ya_votaron||0, sorpresas:+f.sorpresas||0,
+      pendientes:+f.pendientes||0, pct:+f.pct||0, ultima:f.ultima_marca||null, marcadores:+f.marcadores||0 };
+    JORNADA_TOT.padron += +f.padron||0; JORNADA_TOT.votaron += +f.ya_votaron||0; JORNADA_TOT.sorpresas += +f.sorpresas||0;
+    if (f.ultima_marca && (!JORNADA_TOT.ultima || f.ultima_marca > JORNADA_TOT.ultima)) JORNADA_TOT.ultima = f.ultima_marca;
+  });
+  // Sobreponer a las casillas: los votos de la sección van a su PRIMERA casilla
+  // (la tabla de Fase 2 suma por sección; así no se duplican).
+  const vistas = {};
+  const lista = (typeof CASILLAS_F2 !== 'undefined' && CASILLAS_F2.length) ? CASILLAS_F2 : Object.values(CAS_SEC).flat();
+  lista.forEach(c => {
+    const sec = Number(c.seccion); const j = JORNADA_SEC[sec];
+    if (!j) { c.votos = 0; c.nuevos = 0; return; }
+    if (vistas[sec]) { c.votos = 0; c.nuevos = 0; return; }
+    vistas[sec] = true; c.votos = j.ya_votaron; c.nuevos = j.sorpresas;
+  });
+  updateF2KPIs();
+  if (typeof renderCuadF2 === 'function') try { renderCuadF2(); } catch(e){}
+  if (typeof renderMunF2  === 'function') try { renderMunF2(); }  catch(e){}
+  const ult = document.getElementById('f2-ultima-marca');
+  if (ult) ult.textContent = JORNADA_TOT.ultima ? ('última marca ' + new Date(JORNADA_TOT.ultima).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})) : 'sin marcas aún';
+}
+
+
+// [DÍA E 3 sep] % participación real de un conjunto de secciones = votaron / padrón.
+// Sustituye la fórmula horneada votos/(casillas×32) en tabla y cuadrantes.
+function wrPartReal(secIds, fallbackVotos, fallbackAct){
+  let pad=0, vot=0, hay=false;
+  (secIds||[]).forEach(id=>{ const j=JORNADA_SEC[Number(id)]; if(j){ hay=true; pad+=j.padron; vot+=j.ya_votaron; } });
+  if (hay && pad>0) return Math.round(vot/pad*1000)/10;
+  return Math.round((fallbackVotos||0)/Math.max((fallbackAct||0)*32,1)*100);
+}
+
 function updateF2KPIs(){
   const all=Object.values(CAS_SEC).flat();
   const ab=all.filter(c=>c.estatus==='abierta').length;
   const ce=all.filter(c=>c.estatus==='cerrada').length;
   const inc=all.filter(c=>c.estatus==='incidencia').length;
   const sr=all.filter(c=>c.estatus==='sinreporte').length;
-  const vt=all.reduce((s,c)=>s+c.votos,0);
-  const nv=all.reduce((s,c)=>s+c.nuevos,0);
+  const tieneJornada = Object.keys(JORNADA_SEC).length > 0;
+  const vt = tieneJornada ? JORNADA_TOT.votaron   : all.reduce((s,c)=>s+(c.votos||0),0);
+  const nv = tieneJornada ? JORNADA_TOT.sorpresas : all.reduce((s,c)=>s+(c.nuevos||0),0);
   const act=ab+ce;
   const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
   set('k-ab',fmt(ab));set('k-sr',fmt(sr));set('k-inc',fmt(inc));set('k-ce',fmt(ce));
   set('k-vt',fmt(vt));set('k-nv',fmt(nv));
-  set('k-pt',Math.round(vt/Math.max(act*32,1)*100)+'%');
-  set('k-ca',Math.round(act/all.length*100)+'%');
+  // [DÍA E 3 sep] % participación REAL = votaron / padrón de la lista (no casillas×32).
+  set('k-pt', tieneJornada && JORNADA_TOT.padron > 0 ? (Math.round(vt/JORNADA_TOT.padron*1000)/10)+'%' : '0%');
+  set('k-ca',all.length ? Math.round(act/all.length*100)+'%' : '0%');
 }
 
 
@@ -1801,12 +1854,12 @@ function renderMunF2(){
     const mun=MUNS.find(m=>m.id===f2s.mun);
     let secs=DLS.filter(dl=>dl.mun===f2s.mun).flatMap(dl=>SECS[dl.id]||[]);
     if(f2s.dl){const r=secs.filter(s=>s.dl===f2s.dl || ((SECS[f2s.dl]||[]).some(x=>x.id===s.id)));if(r.length)secs=r;}
-    if(filtrosF2.sem){secs=secs.filter(s=>{const st=casStats([s.id]);const act=st.ab+st.ce;const pv=Math.round(st.votos/Math.max(act*32,1)*100);return wrSemOk2(pv);});}
+    if(filtrosF2.sem){secs=secs.filter(s=>{const st=casStats([s.id]);const act=st.ab+st.ce;const pv=wrPartReal([s.id],st.votos,act);return wrSemOk2(pv);});}
     if(thN)thN.textContent='Sección';
     if(capEl)capEl.textContent=`${secs.length} secciones · ${mun?mun.n:''}${f2s.dl?(' · '+(((DLS.find(d=>d.id===f2s.dl)||{}).n)||'')):' (directo; DL opcional en cuadrantes)'}`;
     document.getElementById('mun-f2-tbody').innerHTML=secs.map(s=>{
       const st=casStats([s.id]);const act=st.ab+st.ce;
-      const pv=Math.round(st.votos/Math.max(act*32,1)*100);const c=semC2(pv);
+      const pv=wrPartReal([s.id],st.votos,act);const c=semC2(pv);
       return`<tr onclick="drillF2(\'sec\',\'${s.id}\')" class="${f2s.sec===s.id?'sel':''}">
         <td><div class="nm">Secc. ${s.num}</div><div class="sub">${s.munNombre||''}</div></td>
         <td class="mono" style="text-align:center">${st.total}</td>
@@ -1832,7 +1885,7 @@ function renderMunF2(){
     const secIds = munSecIds(m.id);
     const st = casStats(secIds);
     const act = st.ab + st.ce;
-    const pv = Math.round(st.votos / Math.max(act * 32, 1) * 100);
+    const pv = wrPartReal(secIds, st.votos, act);   // [DÍA E 3 sep] participación real
     return { m, st, pv };
   });
 
@@ -2688,13 +2741,17 @@ async function cargarCasillasF2Reales() {
         estatus:   est,
         hora:      horaLegible(c.hora_apertura),
         rep:       c.presidente_casilla || '—',
-        votos:     Number(c.votos_favor || 0),   // [FIX 1 sep] antes votos_nuestro_partido = historico 2024 pintado como jornada 2027
+        votos:     0,   // [DÍA E 3 sep] lo llena wrAplicarJornada() desde ya_voto (get_jornada_por_seccion)
+        nuevos:    0,   // [DÍA E 3 sep] votos sorpresa; antes era undefined y el KPI daba NaN
       };
     });
 
     CASILLAS_F2.length = 0;
     adaptadas.forEach(function (c) { CASILLAS_F2.push(c); });
     F2_DATOS_REALES = true;
+    // [DÍA E 3 sep] Sobreponer la jornada real (ya_voto) y refrescar cada 30 s.
+    try { await wrCargarJornada(); } catch(e) { console.warn('jornada:', e.message); }
+    if (!window._wrJornadaTimer) window._wrJornadaTimer = setInterval(function(){ wrCargarJornada().catch(function(){}); }, 30000);
 
     // [FIX 23 jul] El encabezado tenía "1,023 casillas" HORNEADO a mano, que no
     // coincidía con la base (939 reales). Un total falso en un panel de mando
