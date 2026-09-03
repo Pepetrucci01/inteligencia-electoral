@@ -220,6 +220,13 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 </div>
 
 <!-- [DÍA E 3 sep] Aviso de modo simulacro: que nadie confunda el ejercicio con la jornada real -->
+<!-- [DÍA E OFFLINE 3 sep] Estado de conexión y cola de votos pendientes de subir -->
+<div id="barra-offline" style="display:none;background:rgba(239,68,68,.12);border-bottom:1px solid rgba(239,68,68,.35);color:#fca5a5;font-family:var(--mono);font-size:11px;padding:6px 14px;text-align:center;letter-spacing:.03em">
+  📵 SIN SEÑAL — puedes seguir marcando. <span id="offline-pend">0</span> voto(s) se subirán solos al volver la conexión.
+</div>
+<div id="barra-sync" style="display:none;background:rgba(59,130,246,.12);border-bottom:1px solid rgba(59,130,246,.35);color:#93c5fd;font-family:var(--mono);font-size:11px;padding:6px 14px;text-align:center;letter-spacing:.03em">
+  🔄 Subiendo <span id="sync-pend">0</span> voto(s) pendiente(s)…
+</div>
 <div id="banner-simulacro" style="display:none;background:rgba(245,158,11,.12);border-bottom:1px solid rgba(245,158,11,.35);color:var(--amber);font-family:var(--mono);font-size:11px;padding:6px 14px;text-align:center;letter-spacing:.04em">
   🧪 MODO SIMULACRO — lo que marques queda etiquetado como ensayo y no afecta la jornada real
 </div>
@@ -592,6 +599,93 @@ const SOLO_LECTURA_DIAE = (ROL_ACTUAL === 'consulta');
 function _diaeRpc(fn, args){ return window.supabase.rpc(fn, args || {}); }
 function _fmtHora(ts){ try { return new Date(ts).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}); } catch(e){ return '—'; } }
 
+// ══════════════════════════════════════════════════════════════════════════
+// [DÍA E OFFLINE 3 sep · decisión José] COLA DE VOTOS SIN SEÑAL
+// ---------------------------------------------------------------------------
+// En casilla rural sin cobertura el capturista NO puede quedarse parado. Si al
+// marcar no hay red (o el servidor no responde), el voto se guarda aquí, en el
+// teléfono, y se sube solo cuando vuelve la señal. Regla intacta: gana el
+// PRIMERO que llega al servidor — si al sincronizar ya lo marcó otro, se avisa
+// y no se duplica. La hora que se sube es la REAL del marcado (p_hora_local).
+// Es una cola distinta a sync_queue.js (esa es de captura de ciudadanos y
+// verifica CURP); esta pesa 3 campos por voto y no depende de nada más.
+// ══════════════════════════════════════════════════════════════════════════
+const VotoOffline = {
+  KEY: 'diae_votos_pendientes_' + ((SESION && SESION.id) || 'anon'),
+  _sync: false,
+  leer(){ try { return JSON.parse(localStorage.getItem(this.KEY) || '[]'); } catch(e){ return []; } },
+  escribir(arr){ try { localStorage.setItem(this.KEY, JSON.stringify(arr)); } catch(e){} this.pintar(); },
+  pendientes(){ return this.leer().length; },
+  encolar(ciudadanoId, nombre){
+    const q = this.leer();
+    if (q.some(v => v.id === ciudadanoId)) return false;          // ya estaba en cola
+    q.push({ id: ciudadanoId, nombre: nombre || '', ts: new Date().toISOString(), simulacro: MODO_SIMULACRO, intentos: 0 });
+    this.escribir(q);
+    return true;
+  },
+  quitar(ciudadanoId){ this.escribir(this.leer().filter(v => v.id !== ciudadanoId)); },
+  // Pintar el estado del voto pendiente sobre la lista al cargar (para que el
+  // capturista vea "✓ pendiente de subir" y no lo marque dos veces).
+  aplicarSobreLista(){
+    const q = this.leer(); if (!q.length) return;
+    q.forEach(v => { const s = SIMPATIZANTES.find(x => x.id === v.id);
+      if (s && !s.votó) { s.votó = true; s.hora_voto = _fmtHora(v.ts); s.pendiente_sync = true; s.marcado_por = 'pendiente de subir'; } });
+  },
+  pintar(){
+    const n = this.pendientes();
+    const online = navigator.onLine;
+    const bOff = document.getElementById('barra-offline'), bSync = document.getElementById('barra-sync');
+    if (bOff)  { bOff.style.display  = (!online) ? 'block' : 'none'; const e = document.getElementById('offline-pend'); if (e) e.textContent = n; }
+    if (bSync) { bSync.style.display = (online && n > 0) ? 'block' : 'none'; const e = document.getElementById('sync-pend'); if (e) e.textContent = n; }
+  },
+  async sincronizar(){
+    if (this._sync || !navigator.onLine) { this.pintar(); return; }
+    const q = this.leer(); if (!q.length) { this.pintar(); return; }
+    this._sync = true; this.pintar();
+    try {
+      if (!await esperarSupabase(8000)) return;
+      for (const v of q) {
+        try {
+          const { data, error } = await _diaeRpc('marcar_voto', { p_ciudadano: v.id, p_simulacro: !!v.simulacro, p_hora_local: v.ts });
+          if (error) {
+            // Error de red/servidor: se queda en cola, se reintenta luego.
+            if (/fetch|network|Failed|timeout|503|502|504/i.test(error.message || '')) { v.intentos = (v.intentos||0)+1; this.escribir(this.leer().map(x => x.id===v.id ? v : x)); continue; }
+            // Error de negocio (rol, sección): no tiene sentido reintentar.
+            agregarLog('amber', `⚠ No se pudo subir voto de ${v.nombre}: ${error.message}`); this.quitar(v.id); continue;
+          }
+          const r = data || {};
+          const s = SIMPATIZANTES.find(x => x.id === v.id);
+          if (r.ok) {
+            if (s) { s.votó = true; s.hora_voto = r.hora || s.hora_voto; s.pendiente_sync = false; s.marcado_por = (SESION && SESION.nombre) || 'yo'; }
+            agregarLog('green', `☁ Subido: ${v.nombre} · marcado ${_fmtHora(v.ts)}`);
+          } else if (r.motivo === 'ya_marcado') {
+            if (s) { s.votó = true; s.hora_voto = r.hora || s.hora_voto; s.pendiente_sync = false; s.marcado_por = r.por || s.marcado_por; }
+            agregarLog('amber', `⚠ ${r.mensaje} (tu marca sin señal llegó después)`);
+          } else {
+            if (s) { s.votó = false; s.hora_voto = null; s.pendiente_sync = false; s.marcado_por = null; }
+            agregarLog('amber', `⚠ ${v.nombre}: ${r.mensaje || 'rechazado por el servidor'}`);
+          }
+          this.quitar(v.id);
+        } catch(e) {
+          v.intentos = (v.intentos||0)+1; this.escribir(this.leer().map(x => x.id===v.id ? v : x));
+        }
+      }
+    } finally {
+      this._sync = false; this.pintar();
+      try { renderLista(); } catch(e){}
+      try { if (typeof actualizarKPIsJornada === 'function') actualizarKPIsJornada(); } catch(e){}
+    }
+  },
+  iniciar(){
+    window.addEventListener('online',  () => { agregarLog('green', '🌐 Conexión recuperada — subiendo votos pendientes…'); this.sincronizar(); });
+    window.addEventListener('offline', () => { agregarLog('amber', '📵 Sin señal — los votos se guardan en el teléfono.'); this.pintar(); });
+    setInterval(() => this.sincronizar(), 20000);
+    this.pintar();
+    if (navigator.onLine) setTimeout(() => this.sincronizar(), 3000);
+  }
+};
+document.addEventListener('DOMContentLoaded', () => VotoOffline.iniciar());
+
 // Simpatizantes — se cargan de Supabase al iniciar, con fallback offline
 let SIMPATIZANTES = [];
 
@@ -670,6 +764,10 @@ async function cargarSimpatizantesDiaE() {
       marcado_por: r.marcado_por_nombre || null,
       es_simulacro: !!r.es_simulacro,
     }));
+
+    // [DÍA E OFFLINE] Los votos marcados sin señal que aún no subieron se pintan
+    // como pendientes, para que no se marquen dos veces.
+    try { VotoOffline.aplicarSobreLista(); } catch(e){}
 
     // [DÍA E 3 sep] Ya NO se restauran votos desde localStorage: el estado vive en
     // la base (si no, cada teléfono tendría su propia verdad y el War Room en 0).
@@ -834,7 +932,9 @@ function renderLista() {
           Secc. ${s.seccion}
           &nbsp;·&nbsp;
           <span class="comp-badge" style="background:${cc}18;color:${cc};border:1px solid ${cc}30">${s.compromiso} ${compLabels[s.compromiso]}</span>
-          ${s.votó ? `&nbsp;·&nbsp;<span style="color:var(--green);font-family:var(--mono);font-size:10px">✓ ${s.hora_voto}${s.marcado_por ? ' · ' + s.marcado_por : ''}</span>` : ''}
+          ${s.votó ? (s.pendiente_sync
+              ? `&nbsp;·&nbsp;<span style="color:var(--amber);font-family:var(--mono);font-size:10px">⏳ ${s.hora_voto} · pendiente de subir</span>`
+              : `&nbsp;·&nbsp;<span style="color:var(--green);font-family:var(--mono);font-size:10px">✓ ${s.hora_voto}${s.marcado_por ? ' · ' + s.marcado_por : ''}</span>`) : ''}
         </div>
       </div>
       <div class="simp-status">
@@ -903,10 +1003,23 @@ async function confirmarVoto() {
 
   const btn = document.querySelector('#modal-voto .btn-confirmar, #modal-voto button.btn-votar');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Guardando…'; }
+
+  // [DÍA E OFFLINE] Sin red: a la cola, se pinta como pendiente y se sigue trabajando.
+  const _encolarYSeguir = (porque) => {
+    VotoOffline.encolar(s.id, s.nombre);
+    s.votó = true; s.hora_voto = _fmtHora(new Date()); s.pendiente_sync = true; s.marcado_por = 'pendiente de subir';
+    agregarLog('amber', `📵 ${s.nombre} marcado SIN SEÑAL · se subirá al volver la conexión`);
+    if(navigator.vibrate) navigator.vibrate([40,40,40]);
+  };
+  if (!navigator.onLine) {
+    _encolarYSeguir('offline');
+    if (btn) { btn.disabled = false; btn.textContent = '✓ Sí, ya votó'; }
+    cerrarModal(); renderLista(); return;
+  }
   try {
-    if (!await esperarSupabase(8000)) throw new Error('Sin conexión con el servidor. Reintenta.');
-    const { data, error } = await _diaeRpc('marcar_voto', { p_ciudadano: s.id, p_simulacro: MODO_SIMULACRO });
-    if (error) throw new Error(error.message);
+    if (!await esperarSupabase(8000)) throw Object.assign(new Error('Sin conexión con el servidor.'), { esRed: true });
+    const { data, error } = await _diaeRpc('marcar_voto', { p_ciudadano: s.id, p_simulacro: MODO_SIMULACRO, p_hora_local: new Date().toISOString() });
+    if (error) throw Object.assign(new Error(error.message), { esRed: /fetch|network|Failed|timeout|503|502|504/i.test(error.message||'') });
     const r = data || {};
     if (r.ok) {
       s.votó = true; s.hora_voto = r.hora || _fmtHora(new Date()); s.marcado_por = (SESION && SESION.nombre) || 'yo';
@@ -921,7 +1034,12 @@ async function confirmarVoto() {
       alert('⚠ ' + (r.mensaje || 'No se pudo marcar el voto.'));
     }
   } catch(e) {
-    alert('⚠ No se pudo guardar el voto: ' + e.message + '\n\nRevisa tu señal y vuelve a intentar. El voto NO quedó registrado.');
+    if (e && e.esRed) {
+      // Falla de red con navigator.onLine=true (señal débil, servidor lento): a la cola.
+      _encolarYSeguir('red');
+    } else {
+      alert('⚠ No se pudo guardar el voto: ' + e.message + '\n\nEl voto NO quedó registrado.');
+    }
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = '✓ Sí, ya votó'; }
     cerrarModal();
