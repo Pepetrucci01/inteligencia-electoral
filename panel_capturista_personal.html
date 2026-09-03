@@ -283,7 +283,11 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
   <div class="tab" id="tab-lista" onclick="showTab('lista')">
     <span class="tab-icon">👥</span>Simpatizantes
   </div>
-  <div class="tab" id="tab-eleccion" onclick="showTab('eleccion')">
+  <!-- [DÍA E 3 sep · depuración] Esta pestaña tenía una COPIA del Día E que
+       guardaba los votos solo en memoria (se perdían al cerrar). El módulo real
+       es modulo_dia_eleccion.html (6 pestañas, conectado a la base). Aquí queda
+       solo el acceso, para no mantener dos pantallas que se desincronizan. -->
+  <div class="tab" id="tab-eleccion" onclick="irADiaE()">
     <span class="tab-icon">🗳</span>Día elección
   </div>
 </div>
@@ -321,7 +325,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
     <div class="fase-icon">🗳</div>
     <div>
       <div class="fase-title">FASE 2 — Día de la elección</div>
-      <div class="fase-sub">Hoy es el día — ve a la pestaña "Día elección"</div>
+      <div class="fase-sub">Hoy es el día — toca "Día elección" para abrir la jornada</div>
     </div>
   </div>
 
@@ -901,8 +905,21 @@ function setFase(f){
     pb.style.border='1px solid rgba(239,68,68,0.35)';
     bf1.style.display='none'; bf2.style.display='flex';
     tabEl.style.opacity='1';
-    showTab('eleccion');
+    // [DÍA E 3 sep] Ya no se abre la copia interna: se va al módulo real.
   }
+}
+
+// [DÍA E 3 sep] Abre el módulo real de jornada en la MISMA pestaña (celular en
+// campo: sin ventanas nuevas). Si el panel está embebido en el shell, navega el
+// shell; si no, la propia página.
+function irADiaE(){
+  const destino = 'modulo_dia_eleccion.html';
+  try {
+    if (window.parent && window.parent !== window && typeof window.parent.load === 'function') {
+      window.parent.load('diae', destino, 'Día de la elección', 'Jornada electoral · marcar votos'); return;
+    }
+  } catch(e){}
+  window.location.href = destino;
 }
 
 // ── [FIX fase · 1 sep] FASE AUTOMÁTICA POR FECHA DE ELECCIÓN ──────────────

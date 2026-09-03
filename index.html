@@ -352,6 +352,17 @@ body.rol-consulta     .kpi-estatal { display:none; }
       <div class="nav-tip">Encuestas</div>
     </div>
 
+    <!-- [DÍA E 3 sep] El módulo de jornada existía pero NO estaba en el menú: solo
+         se llegaba escribiendo la URL. Ahora tiene su entrada. Roles = los que
+         marcan (capturista, repr_casilla, jefe_seccion), los que corrigen
+         (coordinador, coord. estatal, admin, super_admin) y consulta en lectura. -->
+    <div class="nav-item" id="nav-diae" data-rol="super_admin,admin,coordinador_estatal,coordinador,jefe_seccion,repr_casilla,capturista,consulta" onclick="load('diae','modulo_dia_eleccion.html','Día de la elección','Jornada electoral · marcar votos')">
+      <div class="nav-icon" style="background:rgba(239,68,68,.12);color:#ef4444">🗳</div>
+      <span class="nav-label">Día E</span>
+      <span style="margin-left:auto;font-size:8px;font-weight:700;color:#f59e0b;background:rgba(245,158,11,.15);padding:1px 5px;border-radius:6px;letter-spacing:.5px;">SIMULACRO</span>
+      <div class="nav-tip">Día de la elección</div>
+    </div>
+
     <div class="nav-item" id="nav-cc" data-rol="super_admin,admin,coordinador,coordinador_estatal,operador_cc" onclick="load('cc','modulo_callcenter.html','Centro de Llamadas','Campañas telefónicas y CATI')">
       <div class="nav-icon" style="background:rgba(63,167,255,.12);color:#3fa7ff">📞</div>
       <span class="nav-label">Call Center</span>
@@ -582,7 +593,7 @@ function actualizarContadorModulos(){
   }catch(_e){}
 }
 
-const APP_BUILD = '20260903b'; // [02/09] captura (identidad real, Mi Sección, scan INE, responsive) · reportes (calidad en vivo, alcance municipal) · war room (alertas por rol) · panel capturista (header móvil) // [31/08] subir esta cadena cada vez que se actualice un modulo: es el rompe-cache de los iframes
+const APP_BUILD = '20260903c'; // [02/09] captura (identidad real, Mi Sección, scan INE, responsive) · reportes (calidad en vivo, alcance municipal) · war room (alertas por rol) · panel capturista (header móvil) // [31/08] subir esta cadena cada vez que se actualice un modulo: es el rompe-cache de los iframes
 
 let collapsed = false;
 

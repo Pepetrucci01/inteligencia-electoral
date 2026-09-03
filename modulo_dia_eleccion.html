@@ -192,7 +192,10 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
     // [18 jul · Fase 4] repr_casilla es el rol titular del Día D (aterriza aquí
     // directo, sin hub). admin/super_admin entran para supervisar. capturista
     // SALE del Día D según el nuevo modelo de roles (ver 24_rls_repr_casilla).
-    const rolesPermitidos = ["repr_casilla", "jefe_seccion", "coordinador_estatal", "coordinador", "admin", "super_admin"];
+    // [DÍA E 3 sep · decisión José] Entra también 'capturista': es el movilizador
+    // en calle que marca "ya votó" al ver el dedo entintado. 'coordinador' se queda
+    // porque es quien puede corregir (desmarcar). 'consulta' ve el módulo en lectura.
+    const rolesPermitidos = ["repr_casilla", "jefe_seccion", "capturista", "coordinador_estatal", "coordinador", "admin", "super_admin", "consulta"];
     if (!rolesPermitidos.includes(s.rol)) { window.location.replace('login.html'); return; }
     window._sesion = s;
   } catch(e) { window.location.replace('login.html'); }
@@ -216,6 +219,10 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
   </div>
 </div>
 
+<!-- [DÍA E 3 sep] Aviso de modo simulacro: que nadie confunda el ejercicio con la jornada real -->
+<div id="banner-simulacro" style="display:none;background:rgba(245,158,11,.12);border-bottom:1px solid rgba(245,158,11,.35);color:var(--amber);font-family:var(--mono);font-size:11px;padding:6px 14px;text-align:center;letter-spacing:.04em">
+  🧪 MODO SIMULACRO — lo que marques queda etiquetado como ensayo y no afecta la jornada real
+</div>
 <!-- TABS -->
 <div class="tabs">
   <div class="tab active" id="tab-votar" onclick="showTab('votar')">
@@ -564,6 +571,27 @@ const CAPTURISTA_ID = SESION?.id       || 'CAP-017';
 const MUNICIPIO     = SESION?.municipio|| 'VILLA DE ALVAREZ';
 const SECCION_BASE  = SESION?.seccion  || 138;
 
+// ══════════════════════════════════════════════════════════════════════════
+// [DÍA E 3 sep] MODO SIMULACRO. true → todo lo que se marque queda con
+// es_simulacro=true en la base y se puede borrar de un golpe sin tocar el
+// padrón real (ejercicio de diciembre). false → jornada real.
+// Se puede forzar por URL: modulo_dia_eleccion.html?simulacro=1 / ?simulacro=0
+// ══════════════════════════════════════════════════════════════════════════
+const MODO_SIMULACRO = (function(){
+  try {
+    const q = new URLSearchParams(location.search).get('simulacro');
+    if (q === '1' || q === 'true')  return true;
+    if (q === '0' || q === 'false') return false;
+  } catch(e){}
+  return true;   // ⬅ cambiar a false para la jornada real
+})();
+const ROL_ACTUAL = (SESION && SESION.rol) || '';
+const PUEDE_DESMARCAR = ['coordinador','coordinador_estatal','admin','super_admin'].includes(ROL_ACTUAL);
+try { if (MODO_SIMULACRO) { const b = document.getElementById('banner-simulacro'); if (b) b.style.display = 'block'; } } catch(e){}
+const SOLO_LECTURA_DIAE = (ROL_ACTUAL === 'consulta');
+function _diaeRpc(fn, args){ return window.supabase.rpc(fn, args || {}); }
+function _fmtHora(ts){ try { return new Date(ts).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}); } catch(e){ return '—'; } }
+
 // Simpatizantes — se cargan de Supabase al iniciar, con fallback offline
 let SIMPATIZANTES = [];
 
@@ -599,52 +627,32 @@ async function cargarSimpatizantesDiaE() {
     const licenciaId = sesionActual?.licencia_id || 'a1b2c3d4-0001-0000-0000-000000000001';
     const rol = sesionActual?.rol || '';
 
-    // Cargar ciudadanos con compromiso >= 2 del municipio del operador
-    let query = window.supabase
-      .from('ciudadanos')
-      .select('id, nombre, apellido_paterno, apellido_materno, telefono, seccion_electoral, municipio, compromiso, responsable_id, capturista_id')
-      .eq('licencia_id', licenciaId)
-      .gte('compromiso', 2)
-      .order('seccion_electoral', { ascending: true });
+    // [DÍA E 3 sep] Antes: .from('ciudadanos') bajo la RLS del usuario y con
+    // compromiso >= 2. Dos fallas: (a) un capturista solo veía SUS registros, no
+    // toda su sección, y repr_casilla veía 0 (sin política); (b) el vecino de
+    // compromiso 1 que pasa a votar era invisible. Ahora get_padron_jornada()
+    // devuelve TODA la sección del usuario (o municipio / estado según rol) con
+    // ya_voto / hora_voto / quién marcó — así dos teléfonos se enteran entre sí.
+    // Es SECURITY DEFINER: el alcance lo decide la base, no este front.
+    const { data, error } = await _diaeRpc('get_padron_jornada');
 
-    // Filtrar según rol y datos disponibles en sesión
-    const municipioReal = sesionActual?.municipio || '';
-    const seccionReal   = sesionActual?.seccion   || null;
-
-    if(rol === 'capturista' && seccionReal) {
-      // Capturista con sección: solo su sección
-      query = query.eq('seccion_electoral', seccionReal);
-    } else if(municipioReal) {
-      // Coordinador o capturista con municipio: filtrar por municipio
-      query = query.ilike('municipio', municipioReal);
+    if (error) {
+      const msg = String(error.message || '');
+      if (/instalar su casilla|Sin sección activa/i.test(msg)) {
+        // Representante sin casilla instalada: guiarlo al Paso 1, no fallar en silencio.
+        document.getElementById('lista-simpatizantes').innerHTML =
+          '<div class="no-results" style="line-height:1.6">🏛 Primero instala tu casilla en la pestaña <b>Instalación</b>.<br><span style="font-size:11px;color:var(--text3)">Tu ámbito de búsqueda es la sección de la casilla que instales.</span></div>';
+        try { showTab('instalacion'); } catch(e){}
+        _diaECargando = false; return;
+      }
+      console.warn('Día E: get_padron_jornada — ' + msg);
+      _diaECargando = false; return;
     }
-    // Si no hay municipio ni sección (admin o coord sin asignar): trae todos
-    // [T9 16 jul] Tope de seguridad: sin límite, un admin sin asignar podría
-    // intentar bajar toda la licencia. Se acota a 20000 (suficiente para el
-    // día E; PostgREST default corta en 1000, este tope evita esa trampa).
-    // [FIX 1 sep · TRUNCADO] Habia DOS .limit() encadenados: .limit(20000) y
-    // luego .limit(2000) al ejecutar. El segundo pisa al primero, asi que el
-    // tope real eran 2,000 filas. Hoy hay 7,838 ciudadanos con compromiso >= 2:
-    // el dia de la eleccion la lista de movilizacion habria salido con 5,838
-    // personas de MENOS, en silencio y sin ningun aviso. Mismo patron que el
-    // truncado de 1000 de PostgREST que ya nos mordio en la carga maestra.
-    // Ahora: un solo tope alto y paginacion por si la licencia crece.
-    const PAGINA_DIAE = 1000;
-    let acumulado = [];
-    let error = null;
-    for (let p = 0; p < 40; p++) {
-      const { data: pag, error: e } = await query.range(p*PAGINA_DIAE, (p+1)*PAGINA_DIAE - 1);
-      if (e) { error = e; break; }
-      if (!pag || !pag.length) break;
-      acumulado = acumulado.concat(pag);
-      if (pag.length < PAGINA_DIAE) break;
-    }
-    const data = acumulado;
-
-    if(error || !data || !data.length) {
-      console.warn('Día E: sin datos de Supabase' + (error ? ' — ' + error.message : '') +
-                   '. La lista queda vacía; no se inventan simpatizantes.');
-      return;
+    if(!data || !data.length) {
+      console.warn('Día E: la sección no tiene ciudadanos en padrón.');
+      document.getElementById('lista-simpatizantes').innerHTML =
+        '<div class="no-results">Tu sección no tiene simpatizantes en padrón todavía. Usa <b>Voto sorpresa</b> para registrar a quien vote.</div>';
+      _diaECargando = false; return;
     }
 
     SIMPATIZANTES = data.map(r => ({
@@ -656,24 +664,19 @@ async function cargarSimpatizantesDiaE() {
       compromiso:  r.compromiso || 2,
       responsable: r.responsable_id || '—',
       coordinador: '—',
-      votó:        false,
-      hora_voto:   null,
+      // [DÍA E 3 sep] El estado del voto viene de la BASE, no de localStorage.
+      votó:        !!r.ya_voto,
+      hora_voto:   r.ya_voto ? _fmtHora(r.hora_voto) : null,
+      marcado_por: r.marcado_por_nombre || null,
+      es_simulacro: !!r.es_simulacro,
     }));
 
-    // Restaurar estado de votos guardados en localStorage
+    // [DÍA E 3 sep] Ya NO se restauran votos desde localStorage: el estado vive en
+    // la base (si no, cada teléfono tendría su propia verdad y el War Room en 0).
+    // Solo se conserva el log local de esta sesión, como bitácora visual.
     try {
       const saved = localStorage.getItem('dia_eleccion_votos');
-      if(saved) {
-        const savedData = JSON.parse(saved);
-        if(savedData.votos) {
-          savedData.votos.forEach(v => {
-            const s = SIMPATIZANTES.find(x => x.id === v.id);
-            if(s) { s.votó = v.votó; s.hora_voto = v.hora_voto; }
-          });
-        }
-        if(savedData.sorpresas) SORPRESAS = savedData.sorpresas;
-        if(savedData.log) LOG = savedData.log;
-      }
+      if(saved) { const sd = JSON.parse(saved); if(sd.log) LOG = sd.log; }
     } catch(e) {}
 
     console.log(`Día E: ${SIMPATIZANTES.length} simpatizantes cargados (sin truncar)`);
@@ -831,16 +834,16 @@ function renderLista() {
           Secc. ${s.seccion}
           &nbsp;·&nbsp;
           <span class="comp-badge" style="background:${cc}18;color:${cc};border:1px solid ${cc}30">${s.compromiso} ${compLabels[s.compromiso]}</span>
-          ${s.votó ? `&nbsp;·&nbsp;<span style="color:var(--green);font-family:var(--mono);font-size:10px">✓ ${s.hora_voto}</span>` : ''}
+          ${s.votó ? `&nbsp;·&nbsp;<span style="color:var(--green);font-family:var(--mono);font-size:10px">✓ ${s.hora_voto}${s.marcado_por ? ' · ' + s.marcado_por : ''}</span>` : ''}
         </div>
       </div>
       <div class="simp-status">
         ${s.votó
           ? `<div>
                <div class="btn-votado">✓ Votó</div>
-               <button class="btn-desvotar" onclick="desmarcarVoto('${s.id}')">↩ Desmarcar</button>
+               ${PUEDE_DESMARCAR ? `<button class="btn-desvotar" onclick="desmarcarVoto('${s.id}')">↩ Desmarcar</button>` : ''}
              </div>`
-          : `<button class="btn-votar" onclick="abrirModal('${s.id}')">✓ Votó</button>`
+          : (SOLO_LECTURA_DIAE ? `<span style="color:var(--text3);font-size:11px">pendiente</span>` : `<button class="btn-votar" onclick="abrirModal('${s.id}')">✓ Votó</button>`)
         }
       </div>
     </div>`;
@@ -889,33 +892,63 @@ function cerrarModal() {
   pendienteConfirmar = null;
 }
 
-function confirmarVoto() {
+// [DÍA E 3 sep] Antes: s.votó = true en memoria y ya. Ahora escribe en la base
+// vía marcar_voto(): gana el primero; si otro teléfono ya lo marcó, avisa quién
+// y a qué hora y NO sobrescribe (regla de campo de José).
+async function confirmarVoto() {
   if(!pendienteConfirmar) return;
   const s = SIMPATIZANTES.find(x => x.id === pendienteConfirmar);
   if(!s) return;
+  if (SOLO_LECTURA_DIAE) { alert('Tu perfil es de consulta: puedes ver, no marcar.'); cerrarModal(); return; }
 
-  const hora = new Date().toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'});
-  s.votó      = true;
-  s.hora_voto = hora;
-
-  // Agregar al log
-  agregarLog('green', `✓ ${s.nombre} marcado como votante · Secc. ${s.seccion} · ${hora}`);
-
-  cerrarModal();
-  renderLista();
-
-  // Vibración en móvil
-  if(navigator.vibrate) navigator.vibrate(60);
+  const btn = document.querySelector('#modal-voto .btn-confirmar, #modal-voto button.btn-votar');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Guardando…'; }
+  try {
+    if (!await esperarSupabase(8000)) throw new Error('Sin conexión con el servidor. Reintenta.');
+    const { data, error } = await _diaeRpc('marcar_voto', { p_ciudadano: s.id, p_simulacro: MODO_SIMULACRO });
+    if (error) throw new Error(error.message);
+    const r = data || {};
+    if (r.ok) {
+      s.votó = true; s.hora_voto = r.hora || _fmtHora(new Date()); s.marcado_por = (SESION && SESION.nombre) || 'yo';
+      agregarLog('green', `✓ ${s.nombre} marcado como votante · Secc. ${s.seccion} · ${s.hora_voto}`);
+      if(navigator.vibrate) navigator.vibrate(60);
+    } else if (r.motivo === 'ya_marcado') {
+      // Otro compañero le ganó: reflejarlo en la lista sin duplicar.
+      s.votó = true; s.hora_voto = r.hora || s.hora_voto; s.marcado_por = r.por || s.marcado_por;
+      agregarLog('amber', `⚠ ${r.mensaje}`);
+      alert('⚠ ' + r.mensaje);
+    } else {
+      alert('⚠ ' + (r.mensaje || 'No se pudo marcar el voto.'));
+    }
+  } catch(e) {
+    alert('⚠ No se pudo guardar el voto: ' + e.message + '\n\nRevisa tu señal y vuelve a intentar. El voto NO quedó registrado.');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '✓ Sí, ya votó'; }
+    cerrarModal();
+    renderLista();
+  }
 }
 
-function desmarcarVoto(id) {
+// [DÍA E 3 sep] Desmarcar: SOLO mando (coordinador, coord. estatal, admin,
+// super_admin). Capturista y representante no deshacen. Queda en jornada_log.
+async function desmarcarVoto(id) {
   const s = SIMPATIZANTES.find(x => x.id === id);
   if(!s) return;
-  if(!confirm(`¿Desmarcar el voto de ${s.nombre}?`)) return;
-  const hora = new Date().toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'});
-  s.votó      = false;
-  s.hora_voto = null;
-  agregarLog('amber', `↩ ${s.nombre} desmarcado · ${hora}`);
+  if (!PUEDE_DESMARCAR) { alert('Solo un coordinador puede corregir un voto marcado. Avísale.'); return; }
+  const motivo = prompt(`¿Desmarcar el voto de ${s.nombre}?\n\nEscribe el motivo (queda en bitácora):`, 'Error de captura');
+  if (motivo === null) return;
+  try {
+    if (!await esperarSupabase(8000)) throw new Error('Sin conexión.');
+    const { data, error } = await _diaeRpc('desmarcar_voto', { p_ciudadano: s.id, p_motivo: motivo || null });
+    if (error) throw new Error(error.message);
+    const r = data || {};
+    if (r.ok) {
+      s.votó = false; s.hora_voto = null; s.marcado_por = null;
+      agregarLog('amber', `↩ ${s.nombre} desmarcado · ${_fmtHora(new Date())} · ${motivo || ''}`);
+    } else {
+      alert('⚠ ' + (r.mensaje || 'No se pudo desmarcar.'));
+    }
+  } catch(e) { alert('⚠ ' + e.message); }
   renderLista();
 }
 
@@ -935,14 +968,35 @@ function registrarSorpresa() {
     return;
   }
 
-  const hora = new Date().toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'});
-  const nuevo = {
-    id: 'SRP-' + String(SORPRESAS.length+1).padStart(3,'0'),
-    nombre, seccion, obs, hora,
-    registrado_por: CAPTURISTA_ID,
-  };
-  SORPRESAS.push(nuevo);
-  agregarLog('amber', `➕ Voto sorpresa: ${nombre} · Secc. ${seccion} · ${hora}`);
+  // [DÍA E 3 sep] Antes se quedaba en un array local. Ahora se registra en la
+  // base como ciudadano nuevo YA marcado (registrar_voto_sorpresa). El nombre se
+  // parte en nombre / paterno / materno con la convención "NOMBRE(S) PATERNO MATERNO".
+  const partes = nombre.split(/\s+/);
+  let p_nombre, p_paterno, p_materno = null;
+  if (partes.length >= 3) { p_materno = partes.pop(); p_paterno = partes.pop(); p_nombre = partes.join(' '); }
+  else if (partes.length === 2) { p_paterno = partes[1]; p_nombre = partes[0]; }
+  else { p_nombre = nombre; p_paterno = '—'; }
+  (async () => {
+    try {
+      if (!await esperarSupabase(8000)) throw new Error('Sin conexión.');
+      const { data, error } = await _diaeRpc('registrar_voto_sorpresa', {
+        p_nombre, p_paterno, p_materno, p_telefono: null, p_simulacro: MODO_SIMULACRO });
+      if (error) throw new Error(error.message);
+      const r = data || {};
+      if (!r.ok) throw new Error(r.mensaje || 'No se pudo registrar.');
+      const hora = _fmtHora(new Date());
+      SORPRESAS.push({ id: r.id, nombre, seccion, obs, hora, registrado_por: CAPTURISTA_ID });
+      // Que aparezca también en la lista principal, ya marcado.
+      SIMPATIZANTES.unshift({ id: r.id, nombre: nombre.toUpperCase(), tel:'—', seccion, municipio: MUNICIPIO, compromiso: 3,
+        responsable:'—', coordinador:'—', votó:true, hora_voto: hora, marcado_por: (SESION&&SESION.nombre)||'yo', es_simulacro: MODO_SIMULACRO });
+      agregarLog('amber', `➕ Voto sorpresa: ${nombre} · Secc. ${seccion} · ${hora}`);
+      renderSorpresas(); renderLista(); guardarEstado();
+    } catch(e) {
+      msg.style.display = 'block';
+      msg.style.cssText += 'background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:var(--red);';
+      msg.textContent = '⚠ ' + e.message;
+    }
+  })();
 
   // Limpiar
   document.getElementById('s-nombre').value  = '';
@@ -1126,14 +1180,10 @@ function _generarExcelPendientes(modo) {
 // ══════════════════════════════════════════════════════
 // PERSISTENCIA LOCAL (offline)
 // ══════════════════════════════════════════════════════
+// [DÍA E 3 sep] Los votos YA NO se guardan en localStorage (viven en la base).
+// Solo se conserva la bitácora visual de esta sesión.
 function guardarEstado() {
-  const estado = {
-    votos:     SIMPATIZANTES.map(s => ({id:s.id, votó:s.votó, hora_voto:s.hora_voto})),
-    sorpresas: SORPRESAS,
-    log:       LOG,
-    ts:        Date.now(),
-  };
-  localStorage.setItem('dia_eleccion_votos', JSON.stringify(estado));
+  try { localStorage.setItem('dia_eleccion_votos', JSON.stringify({ log: LOG, ts: Date.now() })); } catch(e){}
 }
 
 // ══════════════════════════════════════════════════════
@@ -1325,28 +1375,38 @@ async function guardarInstalacionEnBD(inst) {
     // extraordinarias que comparten esos campos, se actualizarían todas las de
     // esa combinación — aceptable aquí porque el Día E trabaja una casilla física
     // concreta y en la práctica el representante instala la suya.
-    const fila_upd = { ...fila };
-    delete fila_upd.licencia_id;
-    delete fila_upd.numero_seccion;
-    delete fila_upd.tipo_casilla;
-    delete fila_upd.numero_casilla;
-    const { error } = await conTimeout(
-      window.supabase
-        .from('casillas')
-        .update(fila_upd)
-        .eq('licencia_id', fila.licencia_id)
-        .eq('numero_seccion', fila.numero_seccion)
-        .eq('tipo_casilla', fila.tipo_casilla)
-        .eq('numero_casilla', fila.numero_casilla),
-      12000
-    );
+    // [DÍA E 3 sep · decisión José] Antes: UPDATE directo a casillas, que la
+    // política casillas_representante_update solo permite si el representante
+    // YA estaba preasignado (representante_id / get_mis_secciones). José decidió
+    // que se asigna AL INSTALAR. instalar_casilla_jornada() hace esa alta con
+    // sus candados: una casilla abierta por usuario, y no pisar una ajena.
+    const { data: r, error } = await conTimeout(
+      _diaeRpc('instalar_casilla_jornada', {
+        p_seccion:       Number(fila.numero_seccion),
+        p_tipo:          fila.tipo_casilla,
+        p_numero:        Number(fila.numero_casilla) || 1,
+        p_hora_apertura: fila.hora_apertura,
+        p_estatus:       fila.estatus_casilla || 'instalada',
+        p_presidente:    fila.presidente_casilla,
+        p_lista_nominal: fila.lista_nominal != null ? Number(fila.lista_nominal) : null,
+        p_incidencias:   fila.incidencias_apertura,
+        p_direccion:     fila.direccion,
+        p_lat:           fila.lat, p_lng: fila.lng,
+        p_gps_precision: fila.gps_precision_m
+      }), 12000);
     if (error) {
       console.warn('Día E: no se pudo guardar instalación en BD:', error.message);
       localStorage.setItem('dia_eleccion_instalacion_pendiente', '1');
       return false;
     }
+    if (r && r.ok === false) {
+      alert('⚠ ' + (r.mensaje || 'No se pudo instalar la casilla.'));
+      return false;
+    }
     localStorage.removeItem('dia_eleccion_instalacion_pendiente');
-    console.log('✅ Día E: instalación guardada en casillas (upsert).');
+    console.log('✅ Día E: ' + ((r && r.mensaje) || 'instalación guardada.'));
+    // La sección de la casilla es ahora el ámbito: recargar el padrón.
+    try { _diaECargando = false; SIMPATIZANTES = []; await cargarSimpatizantesDiaE(); } catch(e){}
     return true;
   } catch(e) {
     console.warn('Día E: excepción al guardar instalación:', e.message);
@@ -1464,28 +1524,27 @@ async function guardarCierreEnBD(cierre) {
     ]);
     // [FIX] UPDATE por campos identidad en vez de upsert con la constraint
     // eliminada (casillas_seccion_tipo_num_lic_uk). La casilla ya existe.
-    const fila_upd = { ...fila };
-    delete fila_upd.licencia_id;
-    delete fila_upd.numero_seccion;
-    delete fila_upd.tipo_casilla;
-    delete fila_upd.numero_casilla;
-    const { error } = await conTimeout(
-      window.supabase
-        .from('casillas')
-        .update(fila_upd)
-        .eq('licencia_id', fila.licencia_id)
-        .eq('numero_seccion', fila.numero_seccion)
-        .eq('tipo_casilla', fila.tipo_casilla)
-        .eq('numero_casilla', fila.numero_casilla),
-      12000
-    );
+    // [DÍA E 3 sep] Cierre vía RPC (misma razón que la instalación: la política
+    // de UPDATE exige preasignación). cerrar_casilla_jornada escribe hora, acta
+    // e incidencias sobre la casilla que ESTE usuario instaló.
+    const { data: r, error } = await conTimeout(
+      _diaeRpc('cerrar_casilla_jornada', {
+        p_hora_cierre:   fila.hora_cierre,
+        p_votos_nuestro: Number(fila.votos_nuestro_partido) || 0,
+        p_votos_a:       Number(fila.votos_partido_a) || 0,
+        p_votos_b:       Number(fila.votos_partido_b) || 0,
+        p_votos_c:       Number(fila.votos_partido_c) || 0,
+        p_votos_nulos:   Number(fila.votos_nulos) || 0,
+        p_incidencias:   fila.incidencias_cierre
+      }), 12000);
     if (error) {
       console.warn('Día E: no se pudo guardar cierre en BD:', error.message);
       localStorage.setItem('dia_eleccion_cierre_pendiente', '1');
       return false;
     }
+    if (r && r.ok === false) { alert('⚠ ' + (r.mensaje || 'No se pudo cerrar la casilla.')); return false; }
     localStorage.removeItem('dia_eleccion_cierre_pendiente');
-    console.log('✅ Día E: cierre guardado en casillas (upsert).');
+    console.log('✅ Día E: ' + ((r && r.mensaje) || 'cierre guardado.'));
     return true;
   } catch(e) {
     console.warn('Día E: excepción al guardar cierre:', e.message);
