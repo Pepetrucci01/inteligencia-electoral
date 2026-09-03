@@ -1025,11 +1025,11 @@ function abrirModal(id) {
     <div class="modal-row"><span class="modal-key">Compromiso</span><span class="modal-val">${s.compromiso} — ${['','Contacto','Simpatiza','Seg. vota','Moviliza'][s.compromiso]}</span></div>
     <div class="modal-row"><span class="modal-key">Teléfono</span><span class="modal-val">${s.tel || '—'}</span></div>`;
 
-  document.getElementById('modal-bg').classList.add('show');
+  document.getElementById('modal-voto').classList.add('show');
 }
 
 function cerrarModal() {
-  document.getElementById('modal-bg').classList.remove('show');
+  document.getElementById('modal-voto').classList.remove('show');
   pendienteConfirmar = null;
 }
 
