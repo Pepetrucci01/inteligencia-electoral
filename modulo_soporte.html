@@ -260,12 +260,12 @@ var DEMO = {
   ],
   escaner: [ { licencia:'DEMO-2027', escaneos:37, exitosos:34, tokens:51280, cuota:500, pct_cuota:7.4 } ],
   tickets: [
-    { id:'demo-1', folio:12, estado:'abierto', created_at:'2026-09-04T13:05:00Z', licencia:'DEMO-2027', usuario:'María Ruiz', email:'maria@demo.mx', rol:'capturista', modulo:'captura',
+    { id:'demo-1', folio:'VOT-2026-000012', estado:'abierto', created_at:'2026-09-04T13:05:00Z', licencia:'DEMO-2027', usuario:'María Ruiz', email:'maria@demo.mx', rol:'capturista', modulo:'captura',
       descripcion:'Le doy guardar al ciudadano y se queda pensando, nunca dice que ya quedó.', url:'captura @ votera.mx', user_agent:'Chrome 128 · Android',
       errores_recientes:[{cuando:'2026-09-04T13:02:00Z',modulo:'captura',mensaje:'rpc capturar_ciudadano -> 504'}], respuesta:null, atendido_por:null },
-    { id:'demo-2', folio:11, estado:'en_revision', created_at:'2026-09-03T21:10:00Z', licencia:'DEMO-2027', usuario:'Carlos Mena', email:'coord.a@demo.mx', rol:'coordinador', modulo:'war_room',
+    { id:'demo-2', folio:'VOT-2026-000011', estado:'en_revision', created_at:'2026-09-03T21:10:00Z', licencia:'DEMO-2027', usuario:'Carlos Mena', email:'coord.a@demo.mx', rol:'coordinador', modulo:'war_room',
       descripcion:'El semáforo de mi municipio marca rojo pero en reportes vamos al 92%.', url:'war @ votera.mx', user_agent:'Edge 128 · Windows', errores_recientes:[], respuesta:null, atendido_por:'Soporte VOTERA' },
-    { id:'demo-3', folio:10, estado:'resuelto', created_at:'2026-09-03T15:00:00Z', licencia:'DEMO-2027', usuario:'Luis Ortega', email:'rc138@demo.mx', rol:'repr_casilla', modulo:'dia_eleccion',
+    { id:'demo-3', folio:'VOT-2026-000010', estado:'resuelto', created_at:'2026-09-03T15:00:00Z', licencia:'DEMO-2027', usuario:'Luis Ortega', email:'rc138@demo.mx', rol:'repr_casilla', modulo:'dia_eleccion',
       descripcion:'El botón de Votó no abre nada.', url:'diae @ preview', user_agent:'Chrome 128 · Android',
       errores_recientes:[{cuando:'2026-09-03T14:55:00Z',modulo:'dia_eleccion',mensaje:"TypeError: Cannot read properties of null (reading 'classList')"}],
       respuesta:'Corregido en el build de las 15:00. Cierra y vuelve a abrir el módulo.', atendido_por:'José (admin)' },
@@ -359,7 +359,7 @@ function pintarTickets(rows){
   document.getElementById('tbl-tickets').innerHTML = vis.map(function(t){
     var nerr = (t.errores_recientes||[]).length;
     var fila = '<tr class="tk-r" onclick="toggleTicket(\''+esc(t.id)+'\')">'+
-      '<td class="mono" style="color:var(--text3)">#'+t.folio+'</td>'+
+      '<td class="mono" style="color:var(--text3);font-size:10px;white-space:nowrap">'+esc(t.folio)+'</td>'+
       '<td class="mono" style="color:var(--text2);white-space:nowrap">'+fecha(t.created_at)+'</td>'+
       '<td><span class="est '+esc(t.estado)+'">'+(TK_EST[t.estado]||t.estado)+'</span></td>'+
       '<td class="mono" style="font-size:11px">'+esc(t.licencia||'—')+'</td>'+
@@ -380,7 +380,7 @@ function detalleTicket(t){
   return '<tr class="tk-det"><td colspan="8"><div class="tk-det-g">'+
     '<div>'+
       '<div class="tk-k">Reporte completo</div><div class="tk-v">'+esc(t.descripcion)+'</div>'+
-      '<div class="tk-k">Contexto</div><div class="tk-v mono" style="font-size:11px;color:var(--text2)">'+esc(t.email||'')+' · '+esc(t.rol||'')+' · '+esc(t.licencia||'')+'<br>'+esc(t.url||'')+'<br>'+esc(t.user_agent||'')+'</div>'+
+      '<div class="tk-k">Contexto</div><div class="tk-v mono" style="font-size:11px;color:var(--text2)">'+esc(t.email||'')+' · '+esc(t.rol||'')+' · '+esc(t.licencia||'')+(t.prioridad?' · prioridad '+esc(t.prioridad):'')+(t.mensajes?' · '+t.mensajes+' mensajes en el hilo':'')+'<br>'+esc(t.url||'')+'<br>'+esc(t.user_agent||'')+'</div>'+
       '<div class="tk-k">Errores JS de su sesión</div>'+errs+
     '</div>'+
     '<div>'+

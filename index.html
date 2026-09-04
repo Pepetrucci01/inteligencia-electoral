@@ -629,7 +629,7 @@ function actualizarContadorModulos(){
   }catch(_e){}
 }
 
-const APP_BUILD = '20260904h'; // [04/09] reportar un problema (tickets, todos los roles) · soporte técnico solo super_admin+soporte (data-rol) · consulta IA (nuevo módulo) · panel capturista (paginación, Día E) · war room (388) · captura (aviso cuota) · día E (modal logout) // [03/09] día E: buscador único + voz + registro sorpresa real + encabezado por rol; iframe allow=microphone // [02/09] captura (identidad real, Mi Sección, scan INE, responsive) · reportes (calidad en vivo, alcance municipal) · war room (alertas por rol) · panel capturista (header móvil) // [31/08] subir esta cadena cada vez que se actualice un modulo: es el rompe-cache de los iframes
+const APP_BUILD = '20260904i'; // [04/09] reportar un problema (tickets sobre sistema original VOT-2026-*, todos los roles) · soporte técnico solo super_admin+soporte (data-rol) · consulta IA (nuevo módulo) · panel capturista (paginación, Día E) · war room (388) · captura (aviso cuota) · día E (modal logout) // [03/09] día E: buscador único + voz + registro sorpresa real + encabezado por rol; iframe allow=microphone // [02/09] captura (identidad real, Mi Sección, scan INE, responsive) · reportes (calidad en vivo, alcance municipal) · war room (alertas por rol) · panel capturista (header móvil) // [31/08] subir esta cadena cada vez que se actualice un modulo: es el rompe-cache de los iframes
 
 let collapsed = false;
 
@@ -1073,7 +1073,7 @@ function cerrarSesion(){
 .tk-mis{border-top:1px solid var(--border);padding:12px 18px 16px;}
 .tk-row{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;align-items:flex-start;}
 .tk-row:last-child{border-bottom:0;}
-.tk-fol{font-family:var(--mono);color:var(--text3);flex-shrink:0;width:38px;}
+.tk-fol{font-family:var(--mono);color:var(--text3);flex-shrink:0;font-size:10px;width:112px;}
 .tk-est{font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:99px;flex-shrink:0;text-transform:uppercase;}
 .tk-est.abierto{background:rgba(245,158,11,.15);color:var(--amber);}
 .tk-est.en_revision{background:rgba(59,130,246,.15);color:var(--accent);}
@@ -1154,7 +1154,7 @@ function cerrarSesion(){
     try{
       var r=await rpc('levantar_ticket',{p_modulo:document.getElementById('tk-mod').value,p_descripcion:txt,
         p_url:(window._modActual?window._modActual.id:'inicio')+' @ '+location.hostname,p_agente:navigator.userAgent});
-      if(r&&r.ok){ msg.className='tk-msg ok'; msg.textContent='Recibido. Tu reporte es el #'+r.folio+'. Soporte ya fue avisado; aquí mismo verás la respuesta.';
+      if(r&&r.ok){ msg.className='tk-msg ok'; msg.textContent='Recibido. Tu folio es '+r.folio+'. Soporte ya fue avisado; aquí mismo verás la respuesta.';
         document.getElementById('tk-txt').value=''; document.getElementById('tk-cont').textContent='0 / 2000'; cargarMisTickets(); }
       else { msg.className='tk-msg err'; msg.textContent=({demasiados:'Ya enviaste varios reportes en la última hora. Espera un poco.',descripcion_corta:'Cuéntanos un poco más.',sin_sesion:'Tu sesión expiró. Vuelve a entrar.'})[r&&r.motivo]||'No se pudo enviar. Intenta de nuevo.'; }
     }catch(e){ msg.className='tk-msg err'; msg.textContent='Sin conexión con el servidor. Intenta de nuevo en un momento.'; }
@@ -1167,7 +1167,7 @@ function cerrarSesion(){
       var rows=await rpc('mis_tickets');
       if(!rows||!rows.length){ el.textContent='Aún no has enviado ningún reporte.'; return; }
       el.innerHTML=rows.map(function(t){
-        return '<div class="tk-row"><span class="tk-fol">#'+t.folio+'</span><span class="tk-est '+esc(t.estado)+'">'+(ESTADO[t.estado]||t.estado)+'</span>'+
+        return '<div class="tk-row"><span class="tk-fol">'+esc(t.folio)+'</span><span class="tk-est '+esc(t.estado)+'">'+(ESTADO[t.estado]||t.estado)+'</span>'+
           '<div class="tk-desc">'+esc(t.descripcion)+'<div style="color:var(--text3);font-size:10px;margin-top:2px;font-family:var(--mono)">'+esc(t.modulo)+' · '+fecha(t.created_at)+'</div>'+
           (t.respuesta?'<div class="tk-resp">'+esc(t.respuesta)+'</div>':'')+'</div></div>';
       }).join('');
