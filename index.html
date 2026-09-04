@@ -160,6 +160,7 @@ body.rol-consulta     .kpi-estatal { display:none; }
 .mc.meta::before,.mc.meta:hover{border-color:rgba(245,158,11,.35);}.mc.meta::before{background:var(--amber);}
 .mc.rep::before,.mc.rep:hover{border-color:rgba(168,85,247,.35);}  .mc.rep::before{background:var(--purple);}
 .mc.adm::before,.mc.adm:hover{border-color:rgba(239,68,68,.35);}   .mc.adm::before{background:var(--red);}
+.mc.ia::before,.mc.ia:hover{border-color:rgba(168,85,247,.35);}    .mc.ia::before{background:linear-gradient(90deg,var(--purple),var(--accent));}
 .mc-head{display:flex;align-items:center;gap:10px;margin-bottom:7px;}
 .mc-icon{width:34px;height:34px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
 .mc-name{font-size:13px;font-weight:600;}
@@ -550,6 +551,12 @@ body.rol-consulta     .kpi-estatal { display:none; }
         <div class="mc-desc">Fábrica de encuestas: crea estudios con su propio cuestionario, levanta entrevistas en campo y cruza intención de voto contra tu estructura territorial.</div>
         <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(20,184,166,.1);color:#2dd4bf">Anónimas</span><span class="tag" style="background:rgba(20,184,166,.1);color:#2dd4bf">Territorio vs Opinión</span></div><span class="arr">→</span></div>
       </div>
+      <!-- [4 sep] Consulta IA -->
+      <div class="mc ia" data-rol="super_admin,admin,coordinador,coordinador_estatal,consulta" onclick="load('ia','modulo_consulta_ia.html','Consulta IA','Inteligencia electoral con IA')">
+        <div class="mc-head"><div class="mc-icon" style="background:rgba(168,85,247,.15)">🧠</div><div><div class="mc-name">Consulta IA <span style="font-size:9px;font-weight:700;color:var(--purple);background:rgba(168,85,247,.15);padding:1px 6px;border-radius:6px;vertical-align:middle;">NUEVO</span></div><div class="mc-sub">Pregunta en español, responde con tus datos</div></div></div>
+        <div class="mc-desc">Chat de inteligencia electoral. Pregunta por avance, secciones débiles, estructura, riesgo o encuestas y recibe un análisis con cifras reales de tu territorio. Solo ve lo que tu rol ve.</div>
+        <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(168,85,247,.1);color:var(--purple)">20 preguntas listas</span><span class="tag" style="background:rgba(168,85,247,.1);color:var(--purple)">Alcance por rol</span></div><span class="arr">→</span></div>
+      </div>
 
       <div class="mc adm" data-rol="super_admin,admin" onclick="load('adm','modulo_admin.html','Administración','Usuarios · licencias · auditoría · seguridad')">
         <div class="mc-head"><div class="mc-icon" style="background:rgba(239,68,68,.15)">🔒</div><div><div class="mc-name">Administración</div><div class="mc-sub">Solo super admin</div></div></div>
@@ -602,7 +609,7 @@ function actualizarContadorModulos(){
   }catch(_e){}
 }
 
-const APP_BUILD = '20260904d'; // [04/09] consulta IA (nuevo módulo) · panel capturista (paginación, Día E) · war room (388) · captura (aviso cuota) · día E (modal logout) // [03/09] día E: buscador único + voz + registro sorpresa real + encabezado por rol; iframe allow=microphone // [02/09] captura (identidad real, Mi Sección, scan INE, responsive) · reportes (calidad en vivo, alcance municipal) · war room (alertas por rol) · panel capturista (header móvil) // [31/08] subir esta cadena cada vez que se actualice un modulo: es el rompe-cache de los iframes
+const APP_BUILD = '20260904f'; // [04/09] consulta IA (nuevo módulo) · panel capturista (paginación, Día E) · war room (388) · captura (aviso cuota) · día E (modal logout) // [03/09] día E: buscador único + voz + registro sorpresa real + encabezado por rol; iframe allow=microphone // [02/09] captura (identidad real, Mi Sección, scan INE, responsive) · reportes (calidad en vivo, alcance municipal) · war room (alertas por rol) · panel capturista (header móvil) // [31/08] subir esta cadena cada vez que se actualice un modulo: es el rompe-cache de los iframes
 
 let collapsed = false;
 
