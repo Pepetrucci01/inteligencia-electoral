@@ -64,7 +64,19 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 .search-input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:16px;padding:13px 14px 13px 46px;outline:none;-webkit-appearance:none;}
 .search-input:focus{border-color:var(--accent);}
 .search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:18px;color:var(--text3);}
-.search-clear{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:var(--bg4);border:none;color:var(--text3);font-size:14px;cursor:pointer;padding:4px 8px;border-radius:5px;display:none;}
+.search-clear{position:absolute;right:58px;top:50%;transform:translateY(-50%);background:var(--bg4);border:none;color:var(--text3);font-size:14px;cursor:pointer;padding:4px 8px;border-radius:5px;display:none;}
+/* [DÍA E BUSCADOR ÚNICO] botón de voz */
+.search-input{padding-right:56px;}
+.search-mic{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:50%;border:1px solid var(--border2);background:var(--bg4);color:var(--text2);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.search-mic.escuchando{background:rgba(239,68,68,0.2);border-color:var(--red);color:var(--red);animation:micPulse 1s infinite;}
+.search-mic.nodisp{opacity:.35;cursor:not-allowed;}
+@keyframes micPulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.5)}50%{box-shadow:0 0 0 8px rgba(239,68,68,0)}}
+.search-hint{font-size:11px;font-family:var(--mono);color:var(--text3);margin:-6px 0 10px 4px;min-height:14px;}
+/* tarjeta "no está → registrar" */
+.card-registrar{background:rgba(245,158,11,0.08);border:1px dashed rgba(245,158,11,0.5);border-radius:12px;padding:16px;margin:10px 0 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.card-registrar .cr-txt{flex:1;min-width:180px;font-size:13px;line-height:1.5;color:var(--text2);}
+.card-registrar .cr-txt b{color:var(--amber);font-family:var(--mono);}
+.btn-registrar-inline{background:var(--amber);color:#000;border:none;border-radius:10px;padding:12px 18px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;}
 
 /* FILTRO SECCIONES */
 .sec-filter{display:flex;gap:8px;margin-bottom:12px;overflow-x:auto;padding-bottom:4px;}
@@ -292,10 +304,12 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
   <div class="search-wrap">
     <span class="search-icon">🔍</span>
     <input class="search-input" id="search-votar" type="search"
-      placeholder="Buscar por nombre..." autocomplete="off"
+      placeholder="Nombre o apellidos, en cualquier orden…" autocomplete="off" autocapitalize="characters"
       oninput="buscarSimpatizante(this.value)">
     <button class="search-clear" id="search-clear" onclick="limpiarBusqueda()">✕</button>
+    <button class="search-mic" id="search-mic" onclick="vozBuscar()" title="Buscar por voz">🎤</button>
   </div>
+  <div class="search-hint" id="search-hint"></div>
 
   <!-- Filtro por sección -->
   <div class="sec-filter" id="sec-filter"></div>
@@ -318,7 +332,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
     <label class="form-label">Nombre completo <span style="color:var(--red)">*</span></label>
     <input class="form-input" id="s-nombre" type="text" placeholder="Nombre del ciudadano" autocomplete="off">
     <label class="form-label">Sección electoral</label>
-    <input class="form-input" id="s-seccion" type="number" placeholder="Ej. 138" id="s-seccion">
+    <input class="form-input" id="s-seccion" type="number" inputmode="numeric" placeholder="Ej. 280">
     <label class="form-label">Observación (opcional)</label>
     <input class="form-input" id="s-obs" type="text" placeholder="Ej. Se identificó con credencial">
     <button class="btn-registrar" onclick="registrarSorpresa()">✓ Registrar voto sorpresa</button>
@@ -555,8 +569,33 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
   </div>
 </div>
 
+<!-- [DÍA E BUSCADOR ÚNICO] MODAL REGISTRO RÁPIDO (voto sorpresa desde el buscador) -->
+<div class="modal-bg" id="modal-sorpresa">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-icon">➕</div>
+    <div class="modal-title">No está en la lista</div>
+    <div class="modal-sub">Regístralo como <b>voto sorpresa</b>: queda marcado como que ya votó. Revisa que nombre y apellidos estén bien.</div>
+    <label class="form-label">Nombre(s) <span style="color:var(--red)">*</span></label>
+    <input class="form-input" id="ms-nombre" type="text" autocomplete="off" autocapitalize="characters">
+    <label class="form-label">Apellido paterno <span style="color:var(--red)">*</span></label>
+    <input class="form-input" id="ms-paterno" type="text" autocomplete="off" autocapitalize="characters">
+    <label class="form-label">Apellido materno</label>
+    <input class="form-input" id="ms-materno" type="text" autocomplete="off" autocapitalize="characters">
+    <div id="ms-seccion-wrap">
+      <label class="form-label">Sección electoral <span style="color:var(--red)">*</span></label>
+      <input class="form-input" id="ms-seccion" type="number" inputmode="numeric" placeholder="Ej. 280" autocomplete="off">
+    </div>
+    <label class="form-label">Teléfono (opcional)</label>
+    <input class="form-input" id="ms-tel" type="tel" inputmode="tel" autocomplete="off">
+    <div id="ms-msg" style="display:none;margin:0 0 10px;padding:10px;border-radius:8px;font-size:12px;font-family:var(--mono);text-align:center;"></div>
+    <button class="btn-confirmar" id="ms-btn" style="background:var(--amber);color:#000" onclick="confirmarSorpresaModal()">✓ Registrar y marcar voto</button>
+    <button class="btn-cancelar" onclick="cerrarModalSorpresa()">Cancelar</button>
+  </div>
+</div>
+
 <!-- FAB: registro rápido -->
-<button class="fab" onclick="showTab('sorpresa')" title="Voto sorpresa">➕</button>
+<button class="fab" onclick="abrirModalSorpresa()" title="Registrar voto sorpresa">➕</button>
 
 <script>
 // ══════════════════════════════════════════════════════
@@ -576,7 +615,9 @@ function cerrarSesionDiaE() {
 
 const CAPTURISTA_ID = SESION?.id       || 'CAP-017';
 const MUNICIPIO     = SESION?.municipio|| 'VILLA DE ALVAREZ';
-const SECCION_BASE  = SESION?.seccion  || 138;
+// [BUG-DE-04] Antes caía a 138 (Villa de Álvarez) para cualquier usuario sin
+// sección — un coordinador de Tecomán veía "Sección 138" en el encabezado.
+const SECCION_BASE  = Number(SESION?.seccion) || null;
 
 // ══════════════════════════════════════════════════════════════════════════
 // [DÍA E 3 sep] MODO SIMULACRO. true → todo lo que se marque queda con
@@ -695,8 +736,8 @@ const VotoOffline = {
     for (const v of q) {
       try {
         const { data, error } = await _diaeRpc('registrar_voto_sorpresa', {
-          p_nombre: v.p_nombre, p_paterno: v.p_paterno, p_materno: v.p_materno, p_telefono: null,
-          p_simulacro: !!v.simulacro, p_hora_local: v.ts, p_clave_local: v.clave });
+          p_nombre: v.p_nombre, p_paterno: v.p_paterno, p_materno: v.p_materno, p_telefono: v.telefono || null,
+          p_simulacro: !!v.simulacro, p_hora_local: v.ts, p_clave_local: v.clave, p_seccion: v.p_seccion || v.seccion || null });
         if (error) {
           if (/fetch|network|Failed|timeout|503|502|504/i.test(error.message || '')) { v.intentos=(v.intentos||0)+1; this.escribirS(this.leerS().map(x=>x.clave===v.clave?v:x)); continue; }
           agregarLog('amber', `⚠ No se pudo subir sorpresa ${v.nombre}: ${error.message}`); this.quitarS(v.clave); continue;
@@ -887,9 +928,20 @@ setInterval(() => {
   }
 }, 1000);
 
-// Topbar info
-document.getElementById('topbar-casilla').textContent =
-  `Sección ${SECCION_BASE} · ${MUNICIPIO}`;
+// [BUG-DE-01/04] Topbar desde la sesión, no hardcodeado. Rol de mando → su ámbito.
+const ROL_LABEL = { repr_casilla:'Representante de Casilla', capturista:'Capturista', jefe_seccion:'Jefe de Sección',
+  operador_cc:'Operador Call Center', coordinador:'Coordinador Municipal', coordinador_estatal:'Coordinador Estatal',
+  admin:'Administrador', super_admin:'Super Admin', consulta:'Consulta' };
+const ROL_CON_SECCION = ['repr_casilla','capturista','jefe_seccion'];
+(function pintarTopbar(){
+  const t = document.querySelector('.topbar-title'); if (t) t.textContent = ROL_LABEL[ROL_ACTUAL] || 'Día E';
+  const nom = (SESION && SESION.nombre) ? ` · ${SESION.nombre}` : '';
+  let ambito;
+  if (ROL_CON_SECCION.includes(ROL_ACTUAL)) ambito = SECCION_BASE ? `Sección ${SECCION_BASE} · ${MUNICIPIO}` : `Sin sección activa · ${MUNICIPIO}`;
+  else if (ROL_ACTUAL === 'coordinador') ambito = `Municipio · ${MUNICIPIO}`;
+  else ambito = 'Colima · Todo el estado';
+  document.getElementById('topbar-casilla').textContent = ambito + nom;
+})();
 
 // ══════════════════════════════════════════════════════
 // TABS
@@ -923,6 +975,16 @@ function setFiltroSec(sec) {
   renderLista();
 }
 
+// [DÍA E BUSCADOR ÚNICO] Sin acentos, sin importar orden: "ochoa juan" encuentra
+// a JUAN CARLOS RAMIREZ OCHOA. Cada palabra tecleada debe aparecer en el nombre.
+function _normTxt(t){ return String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9 ]/g,' ').replace(/\s+/g,' ').trim(); }
+// Para GUARDAR: mayúsculas y espacios limpios, pero conserva Ñ y acentos (NÚÑEZ no se vuelve NUNEZ).
+function _limpiaNombre(t){ return String(t||'').toUpperCase().replace(/[^A-ZÁÉÍÓÚÜÑ0-9 ]/g,' ').replace(/\s+/g,' ').trim(); }
+function _tokensBusqueda(q){ return _normTxt(q).split(' ').filter(w => w.length >= 2); }
+function _coincide(s, toks){
+  const n = _normTxt(s.nombre) + ' ' + String(s.seccion);
+  return toks.every(w => n.includes(w));
+}
 function buscarSimpatizante(q) {
   queryBusqueda = q;
   document.getElementById('search-clear').style.display = q ? 'block' : 'none';
@@ -939,10 +1001,8 @@ function limpiarBusqueda() {
 function renderLista() {
   let lista = [...SIMPATIZANTES];
   if(filtroSeccion !== 'todas') lista = lista.filter(s => s.seccion === filtroSeccion);
-  if(queryBusqueda) {
-    const q = queryBusqueda.toLowerCase();
-    lista = lista.filter(s => s.nombre.toLowerCase().includes(q) || String(s.seccion).includes(q));
-  }
+  const toks = _tokensBusqueda(queryBusqueda);
+  if(toks.length) lista = lista.filter(s => _coincide(s, toks));
 
   // Pendientes primero, luego votados
   lista.sort((a,b) => {
@@ -953,8 +1013,14 @@ function renderLista() {
   actualizarContador();
 
   if(!lista.length) {
-    document.getElementById('lista-simpatizantes').innerHTML =
-      '<div class="no-results">Sin resultados para esta búsqueda</div>';
+    // [DÍA E BUSCADOR ÚNICO] No está en la lista → ofrecer registrarlo ahí mismo.
+    const puedeReg = !SOLO_LECTURA_DIAE && toks.length >= 2;
+    document.getElementById('lista-simpatizantes').innerHTML = puedeReg
+      ? `<div class="card-registrar">
+           <div class="cr-txt">No aparece <b>${_limpiaNombre(queryBusqueda)}</b> en tu lista.<br>Si está frente a ti y ya votó, regístralo como voto sorpresa.</div>
+           <button class="btn-registrar-inline" onclick="abrirModalSorpresa(queryBusqueda)">➕ Registrar</button>
+         </div>`
+      : `<div class="no-results">${toks.length ? 'Sin resultados. Escribe nombre y apellido para poder registrarlo.' : 'Sin resultados para esta búsqueda'}</div>`;
     return;
   }
 
@@ -1114,77 +1180,162 @@ async function desmarcarVoto(id) {
 // ══════════════════════════════════════════════════════
 // VOTO SORPRESA
 // ══════════════════════════════════════════════════════
-function registrarSorpresa() {
-  const nombre  = document.getElementById('s-nombre').value.trim();
-  const seccion = parseInt(document.getElementById('s-seccion').value) || SECCION_BASE;
-  const obs     = document.getElementById('s-obs').value.trim();
-  const msg     = document.getElementById('sorpresa-msg');
+// [BUG-DE-05 3 sep] Antes pintaba "✓ registrado" ANTES de que la base
+// contestara; si el RPC fallaba (p.ej. coordinador sin sección) el usuario
+// se iba creyendo que guardó. Ahora: un solo núcleo (_registrarSorpresaCore)
+// que ESPERA la respuesta, y dos entradas: el formulario de la pestaña y el
+// modal rápido del buscador. Ambas pasan p_seccion (roles de mando).
 
-  if(!nombre) {
-    msg.style.display = 'block';
-    msg.style.cssText += 'background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:var(--red);';
-    msg.textContent = 'El nombre es obligatorio.';
-    return;
-  }
-
-  // [DÍA E 3 sep] Antes se quedaba en un array local. Ahora se registra en la
-  // base como ciudadano nuevo YA marcado (registrar_voto_sorpresa). El nombre se
-  // parte en nombre / paterno / materno con la convención "NOMBRE(S) PATERNO MATERNO".
-  const partes = nombre.split(/\s+/);
-  let p_nombre, p_paterno, p_materno = null;
+function _partirNombre(nombreCompleto){
+  const partes = _limpiaNombre(nombreCompleto).split(' ').filter(Boolean);
+  let p_nombre='', p_paterno='', p_materno='';
   if (partes.length >= 3) { p_materno = partes.pop(); p_paterno = partes.pop(); p_nombre = partes.join(' '); }
   else if (partes.length === 2) { p_paterno = partes[1]; p_nombre = partes[0]; }
-  else { p_nombre = nombre; p_paterno = '—'; }
-  // [DÍA E OFFLINE] Sin red: a la cola con clave local (idempotente al reintentar).
-  const _sorpresaOffline = () => {
-    const hora = _fmtHora(new Date());
-    const clave = VotoOffline.encolarSorpresa({ nombre, seccion, obs, p_nombre, p_paterno, p_materno });
+  else { p_nombre = partes[0] || ''; }
+  return { p_nombre, p_paterno, p_materno };
+}
+
+// Devuelve { ok, mensaje, offline }. Nunca miente: ok=true solo si la base
+// contestó ok (o si se encoló sin señal, con offline=true).
+async function _registrarSorpresaCore({ p_nombre, p_paterno, p_materno, telefono, seccion, obs }) {
+  p_nombre  = _limpiaNombre(p_nombre);  p_paterno = _limpiaNombre(p_paterno);  p_materno = _limpiaNombre(p_materno) || null;
+  if (!p_nombre || !p_paterno) return { ok:false, mensaje:'Nombre y apellido paterno son obligatorios.' };
+  if (SOLO_LECTURA_DIAE) return { ok:false, mensaje:'Tu perfil es de consulta: puedes ver, no registrar.' };
+  seccion = ROL_CON_SECCION.includes(ROL_ACTUAL) ? SECCION_BASE : (parseInt(seccion) || null);
+  if (!seccion) return { ok:false, mensaje: ROL_CON_SECCION.includes(ROL_ACTUAL) ? 'No tienes sección activa. Instala tu casilla primero.' : 'Indica la sección electoral del ciudadano.' };
+
+  const nombre = [p_nombre, p_paterno, p_materno].filter(Boolean).join(' ');
+  const hora = _fmtHora(new Date());
+  const _offline = () => {
+    const clave = VotoOffline.encolarSorpresa({ nombre, seccion, obs, p_nombre, p_paterno, p_materno, telefono, p_seccion: seccion });
     SORPRESAS.push({ id: clave, clave, nombre, seccion, obs, hora, registrado_por: CAPTURISTA_ID, pendiente_sync: true });
-    SIMPATIZANTES.unshift({ id: clave, clave, nombre: nombre.toUpperCase(), tel:'—', seccion, municipio: MUNICIPIO, compromiso: 3,
+    SIMPATIZANTES.unshift({ id: clave, clave, nombre, tel: telefono||'—', seccion, municipio: MUNICIPIO, compromiso: 3,
       responsable:'—', coordinador:'—', votó:true, hora_voto: hora, marcado_por: 'pendiente de subir', pendiente_sync: true, es_simulacro: MODO_SIMULACRO });
     agregarLog('amber', `📵 Voto sorpresa SIN SEÑAL: ${nombre} · se subirá al volver la conexión`);
     renderSorpresas(); renderLista(); guardarEstado();
+    return { ok:true, offline:true, mensaje:`Guardado en el teléfono: ${nombre}. Se subirá al volver la señal.` };
   };
-  if (!navigator.onLine) { _sorpresaOffline(); }
-  else (async () => {
-    try {
-      if (!await esperarSupabase(8000)) throw Object.assign(new Error('Sin conexión.'), { esRed: true });
-      const clave = 'S-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,7);
-      const { data, error } = await _diaeRpc('registrar_voto_sorpresa', {
-        p_nombre, p_paterno, p_materno, p_telefono: null, p_simulacro: MODO_SIMULACRO,
-        p_hora_local: new Date().toISOString(), p_clave_local: clave });
-      if (error) throw Object.assign(new Error(error.message), { esRed: /fetch|network|Failed|timeout|503|502|504/i.test(error.message||'') });
-      const r = data || {};
-      if (!r.ok) throw new Error(r.mensaje || 'No se pudo registrar.');
-      const hora = _fmtHora(new Date());
-      SORPRESAS.push({ id: r.id, nombre, seccion, obs, hora, registrado_por: CAPTURISTA_ID });
-      // Que aparezca también en la lista principal, ya marcado.
-      SIMPATIZANTES.unshift({ id: r.id, nombre: nombre.toUpperCase(), tel:'—', seccion, municipio: MUNICIPIO, compromiso: 3,
-        responsable:'—', coordinador:'—', votó:true, hora_voto: hora, marcado_por: (SESION&&SESION.nombre)||'yo', es_simulacro: MODO_SIMULACRO });
-      agregarLog('amber', `➕ Voto sorpresa: ${nombre} · Secc. ${seccion} · ${hora}`);
-      renderSorpresas(); renderLista(); guardarEstado();
-    } catch(e) {
-      if (e && e.esRed) { _sorpresaOffline(); return; }
-      msg.style.display = 'block';
-      msg.style.cssText += 'background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:var(--red);';
-      msg.textContent = '⚠ ' + e.message;
-    }
-  })();
+  if (!navigator.onLine) return _offline();
+  try {
+    if (!await esperarSupabase(8000)) throw Object.assign(new Error('Sin conexión.'), { esRed: true });
+    const clave = 'S-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,7);
+    const { data, error } = await _diaeRpc('registrar_voto_sorpresa', {
+      p_nombre, p_paterno, p_materno, p_telefono: telefono || null, p_simulacro: MODO_SIMULACRO,
+      p_hora_local: new Date().toISOString(), p_clave_local: clave, p_seccion: seccion });
+    if (error) throw Object.assign(new Error(error.message), { esRed: /fetch|network|Failed|timeout|503|502|504/i.test(error.message||'') });
+    const r = data || {};
+    if (!r.ok) return { ok:false, mensaje: r.mensaje || 'No se pudo registrar.' };
+    SORPRESAS.push({ id: r.id, nombre, seccion: r.seccion || seccion, obs, hora, registrado_por: CAPTURISTA_ID });
+    SIMPATIZANTES.unshift({ id: r.id, nombre, tel: telefono||'—', seccion: r.seccion || seccion, municipio: (r.municipio||MUNICIPIO).toUpperCase(), compromiso: 3,
+      responsable:'—', coordinador:'—', votó:true, hora_voto: hora, marcado_por: (SESION&&SESION.nombre)||'yo', es_simulacro: MODO_SIMULACRO });
+    agregarLog('amber', `➕ Voto sorpresa: ${nombre} · Secc. ${r.seccion || seccion} · ${hora}`);
+    renderSorpresas(); renderLista(); guardarEstado();
+    if(navigator.vibrate) navigator.vibrate(40);
+    return { ok:true, mensaje: r.mensaje || `Voto sorpresa registrado: ${nombre}` };
+  } catch(e) {
+    if (e && e.esRed) return _offline();
+    return { ok:false, mensaje: e.message };
+  }
+}
 
-  // Limpiar
-  document.getElementById('s-nombre').value  = '';
-  document.getElementById('s-seccion').value = '';
-  document.getElementById('s-obs').value     = '';
+function _pintarMsg(el, ok, txt){
+  el.style.display = 'block';
+  el.style.background = ok ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)';
+  el.style.border = ok ? '1px solid rgba(34,197,94,0.3)' : '1px solid rgba(239,68,68,0.3)';
+  el.style.color = ok ? 'var(--green)' : 'var(--red)';
+  el.textContent = (ok ? '✓ ' : '⚠ ') + txt;
+}
 
-  msg.style.display = 'block';
-  msg.style.cssText += 'background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);color:var(--green);';
-  msg.textContent = `✓ Voto sorpresa registrado: ${nombre}`;
-  setTimeout(() => msg.style.display = 'none', 3000);
+// Entrada 1: formulario de la pestaña "Voto sorpresa"
+async function registrarSorpresa() {
+  const nombre  = document.getElementById('s-nombre').value.trim();
+  const seccion = document.getElementById('s-seccion').value;
+  const obs     = document.getElementById('s-obs').value.trim();
+  const msg     = document.getElementById('sorpresa-msg');
+  const btn     = document.querySelector('#sc-sorpresa .btn-registrar');
+  if(!nombre) { _pintarMsg(msg, false, 'El nombre es obligatorio.'); return; }
+  const partes = _partirNombre(nombre);
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Guardando…'; }
+  const r = await _registrarSorpresaCore({ ...partes, telefono:null, seccion, obs });
+  if (btn) { btn.disabled = false; btn.textContent = '✓ Registrar voto sorpresa'; }
+  _pintarMsg(msg, r.ok, r.mensaje);
+  if (r.ok) {
+    document.getElementById('s-nombre').value = ''; document.getElementById('s-seccion').value = ''; document.getElementById('s-obs').value = '';
+    setTimeout(() => msg.style.display = 'none', 4000);
+  }
+}
 
-  renderSorpresas();
-  guardarEstado();
+// Entrada 2: modal rápido desde el buscador (o el botón ➕ flotante)
+function abrirModalSorpresa(textoBusqueda) {
+  if (SOLO_LECTURA_DIAE) { alert('Tu perfil es de consulta: puedes ver, no registrar.'); return; }
+  const p = _partirNombre(textoBusqueda || '');
+  document.getElementById('ms-nombre').value  = p.p_nombre;
+  document.getElementById('ms-paterno').value = p.p_paterno;
+  document.getElementById('ms-materno').value = p.p_materno;
+  document.getElementById('ms-tel').value = '';
+  const wrap = document.getElementById('ms-seccion-wrap');
+  if (ROL_CON_SECCION.includes(ROL_ACTUAL)) { wrap.style.display = 'none'; document.getElementById('ms-seccion').value = SECCION_BASE || ''; }
+  else {
+    wrap.style.display = 'block';
+    // Sugerir la sección del filtro activo si el coordinador ya acotó la lista
+    document.getElementById('ms-seccion').value = (filtroSeccion !== 'todas' ? filtroSeccion : '');
+  }
+  const msg = document.getElementById('ms-msg'); msg.style.display = 'none';
+  document.getElementById('modal-sorpresa').classList.add('show');
+  setTimeout(() => { const f = p.p_nombre ? (p.p_paterno ? (ROL_CON_SECCION.includes(ROL_ACTUAL) ? 'ms-tel' : 'ms-seccion') : 'ms-paterno') : 'ms-nombre'; document.getElementById(f).focus(); }, 50);
+}
+function cerrarModalSorpresa(){ document.getElementById('modal-sorpresa').classList.remove('show'); }
+async function confirmarSorpresaModal() {
+  const btn = document.getElementById('ms-btn'); const msg = document.getElementById('ms-msg');
+  const datos = {
+    p_nombre:  document.getElementById('ms-nombre').value,
+    p_paterno: document.getElementById('ms-paterno').value,
+    p_materno: document.getElementById('ms-materno').value,
+    telefono:  document.getElementById('ms-tel').value.trim(),
+    seccion:   document.getElementById('ms-seccion').value,
+    obs: ''
+  };
+  btn.disabled = true; btn.textContent = '⏳ Guardando…';
+  const r = await _registrarSorpresaCore(datos);
+  btn.disabled = false; btn.textContent = '✓ Registrar y marcar voto';
+  if (r.ok) {
+    cerrarModalSorpresa();
+    limpiarBusqueda();
+    // Aviso breve arriba de la lista
+    const hint = document.getElementById('search-hint'); hint.style.color = 'var(--green)'; hint.textContent = '✓ ' + r.mensaje;
+    setTimeout(() => { hint.textContent = ''; hint.style.color = ''; }, 5000);
+  } else { _pintarMsg(msg, false, r.mensaje); }
+}
 
-  if(navigator.vibrate) navigator.vibrate(40);
+// ══════════════════════════════════════════════════════
+// [DÍA E BUSCADOR ÚNICO] BÚSQUEDA POR VOZ (Web Speech API, es-MX)
+// Lo dictado cae en la caja de texto EDITABLE y dispara la búsqueda; nunca
+// registra ni marca solo. Requiere internet (Chrome/Android); sin señal,
+// el botón queda apagado y se teclea.
+// ══════════════════════════════════════════════════════
+let _rec = null, _recActivo = false;
+(function initVoz(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const btn = document.getElementById('search-mic');
+  if (!SR || !btn) { if (btn) { btn.classList.add('nodisp'); btn.title = 'Voz no disponible en este navegador'; } return; }
+  _rec = new SR();
+  _rec.lang = 'es-MX'; _rec.interimResults = true; _rec.continuous = false; _rec.maxAlternatives = 1;
+  _rec.onstart  = () => { _recActivo = true; btn.classList.add('escuchando'); _hint('🎤 Escuchando… di nombre y apellidos'); };
+  _rec.onresult = (ev) => {
+    let txt = ''; for (const r of ev.results) txt += r[0].transcript + ' ';
+    const inp = document.getElementById('search-votar'); inp.value = _limpiaNombre(txt); buscarSimpatizante(inp.value);
+  };
+  _rec.onerror  = (ev) => { _hint(ev.error === 'not-allowed' ? '⚠ Permite el micrófono en el navegador' : (ev.error === 'no-speech' ? 'No escuché nada, intenta de nuevo' : '⚠ Voz: ' + ev.error)); };
+  _rec.onend    = () => { _recActivo = false; btn.classList.remove('escuchando'); setTimeout(() => { const h=document.getElementById('search-hint'); if (h && /Escuchando/.test(h.textContent)) h.textContent=''; }, 300); };
+  const _sync = () => { if (!navigator.onLine) { btn.classList.add('nodisp'); btn.title = 'Sin señal: teclea el nombre'; } else { btn.classList.remove('nodisp'); btn.title = 'Buscar por voz'; } };
+  window.addEventListener('online', _sync); window.addEventListener('offline', _sync); _sync();
+})();
+function _hint(t){ const h = document.getElementById('search-hint'); if (h) { h.style.color=''; h.textContent = t || ''; } }
+function vozBuscar(){
+  if (!_rec) { _hint('Voz no disponible aquí: teclea el nombre'); return; }
+  if (!navigator.onLine) { _hint('Sin señal: la voz necesita internet, teclea el nombre'); return; }
+  if (_recActivo) { try { _rec.stop(); } catch(e){} return; }
+  try { _rec.start(); } catch(e) { _hint('No pude iniciar el micrófono'); }
 }
 
 function renderSorpresas() {
@@ -1367,6 +1518,7 @@ renderLista();
 renderSorpresas();
 
 // Cerrar modal al tocar fondo
+document.getElementById('modal-sorpresa').addEventListener('click', function(e) { if (e.target === this) cerrarModalSorpresa(); });
 document.getElementById('modal-voto').addEventListener('click', function(e) {
   if(e.target === this) cerrarModal();
 });
