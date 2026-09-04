@@ -76,6 +76,12 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 .card-registrar{background:rgba(245,158,11,0.08);border:1px dashed rgba(245,158,11,0.5);border-radius:12px;padding:16px;margin:10px 0 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
 .card-registrar .cr-txt{flex:1;min-width:180px;font-size:13px;line-height:1.5;color:var(--text2);}
 .card-registrar .cr-txt b{color:var(--amber);font-family:var(--mono);}
+.ms-preview{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;margin-bottom:14px;text-align:center;}
+.ms-preview .msp-lbl{font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;}
+.ms-preview .msp-nom{font-size:18px;font-weight:700;letter-spacing:.02em;line-height:1.3;min-height:24px;}
+.ms-preview .msp-sec{font-size:12px;font-family:var(--mono);color:var(--amber);margin-top:4px;min-height:16px;}
+.ms-preview.mal{border-color:rgba(239,68,68,.5);} .ms-preview.mal .msp-nom{color:var(--red);}
+.ms-sec-hint{font-size:11px;font-family:var(--mono);margin:-6px 0 10px 4px;min-height:14px;color:var(--text3);}
 .btn-registrar-inline{background:var(--amber);color:#000;border:none;border-radius:10px;padding:12px 18px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;}
 
 /* FILTRO SECCIONES */
@@ -575,16 +581,22 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
     <div class="modal-handle"></div>
     <div class="modal-icon">➕</div>
     <div class="modal-title">No está en la lista</div>
-    <div class="modal-sub">Regístralo como <b>voto sorpresa</b>: queda marcado como que ya votó. Revisa que nombre y apellidos estén bien.</div>
+    <div class="modal-sub">Regístralo como <b>voto sorpresa</b>: queda marcado como que ya votó. Lee la vista previa antes de confirmar.</div>
+    <div class="ms-preview" id="ms-preview">
+      <div class="msp-lbl">Se guardará como</div>
+      <div class="msp-nom" id="msp-nom">—</div>
+      <div class="msp-sec" id="msp-sec"></div>
+    </div>
     <label class="form-label">Nombre(s) <span style="color:var(--red)">*</span></label>
-    <input class="form-input" id="ms-nombre" type="text" autocomplete="off" autocapitalize="characters">
+    <input class="form-input" id="ms-nombre" type="text" autocomplete="off" autocapitalize="characters" oninput="msPreview()">
     <label class="form-label">Apellido paterno <span style="color:var(--red)">*</span></label>
-    <input class="form-input" id="ms-paterno" type="text" autocomplete="off" autocapitalize="characters">
+    <input class="form-input" id="ms-paterno" type="text" autocomplete="off" autocapitalize="characters" oninput="msPreview()">
     <label class="form-label">Apellido materno</label>
-    <input class="form-input" id="ms-materno" type="text" autocomplete="off" autocapitalize="characters">
+    <input class="form-input" id="ms-materno" type="text" autocomplete="off" autocapitalize="characters" oninput="msPreview()">
     <div id="ms-seccion-wrap">
       <label class="form-label">Sección electoral <span style="color:var(--red)">*</span></label>
-      <input class="form-input" id="ms-seccion" type="number" inputmode="numeric" placeholder="Ej. 280" autocomplete="off">
+      <input class="form-input" id="ms-seccion" type="number" inputmode="numeric" placeholder="Ej. 280" autocomplete="off" oninput="msPreview()">
+      <div class="ms-sec-hint" id="ms-sec-hint"></div>
     </div>
     <label class="form-label">Teléfono (opcional)</label>
     <input class="form-input" id="ms-tel" type="tel" inputmode="tel" autocomplete="off">
@@ -1281,10 +1293,62 @@ function abrirModalSorpresa(textoBusqueda) {
     document.getElementById('ms-seccion').value = (filtroSeccion !== 'todas' ? filtroSeccion : '');
   }
   const msg = document.getElementById('ms-msg'); msg.style.display = 'none';
+  document.getElementById('ms-sec-hint').textContent = '';
+  msPreview();
   document.getElementById('modal-sorpresa').classList.add('show');
   setTimeout(() => { const f = p.p_nombre ? (p.p_paterno ? (ROL_CON_SECCION.includes(ROL_ACTUAL) ? 'ms-tel' : 'ms-seccion') : 'ms-paterno') : 'ms-nombre'; document.getElementById(f).focus(); }, 50);
 }
 function cerrarModalSorpresa(){ document.getElementById('modal-sorpresa').classList.remove('show'); }
+
+// [DÍA E] Vista previa en vivo: la frase completa se lee mejor que tres cajitas.
+// Si el nombre trae 2+ palabras y el paterno 1, probablemente vino en orden
+// "apellidos primero": se avisa y se ofrece invertir con un toque.
+const _munCache = {}; let _munTimer = null;
+function _municipioDeSeccion(sec, cb){
+  if (!sec) { cb(null); return; }
+  if (sec in _munCache) { cb(_munCache[sec]); return; }
+  if (ROL_CON_SECCION.includes(ROL_ACTUAL) && sec === SECCION_BASE) { _munCache[sec] = MUNICIPIO; cb(MUNICIPIO); return; }
+  const local = SIMPATIZANTES.find(x => x.seccion === sec); if (local && local.municipio) { _munCache[sec] = local.municipio; cb(local.municipio); return; }
+  clearTimeout(_munTimer);
+  _munTimer = setTimeout(async () => {
+    try { const { data } = await _diaeRpc('municipio_de_seccion', { p_seccion: sec }); _munCache[sec] = data || false; cb(data || false); }
+    catch(e) { cb(null); }
+  }, 250);
+}
+function msPreview(){
+  const n = _limpiaNombre(document.getElementById('ms-nombre').value);
+  const p = _limpiaNombre(document.getElementById('ms-paterno').value);
+  const m = _limpiaNombre(document.getElementById('ms-materno').value);
+  const sec = parseInt(document.getElementById('ms-seccion').value) || null;
+  const pv = document.getElementById('ms-preview'), nom = document.getElementById('msp-nom'), sc = document.getElementById('msp-sec'), sh = document.getElementById('ms-sec-hint');
+  nom.textContent = [n,p,m].filter(Boolean).join(' ') || '—';
+  const ordenRaro = n.split(' ').length >= 2 && p.split(' ').length === 1 && m && /^(JUAN|JOSE|MARIA|ANA|LUIS|CARLOS|JORGE|MIGUEL|PEDRO|ROSA|LAURA|ANGEL|DAVID|DANIEL|MARTHA|ALEJANDRO|FRANCISCO|MANUEL|RICARDO|GUADALUPE)$/.test(p);
+  pv.classList.toggle('mal', ordenRaro);
+  let secTxt = '';
+  if (ROL_CON_SECCION.includes(ROL_ACTUAL)) secTxt = `Secc. ${SECCION_BASE || '—'} · ${MUNICIPIO}`;
+  sc.textContent = secTxt;
+  if (ordenRaro) {
+    sh.style.color = 'var(--red)';
+    sh.innerHTML = `⚠ Parece que pusiste apellidos primero. <a href="#" onclick="msInvertir();return false;" style="color:var(--amber);font-weight:700">Invertir orden</a>`;
+  } else if (!ROL_CON_SECCION.includes(ROL_ACTUAL)) {
+    if (!sec) { sh.style.color = 'var(--text3)'; sh.textContent = 'Escribe la sección del ciudadano'; sc.textContent = ''; }
+    else _municipioDeSeccion(sec, mun => {
+      if (mun === false) { sh.style.color = 'var(--red)'; sh.textContent = `⚠ La sección ${sec} no existe en Colima`; sc.textContent = `Secc. ${sec} · ?`; }
+      else if (mun) { sh.style.color = 'var(--green)'; sh.textContent = `→ ${mun}`; sc.textContent = `Secc. ${sec} · ${mun}`; }
+      else { sh.textContent = ''; sc.textContent = `Secc. ${sec}`; }
+    });
+  }
+}
+// "RAMIREZ OCHOA" / "JUAN" / "CARLOS"  →  "JUAN CARLOS" / "RAMIREZ" / "OCHOA"
+function msInvertir(){
+  const n = _limpiaNombre(document.getElementById('ms-nombre').value).split(' ');
+  const p = _limpiaNombre(document.getElementById('ms-paterno').value);
+  const m = _limpiaNombre(document.getElementById('ms-materno').value);
+  document.getElementById('ms-nombre').value  = [p, m].filter(Boolean).join(' ');
+  document.getElementById('ms-paterno').value = n[0] || '';
+  document.getElementById('ms-materno').value = n.slice(1).join(' ');
+  msPreview();
+}
 async function confirmarSorpresaModal() {
   const btn = document.getElementById('ms-btn'); const msg = document.getElementById('ms-msg');
   const datos = {
