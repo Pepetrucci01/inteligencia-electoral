@@ -161,6 +161,7 @@ body.rol-consulta     .kpi-estatal { display:none; }
 .mc.rep::before,.mc.rep:hover{border-color:rgba(168,85,247,.35);}  .mc.rep::before{background:var(--purple);}
 .mc.adm::before,.mc.adm:hover{border-color:rgba(239,68,68,.35);}   .mc.adm::before{background:var(--red);}
 .mc.ia::before,.mc.ia:hover{border-color:rgba(168,85,247,.35);}    .mc.ia::before{background:linear-gradient(90deg,var(--purple),var(--accent));}
+.mc.cc::before,.mc.cc:hover{border-color:rgba(63,167,255,.35);}    .mc.cc::before{background:#3fa7ff;}
 .mc-head{display:flex;align-items:center;gap:10px;margin-bottom:7px;}
 .mc-icon{width:34px;height:34px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
 .mc-name{font-size:13px;font-weight:600;}
@@ -496,7 +497,7 @@ body.rol-consulta     .kpi-estatal { display:none; }
       <div class="kpi re" data-tip="Secciones con avance menor al 5% de su meta. Son las que más urgen para no perder terreno."><div class="kv" id="hub-kpi-crit">—</div><div class="kl">Sec. críticas</div></div>
     </div>
 
-    <div class="mod-title"><span id="mod-count2">8</span> módulos del sistema — clic para abrir</div>
+    <div class="mod-title"><span id="mod-count2">9</span> módulos del sistema — clic para abrir</div>
     <div class="modules-grid">
 
       <div class="mc war" data-rol="super_admin,admin,coordinador,coordinador_estatal,jefe_seccion,consulta" onclick="load('war','war_room_electoral_colima.html','War Room','Control de avance estatal')">
@@ -556,6 +557,13 @@ body.rol-consulta     .kpi-estatal { display:none; }
         <div class="mc-head"><div class="mc-icon" style="background:rgba(168,85,247,.15)">🧠</div><div><div class="mc-name">Consulta IA <span style="font-size:9px;font-weight:700;color:var(--purple);background:rgba(168,85,247,.15);padding:1px 6px;border-radius:6px;vertical-align:middle;">NUEVO</span></div><div class="mc-sub">Pregunta en español, responde con tus datos</div></div></div>
         <div class="mc-desc">Chat de inteligencia electoral. Pregunta por avance, secciones débiles, estructura, riesgo o encuestas y recibe un análisis con cifras reales de tu territorio. Solo ve lo que tu rol ve.</div>
         <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(168,85,247,.1);color:var(--purple)">20 preguntas listas</span><span class="tag" style="background:rgba(168,85,247,.1);color:var(--purple)">Alcance por rol</span></div><span class="arr">→</span></div>
+      </div>
+
+      <!-- [4 sep] Call Center (faltaba en el grid de inicio) -->
+      <div class="mc cc" data-rol="super_admin,admin,coordinador,coordinador_estatal,operador_cc" onclick="load('cc','modulo_callcenter.html','Centro de Llamadas','Campañas telefónicas y CATI')">
+        <div class="mc-head"><div class="mc-icon" style="background:rgba(63,167,255,.15)">📞</div><div><div class="mc-name">Call Center <span style="font-size:9px;font-weight:700;color:#3fa7ff;background:rgba(63,167,255,.15);padding:1px 6px;border-radius:6px;vertical-align:middle;">NUEVO</span></div><div class="mc-sub">Campañas telefónicas y CATI</div></div></div>
+        <div class="mc-desc">Genera colas de llamadas desde tu padrón, entrega contactos al operador uno por uno, registra la disposición de cada llamada y refleja el compromiso en el ciudadano. Respeta consentimiento y no-llamar.</div>
+        <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(63,167,255,.1);color:#3fa7ff">CATI</span><span class="tag" style="background:rgba(63,167,255,.1);color:#3fa7ff">Reintentos automáticos</span></div><span class="arr">→</span></div>
       </div>
 
       <div class="mc adm" data-rol="super_admin,admin" onclick="load('adm','modulo_admin.html','Administración','Usuarios · licencias · auditoría · seguridad')">
