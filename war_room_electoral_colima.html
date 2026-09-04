@@ -413,7 +413,7 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
         <button id="lens-f1-terr" class="on" onclick="setLensF1('terr')" data-tip="Mirada territorial: dónde va bien o mal la captura.">🗺 Territorio</button>
         <button id="lens-f1-act" onclick="setLensF1('act')" data-tip="Mirada de estructura: qué activistas están produciendo y cuáles no.">👤 Activistas</button>
       </div>
-      <span class="uq-caption" id="mun-table-caption">10 municipios · 393 secciones</span>
+      <span class="uq-caption" id="mun-table-caption">10 municipios · 388 secciones</span>
       <span class="uq-caption" id="cap-tabla-count" style="display:none"></span>
       <div class="uq-chips">
         <button class="uq-chip" id="ch1-verde" onclick="setSemF1('verde')" data-tip="Solo lo que va bien (arriba del 10% de su meta).">🟢 Bien</button>
@@ -1205,7 +1205,10 @@ function renderMunF1(){
     else if(nivelTabla==='sec' && f1s.dl){const dl=DLS.find(d=>d.id===f1s.dl);capEl.textContent=`${rows.length} secciones · ${dl?dl.n:''} · ${MUNS.find(m=>m.id===munFiltro)?.n||''}`;}
     else if(nivelTabla==='sec')         capEl.textContent=`${rows.length} secciones · ${MUNS.find(m=>m.id===munFiltro)?.n||''} (directo; DL opcional en cuadrantes)`;
     else if(f1s.df)                     capEl.textContent=`${rows.length} municipios · ${(DFS.find(d=>d.id===f1s.df)||{}).n||''}`;
-    else                                capEl.textContent='10 municipios · 393 secciones';
+    // [FIX 4 sep] Antes decía '393 secciones' HORNEADO: la base tiene 388 y la
+    // propia tabla sumaba 388. Ahora se calcula de las filas reales (r.secs).
+    else { const _tSec=rows.reduce((s,r)=>s+(Number(r.secs)||0),0);
+           capEl.textContent=`${rows.length} municipios · ${_tSec} secciones`; }
   }
 
   // ── Render ──────────────────────────────────────────────────────
