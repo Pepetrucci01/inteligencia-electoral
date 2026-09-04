@@ -370,6 +370,15 @@ body.rol-consulta     .kpi-estatal { display:none; }
       <div class="nav-tip">Centro de Llamadas</div>
     </div>
 
+    <!-- [4 sep] Consulta IA: chat de inteligencia electoral. Claude recibe el
+         contexto real de la base (RLS del usuario) y responde en español. -->
+    <div class="nav-item" id="nav-ia" data-rol="super_admin,admin,coordinador,coordinador_estatal,consulta" onclick="load('ia','modulo_consulta_ia.html','Consulta IA','Inteligencia electoral con IA')">
+      <div class="nav-icon" style="background:rgba(168,85,247,.12);color:var(--purple)">🧠</div>
+      <span class="nav-label">Consulta IA</span>
+      <span style="margin-left:auto;font-size:8px;font-weight:700;color:var(--purple);background:rgba(168,85,247,.15);padding:1px 5px;border-radius:6px;letter-spacing:.5px;">NUEVO</span>
+      <div class="nav-tip">Consulta IA</div>
+    </div>
+
     <div class="nav-section">Sistema</div>
     <div class="nav-item admin-item" id="nav-adm" data-rol="super_admin,admin" onclick="load('adm','modulo_admin.html','Administración','Usuarios · licencias · auditoría')">
       <div class="nav-icon" style="background:rgba(239,68,68,.12);color:var(--red)">🔒</div>
@@ -593,7 +602,7 @@ function actualizarContadorModulos(){
   }catch(_e){}
 }
 
-const APP_BUILD = '20260903h'; // [03/09] día E: buscador único + voz + registro sorpresa real + encabezado por rol; iframe allow=microphone // [02/09] captura (identidad real, Mi Sección, scan INE, responsive) · reportes (calidad en vivo, alcance municipal) · war room (alertas por rol) · panel capturista (header móvil) // [31/08] subir esta cadena cada vez que se actualice un modulo: es el rompe-cache de los iframes
+const APP_BUILD = '20260904d'; // [04/09] consulta IA (nuevo módulo) · panel capturista (paginación, Día E) · war room (388) · captura (aviso cuota) · día E (modal logout) // [03/09] día E: buscador único + voz + registro sorpresa real + encabezado por rol; iframe allow=microphone // [02/09] captura (identidad real, Mi Sección, scan INE, responsive) · reportes (calidad en vivo, alcance municipal) · war room (alertas por rol) · panel capturista (header móvil) // [31/08] subir esta cadena cada vez que se actualice un modulo: es el rompe-cache de los iframes
 
 let collapsed = false;
 
