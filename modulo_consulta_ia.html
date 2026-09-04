@@ -126,14 +126,24 @@ body{display:flex;flex-direction:column;}
 
 <script>
 // ── Session ──────────────────────────────────────────────────────────────
-const SESION = JSON.parse(localStorage.getItem('electoral_sesion') || 'null');
-if (!SESION || !SESION.token) { window.location.replace('login.html'); }
+// Mismo patrón que modulo_dia_eleccion.html y panel_capturista_personal.html:
+// llave 'electoral_sesion', vigencia por ts (8 h), token en access_token.
+const SESION = (() => {
+  try { return JSON.parse(localStorage.getItem('electoral_sesion') || 'null'); } catch(e) { return null; }
+})();
+(function guardSesion(){
+  if (!SESION || !SESION.ts) { window.location.replace('login.html'); return; }
+  const horas = (Date.now() - SESION.ts) / 3600000;
+  if (horas >= 8) { localStorage.removeItem('electoral_sesion'); window.location.replace('login.html'); return; }
+})();
 
-const SUPABASE_URL = SESION?.url || 'https://dyirhwwmykskpuvzcafx.supabase.co';
-const SUPABASE_ANON = SESION?.anon || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5aXJod3dteWtza3B1dnpjYWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjEwOTI4NzIsImV4cCI6MjAzNjY2ODg3Mn0.FcBOoXjNdNSH2lnEFmJBBXIHYRVOmjZwHjJlm6Rfmtk';
-// [SWAP LUIS] — en desarrollo, la anon key se toma de SESION; en main, horneada arriba.
+const SUPABASE_URL  = 'https://dyirhwwmykskpuvzcafx.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5aXJod3dteWtza3B1dnpjYWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NTk3ODgsImV4cCI6MjA5NTEzNTc4OH0.2xe4cHqORGng1hnYPJ9ZiyT0r87fMijbUEJqBy3-xoI';
+// [SWAP LUIS] — SUPABASE_URL / SUPABASE_ANON: mismos valores que SUPA_URL/SUPA_KEY en los demás módulos.
 
-const TOKEN = SESION.token;
+// Token del usuario para la Edge Function (RLS aplica con su JWT).
+// Si no hay access_token (sesión demo sin Supabase), cae al anon y la función responderá 401.
+const TOKEN = SESION?.access_token || SUPABASE_ANON;
 const historial = [];
 
 // UI refs
