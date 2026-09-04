@@ -54,7 +54,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
    (fail-open a solo lectura, no fail-closed que dejaría al usuario sin panel).
      · Mi avance (tab-inicio) y Simpatizantes (tab-lista): solo super_admin,
        coordinador_estatal, coordinador. Ocultas para el resto.
-     · Día elección (tab-eleccion): + admin, jefe_seccion, repr_casilla, capturista.
+     · Día elección (tab-eleccion): + admin, jefe_seccion, repr_casilla.
        Oculta solo para operador_cc, consulta. [4 sep: capturista habilitado] */
 .rol-admin       #tab-inicio, .rol-admin       #tab-lista,
 .rol-jefe_seccion #tab-inicio, .rol-jefe_seccion #tab-lista,
@@ -63,10 +63,8 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 .rol-repr_casilla #tab-inicio, .rol-repr_casilla #tab-lista,
 .rol-consulta    #tab-inicio, .rol-consulta    #tab-lista { display:none; }
 
-/* [FIX 4 sep · decisión Pepe] El capturista SÍ marca votos el día E en su sección
-   (el backend ya lo autoriza: jornada_puede_tocar y get_jornada_por_seccion).
-   La matriz T12 lo ocultaba y contradecía a la base. Queda oculta solo para
-   operador_cc y consulta, que no operan en campo. */
+/* [FIX 4 sep] capturista SÍ marca votos el día E (backend ya lo autoriza).
+   Oculto solo para operador_cc y consulta, en pestaña y en el botón del header. */
 .rol-operador_cc #tab-eleccion, .rol-operador_cc #btn-diae-top,
 .rol-consulta    #tab-eleccion, .rol-consulta    #btn-diae-top { display:none; }
 
@@ -275,10 +273,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
     </div>
   </div>
   <div class="phase-badge" id="phase-badge">FASE 1</div>
-  <!-- [FIX 4 sep] Acceso FIJO al Día E en el encabezado. Antes solo existia como
-       pestaña, que el gating por rol o theme.js pueden ocultar; en celular el
-       representante se quedaba sin camino a la jornada. Este boton no depende
-       de la barra de pestañas. -->
+  <!-- [FIX 4 sep] Acceso fijo al módulo real de jornada, no depende de la barra de pestañas. -->
   <button id="btn-diae-top" onclick="irADiaE()" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.35);color:#ef4444;border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;font-family:monospace;margin-left:6px;white-space:nowrap;" title="Ir al módulo de jornada electoral">🗳 Día E</button>
   <button onclick="cerrarSesion()" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;font-family:monospace;margin-left:6px;" title="Cerrar sesión">⏻ Salir</button>
 </div>
@@ -433,166 +428,6 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
   <div id="edit-content"></div>
 </div>
 
-<!-- ══ SCREEN: ELECCIÓN ══ -->
-<div class="screen" id="sc-eleccion">
-
-  <!-- SUB-PANTALLA A: REGISTRO DE CASILLA -->
-  <div id="sub-casilla">
-    <div class="fase-banner f2">
-      <div class="fase-icon">📋</div>
-      <div>
-        <div class="fase-title">PASO 1 — Registro de casilla</div>
-        <div class="fase-sub">Llena los datos antes de iniciar la jornada electoral</div>
-      </div>
-    </div>
-
-    <!-- Tipo de casilla -->
-    <div style="margin-bottom:14px">
-      <div style="font-size:11px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Tipo de casilla <span style="color:var(--red)">*</span></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <div class="comp-btn" id="tipo-basica"    onclick="selTipo('basica')">   <div style="font-size:16px;margin-bottom:3px">🏛</div><div class="comp-lbl" style="font-size:12px">Básica</div></div>
-        <div class="comp-btn" id="tipo-contigua"  onclick="selTipo('contigua')"> <div style="font-size:16px;margin-bottom:3px">🏘</div><div class="comp-lbl" style="font-size:12px">Contigua</div></div>
-        <div class="comp-btn" id="tipo-especial"  onclick="selTipo('especial')"> <div style="font-size:16px;margin-bottom:3px">⭐</div><div class="comp-lbl" style="font-size:12px">Especial</div></div>
-        <div class="comp-btn" id="tipo-extraordinaria" onclick="selTipo('extraordinaria')"><div style="font-size:16px;margin-bottom:3px">🔔</div><div class="comp-lbl" style="font-size:12px">Extraordinaria</div></div>
-      </div>
-    </div>
-
-    <!-- Datos de la casilla -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-      <div class="form-group" style="margin:0">
-        <label class="form-label">Número de casilla <span style="color:var(--red)">*</span></label>
-        <input class="form-input" id="cas-numero" type="number" placeholder="Ej. 1060" min="1">
-      </div>
-      <div class="form-group" style="margin:0">
-        <label class="form-label">Sección electoral <span style="color:var(--red)">*</span></label>
-        <input class="form-input" id="cas-seccion" type="number" placeholder="Ej. 138" min="1" max="400">
-      </div>
-    </div>
-
-    <div class="form-group">
-      <label class="form-label">Municipio <span style="color:var(--red)">*</span></label>
-      <select class="form-select" id="cas-municipio">
-        <option value="">Seleccionar...</option>
-        <option>ARMERIA</option><option>COLIMA</option><option>COMALA</option>
-        <option>COQUIMATLAN</option><option>CUAUHTEMOC</option><option>IXTLAHUACAN</option>
-        <option>MANZANILLO</option><option>MINATITLAN</option><option>TECOMAN</option>
-        <option>VILLA DE ALVAREZ</option>
-      </select>
-    </div>
-
-    <div class="form-group">
-      <label class="form-label">Domicilio de la casilla <span style="color:var(--red)">*</span></label>
-      <input class="form-input" id="cas-domicilio" type="text" placeholder="Calle y número">
-    </div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-      <div class="form-group" style="margin:0">
-        <label class="form-label">Colonia</label>
-        <input class="form-input" id="cas-colonia" type="text" placeholder="Ej. Col. Centro">
-      </div>
-      <div class="form-group" style="margin:0">
-        <label class="form-label">Lugar de ubicación</label>
-        <input class="form-input" id="cas-lugar" type="text" placeholder="Ej. Escuela primaria">
-      </div>
-    </div>
-
-    <div class="form-group">
-      <label class="form-label">Hora de apertura <span style="color:var(--red)">*</span></label>
-      <input class="form-input" id="cas-hora" type="time" value="08:00">
-    </div>
-
-    <div class="form-group">
-      <label class="form-label">Observaciones</label>
-      <textarea class="form-input" id="cas-obs" rows="2" placeholder="Notas sobre la casilla, acceso, condiciones..." style="resize:none"></textarea>
-    </div>
-
-    <div id="cas-error" style="font-size:12px;color:var(--red);font-family:var(--mono);text-align:center;margin-bottom:8px;display:none"></div>
-    <button class="btn-voto" onclick="registrarCasilla()" style="background:linear-gradient(135deg,#dc2626,#ef4444)">
-      ✓ Registrar casilla e iniciar jornada
-    </button>
-  </div>
-
-  <!-- SUB-PANTALLA B: JORNADA ACTIVA -->
-  <div id="sub-jornada" style="display:none">
-
-    <!-- Info casilla registrada -->
-    <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:10px;padding:12px 14px;margin-bottom:14px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-        <div style="font-size:13px;font-weight:600;color:var(--red)">🗳 JORNADA EN CURSO</div>
-        <div style="font-size:11px;font-family:var(--mono);color:var(--text3)" id="reloj-jornada">--:--:--</div>
-      </div>
-      <div id="casilla-info-banner" style="font-size:11px;font-family:var(--mono);color:var(--text2);line-height:1.8"></div>
-      <button onclick="verDetalleCasilla()" style="font-size:10px;font-family:var(--mono);color:var(--accent);background:none;border:none;cursor:pointer;margin-top:4px;padding:0">Ver detalle completo →</button>
-    </div>
-
-    <!-- Contador en tiempo real -->
-    <div class="stats-dia" style="margin-bottom:14px">
-      <div class="stat-dia">
-        <div class="stat-dia-val" style="color:var(--green)" id="votos-marcados">0</div>
-        <div class="stat-dia-lbl">Ya votaron</div>
-      </div>
-      <div class="stat-dia">
-        <div class="stat-dia-val" style="color:var(--amber)">32</div>
-        <div class="stat-dia-lbl">En mi lista</div>
-      </div>
-      <div class="stat-dia">
-        <div class="stat-dia-val" style="color:var(--accent)" id="nuevos-dia">0</div>
-        <div class="stat-dia-lbl">Nuevos hoy</div>
-      </div>
-    </div>
-
-    <!-- Barra de progreso -->
-    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:14px">
-      <div style="display:flex;justify-content:space-between;font-size:11px;font-family:var(--mono);color:var(--text3);margin-bottom:6px">
-        <span>Participación de mi lista</span>
-        <span id="pct-voto" style="color:var(--green)">0%</span>
-      </div>
-      <div class="prog-bar" style="height:8px">
-        <div class="prog-fill" id="prog-voto" style="width:0%;background:var(--green)"></div>
-      </div>
-    </div>
-
-    <!-- Buscador grande -->
-    <div class="eleccion-search" style="position:relative;margin-bottom:12px">
-      <div class="eleccion-search-icon">🔍</div>
-      <input class="eleccion-input" id="eleccion-q" type="search"
-        placeholder="Nombre completo del votante..."
-        oninput="buscarEleccion()" autocomplete="off">
-    </div>
-
-    <div id="eleccion-results">
-      <div class="no-result">
-        <div class="no-result-icon">🗳</div>
-        Escribe el nombre del votante<br>para buscarlo en tu lista
-      </div>
-    </div>
-
-    <!-- Cierre de casilla -->
-    <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
-      <button onclick="cerrarCasilla()" style="width:100%;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);color:var(--red);border-radius:8px;padding:12px;font-size:13px;font-family:var(--mono);cursor:pointer">
-        🔒 Cerrar jornada electoral
-      </button>
-    </div>
-  </div>
-
-  <!-- SUB-PANTALLA C: DETALLE CASILLA -->
-  <div id="sub-detalle-casilla" style="display:none">
-    <div class="ficha-back" onclick="volverJornada()">← Regresar a jornada</div>
-    <div id="detalle-casilla-content"></div>
-  </div>
-
-  <!-- SUB-PANTALLA D: JORNADA CERRADA -->
-  <div id="sub-cierre" style="display:none">
-    <div style="text-align:center;padding:30px 20px">
-      <div style="font-size:48px;margin-bottom:12px">🏁</div>
-      <div style="font-size:18px;font-weight:600;color:var(--green);margin-bottom:6px">Jornada cerrada</div>
-      <div style="font-size:13px;color:var(--text2);margin-bottom:20px">Los datos han sido registrados</div>
-      <div id="resumen-cierre" style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:left;margin-bottom:16px"></div>
-      <button class="btn-primary" onclick="nuevaCasilla()">+ Registrar otra casilla</button>
-    </div>
-  </div>
-
-</div>
 
 <script>
 // ── DATOS SIMULADOS ────────────────────────────────────────────────────────
@@ -830,18 +665,15 @@ async function cargarMisRegistros() {
     pcpCargarRanking();   // [FIX ranking] en paralelo, no bloquea la lista
 
     // Filtrar por capturista_id si está disponible, sino por licencia
-    // [FIX 4 sep] Antes: &limit=500 fijo. Un capturista con 755 registros veía
-    // "Mis capturas 500" y los KPIs (validados / seg. votan / en riesgo) se
-    // calculaban sobre esas 500 filas: numeros falsos en el panel del que captura.
-    // Ahora se pagina de 1000 en 1000 (PostgREST corta en 1000 SIN avisar).
+    // [FIX 4 sep] Antes: &limit=500 fijo -> "Mis capturas 500" y KPIs calculados
+    // sobre 500 filas aunque hubiera 755. Ahora pagina de 1000 en 1000.
     const _base = `ciudadanos?select=id,nombre,apellido_paterno,apellido_materno,edad,sexo,seccion_electoral,municipio,telefono,domicilio,curp,clave_elector,compromiso,origen,es_riesgo,es_apoyo,es_influencia,validado,duplicado,notas,created_at,licencia_id,capturista_id&licencia_id=eq.${LICENCIA_ID}`
       + (CAP_ID ? `&capturista_id=eq.${CAP_ID}` : '')
       + `&order=created_at.desc`;
-
     let data = [];
     for (let _p = 0; _p < 10; _p++) {
       const _pag = await supaGet(`${_base}&limit=1000&offset=${_p * 1000}`);
-      if (!Array.isArray(_pag)) { data = _pag; break; }   // deja que el guard de abajo lo maneje
+      if (!Array.isArray(_pag)) { data = _pag; break; }
       data = data.concat(_pag);
       if (_pag.length < 1000) break;
     }
@@ -916,11 +748,7 @@ function setFase(f){
     pb.style.color='var(--accent)';
     pb.style.border='1px solid rgba(59,130,246,0.3)';
     bf1.style.display='flex'; bf2.style.display='none';
-    // [FIX 4 sep] Antes: opacity .4 en Fase 1 y la pestaña se leia como apagada.
-    // El capturista/representante necesita entrar ANTES del 6 de junio para
-    // simulacros y para conocer la pantalla. Queda clickeable, marcada como ensayo.
-    tabEl.style.opacity='0.75';
-    tabEl.title='Simulacro — la jornada real inicia 3 días antes de la elección';
+    tabEl.style.opacity='0.4';
   } else {
     pb.textContent='FASE 2 🗳';
     pb.style.background='rgba(239,68,68,0.15)';
@@ -1008,11 +836,11 @@ function seleccionarPrimeraPestanaVisible(){
 }
 
 function showTab(t){
-  ['inicio','lista','ficha','editar','eleccion'].forEach(s=>{
+  ['inicio','lista','ficha','editar'].forEach(s=>{
     document.getElementById('sc-'+s).classList.remove('active');
   });
   document.getElementById('sc-'+t).classList.add('active');
-  ['inicio','lista','eleccion'].forEach(id=>{
+  ['inicio','lista'].forEach(id=>{
     const el=document.getElementById('tab-'+id);
     if(el){
       el.className='tab';
