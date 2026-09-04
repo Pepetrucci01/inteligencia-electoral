@@ -367,6 +367,9 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
       <div class="form-group">
         <div class="form-label">Nombre(s) <span class="req">*</span></div>
       <button type="button" class="ine-scan-btn" onclick="abrirEscanerINE()">📷 Escanear credencial INE</button>
+      <!-- [4 sep · cuota v3] Aviso de consumo del escáner. Lo llena mostrarCuotaINE()
+           con lo que trae la respuesta de scan-ine (cuota.nivel). Oculto si nivel=normal. -->
+      <div id="ine-cuota-aviso" style="display:none;font-family:var(--mono);font-size:11px;padding:6px 10px;border-radius:8px;margin:-2px 0 8px;line-height:1.4;"></div>
         <input class="form-input" id="f-nombre" type="text" placeholder="Ej. María Elena" autocomplete="given-name">
       </div>
       <div class="form-row">
@@ -959,10 +962,38 @@ function extraerDatosINE(fotoBase64){
   })
   .then(function(r){ return r.json(); })
   .then(function(d){
+    // [4 sep · cuota v3] La Edge Function ya manda el nivel de consumo de la
+    // licencia en cada respuesta (normal / alerta / excedido / bloqueado).
+    mostrarCuotaINE(d && d.cuota);
     if (d && d.success) { aplicarDatosINE(d.data); }
     else { alert((d && d.error) || 'No se pudo leer la credencial. Captura manualmente.'); cerrarEscanerINE(); }
   })
   .catch(function(){ alert('Error de conexión. Captura manualmente.'); cerrarEscanerINE(); });
+}
+
+// [4 sep · cuota v3] Pinta el consumo del escáner bajo el botón. Decisión de
+// producto: la cuota es REFERENCIA, no tope. Solo informa; el único caso que
+// detiene (bloqueado, 300%) ya llega como error 429 desde la Edge Function.
+function mostrarCuotaINE(c){
+  var el = document.getElementById('ine-cuota-aviso');
+  if (!el) return;
+  if (!c || !c.nivel || c.nivel === 'normal' || c.nivel === 'sin_referencia') { el.style.display = 'none'; return; }
+  var usados = Number(c.usados || 0).toLocaleString('es-MX');
+  var ref    = c.referencia ? Number(c.referencia).toLocaleString('es-MX') : '—';
+  var pct    = (c.pct != null) ? Math.round(Number(c.pct)) + '%' : '';
+  var css, txt;
+  if (c.nivel === 'alerta') {
+    css = 'background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.35);color:#f59e0b;';
+    txt = '⚠ Escaneos del mes: ' + usados + ' de ' + ref + ' de referencia (' + pct + '). El escáner sigue activo.';
+  } else if (c.nivel === 'excedido') {
+    css = 'background:rgba(239,68,68,.10);border:1px solid rgba(239,68,68,.35);color:#ef4444;';
+    txt = '⚠ Escaneos del mes: ' + usados + ' — se superó la referencia de ' + ref + ' (' + pct + '). Sigue activo; se detiene al 300%. Avisa al administrador.';
+  } else { // bloqueado
+    css = 'background:rgba(239,68,68,.18);border:1px solid #ef4444;color:#ef4444;font-weight:600;';
+    txt = '⛔ Escáner detenido por seguridad (' + usados + ' escaneos, ' + pct + ' de la referencia). Captura a mano y avisa al administrador.';
+  }
+  el.setAttribute('style', el.getAttribute('style').replace(/display:[^;]+;/, '') + css + 'display:block;');
+  el.textContent = txt;
 }
 
 function aplicarDatosINE(d){
