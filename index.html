@@ -388,19 +388,30 @@ body.rol-consulta     .kpi-estatal { display:none; }
       <span class="nav-badge" style="background:rgba(239,68,68,.12);color:var(--red)">ADMIN</span>
       <div class="nav-tip">Administración</div>
     </div>
-    <!-- [v91] Soporte tecnico. SIN data-rol a proposito: la logica de este
-         hub trata "sin data-rol" como abierto, y aqui entran LOS 9 ROLES —
-         si alguien no puede usar el sistema, tiene que poder decirlo.
-         Mismo criterio que Ayuda. -->
-    <div class="nav-item" id="nav-soporte" onclick="load('soporte','modulo_soporte.html','Soporte técnico','Levanta un ticket con el equipo')">
+    <!-- [4 sep 2026] Soporte tecnico = panel de SALUD del sistema (errores,
+         actividad, consumo, sin datos de ciudadanos). Lo ve solo el area de
+         soporte (rol 'soporte' / soporte@votera.mx) y el administrador
+         general (super_admin). Nadie mas debe saber que existe: el servidor
+         ya lo bloquea con es_soporte(); esto quita el boton del menu.
+         Antes estaba SIN data-rol (concepto viejo de "levanta un ticket"). -->
+    <div class="nav-item" id="nav-soporte" data-rol="super_admin,soporte" onclick="load('soporte','modulo_soporte.html','Soporte técnico','Salud del sistema · errores · consumo')">
       <div class="nav-icon" style="background:rgba(6,182,212,.12);color:var(--cyan)">🛟</div>
       <span class="nav-label">Soporte técnico</span>
+      <span class="nav-badge" style="background:rgba(6,182,212,.12);color:var(--cyan)">SOPORTE</span>
       <div class="nav-tip">Soporte técnico</div>
     </div>
     <div class="nav-item" id="nav-ayuda" onclick="load('ayuda','ayuda_configurador.html','Guía del configurador','Cómo usar el sistema')">
       <div class="nav-icon" style="background:rgba(59,130,246,.12);color:var(--accent)">?</div>
       <span class="nav-label">Ayuda</span>
       <div class="nav-tip">Ayuda</div>
+    </div>
+    <!-- [4 sep 2026] Reportar un problema. SIN data-rol a proposito: los 9
+         roles pueden levantar un ticket. No abre modulo; abre un modal aqui
+         mismo. Soporte lo atiende desde su panel. -->
+    <div class="nav-item" id="nav-ticket" onclick="abrirTicket()">
+      <div class="nav-icon" style="background:rgba(245,158,11,.12);color:var(--amber)">🎫</div>
+      <span class="nav-label">Reportar un problema</span>
+      <div class="nav-tip">Reportar un problema</div>
     </div>
   </nav>
 
@@ -572,10 +583,11 @@ body.rol-consulta     .kpi-estatal { display:none; }
         <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(239,68,68,.1);color:var(--red)">Restringido</span><span class="tag" style="background:rgba(239,68,68,.1);color:var(--red)">Multi-licencia</span></div><span class="arr">→</span></div>
       </div>
 
-      <div class="mc" style="border-color:rgba(6,182,212,.2)" onclick="load('soporte','modulo_soporte.html','Soporte técnico','Levanta un ticket con el equipo')">
-        <div class="mc-head"><div class="mc-icon" style="background:rgba(6,182,212,.15);font-size:16px">🛟</div><div><div class="mc-name">Soporte técnico</div><div class="mc-sub">Ayuda del equipo VOTERA</div></div></div>
-        <div class="mc-desc">¿Algo no funciona? Levanta un ticket y sigue la respuesta aquí mismo. Se envía sola la información técnica que el equipo necesita para resolverlo.</div>
-        <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(6,182,212,.1);color:var(--cyan)">Todos los roles</span><span class="tag" style="background:rgba(6,182,212,.1);color:var(--cyan)">Con seguimiento</span></div><span class="arr">→</span></div>
+      <div class="mc" style="border-color:rgba(6,182,212,.2)" data-rol="super_admin,soporte" onclick="load('soporte','modulo_soporte.html','Soporte técnico','Salud del sistema · errores · consumo')">
+        <div class="mc-head"><div class="mc-icon" style="background:rgba(6,182,212,.15);font-size:16px">🛟</div><div><div class="mc-name">Soporte técnico</div><div class="mc-sub">Salud del sistema</div></div></div>
+        <div class="mc-desc">Errores del frontend, actividad por módulo, consumo del escáner y salud general. Solo conteos y agregados: sin acceso a datos de ciudadanos.</div>
+        <div class="mc-foot"><div class="tags"><span class="tag" style="background:rgba(6,182,212,.1);color:var(--cyan)">Solo soporte</span><span class="tag" style="background:rgba(6,182,212,.1);color:var(--cyan)">Sin padrón</span></div><span class="arr">→</span></div>
+      </div>
       </div>
 
       <div class="mc" style="border-color:rgba(59,130,246,.2)" onclick="load('ayuda','ayuda_configurador.html','Guía del configurador','Cómo usar el sistema')">
@@ -617,7 +629,7 @@ function actualizarContadorModulos(){
   }catch(_e){}
 }
 
-const APP_BUILD = '20260904f'; // [04/09] consulta IA (nuevo módulo) · panel capturista (paginación, Día E) · war room (388) · captura (aviso cuota) · día E (modal logout) // [03/09] día E: buscador único + voz + registro sorpresa real + encabezado por rol; iframe allow=microphone // [02/09] captura (identidad real, Mi Sección, scan INE, responsive) · reportes (calidad en vivo, alcance municipal) · war room (alertas por rol) · panel capturista (header móvil) // [31/08] subir esta cadena cada vez que se actualice un modulo: es el rompe-cache de los iframes
+const APP_BUILD = '20260904h'; // [04/09] reportar un problema (tickets, todos los roles) · soporte técnico solo super_admin+soporte (data-rol) · consulta IA (nuevo módulo) · panel capturista (paginación, Día E) · war room (388) · captura (aviso cuota) · día E (modal logout) // [03/09] día E: buscador único + voz + registro sorpresa real + encabezado por rol; iframe allow=microphone // [02/09] captura (identidad real, Mi Sección, scan INE, responsive) · reportes (calidad en vivo, alcance municipal) · war room (alertas por rol) · panel capturista (header móvil) // [31/08] subir esta cadena cada vez que se actualice un modulo: es el rompe-cache de los iframes
 
 let collapsed = false;
 
@@ -660,6 +672,7 @@ function load(id, file, title, sub){
   const ld = document.getElementById('ld');
   ld.classList.remove('gone');
   document.getElementById('ld-txt').textContent = 'Cargando ' + title + '...';
+  window._modActual = { id:id, titulo:title };   // [tickets] para prellenar 'Reportar un problema'
   const fr = document.getElementById('fr');
   fr.onload = () => setTimeout(()=>ld.classList.add('gone'), 250);
   const sep = file.includes('?') ? '&' : '?';
@@ -1033,5 +1046,134 @@ function cerrarSesion(){
 <div id="votera-credito" aria-hidden="true" style="position:fixed;right:10px;bottom:8px;z-index:9999;pointer-events:none;font-family:'IBM Plex Mono',monospace;font-size:10px;color:rgba(138,154,181,0.45);letter-spacing:.02em;user-select:none;white-space:nowrap;">
   <span class="credito-largo">VOTERA™ · © 2026 MEFT Consulting · Todos los derechos reservados</span><span class="credito-corto" style="display:none">VOTERA™ · © 2026 MEFT</span>
 </div>
+
+<!-- ══════════ [4 sep 2026] Reportar un problema (tickets de soporte) ══════════
+     El usuario escribe QUE le paso. El contexto tecnico (rol, licencia, modulo,
+     navegador y sus ultimos errores JS) lo adjunta la RPC levantar_ticket().
+     Mis reportes: solo los propios (RLS + mis_tickets()). -->
+<style>
+.tk-bg{position:fixed;inset:0;background:rgba(3,6,15,.72);backdrop-filter:blur(3px);z-index:9000;display:none;align-items:center;justify-content:center;padding:16px;}
+.tk-bg.show{display:flex;}
+.tk{width:100%;max-width:560px;max-height:92vh;overflow:auto;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;box-shadow:0 24px 60px rgba(0,0,0,.6);font-family:var(--sans);}
+.tk-h{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);}
+.tk-h b{font-size:15px;font-weight:600;color:var(--text);}
+.tk-h span{font-size:11px;color:var(--text3);font-family:var(--mono);display:block;margin-top:2px;}
+.tk-x{background:none;border:0;color:var(--text3);font-size:20px;cursor:pointer;line-height:1;}
+.tk-b{padding:16px 18px;}
+.tk-l{font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin:10px 0 5px;}
+.tk select,.tk textarea{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--sans);font-size:13px;padding:9px 10px;outline:none;}
+.tk textarea{min-height:110px;resize:vertical;}
+.tk select:focus,.tk textarea:focus{border-color:var(--amber);}
+.tk-info{font-size:11px;color:var(--text3);margin-top:8px;line-height:1.5;}
+.tk-btn{background:var(--amber);color:#1a1200;border:0;border-radius:6px;padding:10px 16px;font-weight:600;font-size:13px;cursor:pointer;font-family:var(--sans);}
+.tk-btn:disabled{opacity:.5;cursor:default;}
+.tk-msg{font-size:12px;margin-top:10px;padding:9px 11px;border-radius:6px;display:none;}
+.tk-msg.ok{display:block;background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.25);}
+.tk-msg.err{display:block;background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.25);}
+.tk-mis{border-top:1px solid var(--border);padding:12px 18px 16px;}
+.tk-row{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;align-items:flex-start;}
+.tk-row:last-child{border-bottom:0;}
+.tk-fol{font-family:var(--mono);color:var(--text3);flex-shrink:0;width:38px;}
+.tk-est{font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:99px;flex-shrink:0;text-transform:uppercase;}
+.tk-est.abierto{background:rgba(245,158,11,.15);color:var(--amber);}
+.tk-est.en_revision{background:rgba(59,130,246,.15);color:var(--accent);}
+.tk-est.resuelto{background:rgba(34,197,94,.15);color:var(--green);}
+.tk-est.cerrado{background:rgba(255,255,255,.06);color:var(--text3);}
+.tk-desc{flex:1;color:var(--text2);line-height:1.45;}
+.tk-resp{margin-top:4px;color:var(--text);border-left:2px solid var(--green);padding-left:8px;}
+</style>
+<div class="tk-bg" id="tk-bg" onclick="if(event.target===this)cerrarTicket()">
+  <div class="tk" role="dialog" aria-modal="true">
+    <div class="tk-h">
+      <div><b>🎫 Reportar un problema</b><span>Llega directo al equipo de soporte de VOTERA</span></div>
+      <button class="tk-x" onclick="cerrarTicket()" aria-label="Cerrar">×</button>
+    </div>
+    <div class="tk-b">
+      <div class="tk-l">¿En qué módulo?</div>
+      <select id="tk-mod">
+        <option value="inicio">Inicio</option><option value="war_room">War Room</option><option value="activistas">Activistas</option>
+        <option value="mapa">Mapa</option><option value="captura">Captura</option><option value="mi_panel">Mi Panel · Activista</option>
+        <option value="reportes">Reportes</option><option value="encuestas">Encuestas</option><option value="dia_eleccion">Día E</option>
+        <option value="callcenter">Call Center</option><option value="consulta_ia">Consulta IA</option><option value="panel_ejecutivo">Panel Ejecutivo</option>
+        <option value="cargas">Cargas</option><option value="administracion">Administración</option><option value="acceso">Entrar / sesión</option><option value="otro">Otro</option>
+      </select>
+      <div class="tk-l">¿Qué pasó?</div>
+      <textarea id="tk-txt" maxlength="2000" placeholder="Cuéntanos con tus palabras: qué intentabas hacer y qué salió mal. No hace falta nada técnico."></textarea>
+      <div class="tk-info">Se envía sola la información técnica que soporte necesita (tu rol, el módulo, tu navegador y los últimos errores del sistema en tu sesión). <b>Nunca</b> se envían datos de ciudadanos.</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:12px;">
+        <button class="tk-btn" id="tk-enviar" onclick="enviarTicket()">Enviar reporte</button>
+        <span style="font-size:11px;color:var(--text3)" id="tk-cont">0 / 2000</span>
+      </div>
+      <div class="tk-msg" id="tk-msg"></div>
+    </div>
+    <div class="tk-mis">
+      <div class="tk-l" style="margin-top:0">Mis reportes</div>
+      <div id="tk-lista" style="color:var(--text3);font-size:12px">Cargando…</div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var TK_URL='https://dyirhwwmykskpuvzcafx.supabase.co';
+  var TK_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5aXJod3dteWtza3B1dnpjYWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NTk3ODgsImV4cCI6MjA5NTEzNTc4OH0.2xe4cHqORGng1hnYPJ9ZiyT0r87fMijbUEJqBy3-xoI';
+  // id de load() -> valor del select
+  var MAPA={war:'war_room',cap:'activistas',map:'mapa',captura:'captura',micap:'mi_panel',rep:'reportes',enc:'encuestas',
+            diae:'dia_eleccion',cc:'callcenter',ia:'consulta_ia',cliente:'panel_ejecutivo',carga:'cargas',adm:'administracion',ayuda:'otro',soporte:'otro'};
+  function tok(){ var s=null; try{ s=JSON.parse(localStorage.getItem('electoral_sesion')); }catch(e){}
+    return (window._sesion&&window._sesion.access_token)||(s&&s.access_token)||null; }
+  async function rpc(n,p){
+    var r=await fetch(TK_URL+'/rest/v1/rpc/'+n,{method:'POST',headers:{'apikey':TK_KEY,'Authorization':'Bearer '+(tok()||TK_KEY),'Content-Type':'application/json'},body:JSON.stringify(p||{})});
+    if((r.status===401||r.status===403)&&typeof window.refrescarTokenSupabase==='function'){ if(await window.refrescarTokenSupabase()) return rpc(n,p); }
+    if(!r.ok) throw new Error(n+' -> '+r.status);
+    return r.json();
+  }
+  function esc(x){ return String(x==null?'':x).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function fecha(x){ try{ return new Date(x).toLocaleString('es-MX',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } }
+  var ESTADO={abierto:'Abierto',en_revision:'En revisión',resuelto:'Resuelto',cerrado:'Cerrado'};
+
+  window.abrirTicket=function(){
+    var m=(window._modActual&&MAPA[window._modActual.id])||'inicio';
+    document.getElementById('tk-mod').value=m;
+    document.getElementById('tk-txt').value=''; document.getElementById('tk-cont').textContent='0 / 2000';
+    var msg=document.getElementById('tk-msg'); msg.className='tk-msg'; msg.textContent='';
+    document.getElementById('tk-enviar').disabled=false;
+    document.getElementById('tk-bg').classList.add('show');
+    setTimeout(function(){ document.getElementById('tk-txt').focus(); },50);
+    cargarMisTickets();
+  };
+  window.cerrarTicket=function(){ document.getElementById('tk-bg').classList.remove('show'); };
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') cerrarTicket(); });
+  document.getElementById('tk-txt').addEventListener('input',function(){ document.getElementById('tk-cont').textContent=this.value.length+' / 2000'; });
+
+  window.enviarTicket=async function(){
+    var txt=document.getElementById('tk-txt').value.trim(), msg=document.getElementById('tk-msg'), btn=document.getElementById('tk-enviar');
+    msg.className='tk-msg';
+    if(!tok()){ msg.className='tk-msg err'; msg.textContent='Necesitas tener sesión iniciada para enviar un reporte.'; return; }
+    if(txt.length<8){ msg.className='tk-msg err'; msg.textContent='Cuéntanos un poco más: al menos una frase.'; return; }
+    btn.disabled=true; btn.textContent='Enviando…';
+    try{
+      var r=await rpc('levantar_ticket',{p_modulo:document.getElementById('tk-mod').value,p_descripcion:txt,
+        p_url:(window._modActual?window._modActual.id:'inicio')+' @ '+location.hostname,p_agente:navigator.userAgent});
+      if(r&&r.ok){ msg.className='tk-msg ok'; msg.textContent='Recibido. Tu reporte es el #'+r.folio+'. Soporte ya fue avisado; aquí mismo verás la respuesta.';
+        document.getElementById('tk-txt').value=''; document.getElementById('tk-cont').textContent='0 / 2000'; cargarMisTickets(); }
+      else { msg.className='tk-msg err'; msg.textContent=({demasiados:'Ya enviaste varios reportes en la última hora. Espera un poco.',descripcion_corta:'Cuéntanos un poco más.',sin_sesion:'Tu sesión expiró. Vuelve a entrar.'})[r&&r.motivo]||'No se pudo enviar. Intenta de nuevo.'; }
+    }catch(e){ msg.className='tk-msg err'; msg.textContent='Sin conexión con el servidor. Intenta de nuevo en un momento.'; }
+    btn.disabled=false; btn.textContent='Enviar reporte';
+  };
+  async function cargarMisTickets(){
+    var el=document.getElementById('tk-lista');
+    if(!tok()){ el.textContent='Inicia sesión para ver tus reportes.'; return; }
+    try{
+      var rows=await rpc('mis_tickets');
+      if(!rows||!rows.length){ el.textContent='Aún no has enviado ningún reporte.'; return; }
+      el.innerHTML=rows.map(function(t){
+        return '<div class="tk-row"><span class="tk-fol">#'+t.folio+'</span><span class="tk-est '+esc(t.estado)+'">'+(ESTADO[t.estado]||t.estado)+'</span>'+
+          '<div class="tk-desc">'+esc(t.descripcion)+'<div style="color:var(--text3);font-size:10px;margin-top:2px;font-family:var(--mono)">'+esc(t.modulo)+' · '+fecha(t.created_at)+'</div>'+
+          (t.respuesta?'<div class="tk-resp">'+esc(t.respuesta)+'</div>':'')+'</div></div>';
+      }).join('');
+    }catch(e){ el.textContent='No se pudieron cargar tus reportes.'; }
+  }
+})();
+</script>
 </body>
 </html>

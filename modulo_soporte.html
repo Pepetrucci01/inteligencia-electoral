@@ -5,9 +5,10 @@
   (c) 2026 MEFT Consulting - RFC: CUOJ7808208Z2
   Modulo: Panel de soporte (observabilidad)
   ------------------------------------------------------------
-  Exclusivo para soporte@votera.mx y super_admin. Cuatro
-  bloques: salud, errores del frontend, consumo del escaner
-  por licencia, y actividad de audit_log.
+  Exclusivo para el equipo de soporte (rol 'soporte') y el
+  super_admin. Bloques: salud, tickets de usuarios (con contexto
+  tecnico y respuesta), errores del frontend, consumo del escaner
+  por licencia, actividad de audit_log y equipo de soporte.
 
   PRINCIPIO: soporte ve SALUD, no PERSONAS. Este panel no
   muestra ni puede mostrar un solo dato de ciudadanos: las
@@ -82,6 +83,31 @@ tr:hover td{background:rgba(255,255,255,0.02);}
 .negado .t{font-size:15px;font-weight:600;margin-bottom:6px;}
 .negado .s{font-size:12px;color:var(--text3);}
 @media(max-width:640px){.wrap{padding:14px 14px 60px;}}
+
+/* [4 sep] Tickets y equipo */
+.tk-filtros{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+.tk-f{font-size:10px;font-family:var(--mono);padding:4px 9px;border-radius:99px;border:1px solid var(--border2);color:var(--text3);cursor:pointer;background:transparent;}
+.tk-f.on{border-color:var(--cyan);color:var(--cyan);background:rgba(6,182,212,.08);}
+.est{font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:99px;text-transform:uppercase;white-space:nowrap;}
+.est.abierto{background:rgba(245,158,11,.15);color:var(--amber);}
+.est.en_revision{background:rgba(59,130,246,.15);color:var(--accent);}
+.est.resuelto{background:rgba(34,197,94,.15);color:var(--green);}
+.est.cerrado{background:rgba(255,255,255,.06);color:var(--text3);}
+tr.tk-r{cursor:pointer;} tr.tk-r:hover td{background:rgba(255,255,255,.02);}
+tr.tk-det td{background:var(--bg3);padding:14px 16px;}
+.tk-det-g{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media(max-width:800px){.tk-det-g{grid-template-columns:1fr;}}
+.tk-k{font-size:9px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin:8px 0 3px;}
+.tk-v{font-size:12px;color:var(--text);line-height:1.5;word-break:break-word;}
+.tk-err{font-family:var(--mono);font-size:10px;color:var(--amber);background:rgba(245,158,11,.06);border-left:2px solid var(--amber);padding:6px 8px;margin-top:4px;white-space:pre-wrap;}
+.tk-in{width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--sans);font-size:12px;padding:8px 10px;outline:none;}
+.tk-in:focus{border-color:var(--cyan);} textarea.tk-in{min-height:80px;resize:vertical;}
+.tk-acc{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center;}
+.btn.ok{border-color:rgba(34,197,94,.4);color:var(--green);} .btn.ok:hover{border-color:var(--green);}
+.eq-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;}
+.eq-row:last-child{border-bottom:0;}
+.msg{font-size:11px;margin-top:8px;display:none;padding:7px 10px;border-radius:6px;}
+.msg.ok{display:block;background:rgba(34,197,94,.1);color:var(--green);} .msg.err{display:block;background:rgba(239,68,68,.1);color:var(--red);}
 </style>
 <!-- Observabilidad: reporta errores a Sentry y a log_errores. Va PRIMERO
      para alcanzar a atrapar errores de los scripts que siguen. -->
@@ -118,6 +144,27 @@ tr:hover td{background:rgba(255,255,255,0.02);}
       <div class="kpi rd"><div class="kl">Atorado</div><div class="kv" id="k-atorado">—</div><div class="ks">reservas de llamada vencidas</div></div>
     </div>
 
+
+    <div class="card" id="card-tickets">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">
+        <div>
+          <div class="card-title">Tickets <span class="mono" id="tk-n" style="font-size:11px;color:var(--amber)"></span></div>
+          <div class="card-sub">Lo que los usuarios reportan con sus palabras. Toca una fila para ver el contexto técnico y responder. La respuesta la ve el usuario en "Mis reportes".</div>
+        </div>
+        <div class="tk-filtros" id="tk-filtros">
+          <button class="tk-f on" data-e="pendientes" onclick="filtrarTickets(this)">Pendientes</button>
+          <button class="tk-f" data-e="abierto" onclick="filtrarTickets(this)">Abiertos</button>
+          <button class="tk-f" data-e="en_revision" onclick="filtrarTickets(this)">En revisión</button>
+          <button class="tk-f" data-e="resuelto" onclick="filtrarTickets(this)">Resueltos</button>
+          <button class="tk-f" data-e="todos" onclick="filtrarTickets(this)">Todos (30 d)</button>
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table><thead><tr>
+          <th>#</th><th>Cuándo</th><th>Estado</th><th>Licencia</th><th>Usuario</th><th>Módulo</th><th>Reporte</th><th class="tR">JS</th>
+        </tr></thead><tbody id="tbl-tickets"></tbody></table>
+      </div>
+    </div>
     <div class="card">
       <div class="card-title">Errores del frontend</div>
       <div class="card-sub">Lo que ha tronado en el navegador de los usuarios, agrupado por error. Muchas repeticiones del mismo = un bug real; uno suelto = probablemente su conexión.</div>
@@ -146,6 +193,21 @@ tr:hover td{background:rgba(255,255,255,0.02);}
         <table><thead><tr>
           <th>Día</th><th>Acción</th><th class="tR">Veces</th>
         </tr></thead><tbody id="tbl-actividad"></tbody></table>
+      </div>
+    </div>
+
+    <div class="card" id="card-equipo">
+      <div class="card-title">Equipo de soporte</div>
+      <div class="card-sub">Quién puede ver este panel y atender tickets. El equipo se define por el rol <span class="mono">soporte</span>; crece o se reduce según carga de trabajo y licencias vendidas. Ninguna cuenta de soporte pertenece a una licencia.</div>
+      <div id="eq-lista"></div>
+      <div id="eq-admin" style="display:none;margin-top:12px;border-top:1px solid var(--border);padding-top:12px;">
+        <div class="tk-k" style="margin-top:0">Agregar al equipo (solo administrador general)</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <input class="tk-in" id="eq-email" type="email" placeholder="correo de una cuenta ya dada de alta en Administración" style="flex:1;min-width:240px">
+          <button class="btn ok" onclick="agregarMiembro()">＋ Agregar</button>
+        </div>
+        <div style="font-size:10px;color:var(--text3);margin-top:6px;">La cuenta se crea primero en Administración como cualquier usuario. Aquí solo se le da el rol de soporte (y se le retira la licencia, si tenía). Quitar a alguien lo desactiva, no lo borra.</div>
+        <div class="msg" id="eq-msg"></div>
       </div>
     </div>
 
@@ -197,6 +259,21 @@ var DEMO = {
       mensaje:'ReferenceError: pintarKPIs is not defined', veces:1 },
   ],
   escaner: [ { licencia:'DEMO-2027', escaneos:37, exitosos:34, tokens:51280, cuota:500, pct_cuota:7.4 } ],
+  tickets: [
+    { id:'demo-1', folio:12, estado:'abierto', created_at:'2026-09-04T13:05:00Z', licencia:'DEMO-2027', usuario:'María Ruiz', email:'maria@demo.mx', rol:'capturista', modulo:'captura',
+      descripcion:'Le doy guardar al ciudadano y se queda pensando, nunca dice que ya quedó.', url:'captura @ votera.mx', user_agent:'Chrome 128 · Android',
+      errores_recientes:[{cuando:'2026-09-04T13:02:00Z',modulo:'captura',mensaje:'rpc capturar_ciudadano -> 504'}], respuesta:null, atendido_por:null },
+    { id:'demo-2', folio:11, estado:'en_revision', created_at:'2026-09-03T21:10:00Z', licencia:'DEMO-2027', usuario:'Carlos Mena', email:'coord.a@demo.mx', rol:'coordinador', modulo:'war_room',
+      descripcion:'El semáforo de mi municipio marca rojo pero en reportes vamos al 92%.', url:'war @ votera.mx', user_agent:'Edge 128 · Windows', errores_recientes:[], respuesta:null, atendido_por:'Soporte VOTERA' },
+    { id:'demo-3', folio:10, estado:'resuelto', created_at:'2026-09-03T15:00:00Z', licencia:'DEMO-2027', usuario:'Luis Ortega', email:'rc138@demo.mx', rol:'repr_casilla', modulo:'dia_eleccion',
+      descripcion:'El botón de Votó no abre nada.', url:'diae @ preview', user_agent:'Chrome 128 · Android',
+      errores_recientes:[{cuando:'2026-09-03T14:55:00Z',modulo:'dia_eleccion',mensaje:"TypeError: Cannot read properties of null (reading 'classList')"}],
+      respuesta:'Corregido en el build de las 15:00. Cierra y vuelve a abrir el módulo.', atendido_por:'José (admin)' },
+  ],
+  equipo: [
+    { email:'admin@sistema.mx', nombre:'José (admin)', rol:'super_admin', activo:true, ultimo_login:'2026-09-04T13:06:00Z', tickets_atendidos:4 },
+    { email:'soporte@votera.mx', nombre:'Soporte VOTERA', rol:'soporte', activo:true, ultimo_login:'2026-08-29T22:08:00Z', tickets_atendidos:7 },
+  ],
   actividad: [
     { dia:'2026-09-01', accion:'CAPTURA_CIUDADANO', veces:14 },
     { dia:'2026-09-01', accion:'import_carga_maestra', veces:1 },
@@ -260,10 +337,111 @@ function pintarActividad(rows){
   }).join('') || '<tr><td colspan="3" style="text-align:center;color:var(--text3);padding:18px 0">Sin actividad en el periodo.</td></tr>';
 }
 
+
+/* ── [4 sep] Tickets ─────────────────────────────────────────── */
+var TK_ROWS = [], TK_FILTRO = 'pendientes', TK_ABIERTO = null;
+var TK_EST = { abierto:'Abierto', en_revision:'En revisión', resuelto:'Resuelto', cerrado:'Cerrado' };
+
+function filtrarTickets(btn){
+  TK_FILTRO = btn.getAttribute('data-e');
+  document.querySelectorAll('.tk-f').forEach(function(b){ b.classList.toggle('on', b===btn); });
+  pintarTickets(TK_ROWS);
+}
+function pintarTickets(rows){
+  TK_ROWS = rows || [];
+  var pend = TK_ROWS.filter(function(t){ return t.estado==='abierto'||t.estado==='en_revision'; }).length;
+  document.getElementById('tk-n').textContent = pend ? '· '+pend+' pendiente'+(pend===1?'':'s') : '';
+  var vis = TK_ROWS.filter(function(t){
+    if (TK_FILTRO==='todos') return true;
+    if (TK_FILTRO==='pendientes') return t.estado==='abierto'||t.estado==='en_revision';
+    return t.estado===TK_FILTRO;
+  });
+  document.getElementById('tbl-tickets').innerHTML = vis.map(function(t){
+    var nerr = (t.errores_recientes||[]).length;
+    var fila = '<tr class="tk-r" onclick="toggleTicket(\''+esc(t.id)+'\')">'+
+      '<td class="mono" style="color:var(--text3)">#'+t.folio+'</td>'+
+      '<td class="mono" style="color:var(--text2);white-space:nowrap">'+fecha(t.created_at)+'</td>'+
+      '<td><span class="est '+esc(t.estado)+'">'+(TK_EST[t.estado]||t.estado)+'</span></td>'+
+      '<td class="mono" style="font-size:11px">'+esc(t.licencia||'—')+'</td>'+
+      '<td>'+esc(t.usuario||t.email||'—')+'<div style="color:var(--text3);font-size:10px">'+esc(t.rol||'')+'</div></td>'+
+      '<td>'+esc(t.modulo||'—')+'</td>'+
+      '<td style="max-width:360px">'+esc(t.descripcion)+'</td>'+
+      '<td class="tR">'+(nerr?'<span class="chip ambar">'+nerr+'</span>':'<span style="color:var(--text3)">—</span>')+'</td></tr>';
+    if (TK_ABIERTO===t.id) fila += detalleTicket(t);
+    return fila;
+  }).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:18px 0">'+
+      (TK_FILTRO==='pendientes' ? 'Sin tickets pendientes. Bandeja limpia.' : 'Nada con ese filtro.')+'</td></tr>';
+}
+function toggleTicket(id){ TK_ABIERTO = (TK_ABIERTO===id) ? null : id; pintarTickets(TK_ROWS); }
+function detalleTicket(t){
+  var errs = (t.errores_recientes||[]).map(function(e){
+    return '<div class="tk-err">'+fecha(e.cuando)+' · '+esc(e.modulo||'')+'\n'+esc(e.mensaje||'')+(e.stack?'\n'+esc(String(e.stack).split('\n').slice(0,3).join('\n')):'')+'</div>';
+  }).join('') || '<div class="tk-v" style="color:var(--text3)">Ningún error JS en su sesión las 2 h previas. Probablemente no es un bug de código: revisa datos, permisos o conexión.</div>';
+  return '<tr class="tk-det"><td colspan="8"><div class="tk-det-g">'+
+    '<div>'+
+      '<div class="tk-k">Reporte completo</div><div class="tk-v">'+esc(t.descripcion)+'</div>'+
+      '<div class="tk-k">Contexto</div><div class="tk-v mono" style="font-size:11px;color:var(--text2)">'+esc(t.email||'')+' · '+esc(t.rol||'')+' · '+esc(t.licencia||'')+'<br>'+esc(t.url||'')+'<br>'+esc(t.user_agent||'')+'</div>'+
+      '<div class="tk-k">Errores JS de su sesión</div>'+errs+
+    '</div>'+
+    '<div>'+
+      '<div class="tk-k">Respuesta al usuario'+(t.atendido_por?' <span style="color:var(--text3);text-transform:none;letter-spacing:0">· último: '+esc(t.atendido_por)+' '+fecha(t.atendido_at)+'</span>':'')+'</div>'+
+      '<textarea class="tk-in" id="tk-resp-'+esc(t.id)+'" placeholder="Qué se hizo o qué debe hacer el usuario. Lo verá en Mis reportes." onclick="event.stopPropagation()">'+esc(t.respuesta||'')+'</textarea>'+
+      '<div class="tk-acc" onclick="event.stopPropagation()">'+
+        '<button class="btn" onclick="responderTicket(\''+esc(t.id)+'\',\'en_revision\')">👀 En revisión</button>'+
+        '<button class="btn ok" onclick="responderTicket(\''+esc(t.id)+'\',\'resuelto\')">✓ Resuelto</button>'+
+        '<button class="btn" onclick="responderTicket(\''+esc(t.id)+'\',\'cerrado\')">Cerrar</button>'+
+        (t.estado!=='abierto'?'<button class="btn" onclick="responderTicket(\''+esc(t.id)+'\',\'abierto\')">Reabrir</button>':'')+
+      '</div><div class="msg" id="tk-msg-'+esc(t.id)+'"></div>'+
+    '</div></div></td></tr>';
+}
+async function responderTicket(id, estado){
+  var ta = document.getElementById('tk-resp-'+id), msg = document.getElementById('tk-msg-'+id);
+  var resp = ta ? ta.value.trim() : '';
+  if ((estado==='resuelto'||estado==='cerrado') && !resp){ msg.className='msg err'; msg.textContent='Escribe una respuesta antes de resolver o cerrar: el usuario la va a leer.'; return; }
+  if (!VIVO){ var t = TK_ROWS.find(function(x){return x.id===id;}); if(t){ t.estado=estado; t.respuesta=resp||t.respuesta; t.atendido_por='(demo)'; t.atendido_at=new Date().toISOString(); } pintarTickets(TK_ROWS); return; }
+  try {
+    var r = await rpc('soporte_responder_ticket', { p_id:id, p_estado:estado, p_respuesta:resp||null });
+    if (!(r&&r.ok)) throw new Error(r&&r.motivo||'error');
+    pintarTickets(await rpc('soporte_tickets', { p_estado:null, p_dias:30 }));
+  } catch(e){ if(msg){ msg.className='msg err'; msg.textContent='No se pudo guardar: '+e.message; } }
+}
+
+/* ── [4 sep] Equipo ──────────────────────────────────────────── */
+function esSuperAdmin(){ var s = sesion(); return !!(s && (s.rol==='super_admin' || (s.usuario&&s.usuario.rol==='super_admin'))); }
+function pintarEquipo(rows){
+  document.getElementById('eq-lista').innerHTML = (rows||[]).map(function(u){
+    var puedeQuitar = VIVO && esSuperAdmin() && u.rol==='soporte' && u.activo && u.email!=='soporte@votera.mx';
+    return '<div class="eq-row"><div>'+esc(u.nombre||u.email)+' <span class="mono" style="color:var(--text3);font-size:11px">'+esc(u.email)+'</span>'+
+      '<div style="color:var(--text3);font-size:10px;margin-top:2px">'+(u.rol==='super_admin'?'administrador general':'soporte')+(u.activo?'':' · <span style="color:var(--red)">inactivo</span>')+
+      ' · último acceso '+(u.ultimo_login?fecha(u.ultimo_login):'nunca')+' · '+fmt(u.tickets_atendidos)+' tickets atendidos</div></div>'+
+      (puedeQuitar?'<button class="btn" style="font-size:11px" onclick="quitarMiembro(\''+esc(u.email)+'\')">Quitar</button>':'')+'</div>';
+  }).join('') || '<div style="color:var(--text3);font-size:12px">Sin equipo registrado.</div>';
+  document.getElementById('eq-admin').style.display = (VIVO && esSuperAdmin()) ? 'block' : 'none';
+}
+async function agregarMiembro(){
+  var em = document.getElementById('eq-email').value.trim(), msg = document.getElementById('eq-msg');
+  if (!em){ msg.className='msg err'; msg.textContent='Escribe el correo.'; return; }
+  try {
+    var r = await rpc('soporte_agregar_miembro', { p_email: em });
+    if (r&&r.ok){ msg.className='msg ok'; msg.textContent=em+' ya es parte de soporte (antes: '+(r.rol_anterior||'—')+').'; document.getElementById('eq-email').value=''; pintarEquipo(await rpc('soporte_equipo')); }
+    else { msg.className='msg err'; msg.textContent=(r&&r.detalle)||({ya_es_admin:'Esa cuenta ya es administrador general.'})[r&&r.motivo]||'No se pudo agregar.'; }
+  } catch(e){ msg.className='msg err'; msg.textContent='No se pudo agregar: '+e.message; }
+}
+async function quitarMiembro(em){
+  if (!confirm('¿Quitar a '+em+' del equipo de soporte? Su cuenta se desactiva (no se borra).')) return;
+  var msg = document.getElementById('eq-msg');
+  try {
+    var r = await rpc('soporte_quitar_miembro', { p_email: em });
+    if (r&&r.ok){ msg.className='msg ok'; msg.textContent=em+' desactivado.'; pintarEquipo(await rpc('soporte_equipo')); }
+    else { msg.className='msg err'; msg.textContent='No se pudo quitar ('+(r&&r.motivo)+').'; }
+  } catch(e){ msg.className='msg err'; msg.textContent='No se pudo quitar: '+e.message; }
+}
+
 async function cargarTodo(){
   if (!VIVO){
     pintarSalud(DEMO.salud); pintarErrores(DEMO.errores);
     pintarEscaner(DEMO.escaner); pintarActividad(DEMO.actividad);
+    pintarTickets(DEMO.tickets); pintarEquipo(DEMO.equipo);
     return;
   }
   try {
@@ -272,6 +450,8 @@ async function cargarTodo(){
     pintarErrores(await rpc('soporte_errores', { p_dias: 7 }));
     pintarEscaner(await rpc('soporte_escaner'));
     pintarActividad(await rpc('soporte_actividad', { p_dias: 14 }));
+    pintarTickets(await rpc('soporte_tickets', { p_estado: null, p_dias: 30 }));
+    pintarEquipo(await rpc('soporte_equipo'));
   } catch(e){
     // Si soporte_salud truena por permisos, la cuenta no es de soporte.
     console.warn('Panel de soporte:', e);
