@@ -34,13 +34,15 @@ body{display:flex;flex-direction:column;}
 .chat-area::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px;}
 
 /* Welcome */
-.welcome{text-align:center;padding:40px 20px;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.welcome{text-align:center;padding:28px 16px 20px;display:flex;flex-direction:column;align-items:center;}
 .welcome-icon{font-size:48px;margin-bottom:16px;filter:drop-shadow(0 0 20px rgba(168,85,247,0.3));}
 .welcome-title{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--text);margin-bottom:8px;letter-spacing:0.5px;}
 .welcome-sub{font-size:13px;color:var(--text2);line-height:1.6;max-width:400px;}
-.sugerencias{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:24px;max-width:500px;}
-.sug{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:10px 14px;font-size:12px;font-family:var(--mono);color:var(--text2);cursor:pointer;transition:all .2s;text-align:left;line-height:1.4;}
-.sug:hover{border-color:var(--purple);color:var(--text);background:var(--bg4);}
+.sug-grupos{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:24px;width:100%;max-width:760px;text-align:left;}
+.sug-grupo{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px;}
+.sug-titulo{font-family:var(--mono);font-size:10px;color:var(--purple);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;padding-left:4px;}
+.sug{display:block;background:transparent;border:1px solid transparent;border-radius:8px;padding:7px 10px;font-size:12px;color:var(--text2);cursor:pointer;transition:all .15s;line-height:1.4;}
+.sug:hover{border-color:rgba(168,85,247,.35);color:var(--text);background:var(--bg3);}
 
 /* Messages */
 .msg{max-width:85%;animation:fadeIn .3s ease;}
@@ -81,8 +83,7 @@ body{display:flex;flex-direction:column;}
 @media(max-width:480px){
   .msg{max-width:92%;}
   .msg-ai{max-width:95%;}
-  .sugerencias{flex-direction:column;}
-  .sug{width:100%;}
+  .sug-grupos{grid-template-columns:1fr;gap:10px;}
 }
 </style>
 </head>
@@ -106,11 +107,39 @@ body{display:flex;flex-direction:column;}
     <div class="welcome-icon">🧠</div>
     <div class="welcome-title">Inteligencia Electoral</div>
     <div class="welcome-sub">Pregunta sobre el avance de tu campaña, estructura de campo, calidad del padrón o proyecciones. Las respuestas usan datos reales de tu territorio.</div>
-    <div class="sugerencias" id="sugerencias">
-      <div class="sug" onclick="enviarSugerencia(this)">¿Cómo va el avance general de la campaña?</div>
-      <div class="sug" onclick="enviarSugerencia(this)">¿Cuáles son mis secciones más débiles?</div>
-      <div class="sug" onclick="enviarSugerencia(this)">¿Cuántos capturistas tengo activos y cuál es su rendimiento?</div>
-      <div class="sug" onclick="enviarSugerencia(this)">Dame un diagnóstico de la calidad de mi padrón</div>
+    <div class="sug-grupos" id="sugerencias">
+      <div class="sug-grupo">
+        <div class="sug-titulo">Avance</div>
+        <div class="sug" onclick="enviarSugerencia(this)">¿Cómo va el avance general de la campaña?</div>
+        <div class="sug" onclick="enviarSugerencia(this)">¿Cuántas personas llevamos capturadas contra la meta?</div>
+        <div class="sug" onclick="enviarSugerencia(this)">¿Cuántos ciudadanos tenemos identificados como seguros de votar?</div>
+        <div class="sug" onclick="enviarSugerencia(this)">¿Estamos en condiciones de alcanzar la meta electoral?</div>
+        <div class="sug" onclick="enviarSugerencia(this)">¿Qué debería atender hoy como prioridad?</div>
+      </div>
+      <div class="sug-grupo">
+        <div class="sug-titulo">Territorio</div>
+        <div class="sug" onclick="enviarSugerencia(this)">¿Cuáles son mis municipios con menor avance?</div>
+        <div class="sug" onclick="enviarSugerencia(this)">¿Qué municipios requieren atención inmediata?</div>
+        <div class="sug" onclick="enviarSugerencia(this)">¿Cuáles son mis secciones más débiles?</div>
+        <div class="sug" onclick="enviarSugerencia(this)">¿Cuáles son mis secciones con mejor avance?</div>
+        <div class="sug" onclick="enviarSugerencia(this)">¿Qué secciones requieren atención inmediata?</div>
+      </div>
+      <div class="sug-grupo">
+        <div class="sug-titulo">Estructura</div>
+        <div class="sug" onclick="enviarSugerencia(this)">¿Cuántos activistas tengo y cómo están distribuidos?</div>
+        <div class="sug" onclick="enviarSugerencia(this)">¿Cuáles son mis activistas con mejor desempeño?</div>
+        <div class="sug" onclick="enviarSugerencia(this)">¿Qué responsables o capturistas tienen menor avance?</div>
+        <div class="sug" onclick="enviarSugerencia(this)">¿Cuál es el avance de mi estructura de campo?</div>
+        <div class="sug" onclick="enviarSugerencia(this)">¿Qué secciones no tienen suficiente estructura?</div>
+      </div>
+      <div class="sug-grupo">
+        <div class="sug-titulo">Estrategia</div>
+        <div class="sug" onclick="enviarSugerencia(this)">Dame un diagnóstico de la calidad de mi padrón</div>
+        <div class="sug" onclick="enviarSugerencia(this)">¿Cuántos ciudadanos están en riesgo y dónde se concentran?</div>
+        <div class="sug" onclick="enviarSugerencia(this)">¿Dónde tengo mayor oportunidad de crecimiento?</div>
+        <div class="sug" onclick="enviarSugerencia(this)">¿Qué zonas presentan mayor riesgo electoral?</div>
+        <div class="sug" onclick="enviarSugerencia(this)">¿Cómo van los resultados de las encuestas?</div>
+      </div>
     </div>
   </div>
 </div>
