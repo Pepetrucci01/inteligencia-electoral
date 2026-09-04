@@ -54,8 +54,8 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
    (fail-open a solo lectura, no fail-closed que dejaría al usuario sin panel).
      · Mi avance (tab-inicio) y Simpatizantes (tab-lista): solo super_admin,
        coordinador_estatal, coordinador. Ocultas para el resto.
-     · Día elección (tab-eleccion): + admin, jefe_seccion, repr_casilla.
-       Oculta solo para capturista, operador_cc, consulta. */
+     · Día elección (tab-eleccion): + admin, jefe_seccion, repr_casilla, capturista.
+       Oculta solo para operador_cc, consulta. [4 sep: capturista habilitado] */
 .rol-admin       #tab-inicio, .rol-admin       #tab-lista,
 .rol-jefe_seccion #tab-inicio, .rol-jefe_seccion #tab-lista,
 .rol-capturista  #tab-inicio, .rol-capturista  #tab-lista,
@@ -63,9 +63,12 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 .rol-repr_casilla #tab-inicio, .rol-repr_casilla #tab-lista,
 .rol-consulta    #tab-inicio, .rol-consulta    #tab-lista { display:none; }
 
-.rol-capturista  #tab-eleccion,
-.rol-operador_cc #tab-eleccion,
-.rol-consulta    #tab-eleccion { display:none; }
+/* [FIX 4 sep · decisión Pepe] El capturista SÍ marca votos el día E en su sección
+   (el backend ya lo autoriza: jornada_puede_tocar y get_jornada_por_seccion).
+   La matriz T12 lo ocultaba y contradecía a la base. Queda oculta solo para
+   operador_cc y consulta, que no operan en campo. */
+.rol-operador_cc #tab-eleccion, .rol-operador_cc #btn-diae-top,
+.rol-consulta    #tab-eleccion, .rol-consulta    #btn-diae-top { display:none; }
 
 /* ── SCREENS ── */
 .screen{display:none;padding:14px 16px 150px;} /* [FIX 2 sep · C4] 100→150: el shell superpone un crédito fixed abajo */
@@ -272,6 +275,11 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
     </div>
   </div>
   <div class="phase-badge" id="phase-badge">FASE 1</div>
+  <!-- [FIX 4 sep] Acceso FIJO al Día E en el encabezado. Antes solo existia como
+       pestaña, que el gating por rol o theme.js pueden ocultar; en celular el
+       representante se quedaba sin camino a la jornada. Este boton no depende
+       de la barra de pestañas. -->
+  <button id="btn-diae-top" onclick="irADiaE()" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.35);color:#ef4444;border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;font-family:monospace;margin-left:6px;white-space:nowrap;" title="Ir al módulo de jornada electoral">🗳 Día E</button>
   <button onclick="cerrarSesion()" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;font-family:monospace;margin-left:6px;" title="Cerrar sesión">⏻ Salir</button>
 </div>
 
