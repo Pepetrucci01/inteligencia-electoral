@@ -822,10 +822,21 @@ async function cargarMisRegistros() {
     pcpCargarRanking();   // [FIX ranking] en paralelo, no bloquea la lista
 
     // Filtrar por capturista_id si está disponible, sino por licencia
-    let query = `ciudadanos?select=id,nombre,apellido_paterno,apellido_materno,edad,sexo,seccion_electoral,municipio,telefono,domicilio,curp,clave_elector,compromiso,origen,es_riesgo,es_apoyo,es_influencia,validado,duplicado,notas,created_at,licencia_id,capturista_id&licencia_id=eq.${LICENCIA_ID}&order=created_at.desc&limit=500`;
-    if (CAP_ID) query += `&capturista_id=eq.${CAP_ID}`;
+    // [FIX 4 sep] Antes: &limit=500 fijo. Un capturista con 755 registros veía
+    // "Mis capturas 500" y los KPIs (validados / seg. votan / en riesgo) se
+    // calculaban sobre esas 500 filas: numeros falsos en el panel del que captura.
+    // Ahora se pagina de 1000 en 1000 (PostgREST corta en 1000 SIN avisar).
+    const _base = `ciudadanos?select=id,nombre,apellido_paterno,apellido_materno,edad,sexo,seccion_electoral,municipio,telefono,domicilio,curp,clave_elector,compromiso,origen,es_riesgo,es_apoyo,es_influencia,validado,duplicado,notas,created_at,licencia_id,capturista_id&licencia_id=eq.${LICENCIA_ID}`
+      + (CAP_ID ? `&capturista_id=eq.${CAP_ID}` : '')
+      + `&order=created_at.desc`;
 
-    const data = await supaGet(query);
+    let data = [];
+    for (let _p = 0; _p < 10; _p++) {
+      const _pag = await supaGet(`${_base}&limit=1000&offset=${_p * 1000}`);
+      if (!Array.isArray(_pag)) { data = _pag; break; }   // deja que el guard de abajo lo maneje
+      data = data.concat(_pag);
+      if (_pag.length < 1000) break;
+    }
     // [FIX 10 jul] Validar que sea arreglo ANTES de mapear. Si la consulta
     // falla (RLS, 404, HTML de error), data no es un array y `.map` reventaba
     // con "(data || []).map is not a function". Ahora degrada limpio.
@@ -897,7 +908,11 @@ function setFase(f){
     pb.style.color='var(--accent)';
     pb.style.border='1px solid rgba(59,130,246,0.3)';
     bf1.style.display='flex'; bf2.style.display='none';
-    tabEl.style.opacity='0.4';
+    // [FIX 4 sep] Antes: opacity .4 en Fase 1 y la pestaña se leia como apagada.
+    // El capturista/representante necesita entrar ANTES del 6 de junio para
+    // simulacros y para conocer la pantalla. Queda clickeable, marcada como ensayo.
+    tabEl.style.opacity='0.75';
+    tabEl.title='Simulacro — la jornada real inicia 3 días antes de la elección';
   } else {
     pb.textContent='FASE 2 🗳';
     pb.style.background='rgba(239,68,68,0.15)';
