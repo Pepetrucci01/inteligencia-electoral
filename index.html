@@ -455,7 +455,7 @@ body.rol-consulta     .kpi-estatal { display:none; }
          'ie:volver-al-hub' que atiende showHub() más abajo.
          allow-popups-to-escape-sandbox hace que la pestaña que se abre (wa.me,
          maps, etc.) NO herede el sandbox y funcione como un sitio normal. -->
-    <iframe id="fr" title="Módulo" sandbox="allow-scripts allow-same-origin allow-forms allow-downloads allow-modals allow-popups allow-popups-to-escape-sandbox"></iframe>
+    <iframe id="fr" title="Módulo" allow="microphone; camera" sandbox="allow-scripts allow-same-origin allow-forms allow-downloads allow-modals allow-popups allow-popups-to-escape-sandbox"></iframe>
   </div>
 
   <!-- HUB -->
@@ -593,7 +593,7 @@ function actualizarContadorModulos(){
   }catch(_e){}
 }
 
-const APP_BUILD = '20260903g'; // [02/09] captura (identidad real, Mi Sección, scan INE, responsive) · reportes (calidad en vivo, alcance municipal) · war room (alertas por rol) · panel capturista (header móvil) // [31/08] subir esta cadena cada vez que se actualice un modulo: es el rompe-cache de los iframes
+const APP_BUILD = '20260903h'; // [03/09] día E: buscador único + voz + registro sorpresa real + encabezado por rol; iframe allow=microphone // [02/09] captura (identidad real, Mi Sección, scan INE, responsive) · reportes (calidad en vivo, alcance municipal) · war room (alertas por rol) · panel capturista (header móvil) // [31/08] subir esta cadena cada vez que se actualice un modulo: es el rompe-cache de los iframes
 
 let collapsed = false;
 
