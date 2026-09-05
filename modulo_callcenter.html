@@ -101,8 +101,9 @@ input:focus,select:focus,textarea:focus{border-color:var(--cyan);}
 textarea{resize:vertical;min-height:64px;}
 .frow{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
 .frow.f3{grid-template-columns:2fr 1fr 1fr;}
+.frow.f4{grid-template-columns:2fr 1.2fr 1fr .8fr;}
 .fitem{min-width:0;}
-@media(max-width:640px){.frow,.frow.f3{grid-template-columns:1fr;}}
+@media(max-width:640px){.frow,.frow.f3,.frow.f4{grid-template-columns:1fr;}}
 .aviso{font-size:10px;color:var(--text3);line-height:1.5;background:var(--bg3);border:1px solid var(--border);
        border-radius:8px;padding:9px 12px;margin-bottom:14px;}
 
@@ -256,9 +257,15 @@ textarea{resize:vertical;min-height:64px;}
 
     <div class="card">
       <div class="card-title">Armar la lista de llamadas</div>
-      <div class="card-sub">Toma personas de tu padrón y las pone en la fila de la campaña. Solo entra quien dio permiso de que le llamen y tiene teléfono. Si dos personas comparten número, se llama a una sola.</div>
-      <div class="frow f3">
+      <div class="card-sub">Toma personas y las pone en la fila de la campaña. Del padrón solo entra quien dio permiso de que le llamen y tiene teléfono. La base externa es la que el administrador cargó desde el Centro de Cargas (pestaña 5); si un número está en ambas, se llama una sola vez, por el padrón.</div>
+      <div class="frow f4">
         <div class="fitem"><label for="cp-campana">Campaña</label><select id="cp-campana"></select></div>
+        <div class="fitem"><label for="cp-fuente">Fuente</label>
+          <select id="cp-fuente">
+            <option value="padron">Simpatizantes (padrón)</option>
+            <option value="externo">Base externa</option>
+            <option value="ambas">Ambas · padrón primero</option>
+          </select></div>
         <div class="fitem"><label for="cp-municipio">Municipio</label><select id="cp-municipio"></select></div>
         <div class="fitem"><label for="cp-limite">Cuántas agregar</label>
           <input type="number" id="cp-limite" value="300" min="1" max="5000"></div>
@@ -682,6 +689,7 @@ async function generarCola(){
   var camp = document.getElementById('cp-campana').value;
   var mun  = document.getElementById('cp-municipio').value || null;
   var lim  = parseInt(document.getElementById('cp-limite').value, 10) || 300;
+  var fte  = (document.getElementById('cp-fuente')||{}).value || 'padron';   // [5 sep] padron | externo | ambas
   var est  = document.getElementById('cp-estado');
 
   if (!camp){ mostrarToast('Elige una campaña'); return; }
@@ -692,9 +700,12 @@ async function generarCola(){
   est.textContent = 'Armando…';
   try {
     var r = await rpc('generar_cola_llamadas',
-      { p_campana_id:camp, p_municipio:mun, p_seccion:null, p_limite:lim });
-    est.innerHTML = 'Se agregaron <b>'+fmt(r.insertados)+'</b>. '+
-                    'Quedan '+fmt(r.restantes)+' personas elegibles sin agregar.';
+      { p_campana_id:camp, p_municipio:mun, p_seccion:null, p_limite:lim, p_fuente:fte });
+    var det = (r.padron && r.externo && fte==='ambas')
+      ? ' ('+fmt(r.padron.insertados)+' del padrón, '+fmt(r.externo.insertados)+' de la base externa)' : '';
+    est.innerHTML = 'Se agregaron <b>'+fmt(r.insertados)+'</b>'+det+'. '+
+                    'Quedan '+fmt(r.restantes)+' elegibles sin agregar'+
+                    (fte==='externo' && !r.elegibles_totales ? ' — la base externa está vacía o ya toda en esta campaña; se carga en Centro de Cargas → pestaña 5.' : '.');
     await cargarConteos(); pintarKPIs(); pintarCampanas();
     mostrarToast('Lista actualizada');
   } catch(e){

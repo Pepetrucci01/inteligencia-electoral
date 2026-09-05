@@ -76,7 +76,7 @@ table.res th{color:var(--text3);font-family:var(--mono);font-size:10px;text-tran
   <div class="logo-mark">📥</div>
   <div>
     <div class="topbar-title">Importador de Carga Maestra</div>
-    <div class="topbar-sub">① Metas · ② Estructura · ③ Representantes · ④ Ciudadanos</div>
+    <div class="topbar-sub">① Metas · ② Estructura · ③ Representantes · ④ Ciudadanos · ⑤ Call center</div>
   </div>
 </div>
 
@@ -84,9 +84,10 @@ table.res th{color:var(--text3);font-family:var(--mono);font-size:10px;text-tran
 
   <div class="tabs">
     <div class="tab on" id="tab-btn-metas" onclick="verTab('metas')"><span class="n">1</span>Metas · casillas</div>
-    <div class="tab" id="tab-btn-estr" onclick="verTab('estr')"><span class="n">2</span>Estructura · capturistas</div>
+    <div class="tab" id="tab-btn-estr" onclick="verTab('estr')"><span class="n">2</span>Estructura · capturistas y telefonistas</div>
     <div class="tab" id="tab-btn-repr" onclick="verTab('repr')"><span class="n">3</span>Representantes de casilla</div>
     <div class="tab" id="tab-btn-ciud" onclick="verTab('ciud')"><span class="n">4</span>Ciudadanos</div>
+    <div class="tab" id="tab-btn-cc" onclick="verTab('cc')"><span class="n">5</span>Call center · base externa</div>
   </div>
   <div id="estado-base" class="msg" style="display:none"></div>
 
@@ -130,7 +131,8 @@ table.res th{color:var(--text3);font-family:var(--mono);font-size:10px;text-tran
 <div id="tab-estr" class="hidden">
   <div class="card">
     <h2>1 · Seleccionar la Carga Maestra de estructura</h2>
-    <p>Excel con las pestañas <b>CAPTURISTAS</b> y <b>ESTRUCTURA</b> (coordinadores). Cada persona recibe cuenta de acceso
+    <p>Excel con las pestañas <b>CAPTURISTAS</b>, <b>ESTRUCTURA</b> (coordinadores) y, si aplica, <b>TELEFONISTAS</b>
+       (operadores del call center: NOMBRE, EMAIL, TELEFONO; sin sección). Cada persona recibe cuenta de acceso
        con contraseña temporal. Si el correo ya existe, se actualiza su asignación y <b>no</b> se le cambia la contraseña.
        Requiere que la carga de metas (pestaña 1) ya esté hecha: las secciones se validan contra ella.</p>
     <label class="drop" style="margin-top:14px;display:block">
@@ -146,6 +148,7 @@ table.res th{color:var(--text3);font-family:var(--mono);font-size:10px;text-tran
     <div class="kpis">
       <div class="kpi" id="e-k-caps"><div class="kpi-val">–</div><div class="kpi-lbl">Capturistas</div></div>
       <div class="kpi" id="e-k-coords"><div class="kpi-val">–</div><div class="kpi-lbl">Coordinadores</div></div>
+      <div class="kpi" id="e-k-tels"><div class="kpi-val">–</div><div class="kpi-lbl">Telefonistas</div></div>
       <div class="kpi" id="e-k-meta"><div class="kpi-val">–</div><div class="kpi-lbl">Suma meta individual</div><div class="kpi-base" id="e-b-meta"></div></div>
     </div>
     <div class="tipos" id="e-tipos"></div>
@@ -267,6 +270,50 @@ table.res th{color:var(--text3);font-family:var(--mono);font-size:10px;text-tran
     <div id="c-tabla"></div>
   </div>
 </div><!-- /tab-ciud -->
+
+<div id="tab-cc" class="hidden">
+  <div class="card">
+    <h2>1 · Base externa para el call center</h2>
+    <p>Excel con una fila por contacto. Obligatorias: <b>NOMBRE</b> y <b>TELEFONO</b> (10 dígitos; se aceptan +52, espacios y guiones).
+       Opcionales: <b>SECCION</b>, <b>MUNICIPIO</b> (si viene la sección, el municipio se deduce solo).
+       Estos contactos <b>no entran al padrón</b>: viven en una base aparte que las campañas de llamadas pueden usar.
+       Un contacto solo se vuelve simpatizante cuando el telefonista lo registra con su consentimiento.
+       Si el teléfono ya es de un simpatizante, se liga y se le llama por el padrón, no dos veces.</p>
+    <div id="cc-estado" class="msg" style="display:none"></div>
+    <label class="drop" style="margin-top:14px;display:block">
+      <input type="file" id="file-cc" accept=".xlsx,.xls,.csv">
+      <div class="drop-icon">📞</div>
+      <div><b>Haz clic para elegir</b> o arrastra el archivo aquí</div>
+      <div class="drop-hint">BASE_EXTERNA_LLAMADAS.xlsx</div>
+    </label>
+  </div>
+  <div class="card hidden" id="x-preview">
+    <h2>2 · Revisión previa</h2>
+    <div class="kpis">
+      <div class="kpi" id="x-k-ok"><div class="kpi-val">–</div><div class="kpi-lbl">Listos para cargar</div></div>
+      <div class="kpi" id="x-k-dup"><div class="kpi-val">–</div><div class="kpi-lbl">Teléfono repetido en el archivo</div></div>
+      <div class="kpi" id="x-k-err"><div class="kpi-val">–</div><div class="kpi-lbl">Con errores</div></div>
+    </div>
+    <div id="x-preview-msg"></div>
+    <div class="msg msg-warn" style="display:flex;gap:10px;align-items:flex-start">
+      <input type="checkbox" id="x-consent" style="margin-top:3px" onchange="document.getElementById('x-btn-import').disabled = !this.checked || !X_OK.length">
+      <label for="x-consent">Confirmo que esta base de datos se obtuvo de forma <b>lícita</b>, que la campaña puede acreditar su origen y que
+        su uso para contacto telefónico cumple la LFPDPPP. Quedará registrado quién la cargó y cuándo.</label>
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" id="x-btn-import" disabled onclick="importarExternos()">Cargar a la base externa</button>
+      <button class="btn btn-ghost" onclick="location.reload()">Cancelar</button>
+    </div>
+  </div>
+  <div class="card hidden" id="x-result">
+    <h2>3 · Resultado</h2>
+    <div class="prog" id="x-prog"><i></i></div>
+    <div id="x-result-msg"></div>
+    <div class="actions hidden" id="x-err-actions">
+      <button class="btn btn-ghost" onclick="descargarErroresCC()">⬇ Descargar filas rechazadas (CSV)</button>
+    </div>
+  </div>
+</div><!-- /tab-cc -->
 
 </div>
 
@@ -457,7 +504,7 @@ function mostrarPreviewMsg(tipo, txt){
 // Auth, la fila en usuarios y la asignación territorial). La licencia la pone
 // la función a partir del usuario que importa; nunca viaja en el archivo.
 // ═══════════════════════════════════════════════════════════════════════════
-const TABS = ['metas','estr','repr','ciud'];
+const TABS = ['metas','estr','repr','ciud','cc'];
 function verTab(t){
   TABS.forEach(x => {
     document.getElementById('tab-'+x).classList.toggle('hidden', x!==t);
@@ -489,8 +536,8 @@ function leerEstructura(f){
     try{
       const wb = XLSX.read(ev.target.result, { type:'array' });
       const hoja = n => { const k = wb.SheetNames.find(x => x.toUpperCase().includes(n)); return k ? XLSX.utils.sheet_to_json(wb.Sheets[k], { defval:null }) : null; };
-      const caps = hoja('CAPTUR'), coords = hoja('ESTRUC');
-      if(!caps && !coords) throw new Error('No se encontraron las pestañas CAPTURISTAS ni ESTRUCTURA');
+      const caps = hoja('CAPTUR'), coords = hoja('ESTRUC'), tels = hoja('TELEFON') || hoja('OPERADOR');
+      if(!caps && !coords && !tels) throw new Error('No se encontraron las pestañas CAPTURISTAS, ESTRUCTURA ni TELEFONISTAS');
       E_FILAS = [];
       // Coordinadores primero (así existen cuando lleguen sus capturistas)
       (coords||[]).forEach(r => {
@@ -503,6 +550,12 @@ function leerEstructura(f){
         const em = colDe(r,'EMAIL','CORREO'); if(!em) return;
         E_FILAS.push({ rol:'capturista', nombre:colDe(r,'NOMBRE'), email:em, telefono:colDe(r,'TELEFONO','TEL'),
           municipio:colDe(r,'MUNICIPIO'), seccion:colDe(r,'SECCION','SECCION_BASE'), meta_individual:colDe(r,'META_INDIVIDUAL','META') });
+      });
+      // [5 sep] Telefonistas del call center: rol operador_cc, sin sección ni meta.
+      (tels||[]).forEach(r => {
+        const em = colDe(r,'EMAIL','CORREO'); if(!em) return;
+        E_FILAS.push({ rol:'operador_cc', nombre:colDe(r,'NOMBRE'), email:em, telefono:colDe(r,'TELEFONO','TEL'),
+          municipio:colDe(r,'MUNICIPIO'), seccion:null, meta_individual:null });
       });
       previewEstructura();
     }catch(err){
@@ -521,7 +574,7 @@ document.getElementById('file-estr').addEventListener('change', e => leerEstruct
 })();
 
 function previewEstructura(){
-  const caps = E_FILAS.filter(f => f.rol==='capturista'), coords = E_FILAS.filter(f => f.rol==='coordinador');
+  const caps = E_FILAS.filter(f => f.rol==='capturista'), coords = E_FILAS.filter(f => f.rol==='coordinador'), tels = E_FILAS.filter(f => f.rol==='operador_cc');
   const fmtN = v => Number(v||0).toLocaleString('es-MX');
   const sumMeta = caps.reduce((s,f) => s + (Number(f.meta_individual)||0), 0);
   const emails = E_FILAS.map(f => String(f.email||'').trim().toLowerCase());
@@ -531,6 +584,7 @@ function previewEstructura(){
   const bMeta = BASE ? Number(BASE.meta_proyectada||0) : null;
   setKpi('e-k-caps', caps.length, caps.length>0);
   setKpi('e-k-coords', coords.length, true);
+  setKpi('e-k-tels', tels.length, true);
   setKpi('e-k-meta', fmtN(sumMeta), bMeta==null || sumMeta===bMeta);
   const bm = document.getElementById('e-b-meta');
   if(bm) bm.textContent = bMeta==null ? 'base: sin metas cargadas' : 'meta de la carga de casillas: '+fmtN(bMeta)+(sumMeta===bMeta?' · cuadra':' · dif '+fmtN(sumMeta-bMeta));
@@ -538,12 +592,12 @@ function previewEstructura(){
   document.getElementById('e-tipos').innerHTML = Object.entries(munCnt).sort().map(([m,n]) => `<span class="chip">${m}: <b>${n}</b></span>`).join('');
   const btn = document.getElementById('e-btn-import'); const msg = [];
   let bloquea = false;
-  if(!caps.length && !coords.length){ msg.push('❌ No hay filas válidas.'); bloquea = true; }
+  if(!caps.length && !coords.length && !tels.length){ msg.push('❌ No hay filas válidas.'); bloquea = true; }
   if(sinEmail){ msg.push('❌ '+sinEmail+' fila(s) sin correo válido. Cada persona necesita correo para su cuenta.'); bloquea = true; }
   if(dup.length){ msg.push('❌ Correos repetidos en el archivo: '+[...new Set(dup)].slice(0,5).join(', ')+(dup.length>5?'…':'')); bloquea = true; }
   if(sinSec){ msg.push('❌ '+sinSec+' capturista(s) sin sección.'); bloquea = true; }
   if(bMeta!=null && bMeta>0 && sumMeta!==bMeta) msg.push('⚠️ La suma de metas individuales ('+fmtN(sumMeta)+') no coincide con la meta cargada ('+fmtN(bMeta)+'). Se puede importar, pero revisa el archivo.');
-  if(!bloquea) msg.push('✅ '+caps.length+' capturistas y '+coords.length+' coordinadores listos. Se crearán cuentas para los correos nuevos.');
+  if(!bloquea) msg.push('✅ '+caps.length+' capturistas, '+coords.length+' coordinadores'+(tels.length?' y '+tels.length+' telefonistas':'')+' listos. Se crearán cuentas para los correos nuevos.');
   document.getElementById('e-preview-msg').innerHTML = msg.map(m => '<div class="msg '+(m.startsWith('❌')?'msg-err':m.startsWith('⚠')?'msg-warn':'msg-ok')+'">'+m+'</div>').join('');
   btn.disabled = bloquea;
   document.getElementById('e-preview').classList.remove('hidden');
@@ -854,6 +908,113 @@ function descargarErroresCiud(){
     .concat(C_ERR.map(f => [f._row,f.nombre,f.apellido_paterno,f.curp,f.municipio,f.seccion_electoral,(f._errores||[]).join(' · ')]));
   bajar('ciudadanos_rechazados.csv', csv(rows));
 }
+
+
+// ── Pestaña 5 · Call center · base externa ──────────────────────────────────
+// Va a cc_contactos_externos vía RPC importar_contactos_externos (lotes de 500).
+// La RPC normaliza teléfonos, deduce municipio por sección, liga con simpatizantes
+// existentes y deduplica por (licencia, teléfono). NUNCA toca ciudadanos.
+let X_OK = [], X_ERR = [], X_FUENTE = '';
+function leerExternos(f){
+  if(!f) return; X_FUENTE = f.name;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try{
+      const wb = XLSX.read(ev.target.result, { type:'array' });
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval:'' });
+      if(!rows.length) throw new Error('El archivo no tiene filas de datos.');
+      validarExternos(rows);
+    }catch(err){
+      document.getElementById('x-preview').classList.remove('hidden');
+      document.getElementById('x-preview-msg').innerHTML = '<div class="msg msg-err">❌ '+err.message+'</div>';
+    }
+  };
+  reader.readAsArrayBuffer(f);
+}
+document.getElementById('file-cc').addEventListener('change', e => leerExternos(e.target.files[0]));
+
+function validarExternos(rows){
+  X_OK = []; X_ERR = [];
+  const vistos = new Set();
+  rows.forEach((r, idx) => {
+    const get = k => { const key = Object.keys(r).find(kk => cNorm(kk).replace(/ \*$/,'') === cNorm(k)); return key ? String(r[key]).trim() : ''; };
+    const nombre = get('nombre') || get('nombre completo');
+    let tel = (get('telefono') || get('tel') || get('celular') || get('numero')).replace(/\D/g,'');
+    if(tel.length===12 && tel.startsWith('52')) tel = tel.slice(2);
+    if(!nombre && !tel) return;
+    const err = [];
+    if(!nombre || nombre.length<3) err.push('falta nombre');
+    if(!tel) err.push('falta teléfono'); else if(tel.length!==10) err.push('teléfono no tiene 10 dígitos');
+    const fila = { _row: idx+2, nombre, telefono: tel, seccion: get('seccion') || get('seccion electoral') || null, municipio: get('municipio') || null, _errores: err };
+    if(!err.length){ if(vistos.has(tel)){ fila._errores=['teléfono repetido en el archivo']; fila._dup=true; X_ERR.push(fila); return; } vistos.add(tel); }
+    (err.length ? X_ERR : X_OK).push(fila);
+  });
+  const dups = X_ERR.filter(f => f._dup).length;
+  setKpi('x-k-ok', X_OK.length, X_OK.length>0);
+  setKpi('x-k-dup', dups, true);
+  setKpi('x-k-err', X_ERR.length-dups, X_ERR.length-dups===0);
+  const msg = [];
+  if(X_OK.length) msg.push('✅ '+X_OK.length+' contactos listos para cargar. Los teléfonos que ya estén en la base o en el padrón se detectan al cargar.');
+  else msg.push('❌ No hay filas válidas para cargar.');
+  document.getElementById('x-preview-msg').innerHTML = msg.map(m => '<div class="msg '+(m.startsWith('❌')?'msg-err':'msg-ok')+'">'+m+'</div>').join('');
+  document.getElementById('x-btn-import').disabled = !X_OK.length || !document.getElementById('x-consent').checked;
+  document.getElementById('x-preview').classList.remove('hidden');
+}
+
+async function importarExternos(){
+  if(!X_OK.length) return;
+  const btn = document.getElementById('x-btn-import'); btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Cargando…';
+  document.getElementById('x-result').classList.remove('hidden');
+  const prog = document.querySelector('#x-prog i'), msg = document.getElementById('x-result-msg');
+  const tot = { insertados:0, duplicados:0, ya_simpatizantes:0, invalidos:0, total_base:0 };
+  try{
+    const token = (await window.supabase.auth.getSession()).data.session?.access_token;
+    if(!token) throw new Error('Sesión no válida. Vuelve a iniciar sesión.');
+    const filas = X_OK.map(f => ({ nombre:f.nombre, telefono:f.telefono, seccion:f.seccion, municipio:f.municipio }));
+    for(let i=0; i<filas.length; i+=500){
+      const r = await fetch(`${SUPA_URL}/rest/v1/rpc/importar_contactos_externos`, {
+        method:'POST', headers:{ 'apikey':SUPA_KEY, 'Authorization':'Bearer '+token, 'Content-Type':'application/json' },
+        body: JSON.stringify({ p_filas: filas.slice(i,i+500), p_fuente: X_FUENTE, p_consent: true }) });
+      if(!r.ok){ const t = await r.text(); let m=t; try{ m = JSON.parse(t).message || t; }catch(_){} throw new Error(m); }
+      const j = await r.json();
+      tot.insertados += j.insertados; tot.duplicados += j.duplicados; tot.ya_simpatizantes += j.ya_simpatizantes; tot.invalidos += j.invalidos; tot.total_base = j.total_base;
+      prog.style.width = Math.round(Math.min(i+500, filas.length)/filas.length*100)+'%';
+      msg.innerHTML = '<div class="msg msg-ok">Cargados <b>'+tot.insertados+'</b> de '+filas.length+'…</div>';
+    }
+    msg.innerHTML = '<div class="msg msg-ok">✅ <b>'+tot.insertados+'</b> contactos nuevos en la base externa'
+      + (tot.ya_simpatizantes?' · <b>'+tot.ya_simpatizantes+'</b> ya eran simpatizantes (ligados, se llamarán por el padrón)':'')
+      + (tot.duplicados?' · <b>'+tot.duplicados+'</b> ya estaban en la base externa':'')
+      + (tot.invalidos?' · <b>'+tot.invalidos+'</b> inválidos':'')
+      + '.<br>La base externa de esta licencia tiene ahora <b>'+Number(tot.total_base).toLocaleString('es-MX')+'</b> contactos. En el Call Center, al generar una cola, elige fuente "Base externa" o "Ambas".</div>';
+    if(X_ERR.length) document.getElementById('x-err-actions').classList.remove('hidden');
+    btn.classList.add('hidden');
+    cargarEstadoCC();
+  }catch(e){
+    msg.innerHTML = '<div class="msg msg-err">❌ '+e.message+'</div>';
+    btn.disabled=false; btn.innerHTML='Reintentar';
+  }
+}
+function descargarErroresCC(){
+  const rows = [['fila','nombre','telefono','seccion','municipio','motivo']]
+    .concat(X_ERR.map(f => [f._row,f.nombre,f.telefono,f.seccion||'',f.municipio||'',(f._errores||[]).join(' · ')]));
+  bajar('base_externa_rechazados.csv', csv(rows));
+}
+async function cargarEstadoCC(){
+  const el = document.getElementById('cc-estado'); if(!el) return;
+  try{
+    const token = (await window.supabase.auth.getSession()).data.session?.access_token; if(!token) return;
+    const r = await fetch(`${SUPA_URL}/rest/v1/rpc/cc_base_externa_estado`, { method:'POST', headers:{ 'apikey':SUPA_KEY, 'Authorization':'Bearer '+token, 'Content-Type':'application/json' }, body:'{}' });
+    if(!r.ok) return;
+    const e = await r.json();
+    if(!e || !e.total){ el.style.display='block'; el.className='msg'; el.textContent='Esta licencia todavía no tiene base externa cargada.'; return; }
+    el.style.display='block'; el.className='msg msg-ok';
+    el.innerHTML = 'Base externa actual: <b>'+Number(e.total).toLocaleString('es-MX')+'</b> contactos'
+      + (e.ya_simpatizantes?' ('+e.ya_simpatizantes+' ligados al padrón)':'')
+      + ' · '+(e.por_municipio||[]).map(m => m.municipio+': <b>'+m.n+'</b>').join(' · ')
+      + (e.lotes&&e.lotes.length?'<br><span style="opacity:.75">Lotes: '+e.lotes.map(l => l.fuente+' ('+l.n+')').join(', ')+'</span>':'');
+  }catch(_){}
+}
+document.getElementById('tab-btn-cc').addEventListener('click', cargarEstadoCC);
 
 function csv(rows){ return rows.map(r => r.map(v => '"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n'); }
 function bajar(nombre, texto){ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob(['\ufeff'+texto],{type:'text/csv;charset=utf-8'})); a.download=nombre; a.click(); }
