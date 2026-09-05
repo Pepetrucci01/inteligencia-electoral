@@ -604,10 +604,15 @@ body.rol-consulta     .kpi-estatal { display:none; }
          para todos. Ahora las calcula get_alertas_hub() con el alcance del usuario
          (estatal o municipal). Oculto hasta que la RPC responda; si no hay alertas
          o el rol es de campo, no se muestra nada. -->
+    <!-- [5 sep] Solo se muestra en Inicio (load() lo oculta siempre). Se puede
+         plegar/desplegar con el boton; la eleccion se recuerda en este navegador. -->
     <div class="alerts" id="alertas-hub" style="display:none">
-      <div class="al-head">
+      <div class="al-head" style="cursor:pointer;user-select:none" onclick="toggleAlertas()" title="Plegar / desplegar">
         <span class="al-title">Alertas activas</span>
-        <span class="tb-badge" id="al-badge" style="background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.2)">—</span>
+        <span style="display:flex;align-items:center;gap:10px">
+          <span class="tb-badge" id="al-badge" style="background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.2)">—</span>
+          <span id="al-toggle" style="font-family:var(--mono);font-size:10px;color:var(--text3);padding:2px 8px;border:1px solid var(--border);border-radius:99px">▲ Ocultar</span>
+        </span>
       </div>
       <div id="al-lista"></div>
     </div>
@@ -629,7 +634,7 @@ function actualizarContadorModulos(){
   }catch(_e){}
 }
 
-const APP_BUILD = '20260904i'; // [04/09] reportar un problema (tickets sobre sistema original VOT-2026-*, todos los roles) · soporte técnico solo super_admin+soporte (data-rol) · consulta IA (nuevo módulo) · panel capturista (paginación, Día E) · war room (388) · captura (aviso cuota) · día E (modal logout) // [03/09] día E: buscador único + voz + registro sorpresa real + encabezado por rol; iframe allow=microphone // [02/09] captura (identidad real, Mi Sección, scan INE, responsive) · reportes (calidad en vivo, alcance municipal) · war room (alertas por rol) · panel capturista (header móvil) // [31/08] subir esta cadena cada vez que se actualice un modulo: es el rompe-cache de los iframes
+const APP_BUILD = '20260905a'; // [05/09] alertas solo en Inicio + plegables · importador pestaña 5 + telefonistas · call center fuente // [04/09] reportar un problema (tickets sobre sistema original VOT-2026-*, todos los roles) · soporte técnico solo super_admin+soporte (data-rol) · consulta IA (nuevo módulo) · panel capturista (paginación, Día E) · war room (388) · captura (aviso cuota) · día E (modal logout) // [03/09] día E: buscador único + voz + registro sorpresa real + encabezado por rol; iframe allow=microphone // [02/09] captura (identidad real, Mi Sección, scan INE, responsive) · reportes (calidad en vivo, alcance municipal) · war room (alertas por rol) · panel capturista (header móvil) // [31/08] subir esta cadena cada vez que se actualice un modulo: es el rompe-cache de los iframes
 
 let collapsed = false;
 
@@ -669,6 +674,7 @@ function load(id, file, title, sub){
   if(ni) ni.classList.add('active');
   document.getElementById('hub').style.display = 'none';
   document.getElementById('frame-wrap').style.display = 'block';
+  const _al = document.getElementById('alertas-hub'); if(_al) _al.style.display = 'none';   // [5 sep] alertas solo en Inicio
   const ld = document.getElementById('ld');
   ld.classList.remove('gone');
   document.getElementById('ld-txt').textContent = 'Cargando ' + title + '...';
@@ -682,6 +688,7 @@ function load(id, file, title, sub){
 function showHub(){
   closeSidebar();
   document.getElementById('hub').style.display = 'block';
+  const _al = document.getElementById('alertas-hub'); if(_al && window._alertasHay) _al.style.display = 'block';
   document.getElementById('frame-wrap').style.display = 'none';
   document.getElementById('tb-title').textContent = 'Panel de inicio';
   document.getElementById('tb-sub').textContent = 'Inteligencia Electoral · Colima 2027';
@@ -927,6 +934,18 @@ function cerrarSesion(){
 </script>
 <script>
 // ── [FIX 1 sep] ALERTAS REALES DESDE SUPABASE ─────────────────────────────
+// [5 sep] Plegar/desplegar alertas del hub. Se recuerda por navegador.
+function aplicarPliegueAlertas(){
+  const plegado = localStorage.getItem('votera_alertas_plegadas') === '1';
+  const lista = document.getElementById('al-lista'), tg = document.getElementById('al-toggle');
+  if(lista) lista.style.display = plegado ? 'none' : 'block';
+  if(tg) tg.textContent = plegado ? '▼ Mostrar' : '▲ Ocultar';
+}
+function toggleAlertas(){
+  const plegado = localStorage.getItem('votera_alertas_plegadas') === '1';
+  localStorage.setItem('votera_alertas_plegadas', plegado ? '0' : '1');
+  aplicarPliegueAlertas();
+}
 (async function cargarAlertasHub(){
   const box = document.getElementById('alertas-hub');
   if(!box) return;
@@ -976,8 +995,10 @@ function cerrarSesion(){
     if(!c){ badge.style.background='rgba(245,158,11,.1)'; badge.style.color='var(--amber)'; badge.style.border='1px solid rgba(245,158,11,.25)'; }
     if(!c && !v){ badge.style.background='rgba(34,197,94,.1)'; badge.style.color='var(--green)'; badge.style.border='1px solid rgba(34,197,94,.25)'; }
 
-    // Ocultar a roles de campo (RPC ya devuelve vacio, pero por si acaso)
-    box.style.display = 'block';
+    window._alertasHay = true;
+    aplicarPliegueAlertas();
+    // Solo si el usuario esta en Inicio; si ya abrio un modulo, load() lo dejo oculto
+    if(document.getElementById('hub').style.display !== 'none') box.style.display = 'block';
     console.log(`✅ Hub alertas: ${lista.length} (${d.alcance})`);
   }catch(e){
     console.warn('Hub alertas error:', e);
