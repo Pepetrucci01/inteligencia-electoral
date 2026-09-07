@@ -37,7 +37,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);}
-.shell{display:flex;height:100vh;overflow:hidden;}
+.shell{display:flex;height:100vh;height:100dvh;overflow:hidden;} /* [MÓVIL 7 sep] 100dvh: en iOS Safari 100vh incluye la barra del navegador y el fondo quedaba tapado */
 
 /* ── SIDEBAR ── */
 .sidebar{width:224px;background:var(--bg2);border-right:1px solid var(--border2);display:flex;flex-direction:column;flex-shrink:0;transition:width .25s;}
@@ -214,7 +214,13 @@ body.rol-consulta     .kpi-estatal { display:none; }
   #tb-usuario{display:none !important;}
   .breadcrumb{padding:0 12px;white-space:nowrap;overflow:hidden;}
   .breadcrumb .bc-cur{overflow:hidden;text-overflow:ellipsis;}
-  #votera-credito{font-size:9px;right:8px;bottom:4px;}
+  /* [MÓVIL 7 sep] El crédito era position:fixed flotando SOBRE el iframe: en las
+     17 capturas de prueba tapaba botones (Escanear INE, "+" de Día E, caja de
+     Consulta IA, filas de Admin). Ahora el contenido cede 18px y el crédito vive
+     en una franja propia al pie, sin encimarse con nada. */
+  .content{padding-bottom:18px;}
+  #votera-credito{font-size:9px;left:0;right:0 !important;bottom:0 !important;height:18px;line-height:18px;
+    padding-right:10px;text-align:right;background:var(--bg2);border-top:1px solid var(--border);}
   #votera-credito .credito-largo{display:none;}
   #votera-credito .credito-corto{display:inline !important;}
 }
@@ -633,7 +639,7 @@ function actualizarContadorModulos(){
   }catch(_e){}
 }
 
-const APP_BUILD = '20260905b'; // [05/09] alertas solo en Inicio + plegables · importador pestaña 5 + telefonistas · call center fuente // [04/09] reportar un problema (tickets sobre sistema original VOT-2026-*, todos los roles) · soporte técnico solo super_admin+soporte (data-rol) · consulta IA (nuevo módulo) · panel capturista (paginación, Día E) · war room (388) · captura (aviso cuota) · día E (modal logout) // [03/09] día E: buscador único + voz + registro sorpresa real + encabezado por rol; iframe allow=microphone // [02/09] captura (identidad real, Mi Sección, scan INE, responsive) · reportes (calidad en vivo, alcance municipal) · war room (alertas por rol) · panel capturista (header móvil) // [31/08] subir esta cadena cada vez que se actualice un modulo: es el rompe-cache de los iframes
+const APP_BUILD = '20260907a'; // [07/09] responsive móvil ronda 1: shell (crédito en franja propia, 100dvh), war room, activistas, reportes, admin // [05/09] alertas solo en Inicio + plegables · importador pestaña 5 + telefonistas · call center fuente // [04/09] reportar un problema (tickets sobre sistema original VOT-2026-*, todos los roles) · soporte técnico solo super_admin+soporte (data-rol) · consulta IA (nuevo módulo) · panel capturista (paginación, Día E) · war room (388) · captura (aviso cuota) · día E (modal logout) // [03/09] día E: buscador único + voz + registro sorpresa real + encabezado por rol; iframe allow=microphone // [02/09] captura (identidad real, Mi Sección, scan INE, responsive) · reportes (calidad en vivo, alcance municipal) · war room (alertas por rol) · panel capturista (header móvil) // [31/08] subir esta cadena cada vez que se actualice un modulo: es el rompe-cache de los iframes
 
 let collapsed = false;
 

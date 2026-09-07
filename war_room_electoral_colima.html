@@ -104,6 +104,47 @@ html,body{background:var(--bg);color:var(--text);font-family:var(--sans);}
 [data-tip]{cursor:help;}
 #vt-tooltip{position:fixed;z-index:9999;max-width:260px;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;padding:8px 11px;font-size:11px;line-height:1.5;color:var(--text);font-family:var(--sans);pointer-events:none;opacity:0;transition:opacity .12s;box-shadow:0 6px 18px rgba(0,0,0,.5);}
 #vt-tooltip.show{opacity:1;}
+/* ══ [MÓVIL 7 sep] Ronda 1 responsive (capturas iPhone ~390px) ═══════════════
+   Visto en pruebas: el header de 52px fijos se desbordaba y "ESTADO DE Inteligencia
+   Electoral · Colima 2027" caía encima del banner de fase; la barra de avance
+   tenía anchos fijos (180/220px) y cortaba el "14,187 / 208,754"; y los grids
+   de 2 y 3 columnas no se apilaban. El shell ya muestra título y alcance, así
+   que aquí el header se comprime a una línea. */
+@media (max-width:640px){
+  .topbar{height:auto;min-height:48px;padding:6px 12px;gap:8px;}
+  .tb-l{min-width:0;flex:1;gap:8px;}
+  .tb-l > div{min-width:0;}
+  .tb-title,.tb-sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .tb-title{font-size:13px;}
+  .tb-r{gap:6px;flex-shrink:0;}
+  .clock{display:none;}
+  .live{padding:3px 8px;font-size:10px;white-space:nowrap;}
+  .fb{padding:9px 8px;font-size:11px;gap:6px;text-align:center;}
+  .fchip{display:none;}
+  .fase-banner{padding:8px 12px;gap:8px;align-items:flex-start;}
+  .fase-banner > div{min-width:0;}
+  .fb-title{font-size:12px;}
+  .fb-sub{font-size:10px;white-space:normal;line-height:1.4;}
+  .cfg{padding:8px 12px;gap:8px;}
+  .main{padding:12px 12px 24px;}
+  .prog-banner{flex-wrap:wrap;padding:12px 14px;gap:8px 12px;}
+  .pb-lbl{width:auto;flex:1 1 100%;}
+  .pb-track{flex:1 1 140px;order:3;}
+  .pb-pct{width:auto;order:2;}
+  .pb-nums{width:auto;flex:1 1 100%;text-align:left;order:4;}
+  .kpi-row,.f2kpi-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+  .kpi{padding:10px 12px;}
+  .kv{font-size:22px;}
+  .uq-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+  .g2,.g21,.g3{grid-template-columns:1fr;gap:12px;}
+  .dp-kpis{grid-template-columns:repeat(2,minmax(0,1fr));}
+  /* rejillas de 3 columnas escritas inline (Alertas · Compromiso · Origen, y su par en Fase 2) */
+  .main [style*="grid-template-columns:1fr 1fr 1fr"]{grid-template-columns:1fr !important;}
+  table.t{min-width:640px;}      /* la tabla se desplaza de lado dentro de .card, no se aplasta */
+  .card{overflow-x:auto;}
+  #vt-tooltip{max-width:min(260px,calc(100vw - 24px));}
+}
+
 /* --- Patrón unificado (maqueta aprobada) --- */
 .uq-regla{font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin:14px 0 8px;}
 .uq-regla b{color:var(--cyan);}
@@ -4224,15 +4265,24 @@ document.addEventListener('DOMContentLoaded',()=>{
     if(px<4)px=4;if(py<4)py=4;tip.style.left=px+'px';tip.style.top=py+'px';}
   function show(el,x,y){tip.textContent=el.getAttribute('data-tip');tip.classList.add('show');move(x,y);}
   function hide(){tip.classList.remove('show');}
+  /* [MÓVIL 7 sep] En iPhone el tooltip se quedaba pegado tapando dos KPIs: tras
+     el tap, Safari emite mouseover/mousemove "emulados" que volvían a mostrarlo
+     sin temporizador. Se ignoran los eventos de ratón que llegan justo después
+     de un toque, y cualquier scroll lo cierra. */
+  var lastTouch=0;
   document.addEventListener('mouseover',function(e){
+    if(Date.now()-lastTouch<900)return;
     var el=e.target.closest?e.target.closest('[data-tip]'):null;
     if(el)show(el,e.clientX,e.clientY);else hide();});
+  window.addEventListener('scroll',hide,{passive:true,capture:true});
   document.addEventListener('mousemove',function(e){
+    if(Date.now()-lastTouch<900)return;
     if(!tip.classList.contains('show'))return;
     var el=e.target.closest?e.target.closest('[data-tip]'):null;
     if(el)move(e.clientX,e.clientY);else hide();});
   var tmo=null;
   document.addEventListener('touchstart',function(e){
+    lastTouch=Date.now();
     var el=e.target.closest?e.target.closest('[data-tip]'):null;
     if(el){var t=e.touches[0];show(el,t.clientX,t.clientY);clearTimeout(tmo);tmo=setTimeout(hide,2500);}
     else hide();},{passive:true});

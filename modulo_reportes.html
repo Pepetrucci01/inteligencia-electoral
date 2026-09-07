@@ -185,6 +185,32 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
 }
 #ie-tip.on{opacity:1; transform:translateY(0);}
 @media (max-width:820px){ #ie-tip{max-width:min(280px,calc(100vw - 24px)); font-size:12.5px;} }
+/* ══ [MÓVIL 7 sep] Ronda 1 responsive (capturas iPhone ~390px) ═══════════════
+   Visto en pruebas: el header de 52px fijos con "COLIMA 2027 · DATOS REALES AL
+   07/SEP/2026" se partía en 4 renglones y caía encima de la pestaña "Resumen
+   ejecutivo"; el botón Descargar y el badge de rol no cabían; grids de 2-3
+   columnas sin apilar. Las pestañas YA se desplazan de lado (overflow-x:auto):
+   eso está bien, solo se les afina el padding. */
+@media (max-width:640px){
+  .topbar{height:auto;min-height:48px;padding:6px 12px;gap:8px;}
+  .topbar-left{min-width:0;flex:1;gap:8px;}
+  .topbar-left > div{min-width:0;}
+  .topbar-title,.topbar-sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .topbar-sub{font-size:10px;}
+  .topbar-right{gap:6px !important;flex-shrink:0;}
+  #rol-indicator{display:none;}          /* el rol ya se ve en el shell */
+  .export-btn{padding:5px 10px;white-space:nowrap;}
+  .report-tabs{top:48px;}                /* el header móvil mide exactamente 48px (min-height + 1 línea) */
+  .rtab{padding:10px 12px;font-size:11px;}
+  .main{padding:12px 12px 24px;}
+  .kpi-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+  .kpi{padding:10px 12px;}
+  .kpi-val{font-size:20px;}
+  .grid2,.grid3,.grid21,.grid12{grid-template-columns:1fr;gap:12px;}
+  .chart-wrap{padding:10px 8px;}
+  .table-wrap table{min-width:560px;}      /* la tabla se desplaza de lado, no se aplasta */
+}
+
 </style>
 </head>
 <script>
@@ -1170,7 +1196,7 @@ async function cargarDatosMunicipios() {
     // fetch directo caía a la anon key si la sesión no estaba lista → RLS lo
     // trataba como anónimo. Fallback al fetch directo si supaFetch no cargó.
     const _doRPC = (u, o) => (window.supaFetch ? window.supaFetch(u, o) : fetch(u, o));
-    const rpc = await _doRPC(SUPA_URL + '/rest/v1/rpc/get_war_room_kpis', {
+    let rpc = await _doRPC(SUPA_URL + '/rest/v1/rpc/get_war_room_kpis', {
       method: 'POST',
       headers: Object.assign({}, headers, { 'Content-Type': 'application/json' }),
       body: '{}'
@@ -1179,9 +1205,24 @@ async function cargarDatosMunicipios() {
       return null;
     });
 
-    if (!rpc || !rpc.ok) {
-      console.warn('Municipios: RPC status ' + (rpc && rpc.status) + ' — se conservan los datos previos.');
-      return;
+    // [FIX 7 sep] En celular (red más lenta) el Resumen quedaba con "—" en
+    // capturados/avance/seguro/riesgo/duplicados mientras Secciones críticas sí
+    // cargaba: esta RPC va por fetch directo y, si la sesión aún no estaba
+    // publicada, salía con la anon key (que ya no tiene EXECUTE) y no se
+    // reintentaba. Las demás cargas usan rpcConReintento(); aquí se hace un
+    // reintento único tras 1.5 s con la sesión ya lista.
+    let rpcOk = rpc && rpc.ok;
+    if (!rpcOk) {
+      console.warn('Municipios: RPC status ' + (rpc && rpc.status) + ' — reintentando en 1.5 s…');
+      await new Promise(r => setTimeout(r, 1500));
+      const tok2 = window._sesion?.access_token || (window.supabase && (await window.supabase.auth.getSession()).data?.session?.access_token) || token;
+      const h2 = Object.assign({}, headers, { 'Authorization': 'Bearer ' + tok2, 'Content-Type': 'application/json' });
+      const rpc2 = await _doRPC(SUPA_URL + '/rest/v1/rpc/get_war_room_kpis', { method:'POST', headers:h2, body:'{}' }).catch(() => null);
+      if (!rpc2 || !rpc2.ok) {
+        console.warn('Municipios: RPC sigue sin responder (' + (rpc2 && rpc2.status) + ') — se conservan los datos previos.');
+        return;
+      }
+      rpc = rpc2;
     }
     const kpis = await rpc.json();
     if (!kpis || typeof kpis !== 'object' || kpis.total === undefined) {

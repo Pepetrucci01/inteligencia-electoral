@@ -173,6 +173,37 @@ table.cap-table tr.selected{background:rgba(59,130,246,0.1);}
 }
 #btn-back-menu:hover { transform: scale(1.05); }
 
+
+/* ══ [MÓVIL 7 sep] Ronda 1 responsive (capturas iPhone ~390px) ═══════════════
+   Problemas vistos: header interno de 52px fijos con texto que se desbordaba
+   hacia abajo; fila de 5 KPIs aplastada ("TOTAL OPERADO", "PROMEL"); filtros
+   cortados a la derecha; y la rejilla lista|detalle (1fr 320px) dejaba la lista
+   en una tira de 50px. Dentro del iframe el shell ya muestra título y alcance,
+   así que aquí el header se comprime a una sola línea. */
+@media (max-width:640px){
+  .topbar{height:auto;min-height:48px;padding:6px 12px;gap:8px;}
+  .topbar-left{min-width:0;flex:1;gap:8px;}
+  .topbar-left > div{min-width:0;}
+  .topbar-title,.topbar-sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .topbar-sub{font-size:10px;}
+  .topbar-right{gap:6px;flex-shrink:0;}
+  .back-btn{padding:4px 8px;white-space:nowrap;}
+  .live-badge{display:none;}          /* "514 OPERADORES": el mismo dato ya sale en los filtros */
+  .filters{padding:8px 12px;gap:8px;}
+  .filter-sep{display:none;}
+  .filters input[type=text]{flex:1;min-width:120px;}
+  .results-count{margin-left:0;width:100%;}
+  .main{padding:12px 12px 24px;gap:12px;}
+  .kpi-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+  .kpi{padding:10px 12px;}
+  .kpi-val{font-size:20px;}
+  .kpi-label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .content-grid{grid-template-columns:1fr;gap:12px;}
+  .content-grid > div:last-child{order:-1;}   /* ficha ARRIBA de la tabla: al tocar una fila se hace scroll a la ficha */
+  .placeholder-msg{padding:16px 12px;}
+  table.cap-table{min-width:720px;}            /* la tabla se desplaza de lado dentro de su contenedor, no se aplasta */
+  #rep-modal{padding:10px !important;}
+}
 </style>
 </head>
 <script>
@@ -846,6 +877,11 @@ function seleccionar(id, mun){
   const initials = r.CAPTURADO_POR.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
   const maxComp = Math.max(r.moviliza,r.seguros-r.moviliza,r.simpatizantes,r.contactos)||1;
 
+  // [MÓVIL 7 sep] En celular la ficha queda arriba de la tabla (CSS order:-1);
+  // llevar la vista hasta ella para que el tap en la fila se sienta inmediato.
+  if (window.matchMedia && window.matchMedia('(max-width:640px)').matches) {
+    setTimeout(() => { try { document.getElementById('detail-panel').scrollIntoView({behavior:'smooth', block:'start'}); } catch(e){} }, 30);
+  }
   document.getElementById('detail-panel').innerHTML = `
     <div class="detail">
       <div class="detail-header">

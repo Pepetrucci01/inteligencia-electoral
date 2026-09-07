@@ -200,6 +200,36 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
 }
 #btn-back-menu:hover { transform: scale(1.05); }
 
+
+/* ══ [MÓVIL 7 sep] Ronda 1 responsive (capturas iPhone ~390px) ═══════════════
+   Visto en pruebas: header de 52px fijos con "PANEL DE ADMINISTRACIÓN" cortado
+   arriba y el subtítulo en 2 renglones; badge de rol y botones fuera de la
+   pantalla; la fila buscador + 2 selects (anchos fijos 160/140px) se salía a la
+   derecha; la tabla de usuarios se aplastaba. Las pestañas ya se desplazan de
+   lado. El shell ya muestra título, alcance y usuario. */
+@media (max-width:640px){
+  .topbar{height:auto;min-height:48px;padding:6px 12px;gap:8px;}
+  .topbar-left{min-width:0;flex:1;gap:8px;}
+  .topbar-left > div{min-width:0;}
+  .topbar-title,.topbar-sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .topbar-sub{font-size:10px;}
+  .topbar-right{gap:6px !important;flex-shrink:0;}
+  #admin-nombre-badge{display:none;}                 /* el nombre/rol ya está en el shell */
+  .topbar-right button{padding:5px 8px !important;white-space:nowrap;}
+  .tabs{top:48px;}                                   /* header móvil = 48px exactos */
+  .tab{padding:10px 12px;font-size:11px;}
+  .main{padding:12px 12px 24px;}
+  .kpi-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+  .kpi{padding:10px 12px;}
+  .kpi-val{font-size:20px;}
+  .card-head{flex-wrap:wrap;gap:8px;padding:10px 12px;}
+  .dir-filtros{flex-wrap:wrap;}
+  .dir-filtros .search-bar{flex:1 1 100% !important;}   /* !important: el flex:1 viene inline */
+  .dir-filtros .form-select{flex:1 1 0;width:auto !important;min-width:0;}
+  .grid2,.grid3,.form-row{grid-template-columns:1fr;gap:12px;}
+  .table-wrap table{min-width:640px;}              /* la tabla se desplaza de lado, no se aplasta */
+  #modal-bg > div,#modal-cand-bg > div{padding:16px !important;max-height:92vh !important;}
+}
 </style>
 </head>
 <script src="supabase_client.js"></script>
@@ -276,7 +306,7 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
       </div>
     </div>
     <div style="padding:12px 16px;border-bottom:1px solid var(--border);">
-      <div style="display:flex;gap:10px;">
+      <div class="dir-filtros" style="display:flex;gap:10px;">
         <div class="search-bar" style="flex:1;margin-bottom:0">
           <div class="search-icon">🔍</div>
           <input class="search-input" id="user-search" type="search" placeholder="Buscar por nombre, ID o municipio..." oninput="filtrarUsuarios()">
