@@ -254,15 +254,17 @@ function _calcularAlcance(sesion) {
   const rol = sesion.rol;
   const mun = (sesion.municipio || '').trim();
 
+  // [MÓVIL 7 sep] `corto` es la versión para pantallas angostas: en el shell
+  // "📍 Coordinador Municipal · Colima" dejaba el título como "Panel d…".
   if (rol === 'super_admin' || rol === 'admin') {
-    return { texto: '🌐 Vista Estatal', clase: 'estatal' };
+    return { texto: '🌐 Vista Estatal', corto: '🌐 Estatal', clase: 'estatal' };
   }
   if (rol === 'coordinador' && !mun) {
-    return { texto: '🌐 Coordinador General · Estatal', clase: 'estatal' };
+    return { texto: '🌐 Coordinador General · Estatal', corto: '🌐 Estatal', clase: 'estatal' };
   }
   if (rol === 'coordinador' && mun) {
     const munLindo = mun.charAt(0).toUpperCase() + mun.slice(1).toLowerCase();
-    return { texto: '📍 Coordinador Municipal · ' + munLindo, clase: 'municipal' };
+    return { texto: '📍 Coordinador Municipal · ' + munLindo, corto: '📍 ' + munLindo, clase: 'municipal' };
   }
   // jefe_seccion / capturista u otros: no mostrar (su alcance es obvio
   // por el propio módulo; el badge es para distinguir coordinadores).
@@ -280,6 +282,12 @@ function montarBadgeAlcance() {
     const info = _calcularAlcance(sesion);
     if (!info) return;   // rol sin badge (capturista, jefe_seccion, sin sesión)
 
+    // [MÓVIL 7 sep] Dentro del hub en celular NO se monta: el shell ya muestra el
+    // badge y el duplicado en el header del módulo era lo que lo desbordaba.
+    const esMovil = window.matchMedia && window.matchMedia('(max-width:640px)').matches;
+    let enIframe = false; try { enIframe = window.top !== window.self; } catch (e) { enIframe = true; }
+    if (esMovil && enIframe) return;
+
     const topbar = document.querySelector('.topbar');
     if (!topbar) return; // módulo sin topbar estándar
 
@@ -294,14 +302,16 @@ function montarBadgeAlcance() {
         '.badge-alcance-global.estatal{color:var(--accent,#3b82f6);' +
         'background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.3);}' +
         '.badge-alcance-global.municipal{color:var(--amber,#f59e0b);' +
-        'background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);}';
+        'background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);}' +
+        '@media (max-width:640px){.badge-alcance-global{font-size:10px;padding:3px 8px;max-width:130px;overflow:hidden;text-overflow:ellipsis;}}';
       document.head.appendChild(st);
     }
 
     const badge = document.createElement('div');
     badge.id = 'badge-alcance-global';
     badge.className = 'badge-alcance-global ' + info.clase;
-    badge.textContent = info.texto;
+    badge.textContent = esMovil ? (info.corto || info.texto) : info.texto;
+    badge.title = info.texto;
 
     // Colocación: si hay un contenedor derecho conocido, va al inicio de él;
     // si no, se agrega al final de la topbar (que suele ser flex).

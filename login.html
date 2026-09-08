@@ -6,6 +6,12 @@
      Va lo mas arriba posible para alcanzar a atrapar los errores
      de las librerias externas que cargan en este mismo <head>. -->
 <script>window.VOTERA_MODULO = 'login';</script>
+<!-- [FIX 7 sep] El login NUNCA debe cargarse dentro del iframe del hub. Pasaba
+     al pulsar "Salir" desde el header de un módulo: el login aparecía dentro del
+     iframe, el usuario entraba con otra cuenta y "Continuar" cargaba index.html
+     DENTRO de index.html (shell anidado, dos breadcrumbs). Si detecta que está
+     embebido, se sube a la ventana completa. -->
+<script>(function(){try{if(window.top!==window.self){window.top.location.replace(window.location.href);}}catch(e){}})();</script>
 <script src="observabilidad.js"></script>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗳️</text></svg>">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">

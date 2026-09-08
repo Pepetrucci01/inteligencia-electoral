@@ -264,6 +264,24 @@ body.rol-consulta     .kpi-estatal { display:none; }
     window._sesion = u;
   } catch(e){ window.location.replace('login.html'); }
 })();
+
+// [FIX 7 sep] El shell se quedaba con la sesión VIEJA cuando se cambiaba de
+// usuario (menú de 14 módulos y "Vista Estatal" para un coordinador, mientras
+// los módulos ya cargaban con la cuenta nueva). Si la sesión guardada cambia
+// (otra pestaña, o el login que corrió en esta misma pestaña) o desaparece,
+// el shell se recarga para volver a filtrar menú, KPIs y alcance.
+(function(){
+  const firma = (raw) => { try { const u = JSON.parse(raw||'null'); return u ? (u.id||'') + '|' + (u.rol||'') + '|' + (u.municipio||'') : ''; } catch(e){ return ''; } };
+  const firmaInicial = firma(localStorage.getItem('electoral_sesion'));
+  const revisar = () => {
+    const raw = localStorage.getItem('electoral_sesion');
+    if (!raw) { window.location.replace('login.html'); return; }
+    if (firma(raw) !== firmaInicial) { window.location.reload(); }
+  };
+  window.addEventListener('storage', e => { if (e.key === 'electoral_sesion' || e.key === null) revisar(); });
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') revisar(); });
+  window.addEventListener('focus', revisar);
+})();
 </script>
 
 <div class="mob-overlay" id="mob-overlay" onclick="closeSidebar()"></div>
@@ -639,7 +657,7 @@ function actualizarContadorModulos(){
   }catch(_e){}
 }
 
-const APP_BUILD = '20260907a'; // [07/09] responsive móvil ronda 1: shell (crédito en franja propia, 100dvh), war room, activistas, reportes, admin // [05/09] alertas solo en Inicio + plegables · importador pestaña 5 + telefonistas · call center fuente // [04/09] reportar un problema (tickets sobre sistema original VOT-2026-*, todos los roles) · soporte técnico solo super_admin+soporte (data-rol) · consulta IA (nuevo módulo) · panel capturista (paginación, Día E) · war room (388) · captura (aviso cuota) · día E (modal logout) // [03/09] día E: buscador único + voz + registro sorpresa real + encabezado por rol; iframe allow=microphone // [02/09] captura (identidad real, Mi Sección, scan INE, responsive) · reportes (calidad en vivo, alcance municipal) · war room (alertas por rol) · panel capturista (header móvil) // [31/08] subir esta cadena cada vez que se actualice un modulo: es el rompe-cache de los iframes
+const APP_BUILD = '20260907b'; // [07/09 b] shell se recarga solo si cambia la sesión (storage/visibilidad) · login nunca en iframe · sin-acceso en vez de login (auth-guard) · badge alcance compacto en móvil (theme.js) // [07/09] responsive móvil ronda 1: shell (crédito en franja propia, 100dvh), war room, activistas, reportes, admin // [05/09] alertas solo en Inicio + plegables · importador pestaña 5 + telefonistas · call center fuente // [04/09] reportar un problema (tickets sobre sistema original VOT-2026-*, todos los roles) · soporte técnico solo super_admin+soporte (data-rol) · consulta IA (nuevo módulo) · panel capturista (paginación, Día E) · war room (388) · captura (aviso cuota) · día E (modal logout) // [03/09] día E: buscador único + voz + registro sorpresa real + encabezado por rol; iframe allow=microphone // [02/09] captura (identidad real, Mi Sección, scan INE, responsive) · reportes (calidad en vivo, alcance municipal) · war room (alertas por rol) · panel capturista (header móvil) // [31/08] subir esta cadena cada vez que se actualice un modulo: es el rompe-cache de los iframes
 
 let collapsed = false;
 

@@ -44,10 +44,55 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
   }
 })();
 
-function redirigirLogin() {
-  if (!window.location.pathname.endsWith('login.html')) {
+// [FIX 7 sep] ¿Estamos dentro del iframe del hub? Toda navegación al login
+// debe hacerse en la ventana COMPLETA: si se hace en el iframe, el login queda
+// embebido y al entrar de nuevo se carga un hub dentro del hub.
+function _enIframe() {
+  try { return window.top !== window.self; } catch (e) { return true; }
+}
+function _irALogin(reemplazar) {
+  try {
+    const destino = _enIframe() ? window.top : window;
+    if (reemplazar) destino.location.replace('login.html');
+    else destino.location.href = 'login.html';
+  } catch (e) {
+    // Sin acceso a window.top (no debería pasar: mismo origen). Último recurso.
     window.location.href = 'login.html';
   }
+}
+
+function redirigirLogin() {
+  if (!window.location.pathname.endsWith('login.html')) {
+    _irALogin(false);
+  }
+}
+
+// [FIX 7 sep] Pantalla "sin acceso" para un módulo abierto dentro del hub con
+// un rol que no lo permite. Antes rebotaba al login (dentro del iframe). Ahora
+// tapa el módulo con un aviso claro y deja al usuario regresar al inicio.
+function mostrarSinAcceso(rol, rolesPermitidos) {
+  const pintar = () => {
+    if (document.getElementById('ie-sin-acceso')) return;
+    const o = document.createElement('div');
+    o.id = 'ie-sin-acceso';
+    o.style.cssText = 'position:fixed;inset:0;z-index:2147483000;background:#0a0e1a;color:#e8edf5;' +
+      'display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;' +
+      "font-family:'IBM Plex Sans',system-ui,sans-serif;";
+    o.innerHTML =
+      '<div style="max-width:380px">' +
+        '<div style="font-size:40px;margin-bottom:12px">🔒</div>' +
+        '<div style="font-size:17px;font-weight:600;margin-bottom:8px">No tienes acceso a este módulo</div>' +
+        '<div style="font-size:12px;color:#8a9ab5;line-height:1.5;font-family:\'IBM Plex Mono\',monospace">' +
+          'Tu rol actual (<b style="color:#e8edf5">' + (rol || 'sin sesión') + '</b>) no incluye este módulo.<br>' +
+          'Si acabas de cambiar de usuario, recarga el sistema.</div>' +
+        '<div style="display:flex;gap:8px;justify-content:center;margin-top:18px;flex-wrap:wrap">' +
+          '<button onclick="try{window.top.location.reload()}catch(e){location.reload()}" style="background:#3b82f6;color:#fff;border:none;border-radius:6px;padding:9px 16px;font-size:12px;cursor:pointer;font-family:inherit">↻ Recargar sistema</button>' +
+          '<button onclick="try{window.parent.postMessage({tipo:\'ie:volver-al-hub\'},\'*\')}catch(e){}" style="background:rgba(255,255,255,.06);color:#e8edf5;border:1px solid rgba(255,255,255,.13);border-radius:6px;padding:9px 16px;font-size:12px;cursor:pointer;font-family:inherit">⌂ Ir al inicio</button>' +
+        '</div>' +
+      '</div>';
+    (document.body || document.documentElement).appendChild(o);
+  };
+  if (document.body) pintar(); else document.addEventListener('DOMContentLoaded', pintar);
 }
 
 // ── Defensa en profundidad: exigir rol al cargar un módulo ─────
@@ -60,7 +105,10 @@ function exigirRol(rolesPermitidos) {
   const rol = window._sesion?.rol;
   if (!rol || !rolesPermitidos.includes(rol)) {
     console.warn('Acceso denegado para rol:', rol, '— se requiere:', rolesPermitidos.join('/'));
-    window.location.replace('login.html');
+    // [FIX 7 sep] Dentro del hub: aviso en el iframe (no login embebido).
+    // Abierto por URL directa: rebota al login como siempre.
+    if (_enIframe() && rol) { mostrarSinAcceso(rol, rolesPermitidos); }
+    else { _irALogin(true); }
     return false;
   }
   return true;
@@ -94,7 +142,9 @@ function cerrarSesion() {
     }).catch(() => {});
   }
   localStorage.removeItem(SESION_KEY);
-  window.location.href = 'login.html';
+  // [FIX 7 sep] Salir desde el header de un módulo dentro del hub llevaba el
+  // login AL IFRAME. Ahora siempre sale en la ventana completa.
+  _irALogin(false);
 }
 
 // ── Refresh de token (cada 30 min) ────────────────────────────
