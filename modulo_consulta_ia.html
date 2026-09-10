@@ -214,7 +214,7 @@ async function enviar() {
   scrollBottom();
 
   try {
-    const resp = await fetch(SUPABASE_URL + '/functions/v1/consulta-electoral-v7', {
+    const resp = await fetch(SUPABASE_URL + '/functions/v1/consulta-electoral', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
