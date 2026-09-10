@@ -259,6 +259,9 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
   <div class="tab" id="tab-instalacion" onclick="showTab('instalacion')">
     <span class="tab-icon">🏛</span>Instalación
   </div>
+  <div class="tab" id="tab-acta" onclick="showTab('acta')">
+    <span class="tab-icon">📷</span>Acta
+  </div>
   <div class="tab" id="tab-cierre" onclick="showTab('cierre')">
     <span class="tab-icon">🔒</span>Cierre
   </div>
@@ -560,6 +563,44 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 
   </div><!-- /cierre-formulario -->
 
+</div>
+
+<!-- ══════════ ACTA DE ESCRUTINIO (OCR) ══════════ -->
+<div class="screen" id="sc-acta">
+  <div class="contador-wrap">
+    <div class="contador-title"><span>📷 Lectura de acta</span><span id="acta-eleccion-lbl" style="color:var(--text2)"></span></div>
+    <p style="font-size:12px;color:var(--text2);line-height:1.5;margin:0 0 12px">
+      Toma o sube la foto del <b>acta de escrutinio y cómputo</b>. El sistema lee los votos por partido y detecta inconsistencias. <b>Revisa y corrige</b> antes de guardar.
+    </p>
+    <label class="form-label">Elección</label>
+    <select class="form-input" id="acta-eleccion">
+      <option value="gubernatura">Gubernatura</option>
+      <option value="diputados_locales">Diputados locales</option>
+      <option value="ayuntamiento">Ayuntamiento</option>
+    </select>
+    <label class="form-label" style="margin-top:10px">Foto del acta</label>
+    <input class="form-input" id="acta-file" type="file" accept="image/*" capture="environment" onchange="actaArchivo(event)">
+    <img id="acta-preview" style="display:none;max-width:100%;max-height:340px;border-radius:8px;border:1px solid var(--bg4);margin-top:10px">
+    <button class="btn-confirmar" id="acta-btn-leer" style="background:var(--accent);color:#fff;margin-top:12px" disabled onclick="actaLeer()">📖 Leer acta</button>
+    <div id="acta-estado" style="display:none;margin-top:10px;padding:9px 12px;border-radius:8px;font-size:12px;font-family:var(--mono);text-align:center;"></div>
+  </div>
+
+  <div class="contador-wrap" id="acta-resultado" style="display:none">
+    <div class="contador-title"><span>Resultado leído</span><span id="acta-conf" style="font-family:var(--mono)"></span></div>
+    <div id="acta-ident" style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:10px"></div>
+    <div id="acta-incs" style="margin-bottom:12px"></div>
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead><tr>
+        <th style="text-align:left;color:var(--text3);font-weight:500;padding:5px 6px;border-bottom:1px solid var(--bg4)">Partido / coalición</th>
+        <th style="text-align:left;color:var(--text3);font-weight:500;padding:5px 6px;border-bottom:1px solid var(--bg4)">Con letra</th>
+        <th style="text-align:right;color:var(--text3);font-weight:500;padding:5px 6px;border-bottom:1px solid var(--bg4)">Votos</th>
+      </tr></thead>
+      <tbody id="acta-tbody"></tbody>
+    </table>
+    <div id="acta-totales" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--bg4);font-family:var(--mono);font-size:12px"></div>
+    <button class="btn-confirmar" id="acta-btn-guardar" style="background:var(--green);color:#000;margin-top:14px" onclick="actaGuardar()">💾 Guardar acta</button>
+    <div id="acta-guardar-msg" style="display:none;margin-top:10px;padding:9px 12px;border-radius:8px;font-size:12px;font-family:var(--mono);text-align:center;"></div>
+  </div>
 </div>
 
 <!-- MODAL CONFIRMAR VOTO -->
@@ -957,8 +998,143 @@ const ROL_CON_SECCION = ['repr_casilla','capturista','jefe_seccion'];
 // ══════════════════════════════════════════════════════
 // TABS
 // ══════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
+// [ACTA 10 sep] OCR de acta de escrutinio y cómputo
+// Reutiliza sesión (electoral_sesion) y cliente window.supabase.
+// Llama a la edge function scan-acta; el humano corrige; guarda en actas_casilla.
+// ══════════════════════════════════════════════════════
+let ACTA = { b64:null, mime:'image/jpeg', lectura:null };
+
+function _actaEstado(id, msg, tipo){
+  const e = document.getElementById(id);
+  if(!msg){ e.style.display='none'; return; }
+  const col = tipo==='ok'?'34,197,94':tipo==='err'?'239,68,68':'138,154,181';
+  e.style.display='block'; e.textContent=msg;
+  e.style.background='rgba('+col+',0.1)'; e.style.border='1px solid rgba('+col+',0.3)'; e.style.color='rgb('+col+')';
+}
+
+async function actaArchivo(ev){
+  const f = ev.target.files[0]; if(!f) return;
+  try {
+    const img = await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=URL.createObjectURL(f); });
+    const esc = Math.min(1, 2000/Math.max(img.width,img.height));
+    const c = document.createElement('canvas'); c.width=Math.round(img.width*esc); c.height=Math.round(img.height*esc);
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+    const durl = c.toDataURL('image/jpeg',0.9);
+    ACTA.b64 = durl.split(',')[1]; ACTA.mime='image/jpeg';
+    const pv = document.getElementById('acta-preview'); pv.src=durl; pv.style.display='block';
+    document.getElementById('acta-btn-leer').disabled=false;
+    _actaEstado('acta-estado', c.width+'×'+c.height+' px · '+Math.round(ACTA.b64.length*0.75/1024)+' KB', 'info');
+  } catch(e){ _actaEstado('acta-estado','No se pudo procesar la imagen.','err'); }
+}
+
+async function actaLeer(){
+  if(!ACTA.b64) return;
+  const btn = document.getElementById('acta-btn-leer'); btn.disabled=true;
+  _actaEstado('acta-estado','Leyendo el acta… (10–20 s)','info');
+  try {
+    await esperarSupabase(8000);
+    const { data:{ session } } = await window.supabase.auth.getSession();
+    const base = window.supabase.supabaseUrl || window.supabase.rest?.url?.replace(/\/rest\/v1$/,'') || '';
+    const body = { image_base64: ACTA.b64, media_type: ACTA.mime };
+    if (SECCION_BASE) body.seccion_esperada = SECCION_BASE;
+    const r = await fetch(base + '/functions/v1/scan-acta', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+session.access_token },
+      body: JSON.stringify(body),
+    });
+    const j = await r.json();
+    if(!j.success) throw new Error(j.error || 'Sin respuesta');
+    ACTA.lectura = j.data;
+    _actaEstado('acta-estado', 'Leída en '+(j.consumo.ms/1000).toFixed(1)+' s · confianza '+Math.round(j.data.confianza*100)+'%', 'ok');
+    actaPintar();
+  } catch(e){ _actaEstado('acta-estado','Error: '+(e.message||e),'err'); }
+  btn.disabled=false;
+}
+
+function _actaNum(s){ return s===''||s===null||s===undefined ? null : Number(s); }
+
+function actaPintar(){
+  const d = ACTA.lectura;
+  document.getElementById('acta-resultado').style.display='block';
+  document.getElementById('acta-conf').textContent = 'confianza '+Math.round(d.confianza*100)+'%';
+  document.getElementById('acta-ident').innerHTML = [
+    ['Sección', d.seccion ?? '—'], ['Casilla', (d.casilla||'—')+(d.tipo_casilla?' ('+d.tipo_casilla+')':'')],
+    ['Municipio', d.municipio||'—'], ['Lista nominal que votó', d.lista_nominal_votaron ?? '—'],
+    ['Total de personas', d.total_personas ?? '—'], ['Votos en urna', d.votos_urna ?? '—'],
+  ].map(([k,v])=>'<b style="color:var(--text3)">'+k+':</b> '+v).join(' &nbsp;·&nbsp; ')
+    + (d.notas?'<br><span style="color:var(--amber)">Nota del lector: '+d.notas+'</span>':'');
+  const tb = document.getElementById('acta-tbody');
+  tb.innerHTML = d.votos.map((v,i)=>{
+    const col = v.confianza>=0.8?'var(--green)':v.confianza>=0.6?'var(--amber)':'var(--red)';
+    return '<tr><td style="padding:5px 6px;border-bottom:1px solid var(--bg3)"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;background:'+col+'"></span>'+v.partido+'</td>'
+      +'<td style="padding:5px 6px;border-bottom:1px solid var(--bg3);color:var(--text3)">'+(v.letra||'')+'</td>'
+      +'<td style="padding:5px 6px;border-bottom:1px solid var(--bg3);text-align:right"><input type="number" min="0" data-i="'+i+'" value="'+(v.votos ?? '')+'" style="width:80px;text-align:right;background:var(--bg);color:var(--text);border:1px solid var(--bg4);border-radius:5px;padding:4px 6px;font-family:var(--mono)"></td></tr>';
+  }).join('')
+   + '<tr><td style="padding:5px 6px">No registrados</td><td></td><td style="padding:5px 6px;text-align:right"><input type="number" min="0" id="acta-noreg" value="'+(d.no_registrados ?? 0)+'" style="width:80px;text-align:right;background:var(--bg);color:var(--text);border:1px solid var(--bg4);border-radius:5px;padding:4px 6px;font-family:var(--mono)"></td></tr>'
+   + '<tr><td style="padding:5px 6px">Nulos</td><td></td><td style="padding:5px 6px;text-align:right"><input type="number" min="0" id="acta-nulos" value="'+(d.nulos ?? 0)+'" style="width:80px;text-align:right;background:var(--bg);color:var(--text);border:1px solid var(--bg4);border-radius:5px;padding:4px 6px;font-family:var(--mono)"></td></tr>'
+   + '<tr><td style="padding:5px 6px"><b>Total (acta)</b></td><td></td><td style="padding:5px 6px;text-align:right"><input type="number" min="0" id="acta-total" value="'+(d.total ?? '')+'" style="width:80px;text-align:right;background:var(--bg);color:var(--text);border:1px solid var(--bg4);border-radius:5px;padding:4px 6px;font-family:var(--mono)"></td></tr>';
+  tb.querySelectorAll('input').forEach(inp=>inp.oninput=actaRecalc);
+  actaRecalc();
+  const incs = d.inconsistencias||[];
+  document.getElementById('acta-incs').innerHTML = incs.length
+    ? incs.map(i=>{ const col=i.severidad==='alta'?'239,68,68':i.severidad==='media'?'245,158,11':'138,154,181';
+        return '<div style="border-left:3px solid rgb('+col+');padding:7px 10px;margin:5px 0;background:var(--bg);border-radius:4px;font-size:12px"><b>'+i.tipo+'</b> · '+i.detalle+'</div>'; }).join('')
+    : '<div style="border-left:3px solid var(--green);padding:7px 10px;background:var(--bg);border-radius:4px;font-size:12px">Sin inconsistencias detectadas.</div>';
+}
+
+function actaValores(){
+  const votos = ACTA.lectura.votos.map((v,i)=>({ ...v, votos:_actaNum(document.querySelector('#acta-tbody input[data-i="'+i+'"]').value) }));
+  return { votos, no_registrados:Number(document.getElementById('acta-noreg').value||0), nulos:Number(document.getElementById('acta-nulos').value||0), total:_actaNum(document.getElementById('acta-total').value) };
+}
+
+function actaRecalc(){
+  const v = actaValores();
+  const suma = v.votos.reduce((a,x)=>a+(x.votos||0),0)+v.no_registrados+v.nulos;
+  const ig = v.total!==null && suma===v.total;
+  document.getElementById('acta-totales').innerHTML =
+    'Suma calculada: <b>'+suma+'</b> &nbsp; Total del acta: <b>'+(v.total ?? '—')+'</b> &nbsp; '
+    +'<span style="color:'+(ig?'var(--green)':'var(--red)')+'">'+(ig?'✓ Cuadra':(v.total===null?'sin total':'✗ No cuadra (dif. '+(suma-v.total)+')'))+'</span>';
+}
+
+async function actaGuardar(){
+  const btn = document.getElementById('acta-btn-guardar'); btn.disabled=true;
+  _actaEstado('acta-guardar-msg','Guardando…','info');
+  try {
+    await esperarSupabase(8000);
+    const { data:{ user } } = await window.supabase.auth.getUser();
+    const licenciaId = SESION?.licencia_id;
+    if(!licenciaId) throw new Error('Sesión sin licencia');
+    const d = ACTA.lectura, v = actaValores();
+    const eleccion = document.getElementById('acta-eleccion').value;
+    const sec = d.seccion ?? SECCION_BASE;
+    const cas = (d.casilla || 'B1').toUpperCase();
+    if(!sec) throw new Error('El acta no trae sección legible; corrígela antes de guardar.');
+    const path = licenciaId+'/'+eleccion+'/'+sec+'-'+cas+'-'+Date.now()+'.jpg';
+    const blob = await (await fetch('data:image/jpeg;base64,'+ACTA.b64)).blob();
+    const up = await window.supabase.storage.from('actas').upload(path, blob, { contentType:'image/jpeg' });
+    if(up.error) throw up.error;
+    const suma = v.votos.reduce((a,x)=>a+(x.votos||0),0)+v.no_registrados+v.nulos;
+    const incs = [...(d.inconsistencias||[])].filter(i=>i.tipo!=='suma');
+    if(v.total!==null && suma!==v.total) incs.push({tipo:'suma',detalle:'Suma '+suma+' ≠ total '+v.total+' (tras corrección).',severidad:'alta'});
+    const fila = {
+      licencia_id: licenciaId, eleccion, seccion: sec, casilla: cas, tipo_casilla: d.tipo_casilla,
+      municipio: d.municipio||MUNICIPIO||null, distrito: d.distrito, lugar: d.lugar||null,
+      boletas_sobrantes: d.boletas_sobrantes, lista_nominal_votaron: d.lista_nominal_votaron,
+      representantes_votaron: d.representantes_votaron, total_personas: d.total_personas,
+      votos: v.votos, no_registrados: v.no_registrados, nulos: v.nulos, total: v.total, votos_urna: d.votos_urna,
+      incidentes: d.incidentes, escritos_protesta: d.escritos_protesta, inconsistencias: incs,
+      confianza: d.confianza, estado: 'pendiente', foto_path: path, capturado_por: user.id, es_simulacro: MODO_SIMULACRO,
+    };
+    const ins = await window.supabase.from('actas_casilla').insert(fila).select('id').single();
+    if(ins.error) throw ins.error;
+    _actaEstado('acta-guardar-msg','✓ Acta guardada'+(MODO_SIMULACRO?' (simulacro)':'')+'. Sección '+sec+' casilla '+cas+'.','ok');
+    setTimeout(()=>{ ACTA={b64:null,mime:'image/jpeg',lectura:null}; document.getElementById('acta-file').value=''; document.getElementById('acta-preview').style.display='none'; document.getElementById('acta-resultado').style.display='none'; document.getElementById('acta-btn-leer').disabled=true; _actaEstado('acta-estado','',''); }, 2500);
+  } catch(e){ _actaEstado('acta-guardar-msg','No se guardó: '+(e.message||e),'err'); btn.disabled=false; }
+}
+
 function showTab(tab) {
-  ['votar','sorpresa','instalacion','cierre','resumen','log'].forEach(t => {
+  ['votar','sorpresa','instalacion','acta','cierre','resumen','log'].forEach(t => {
     document.getElementById('tab-'+t).classList.toggle('active', t===tab);
     document.getElementById('sc-'+t).classList.toggle('active', t===tab);
   });
