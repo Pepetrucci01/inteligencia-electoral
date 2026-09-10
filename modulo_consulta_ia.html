@@ -273,7 +273,7 @@ function appendMsg(role, content, ms, tokens, herramientas) {
       meta.className = 'msg-meta';
       const parts = [];
       if (ms) parts.push(Math.round(ms/1000) + 's');
-      if (tokens) parts.push((tokens.input||0)+'/'+(tokens.output||0)+' tok');
+      if (tokens) parts.push((tokens.input||0)+'/'+(tokens.output||0)+' tok' + (tokens.cache_leidos ? ' (' + tokens.cache_leidos + ' en caché)' : ''));
       if (Array.isArray(herramientas) && herramientas.length) parts.push('consultó: ' + [...new Set(herramientas)].join(', '));
       meta.textContent = parts.join(' · ');
       div.appendChild(meta);
