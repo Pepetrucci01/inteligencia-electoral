@@ -9,7 +9,7 @@
 <script src="observabilidad.js"></script>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📝</text></svg>">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>CAPTURA CIUDADANA — COLIMA 2027</title>
+<title data-theme="title">CAPTURA CIUDADANA</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
 :root{
@@ -295,7 +295,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
   <div class="logo-mark">C4</div>
   <div class="topbar-info">
     <div class="topbar-title">Módulo de Captura</div>
-    <div class="topbar-sub">COLIMA 2027 · CAMPO</div>
+    <div class="topbar-sub"><span data-theme="sistema-titulo">—</span> · CAMPO</div>
   </div>
   <div class="btn-icon" onclick="toggleCapturista()">👤</div>
   <button onclick="cerrarSesion()" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;font-family:monospace;margin-left:6px;" title="Cerrar sesión">⏻ Salir</button>
@@ -643,10 +643,13 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 // ─── DATOS SIMULADOS ───────────────────────────────────────────────────────
 // Datos del capturista desde sesión real
 const CAPTURISTA = {
-  id:           window._sesion?.id || 'CAP-017',
+  // [25 sep] Los defaults 138 / VILLA DE ALVAREZ eran de Colima y solo aplican
+  // en demo SIN sesion. Con sesion, si el usuario no trae seccion/municipio se
+  // deja null y la UI lo pide, en vez de fingir que es de Colima.
+  id:           window._sesion?.id || 'CAP-DEMO',
   nombre:       window._sesion?.nombre     || 'Capturista Demo',
-  seccion_base: window._sesion?.seccion    || 138,
-  municipio:    window._sesion?.municipio  || 'VILLA DE ALVAREZ'
+  seccion_base: window._sesion?.seccion    || (window._sesion ? null : 138),
+  municipio:    window._sesion?.municipio  || (window._sesion ? null : 'VILLA DE ALVAREZ')
 };
 
 const RESPONSABLES = {
@@ -1965,7 +1968,7 @@ function construirDatosCaptura(nuevo) {
     es_influencia:      nuevo.influencia || false,
     notas:              nuevo.obs || null,
     compromiso:         compromiso,
-    licencia_id:        window._sesion?.licencia_id || window.LICENCIA_ACTIVA_ID || 'a1b2c3d4-0001-0000-0000-000000000001',
+    licencia_id:        window._sesion?.licencia_id || window.LICENCIA_ACTIVA_ID || null,   // [25 sep] RLS rechaza null: nunca Colima por defecto
     capturista_id:      window._sesion?.id || null,
     responsable_id:     null,
     validado:           false,
@@ -1978,7 +1981,9 @@ function construirDatosCaptura(nuevo) {
     consentimiento_fecha: (document.getElementById('f-consent')?.checked) ? new Date().toISOString() : null,
   };
 
-  const candidaturaActualId = window.CANDIDATURA_ACTIVA_ID || 'a1b2c3d4-0001-0000-0000-000000000101';
+  // [25 sep] Candidatura activa de LA LICENCIA (capResolverCandidatura la cachea en
+  // window.CANDIDATURA_ACTIVA_ID al iniciar). El id de Colima solo aplica sin licencia.
+  const candidaturaActualId = window.CANDIDATURA_ACTIVA_ID || (!window._sesion?.licencia_id ? 'a1b2c3d4-0001-0000-0000-000000000101' : null);
   const candidaturaData = {
     candidatura_id:   candidaturaActualId,
     compromiso:       nuevo.comp ? parseInt(nuevo.comp) : null,
@@ -2284,6 +2289,21 @@ async function guardarEnSupabase(nuevo) {
 </script>
 <script>
 function cerrarSesion(){localStorage.removeItem('electoral_sesion');window.location.href='login.html';}
+
+// [25 sep] Resuelve y cachea la candidatura activa de la licencia en sesion.
+async function capResolverCandidatura(){
+  try{
+    if(window.CANDIDATURA_ACTIVA_ID) return;
+    if(!window._sesion?.licencia_id) return;                 // demo sin sesion: usa el fallback de Colima
+    if(!(window.supabase&&window.supabase.from)) return;
+    const {data}=await window.supabase.from('candidaturas').select('id,tipo,activa')
+      .eq('activa',true).order('tipo',{ascending:true});
+    if(!data||!data.length){ console.warn('captura: la licencia no tiene candidaturas activas'); return; }
+    const gob=data.find(c=>String(c.tipo).toLowerCase().includes('gobernador'))||data[0];
+    window.CANDIDATURA_ACTIVA_ID=gob.id;
+  }catch(e){ console.warn('captura candidatura:',e); }
+}
+document.addEventListener('DOMContentLoaded',()=>{ setTimeout(capResolverCandidatura,500); });
 </script>
 
 <!-- [T29] Modal escáner INE -->

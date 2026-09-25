@@ -76,7 +76,7 @@ table.res th{color:var(--text3);font-family:var(--mono);font-size:10px;text-tran
   <div class="logo-mark">📥</div>
   <div>
     <div class="topbar-title">Importador de Carga Maestra</div>
-    <div class="topbar-sub">① Metas · ② Estructura · ③ Representantes · ④ Ciudadanos · ⑤ Call center</div>
+    <div class="topbar-sub">① Metas · ② Estructura · ③ Representantes · ④ Ciudadanos · ⑤ Call center · ⑥ Cartografía</div>
   </div>
 </div>
 
@@ -88,6 +88,7 @@ table.res th{color:var(--text3);font-family:var(--mono);font-size:10px;text-tran
     <div class="tab" id="tab-btn-repr" onclick="verTab('repr')"><span class="n">3</span>Representantes de casilla</div>
     <div class="tab" id="tab-btn-ciud" onclick="verTab('ciud')"><span class="n">4</span>Ciudadanos</div>
     <div class="tab" id="tab-btn-cc" onclick="verTab('cc')"><span class="n">5</span>Call center · base externa</div>
+    <div class="tab" id="tab-btn-carto" onclick="verTab('carto')"><span class="n">6</span>Cartografía · mapa</div>
   </div>
   <div id="estado-base" class="msg" style="display:none"></div>
 
@@ -101,7 +102,7 @@ table.res th{color:var(--text3);font-family:var(--mono);font-size:10px;text-tran
       <input type="file" id="file" accept=".xlsx,.xls">
       <div class="drop-icon">📄</div>
       <div><b>Haz clic para elegir</b> o arrastra el .xlsx aquí</div>
-      <div class="drop-hint">COLIMA_CARGA_PLANA.xlsx · COLIMA_ELECTORAL_2024 (dorado)</div>
+      <div class="drop-hint">CEREBRO_&lt;ESTADO&gt;.xlsx (dorado con hoja BASE DATOS INE)</div>
     </label>
   </div>
 
@@ -139,7 +140,7 @@ table.res th{color:var(--text3);font-family:var(--mono);font-size:10px;text-tran
       <input type="file" id="file-estr" accept=".xlsx,.xls">
       <div class="drop-icon">👥</div>
       <div><b>Haz clic para elegir</b> o arrastra el .xlsx aquí</div>
-      <div class="drop-hint">Carga_Maestra_500_Colima.xlsx</div>
+      <div class="drop-hint">Carga_Maestra_&lt;Estado&gt;.xlsx</div>
     </label>
   </div>
 
@@ -200,7 +201,7 @@ table.res th{color:var(--text3);font-family:var(--mono);font-size:10px;text-tran
       <input type="file" id="file-repr" accept=".xlsx,.xls">
       <div class="drop-icon">🗳️</div>
       <div><b>Haz clic para elegir</b> o arrastra el .xlsx aquí</div>
-      <div class="drop-hint">REPRESENTANTES_COLIMA.xlsx</div>
+      <div class="drop-hint">REPRESENTANTES_&lt;ESTADO&gt;.xlsx</div>
     </label>
   </div>
   <div class="card hidden" id="r-preview">
@@ -314,6 +315,35 @@ table.res th{color:var(--text3);font-family:var(--mono);font-size:10px;text-tran
     </div>
   </div>
 </div><!-- /tab-cc -->
+
+<div id="tab-carto" class="hidden">
+  <div class="paso">
+    <div class="paso-h"><span class="paso-n">1</span> Elegir el GeoJSON del estado</div>
+    <p class="paso-p">Archivo <code>*.geojson</code> (FeatureCollection); cada sección con <code>properties.seccion</code>. Se carga bajo tu licencia (RLS). Si la sección ya existe, se actualiza.</p>
+    <div class="drop" id="cg-drop" style="border:2px dashed var(--border2);border-radius:10px;padding:30px;text-align:center;cursor:pointer">
+      <div style="font-size:30px">🗺</div>
+      <div><b>Arrastra el .geojson aquí</b> o haz clic</div>
+      <div style="font-size:12px;color:var(--text3);margin-top:4px">Ej. BCS_secciones_wgs84.geojson</div>
+      <input type="file" id="cg-file" accept=".geojson,.json,application/geo+json,application/json" style="display:none">
+    </div>
+    <div class="kpis" style="margin-top:12px">
+      <div class="kpi" id="cg-k-feat"><div class="kpi-val">–</div><div class="kpi-lbl">Secciones en el archivo</div></div>
+      <div class="kpi" id="cg-k-base"><div class="kpi-val">–</div><div class="kpi-lbl">Hoy en la base (tu licencia)</div></div>
+      <div class="kpi" id="cg-k-mun"><div class="kpi-val">–</div><div class="kpi-lbl">Municipios detectados</div></div>
+    </div>
+  </div>
+  <div class="paso">
+    <div class="paso-h"><span class="paso-n">2</span> Cargar</div>
+    <p class="paso-p">Se envía en lotes de 40. Al terminar, sincroniza a <code>secciones_ine</code> distritos, votos 2024, dificultad y centroide, sin pisar lo existente.</p>
+    <div class="bar" style="height:10px;background:var(--bg2);border-radius:99px;overflow:hidden;margin:10px 0"><div id="cg-bar" style="height:100%;width:0;background:var(--accent);transition:width .2s"></div></div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <button class="btn" id="cg-btn" disabled onclick="cgCargar()">Cargar a la base</button>
+      <button class="btn sec" onclick="cgConteo()">Ver conteo actual</button>
+      <span id="cg-estado" style="font-size:12px;color:var(--text3)"></span>
+    </div>
+    <div id="cg-log" class="msg" style="display:block;margin-top:12px;font-family:var(--mono);font-size:12px;white-space:pre-wrap;max-height:200px;overflow:auto">Esperando archivo…</div>
+  </div>
+</div><!-- /tab-carto -->
 
 </div>
 
@@ -504,7 +534,7 @@ function mostrarPreviewMsg(tipo, txt){
 // Auth, la fila en usuarios y la asignación territorial). La licencia la pone
 // la función a partir del usuario que importa; nunca viaja en el archivo.
 // ═══════════════════════════════════════════════════════════════════════════
-const TABS = ['metas','estr','repr','ciud','cc'];
+const TABS = ['metas','estr','repr','ciud','cc','carto'];
 function verTab(t){
   TABS.forEach(x => {
     document.getElementById('tab-'+x).classList.toggle('hidden', x!==t);
@@ -1072,6 +1102,70 @@ async function importar(){
     btn.innerHTML = 'Reintentar';
   }
 }
+
+// ══════════ PESTAÑA 6: CARTOGRAFÍA (mismo comportamiento que cargar_cartografia.html) ══════════
+(function(){
+  var FC=null;
+  function lic(){ try{ var s=JSON.parse(localStorage.getItem('electoral_sesion')||'null'); return s&&s.licencia_id?String(s.licencia_id):null; }catch(e){ return null; } }
+  function tok(){ try{ var s=JSON.parse(localStorage.getItem('electoral_sesion')||'null'); return (window._sesion&&window._sesion.access_token)||(s&&s.access_token)||SUPA_KEY; }catch(e){ return SUPA_KEY; } }
+  function hdr(extra){ return Object.assign({'apikey':SUPA_KEY,'Authorization':'Bearer '+tok(),'Content-Type':'application/json'}, extra||{}); }
+  var F=function(u,o){ return (window.supaFetch||fetch)(u,o); };
+  var cglog=function(m,cls){ var el=document.getElementById('cg-log'); if(!el)return; var d=document.createElement('div'); if(cls)d.style.color='var(--'+cls+')'; d.textContent=m; el.appendChild(d); el.scrollTop=el.scrollHeight; };
+  function setK(id,v){ var e=document.getElementById(id); if(e)e.querySelector('.kpi-val').textContent=v; }
+
+  window.cgConteo=async function(){
+    try{ var r=await F(SUPA_URL+'/rest/v1/cartografia_secciones?select=seccion&limit=1',{headers:hdr({'Prefer':'count=exact'})});
+      var cr=r.headers.get('content-range')||''; var tot=cr.split('/')[1];
+      setK('cg-k-base',(tot&&tot!=='*')?Number(tot).toLocaleString('es-MX'):'0');
+    }catch(e){ setK('cg-k-base','?'); }
+  };
+  function cgLeer(f){
+    var el=document.getElementById('cg-log'); el.textContent=''; cglog('Leyendo '+f.name+' ('+Math.round(f.size/1024)+' KB)…');
+    var rd=new FileReader();
+    rd.onload=function(){
+      try{ var j=JSON.parse(rd.result);
+        if(!j||j.type!=='FeatureCollection'||!Array.isArray(j.features)) throw new Error('No es un FeatureCollection GeoJSON.');
+        var sinSec=j.features.filter(function(x){return !x.properties||x.properties.seccion==null;}).length;
+        if(sinSec) cglog(sinSec+' features sin properties.seccion: se omitirán.','amber');
+        FC=j;
+        var muns=Array.from(new Set(j.features.map(function(x){return x.properties&&x.properties.nom_municipio;}).filter(Boolean)));
+        setK('cg-k-feat',j.features.length.toLocaleString('es-MX')); setK('cg-k-mun',muns.length||'–');
+        cglog('OK: '+j.features.length+' secciones · '+muns.length+' municipios'+(muns.length?': '+muns.sort().join(', '):''),'green');
+        document.getElementById('cg-btn').disabled=!lic();
+      }catch(e){ FC=null; document.getElementById('cg-btn').disabled=true; cglog('Archivo inválido: '+e.message,'red'); }
+    };
+    rd.readAsText(f,'utf-8');
+  }
+  window.cgCargar=async function(){
+    var L=lic(); if(!FC||!L){ cglog('Sin sesión con licencia o sin archivo.','red'); return; }
+    var btn=document.getElementById('cg-btn'); btn.disabled=true; document.getElementById('cg-bar').style.width='0%';
+    var feats=FC.features.filter(function(x){return x.properties&&x.properties.seccion!=null&&x.geometry;});
+    var fuente='GeoJSON '+new Date().toISOString().slice(0,10); var hechas=0,err=0,LT=40;
+    for(var i=0;i<feats.length;i+=LT){
+      var filas=feats.slice(i,i+LT).map(function(x){ var p=Object.assign({},x.properties); var sec=Number(p.seccion); delete p.seccion; return {licencia_id:L,seccion:sec,propiedades:p,geometria:x.geometry,fuente:fuente}; });
+      try{ var r=await F(SUPA_URL+'/rest/v1/cartografia_secciones?on_conflict=licencia_id,seccion',{method:'POST',headers:hdr({'Prefer':'resolution=merge-duplicates,return=minimal'}),body:JSON.stringify(filas)});
+        if(!r.ok){ var t=await r.text(); throw new Error('HTTP '+r.status+' '+t.slice(0,140)); } hechas+=filas.length;
+      }catch(e){ err++; cglog('Lote '+(i/LT+1)+' falló: '+e.message,'red'); if(err>=3){ cglog('Demasiados errores, se detiene.','red'); break; } }
+      document.getElementById('cg-bar').style.width=Math.round(hechas/feats.length*100)+'%'; document.getElementById('cg-estado').textContent=hechas+' / '+feats.length;
+    }
+    cglog('Cartografía: '+hechas+' secciones enviadas'+(err?(' · '+err+' lotes con error'):''), err?'amber':'green');
+    try{ var r2=await F(SUPA_URL+'/rest/v1/rpc/sincronizar_secciones_desde_cartografia',{method:'POST',headers:hdr(),body:'{}'});
+      var j=await r2.json(); if(!r2.ok) throw new Error(j.message||JSON.stringify(j));
+      cglog('secciones_ine sincronizadas: '+j.secciones_actualizadas+' actualizadas · '+j.secciones_creadas+' creadas','green');
+    }catch(e){ cglog('Sincronización a secciones_ine falló: '+e.message,'red'); }
+    await window.cgConteo(); btn.disabled=false; cglog('Listo. Abre el módulo Mapa para verlo.','green');
+  };
+  document.addEventListener('DOMContentLoaded',function(){
+    var d=document.getElementById('cg-drop'), fi=document.getElementById('cg-file'); if(!d||!fi) return;
+    d.onclick=function(){ fi.click(); };
+    d.ondragover=function(e){ e.preventDefault(); d.style.borderColor='var(--accent)'; };
+    d.ondragleave=function(){ d.style.borderColor='var(--border2)'; };
+    d.ondrop=function(e){ e.preventDefault(); d.style.borderColor='var(--border2)'; if(e.dataTransfer.files[0]) cgLeer(e.dataTransfer.files[0]); };
+    fi.onchange=function(){ if(fi.files[0]) cgLeer(fi.files[0]); };
+    window.cgConteo();
+  });
+})();
+
 </script>
 </body>
 </html>

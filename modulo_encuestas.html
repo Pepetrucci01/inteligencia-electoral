@@ -3,7 +3,7 @@
 ============================================================
   VOTERA(TM) - Inteligencia Electoral
   (c) 2026 MEFT Consulting - RFC: CUOJ7808208Z2
-  Villa de Alvarez, Colima, Mexico - votera.mx
+  votera.mx
   Todos los derechos reservados.
 
   Software propietario bajo licencia. Su uso, copia,
@@ -157,7 +157,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--cyan);}
       <div class="h-title">🗳 Encuestas y Opinión Ciudadana</div>
       <div class="h-sub">Fábrica de estudios de opinión · levantamiento en campo · cruce Territorio vs Opinión</div>
     </div>
-    <div class="h-badge">MODO DEMO · DATOS SIMULADOS</div>
+    <div class="h-badge">SIN ENCUESTAS CARGADAS · DATOS DE EJEMPLO</div>
   </div>
 
   <div class="tabs">
@@ -405,9 +405,9 @@ input:focus,select:focus,textarea:focus{border-color:var(--cyan);}
       <!-- [SWAP LUIS] Fase 4+: este texto se genera vía proxy backend de
            Anthropic API leyendo v_territorio_vs_opinion + avance territorial,
            mismo patrón que el Diagnóstico IA de modulo_reportes.html. -->
-      <b>1. Tu foco inmediato es Manzanillo.</b> Es el municipio con mayor meta del estado (49,083) y está débil en ambos frentes: 4.3% de estructura y 35% de intención. Sin corrección aquí, la meta estatal no cierra.<br><br>
-      <b>2. Villa de Álvarez y Colima capital son tu mejor inversión.</b> La opinión ya está contigo (42% y 40%) pero la estructura no la está capitalizando (4.0% y 3.4% de avance). Meter activistas ahí convierte simpatía existente en compromisos — es el crecimiento más barato disponible.<br><br>
-      <b>3. Cuidado con el voto blando en Minatitlán, Comala, Cuauhtémoc y Coquimatlán.</b> La estructura reporta avances por arriba de la media, pero la intención medida no lo respalda. O el compromiso capturado está inflado, o hay erosión reciente: audita la calidad de captura en esas secciones.<br><br>
+      <b>1. Prioriza el municipio con mayor meta.</b> Es el municipio con mayor meta del estado y aún está débil en estructura. <br><br>
+      <b>2. Donde la opinión ya te favorece, refuerza estructura.</b> La opinión ya está contigo (42% y 40%) pero la estructura no la está capitalizando (4.0% y 3.4% de avance). Meter activistas ahí convierte simpatía existente en compromisos — es el crecimiento más barato disponible.<br><br>
+      <b>3. Cuida el voto blando en los municipios con más indecisos.</b> La estructura reporta avances por arriba de la media, pero la intención medida no lo respalda. O el compromiso capturado está inflado, o hay erosión reciente: audita la calidad de captura en esas secciones.<br><br>
       <b>4. La bolsa de indecisos (22%) decide la elección.</b> Con 37.8% de intención propia, los indecisos representan el camino a la victoria. Prioriza los municipios cyan y ámbar donde ya tienes presencia física para trabajarlos.
     </div>
   </div>
@@ -416,7 +416,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--cyan);}
   <div class="pane" id="pane-vivo">
     <div class="card" style="margin-bottom:12px;">
       <div class="card-title">📊 Encuesta en vivo — Intención de Voto Estatal</div>
-      <div class="card-sub">Simulación de levantamiento en campo sobre los 10 municipios de Colima. Mueve el control para ver cómo evolucionan los resultados conforme entran las entrevistas — igual que lo verías el día real del estudio.</div>
+      <div class="card-sub">Simulación de levantamiento en campo (datos de ejemplo). Mueve el control para ver cómo evolucionan los resultados conforme entran las entrevistas — igual que lo verías el día real del estudio.</div>
       <!-- Control deslizante de avance -->
       <div style="background:var(--bg4,#1a2238);border:1px solid var(--border,#2a3350);border-radius:10px;padding:12px 16px;margin-top:6px;">
         <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3,#9aa4bf);margin-bottom:6px;">
@@ -511,15 +511,15 @@ const OPTS_FIJAS_INTENCION = ['Indeciso','Ninguno','Prefiere no responder'];
 // window: la asignacion creaba una propiedad aparte y este modulo seguia
 // pintando los tres estudios demo aunque la BD ya tuviera datos. No cambiar.
 var ENCUESTAS = [
-  {id:'demo-01', nombre:'Intención de Voto Estatal — Julio 2026', desc:'Medición estatal, 10 municipios', estado:'activa',
+  {id:'demo-01', nombre:'Intención de Voto Estatal (ejemplo)', desc:'Medición estatal de ejemplo', estado:'activa',
    ini:'2026-07-01', fin:'2026-07-15', entrevistas:2847,
    metodologia:{modo:'Vivienda', diseno:'Estratificado', n:2850, dist:'Proporcional'},
    preguntas: armarCuestionario(['conocimiento','imagen','intencion','firmeza','tema','aprobacion'], ['Candidato A','Candidato B','Candidato C'], [])},
-  {id:'demo-02', nombre:'Línea Base Colima — Mayo 2026', desc:'Primera medición de arranque', estado:'cerrada',
+  {id:'demo-02', nombre:'Línea Base Estatal (ejemplo)', desc:'Primera medición de arranque', estado:'cerrada',
    ini:'2026-05-04', fin:'2026-05-18', entrevistas:2412,
    metodologia:{modo:'Vivienda', diseno:'Estratificado', n:2400, dist:'Proporcional'},
    preguntas: armarCuestionario(['conocimiento','imagen','intencion','tema'], ['Candidato A','Candidato B','Candidato C'], [])},
-  {id:'demo-03', nombre:'Aprobación Ayuntamiento Manzanillo', desc:'Percepción de gobierno municipal', estado:'borrador',
+  {id:'demo-03', nombre:'Aprobación Municipal (ejemplo)', desc:'Percepción de gobierno municipal', estado:'borrador',
    ini:'', fin:'', entrevistas:0,
    metodologia:{modo:'Telefónica', diseno:'Cuotas', n:600, dist:'Uniforme'},
    preguntas: armarCuestionario(['aprobacion','tema'], [], [{clave:'obra', txt:'¿Conoce la obra del malecón?', opciones:['Sí','No']}])},
@@ -528,21 +528,21 @@ var ENCUESTAS = [
 // Cruce Territorio vs Opinión — agregados simulados por municipio.
 // estructura = comprometidos/meta (%); intencion e indecisos = medidos (%)
 const CRUCE = [
-  {n:'Tecomán',          estructura:15.3, intencion:44, indecisos:19, entrev:420},
-  {n:'Minatitlán',       estructura:14.4, intencion:33, indecisos:26, entrev:95},
-  {n:'Ixtlahuacán',      estructura:12.0, intencion:46, indecisos:18, entrev:80},
-  {n:'Comala',           estructura:10.0, intencion:31, indecisos:27, entrev:150},
-  {n:'Armería',          estructura:9.4,  intencion:41, indecisos:20, entrev:140},
-  {n:'Cuauhtémoc',       estructura:7.7,  intencion:36, indecisos:23, entrev:190},
-  {n:'Coquimatlán',      estructura:7.0,  intencion:30, indecisos:28, entrev:92},
-  {n:'Manzanillo',       estructura:4.3,  intencion:35, indecisos:24, entrev:540},
-  {n:'Villa de Álvarez', estructura:4.0,  intencion:42, indecisos:21, entrev:480},
-  {n:'Colima',           estructura:3.4,  intencion:40, indecisos:22, entrev:660},
-];
+  {n:'Municipio 1',  estructura:15.3, intencion:44, indecisos:19, entrev:420},
+  {n:'Municipio 2',  estructura:14.4, intencion:33, indecisos:26, entrev:95},
+  {n:'Municipio 3',  estructura:12.0, intencion:46, indecisos:18, entrev:80},
+  {n:'Municipio 4',  estructura:10.0, intencion:31, indecisos:27, entrev:150},
+  {n:'Municipio 5',  estructura:9.4,  intencion:41, indecisos:20, entrev:140},
+  {n:'Municipio 6',  estructura:7.7,  intencion:36, indecisos:23, entrev:190},
+  {n:'Municipio 7',  estructura:7.0,  intencion:30, indecisos:28, entrev:92},
+  {n:'Municipio 8',  estructura:4.3,  intencion:35, indecisos:24, entrev:540},
+  {n:'Municipio 9',  estructura:4.0,  intencion:42, indecisos:21, entrev:480},
+  {n:'Municipio 10', estructura:3.4,  intencion:40, indecisos:22, entrev:660},
+]
 const MEDIA_ESTRUCTURA = 6.6;  // avance estatal comprometidos/meta
 const MEDIA_INTENCION  = 37.8; // intención estatal medida
 
-const MUNICIPIOS = ['Tecomán','Minatitlán','Ixtlahuacán','Comala','Armería','Villa de Álvarez','Manzanillo','Colima','Cuauhtémoc','Coquimatlán'];
+const MUNICIPIOS_DEMO_PLACEHOLDER = true; const MUNICIPIOS = ['Municipio 1','Municipio 2','Municipio 3','Municipio 4','Municipio 5','Municipio 6','Municipio 7','Municipio 8','Cuauhtémoc','Coquimatlán'];
 
 /* ── Helpers ─────────────────────────────────────────────── */
 function armarCuestionario(clavesStd, opcionesIntencion, personalizadas){
@@ -777,20 +777,20 @@ function mostrarToast(msg){
 
 // Avance territorial real, horneado desde la BD (1 sep 2026).
 // meta = SUM(casillas.meta_proyectada); cap = ciudadanos capturados.
-// La suma de meta da 208,754 (cifra canonica del estado).
-// [SWAP LUIS] Fase 4+: leer de v_opinion_municipio, que ya entrega
-// meta, capturados y pct_avance por municipio en una sola consulta.
+// [25 sep] Respaldo de ejemplo con nombres GENÉRICOS (antes: 10 municipios de
+// Colima con la meta 208,754). Solo se ve si la licencia no tiene datos de
+// opinión; con datos reales, v_opinion_municipio los reemplaza por licencia.
 const TERRITORIO = [
-  {mun:'Manzanillo',       meta:58013, cap:2526},
-  {mun:'Colima',           meta:48664, cap:3572},
-  {mun:'Villa de Álvarez', meta:36937, cap:2349},
-  {mun:'Tecomán',          meta:29884, cap:4476},
-  {mun:'Armería',          meta:8432,  cap:653},
-  {mun:'Cuauhtémoc',       meta:8351,  cap:218},
-  {mun:'Comala',           meta:6403,  cap:246},
-  {mun:'Coquimatlán',      meta:5050,  cap:94},
-  {mun:'Minatitlán',       meta:4426,  cap:66},
-  {mun:'Ixtlahuacán',      meta:2594,  cap:76},
+  {mun:'Municipio 1',  meta:58013, cap:2526},
+  {mun:'Municipio 2',  meta:48664, cap:3572},
+  {mun:'Municipio 3',  meta:36937, cap:2349},
+  {mun:'Municipio 4',  meta:29884, cap:4476},
+  {mun:'Municipio 5',  meta:8432,  cap:653},
+  {mun:'Municipio 6',  meta:8351,  cap:218},
+  {mun:'Municipio 7',  meta:6403,  cap:246},
+  {mun:'Municipio 8',  meta:5050,  cap:94},
+  {mun:'Municipio 9',  meta:4426,  cap:66},
+  {mun:'Municipio 10', meta:2594,  cap:76},
 ];
 
 // RESULTADOS[encuestaId] = {propia, unidad, filas:{Municipio:{n, v:{opcion:num}}}}
@@ -1058,8 +1058,8 @@ function renderCruce(){
   const rows = D.rows;
 
   // Medias de referencia: con datos reales se recalculan ponderando
-  // por entrevistas, no promediando municipios (Ixtlahuacan con 40
-  // entrevistas no puede pesar igual que Manzanillo con 500).
+  // por entrevistas, no promediando municipios (un municipio chico con 40
+  // entrevistas no puede pesar igual que uno grande con 500).
   const totalN = rows.reduce((s,m) => s + m.entrev, 0);
   const mediaE = D.real
     ? TERRITORIO.reduce((s,t)=>s+t.cap,0) / TERRITORIO.reduce((s,t)=>s+t.meta,0) * 100

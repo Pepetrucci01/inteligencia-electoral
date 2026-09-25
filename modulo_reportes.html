@@ -452,16 +452,8 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
     <span style="font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;"> Municipio:</span>
     <div id="cal-mun-btns" style="display:flex;gap:6px;flex-wrap:wrap;">
       <button class="cal-mun-btn active" onclick="filtrarCalidad('todos')" data-mun="todos" style="font-family:var(--mono);font-size:10px;padding:4px 10px;border-radius:5px;border:1px solid var(--border2);background:var(--accent);color:#fff;cursor:pointer;">Todos</button>
-      <button class="cal-mun-btn" onclick="filtrarCalidad('Tecomán')" data-mun="Tecomán" style="font-family:var(--mono);font-size:10px;padding:4px 10px;border-radius:5px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;">Tecomán</button>
-      <button class="cal-mun-btn" onclick="filtrarCalidad('Colima')" data-mun="Colima" style="font-family:var(--mono);font-size:10px;padding:4px 10px;border-radius:5px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;">Colima</button>
-      <button class="cal-mun-btn" onclick="filtrarCalidad('Villa de Álv.')" data-mun="Villa de Álv." style="font-family:var(--mono);font-size:10px;padding:4px 10px;border-radius:5px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;">Villa de Álv.</button>
-      <button class="cal-mun-btn" onclick="filtrarCalidad('Manzanillo')" data-mun="Manzanillo" style="font-family:var(--mono);font-size:10px;padding:4px 10px;border-radius:5px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;">Manzanillo</button>
-      <button class="cal-mun-btn" onclick="filtrarCalidad('Armería')" data-mun="Armería" style="font-family:var(--mono);font-size:10px;padding:4px 10px;border-radius:5px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;">Armería</button>
-      <button class="cal-mun-btn" onclick="filtrarCalidad('Comala')" data-mun="Comala" style="font-family:var(--mono);font-size:10px;padding:4px 10px;border-radius:5px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;">Comala</button>
-      <button class="cal-mun-btn" onclick="filtrarCalidad('Cuauhtémoc')" data-mun="Cuauhtémoc" style="font-family:var(--mono);font-size:10px;padding:4px 10px;border-radius:5px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;">Cuauhtémoc</button>
-      <button class="cal-mun-btn" onclick="filtrarCalidad('Minatitlán')" data-mun="Minatitlán" style="font-family:var(--mono);font-size:10px;padding:4px 10px;border-radius:5px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;">Minatitlán</button>
-      <button class="cal-mun-btn" onclick="filtrarCalidad('Ixtlahuacán')" data-mun="Ixtlahuacán" style="font-family:var(--mono);font-size:10px;padding:4px 10px;border-radius:5px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;">Ixtlahuacán</button>
-      <button class="cal-mun-btn" onclick="filtrarCalidad('Coquimatlán')" data-mun="Coquimatlán" style="font-family:var(--mono);font-size:10px;padding:4px 10px;border-radius:5px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;">Coquimatlán</button>
+      <!-- [25 sep] botones por municipio: repPoblarMunicipios() -->
+    
     </div>
   </div>
 
@@ -524,9 +516,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
 
     <select id="fil-municipio" onchange="aplicarFiltroSecciones()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:11px;padding:5px 10px;outline:none;cursor:pointer;">
       <option value="">Todos los municipios</option>
-      <option>Tecomán</option><option>Armería</option><option>Colima</option>
-      <option>Villa de Álv.</option><option>Manzanillo</option><option>Comala</option>
-      <option>Cuauhtémoc</option><option>Ixtlahuacán</option><option>Minatitlán</option><option>Coquimatlán</option>
+      <!-- [25 sep] municipios de la licencia: repPoblarMunicipios() -->
     </select>
 
     <select id="fil-df" onchange="aplicarFiltroSecciones()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:11px;padding:5px 10px;outline:none;cursor:pointer;">
@@ -632,9 +622,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
     <span style="font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;flex-shrink:0"> Filtrar:</span>
     <select id="ec-fil-mun" onchange="aplicarFiltroEstructura()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:11px;padding:5px 10px;outline:none;cursor:pointer;">
       <option value="">Todos los municipios</option>
-      <option>Manzanillo</option><option>Colima</option><option>V. Álvarez</option>
-      <option>Tecomán</option><option>Armería</option><option>Comala</option>
-      <option>Cuauhtémoc</option><option>Ixtlahuacán</option><option>Minatitlán</option><option>Coquimatlán</option>
+      <!-- [25 sep] municipios de la licencia: repPoblarMunicipios() -->
     </select>
     <select id="ec-fil-status" onchange="aplicarFiltroEstructura()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:11px;padding:5px 10px;outline:none;cursor:pointer;">
       <option value="">Todos los estatus</option>
@@ -958,9 +946,7 @@ table.rt tr:hover td{background:rgba(255,255,255,0.02);}
           <div style="font-size:12px;font-weight:600;margin-bottom:4px"> Por municipio</div>
           <select id="diae-mun-sel" style="width:100%;background:var(--bg4);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:12px;padding:7px 10px;outline:none;margin-bottom:8px">
             <option value="">-- Seleccionar municipio --</option>
-            <option>MANZANILLO</option><option>COLIMA</option><option>VILLA DE ALVAREZ</option>
-            <option>TECOMAN</option><option>ARMERIA</option><option>COMALA</option>
-            <option>COQUIMATLAN</option><option>CUAUHTEMOC</option><option>MINATITLAN</option><option>IXTLAHUACAN</option>
+            <!-- [25 sep] municipios de la licencia: repPoblarMunicipios() -->
           </select>
           <button class="export-btn" style="width:100%;padding:9px;background:rgba(6,182,212,0.12);border-color:rgba(6,182,212,0.3);color:var(--cyan)" onclick="descargarPendientesCoordi('municipio')">⬇ Descargar municipio</button>
         </div>
@@ -1090,8 +1076,8 @@ document.addEventListener('DOMContentLoaded', repAplicarAlcanceTerritorial);
     // así que manda; el horneado queda de respaldo.
     if (window._kpisReportes && Number(window._kpisReportes.meta) > 0) return Number(window._kpisReportes.meta);
     if(typeof window.SISTEMA_META==='number'&&window.SISTEMA_META>0) return window.SISTEMA_META;
-    if(typeof IE_METAS_CASILLA!=='undefined'&&IE_METAS_CASILLA.meta_estatal) return IE_METAS_CASILLA.meta_estatal;
-    return 208754;   // [FIX 1 sep] canonico (era 208717)
+    if(!window._sesion?.licencia_id && typeof IE_METAS_CASILLA!=='undefined'&&IE_METAS_CASILLA.meta_estatal) return IE_METAS_CASILLA.meta_estatal;
+    return 0;
   }
   function apply(){
     // [FIX 2 sep · BUG-B2-04] A un coordinador MUNICIPAL no se le pinta la meta
@@ -1140,7 +1126,7 @@ async function cargarDatosMunicipios() {
     // Nunca pudo funcionar. Era código copiado de un módulo que sí lo cargaba.
     // Ahora usa el patrón REST del resto del proyecto (fetch + token de sesión).
     const sesion = JSON.parse(localStorage.getItem('electoral_sesion') || 'null');
-    const licenciaId = sesion?.licencia_id || 'a1b2c3d4-0001-0000-0000-000000000001';
+    const licenciaId = sesion?.licencia_id || null;   // [25 sep]
 
     // [FIX 1 sep] METAS_MUN estaba HORNEADO con metas viejas que sumaban 140,297
     // (Colima 22,050 · Manzanillo 49,083 · V. Álvarez 23,201...). Las reales
@@ -1154,7 +1140,7 @@ async function cargarDatosMunicipios() {
       const norm = x => String(x||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
       const out = {};
       try {
-        if (typeof IE_METAS_CASILLA !== 'undefined' && IE_METAS_CASILLA.secciones) {
+        if (!window._sesion?.licencia_id && typeof IE_METAS_CASILLA !== 'undefined' && IE_METAS_CASILLA.secciones) {
           for (const sec in IE_METAS_CASILLA.secciones) {
             const o = IE_METAS_CASILLA.secciones[sec];
             const k = norm(o.mun);
@@ -1316,8 +1302,8 @@ function actualizarKPIsResumen(kpis) {
   const meta = (Number(kpis.meta) > 0) ? Number(kpis.meta)
     : ((typeof window.SISTEMA_META === 'number' && window.SISTEMA_META > 0)
         ? window.SISTEMA_META
-        : ((typeof IE_METAS_CASILLA !== 'undefined' && IE_METAS_CASILLA.meta_estatal)
-            ? IE_METAS_CASILLA.meta_estatal : 208754));
+        : ((typeof window.SISTEMA_META==='number'&&window.SISTEMA_META>0) ? window.SISTEMA_META
+            : ((!window._sesion?.licencia_id && typeof IE_METAS_CASILLA !== 'undefined' && IE_METAS_CASILLA.meta_estatal) ? IE_METAS_CASILLA.meta_estatal : 0)));
 
   const pct = meta > 0 ? (total / meta * 100) : 0;
 
@@ -1928,7 +1914,7 @@ function exportarExcel(){
       ? MUN_DATA.reduce((a,m)=>a+(m.cap||0),0) : (Number(K.total)||0);
     const metaReal  = (Number(K.meta)>0) ? Number(K.meta)
       : ((typeof window.SISTEMA_META==='number'&&window.SISTEMA_META>0) ? window.SISTEMA_META
-      : ((typeof IE_METAS_CASILLA!=='undefined'&&IE_METAS_CASILLA.meta_estatal) ? IE_METAS_CASILLA.meta_estatal : 208754));
+      : ((!window._sesion?.licencia_id && typeof IE_METAS_CASILLA!=='undefined'&&IE_METAS_CASILLA.meta_estatal) ? IE_METAS_CASILLA.meta_estatal : 0));
     const semanasRest = Math.max(1, Math.ceil((new Date('2027-06-06') - new Date())/(7*24*3600*1000)));
     const reqSemana   = Math.ceil(Math.max(0, metaReal - totalReal) / semanasRest);
 
@@ -3540,8 +3526,8 @@ function diagnosticoHorneado(){
           ? MUN_DATA.reduce(function(s,m){ return s + (m.cap||0); }, 0) : 0;
         var metaReal = (typeof window.SISTEMA_META === 'number' && window.SISTEMA_META > 0)
           ? window.SISTEMA_META
-          : ((typeof IE_METAS_CASILLA !== 'undefined' && IE_METAS_CASILLA.meta_estatal)
-              ? IE_METAS_CASILLA.meta_estatal : 208754);
+          : ((typeof window.SISTEMA_META==='number'&&window.SISTEMA_META>0) ? window.SISTEMA_META
+              : ((!window._sesion?.licencia_id && typeof IE_METAS_CASILLA !== 'undefined' && IE_METAS_CASILLA.meta_estatal) ? IE_METAS_CASILLA.meta_estatal : 0));
         var f = function(n){ return Number(n||0).toLocaleString('es-MX'); };
 
         if (!totalReal) {
@@ -3771,8 +3757,8 @@ showTab = function(tab) {
     // así que manda; el horneado queda de respaldo.
     if (window._kpisReportes && Number(window._kpisReportes.meta) > 0) return Number(window._kpisReportes.meta);
     if(typeof window.SISTEMA_META==='number' && window.SISTEMA_META>0) return window.SISTEMA_META;
-    if(typeof IE_METAS_CASILLA!=='undefined' && IE_METAS_CASILLA.meta_estatal) return IE_METAS_CASILLA.meta_estatal;
-    return 208754;   // [FIX 1 sep] canonico (era 208717)
+    if(!window._sesion?.licencia_id && typeof IE_METAS_CASILLA!=='undefined' && IE_METAS_CASILLA.meta_estatal) return IE_METAS_CASILLA.meta_estatal;
+    return 0;
   }
   function f(n){ return Number(n).toLocaleString('es-MX'); }
   function ap(){
@@ -3785,6 +3771,27 @@ showTab = function(tab) {
   window.addEventListener('sistema-meta-ready', ap);
   setTimeout(ap,300); setTimeout(ap,1000);
 })();
+
+// [25 sep] Municipios de la licencia (selects y botones de Reportes). Antes: 10 de Colima quemados.
+async function repPoblarMunicipios(){
+  try{
+    if(!(window.supabase&&window.supabase.from)) return;
+    const {data}=await window.supabase.from('secciones_ine').select('municipio').not('municipio','is',null);
+    const muns=[...new Set((data||[]).map(r=>r.municipio))].sort();
+    if(!muns.length) return;
+    // selects (los que quedaron con el comentario)
+    document.querySelectorAll('select').forEach(sel=>{
+      const marca=[...sel.childNodes].some(n=>n.nodeType===8 && /municipios de la licencia/.test(n.textContent||''));
+      if(marca){ const keep=sel.querySelector('option[value=""]'); sel.innerHTML=(keep?keep.outerHTML:'')+muns.map(m=>`<option>${m}</option>`).join(''); }
+    });
+    // botones de calidad
+    const cont=document.getElementById('cal-mun-btns');
+    if(cont){ const base=cont.querySelector('.cal-mun-btn'); 
+      muns.forEach(m=>{ const b=document.createElement('button'); b.className='cal-mun-btn'; b.setAttribute('data-mun',m);
+        b.setAttribute('onclick',`filtrarCalidad('${m.replace(/'/g,"\\'")}')`); b.style.cssText=base?base.style.cssText:''; b.textContent=m; cont.appendChild(b); }); }
+  }catch(e){ console.warn('municipios reportes:',e); }
+}
+document.addEventListener('DOMContentLoaded',()=>{ setTimeout(repPoblarMunicipios, 600); });
 </script>
 </body>
 </html>

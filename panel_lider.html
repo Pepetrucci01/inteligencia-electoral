@@ -210,7 +210,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
     <div class="sec-num" id="sec-num">138</div>
     <div class="sec-info">
       <div class="sec-mun" id="sec-mun">Villa de Álvarez</div>
-      <div class="sec-meta" id="sec-meta">Sección electoral · Colima 2027</div>
+      <div class="sec-meta" id="sec-meta">Sección electoral</div>
     </div>
   </div>
 
@@ -383,7 +383,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var
 // ══════════════════════════════════════════════
 const SUPA_URL = 'https://dyirhwwmykskpuvzcafx.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5aXJod3dteWtza3B1dnpjYWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NTk3ODgsImV4cCI6MjA5NTEzNTc4OH0.2xe4cHqORGng1hnYPJ9ZiyT0r87fMijbUEJqBy3-xoI';
-const LICENCIA_ID = window._sesion?.licencia_id || 'a1b2c3d4-0001-0000-0000-000000000001';
+const LICENCIA_ID = window._sesion?.licencia_id || null;   // [25 sep]
 
 // [FIX 18 jul] Dos huecos que dejaban al panel 'vacío' sin error visible:
 // 1) Sin refresh PROACTIVO: token >55 min llegaba vencido; si además el
@@ -678,7 +678,7 @@ async function cargarMetaSeccion(seccion) {
       meta = await plRpc('get_meta_seccion', { p_seccion: Number(seccion) });
     } catch (e1) {
       console.warn('RPC get_meta_seccion no disponible, leyendo tabla directa:', e1);
-      const data = await plFetch(`secciones_electorales_colima?select=meta_proyectada&seccion=eq.${seccion}&limit=1`);
+      const data = await plFetch(`secciones_ine?select=meta_proyectada&seccion=eq.${seccion}&limit=1`);
       if (Array.isArray(data) && data.length > 0) meta = data[0].meta_proyectada;
     }
     if (meta !== null && meta !== undefined) {
@@ -686,7 +686,7 @@ async function cargarMetaSeccion(seccion) {
       window._META_SECCION[seccion] = Math.round(Number(meta) || 0);
       actualizarKPIs(); // refrescar con la meta real
     } else {
-      console.warn(`Meta de sección ${seccion} no encontrada en secciones_electorales_colima.`);
+      console.warn(`Meta de sección ${seccion} no encontrada en secciones_ine.`);
     }
   } catch(e) { console.warn('Error cargando meta sección:', e); }
 }

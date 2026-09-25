@@ -591,7 +591,7 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
         <div class="card-body">
           <div class="form-group">
             <label class="form-label">Estado / entidad federativa</label>
-            <input class="form-input" id="cfg-estado" value="Colima" placeholder="Ej. Colima, Jalisco, Sonora...">
+            <input class="form-input" id="cfg-estado" value="" placeholder="Ej. Colima, Jalisco, Sonora...">
           </div>
           <div class="form-group">
             <label class="form-label">Año de la elección</label>
@@ -606,7 +606,7 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
           </div>
           <div class="form-group">
             <label class="form-label">Meta estatal de registros</label>
-            <input class="form-input" type="number" id="cfg-meta" value="208754" placeholder="Ej. 208754"
+            <input class="form-input" type="number" id="cfg-meta" value="" placeholder="Ej. 208754"
               oninput="actualizarPrevMeta(this.value)">
             <div style="font-size:10px;font-family:var(--mono);color:var(--text3);margin-top:4px">
               Vista previa: <span id="cfg-meta-prev" style="color:var(--accent);font-weight:600">—</span> registros
@@ -1386,6 +1386,7 @@ function showTab(t){
     setTimeout(() => {
       cargarTemaEnFormulario();
       cargarConfigOperativaEnFormulario();
+      adminPoblarMunicipios();
     }, 50);
   }
   if (t === 'candidaturas') {
@@ -1424,9 +1425,7 @@ function modalNuevoUsuario(){
       </div>
       <div class="form-group"><label class="form-label">Municipio</label>
         <select class="form-select" id="m-mun">
-          <option>Colima</option><option>Villa de Álvarez</option><option>Tecomán</option>
-          <option>Manzanillo</option><option>Armería</option><option>Comala</option>
-          <option>Coquimatlán</option><option>Cuauhtémoc</option><option>Minatitlán</option><option>Ixtlahuacán</option>
+          <!-- [25 sep] municipios de la licencia: adminPoblarMunicipios() -->
         </select>
       </div>
     </div>
@@ -1580,7 +1579,7 @@ function guardarConfigOperativa() {
   // [FIX 14 jul] El fallback era la meta VIEJA (197,297). Ahora: valor del campo
   // -> meta viva de Supabase (window.SISTEMA_META) -> 208,717.
   const meta   = parseInt(document.getElementById('cfg-meta').value.replace(/\D/g,''))
-                 || (typeof window.SISTEMA_META === 'number' && window.SISTEMA_META > 0 ? window.SISTEMA_META : 208754)   /* [FIX 1 sep] canonico */;
+                 || (typeof window.SISTEMA_META === 'number' && window.SISTEMA_META > 0 ? window.SISTEMA_META : 0)   /* [FIX 1 sep] canonico */;
 
   if (!estado) { alert('Por favor ingresa el estado.'); return; }
 
@@ -1759,7 +1758,7 @@ function exportarUsuarios(){
   const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
-  a.download='usuarios_colima_2027.csv';
+  a.download='usuarios_'+((window.SISTEMA_ESTADO||'estado').toLowerCase().replace(/\s+/g,'_'))+'_'+(window.SISTEMA_ANIO||'')+'.csv';
   a.click();
 }
 
@@ -2074,11 +2073,11 @@ function procesarExcelCandidaturas(input){
 function descargarPlantillaCand(){
   const csv = [
     'TIPO,NOMBRE,MUNICIPIO_DISTRITO,META_VOTOS,CAPTURISTAS,ACTIVA',
-    'gobernador,Candidato a Gobernador,Estado de Colima,208754,1500,SI',
+    'gobernador,Candidato a Gobernador,'+(window.SISTEMA_ESTADO?('Estado de '+window.SISTEMA_ESTADO):'Estado')+',0,1500,SI',
     'presidente,Presidente Municipal Ejemplo,Nombre Municipio,25000,120,SI',
     'dip_local,Diputado Local Dist. 1,Distrito Local 1,18000,80,SI',
     'dip_federal,Diputado Federal Dist. 1,Distrito Federal 1,98000,380,SI',
-    'senador,Candidato a Senador,Estado de Colima,208754,800,SI',
+    'senador,Candidato a Senador,'+(window.SISTEMA_ESTADO?('Estado de '+window.SISTEMA_ESTADO):'Estado')+',0,800,SI',
   ].join('\n');
   const blob = new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
   const a = document.createElement('a');
@@ -2390,6 +2389,22 @@ function ieVolverAlHub(){
     if (total && total !== '*') el.textContent = Number(total).toLocaleString('es-MX');
   } catch(e) { console.warn('Total de registros no disponible:', e.message); }
 })();
+
+// [25 sep] Municipios de la licencia en sesion (para el modal de alta de usuario).
+async function adminPoblarMunicipios(){
+  try{
+    const sel=document.getElementById('m-mun'); if(!sel) return;
+    const _f=window.supaFetch||fetch;
+    const url=(window.SUPA_URL||(window.supabaseUrl))||'';
+    // usar el cliente ya inicializado si existe
+    let muns=[];
+    if(window.supabase&&window.supabase.from){
+      const {data}=await window.supabase.from('secciones_ine').select('municipio').not('municipio','is',null);
+      muns=[...new Set((data||[]).map(r=>r.municipio))].sort();
+    }
+    if(muns.length){ sel.innerHTML=muns.map(m=>`<option>${m}</option>`).join(''); }
+  }catch(e){ console.warn('municipios admin:',e); }
+}
 </script>
 </body>
 </html>

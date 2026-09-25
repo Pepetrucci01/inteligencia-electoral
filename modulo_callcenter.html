@@ -364,8 +364,20 @@ var COLA_DEMO = [
   { id:'d2', nombre:'JOSÉ TORRES DELGADO',    telefono:'3140000118', municipio:'MANZANILLO', seccion:'060', intentos:1 },
   { id:'d3', nombre:'ALICIA GUERRERO RÍOS',   telefono:'3130000077', municipio:'TECOMÁN',    seccion:'336', intentos:0 },
 ];
-var MUNICIPIOS = ['MANZANILLO','COLIMA','VILLA DE ÁLVAREZ','TECOMÁN','ARMERÍA',
-                  'CUAUHTÉMOC','COMALA','COQUIMATLÁN','MINATITLÁN','IXTLAHUACÁN'];
+// [25 sep] Municipios de la licencia (ccPoblarMunicipios los carga de secciones_ine).
+// En demo sin sesion se derivan de COLA_DEMO. Antes: los 10 de Colima quemados.
+var MUNICIPIOS = [];
+async function ccPoblarMunicipios(){
+  try{
+    if(licenciaId() && window.supabase && window.supabase.from){
+      var r = await window.supabase.from('secciones_ine').select('municipio').not('municipio','is',null);
+      MUNICIPIOS = Array.from(new Set(((r&&r.data)||[]).map(function(x){return x.municipio;}))).sort();
+    }
+    if(!MUNICIPIOS.length){ MUNICIPIOS = Array.from(new Set(COLA_DEMO.map(function(x){return x.municipio;}))).sort(); }
+    if(typeof pintarSelectores==='function') pintarSelectores();
+  }catch(e){ console.warn('municipios callcenter:',e); }
+}
+document.addEventListener('DOMContentLoaded',function(){ setTimeout(ccPoblarMunicipios,500); });
 
 /* Las siete disposiciones que acepta la base. El texto es el que ve
    el operador; el valor es el que guarda registrar_llamada(). */

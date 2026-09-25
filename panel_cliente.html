@@ -230,7 +230,7 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
     </div>
     <div>
       <div class="topbar-title" data-theme="partido-nombre">Inteligencia Electoral</div>
-      <div class="topbar-sub" data-theme="partido-slogan">Panel de administración · Colima 2027</div>
+      <div class="topbar-sub" data-theme="partido-slogan">Panel de administración</div>
     </div>
   </div>
   <div class="topbar-right">
@@ -364,7 +364,7 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
           <span class="badge b-green">Licencia activa</span>
         </div>
         <div class="lic-nombre" data-theme="partido-nombre">Inteligencia Electoral</div>
-        <div class="lic-plan">Plan Estándar · Colima 2027</div>
+        <div class="lic-plan">Plan Estándar · <span data-theme="sistema-titulo">—</span></div>
 
         <div class="lic-row"><span class="lic-key">Estado</span><span class="lic-val" id="lic-estado">—</span></div>
         <div class="lic-row"><span class="lic-key">Usuarios activos</span><span class="lic-val" id="lic-usuarios">—</span></div>
@@ -531,7 +531,7 @@ table.at tr:hover td{background:rgba(255,255,255,0.02);}
       </div>
       <div class="form-group">
         <label class="form-label">Estado / entidad</label>
-        <input class="form-input" value="Colima" readonly>
+        <input class="form-input" id="pc-estado-ro" value="" readonly>
       </div>
       <div class="form-group">
         <label class="form-label">Plan actual</label>
@@ -613,7 +613,7 @@ const ROLES = {
 // ══════════════════════════════════════════════
 // SUPA_URL viene de supabase_client.js
 // SUPA_KEY viene de supabase_client.js
-const LICENCIA_ID = window._sesion?.licencia_id || 'a1b2c3d4-0001-0000-0000-000000000001';
+const LICENCIA_ID = window._sesion?.licencia_id || null;   // [25 sep] sin sesion no se asume Colima
 
 // [FIX 18 jul · CAUSA RAÍZ] theme.js define un supaFetch GLOBAL (URL completa,
 // devuelve Response) y se carga al final → PISABA esta función local: los paths
@@ -728,7 +728,7 @@ async function cargarDatosCliente() {
     // usará el coordinador). METAS_MUN queda solo como último fallback.
     const METAS_CATALOGO = {};
     try {
-      const secs = await pcFetch('secciones_electorales_colima?select=municipio,meta_proyectada');
+      const secs = await pcFetch('secciones_ine?select=municipio,meta_proyectada');
       (Array.isArray(secs) ? secs : []).forEach(s => {
         const m = normMun(s.municipio);
         METAS_CATALOGO[m] = (METAS_CATALOGO[m] || 0) + (Number(s.meta_proyectada) || 0);
@@ -736,11 +736,9 @@ async function cargarDatosCliente() {
     } catch (eM) { console.warn('Metas municipales del catálogo no disponibles:', eM); }
 
     // Metas por municipio (referencia 2024 ajustada)
-    const METAS_MUN = {
-      'MANZANILLO': 49000, 'COLIMA': 44000, 'TECOMAN': 38000,
-      'VILLA DE ALVAREZ': 28000, 'COMALA': 12000, 'COQUIMATLAN': 10000,
-      'ARMERIA': 8000, 'CUAUHTEMOC': 5000, 'MINATITLAN': 2500, 'IXTLAHUACAN': 1797
-    };
+    // [25 sep] Metas por municipio: SIEMPRE de METAS_CATALOGO (secciones_ine, por licencia).
+    // Se elimino el respaldo con los 10 municipios de Colima quemados.
+    const METAS_MUN = {};
 
     MUNICIPIOS_DATA = Object.entries(munMap)
       .map(([nombre, capturados]) => ({
@@ -1062,8 +1060,7 @@ function abrirModalNuevo(){
       </div>
       <div class="form-group"><label class="form-label">Municipio</label>
         <select class="form-select" id="m-mun">
-          <option>Colima</option><option>Villa de Álvarez</option><option>Tecomán</option>
-          <option>Manzanillo</option><option>Armería</option><option>Comala</option>
+          <!-- [25 sep] municipios de la licencia: pcPoblarMunicipios() -->
           <option>Coquimatlán</option><option>Cuauhtémoc</option><option>Minatitlán</option><option>Ixtlahuacán</option>
         </select>
       </div>
@@ -1152,7 +1149,7 @@ function exportarCSV(){
   ].map(r => r.join(',')).join('\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'}));
-  a.download = 'usuarios_colima_2027.csv';
+  a.download = 'usuarios_'+((window.SISTEMA_ESTADO||'estado').toLowerCase().replace(/\s+/g,'_'))+'_'+(window.SISTEMA_ANIO||'')+'.csv';
   a.click();
 }
 
@@ -1216,6 +1213,20 @@ function cerrarSesion() {
     }
   } catch(e){}
 })();
+
+// [25 sep] Estado (campo readonly) y municipios de la licencia.
+window.addEventListener('sistema-config-ready',()=>{ const e=document.getElementById('pc-estado-ro'); if(e&&window.SISTEMA_ESTADO) e.value=window.SISTEMA_ESTADO; });
+async function pcPoblarMunicipios(){
+  try{ if(!(window.supabase&&window.supabase.from)) return;
+    const {data}=await window.supabase.from('secciones_ine').select('municipio').not('municipio','is',null);
+    const muns=[...new Set((data||[]).map(r=>r.municipio))].sort();
+    document.querySelectorAll('select').forEach(sel=>{
+      const marca=[...sel.childNodes].some(n=>n.nodeType===8&&/municipios de la licencia/.test(n.textContent||''));
+      if(marca&&muns.length){ const k=sel.querySelector('option[value=""]'); sel.innerHTML=(k?k.outerHTML:'')+muns.map(m=>`<option>${m}</option>`).join(''); }
+    });
+  }catch(e){ console.warn('municipios panel_cliente:',e); }
+}
+document.addEventListener('DOMContentLoaded',()=>{ const e=document.getElementById('pc-estado-ro'); if(e&&window.SISTEMA_ESTADO)e.value=window.SISTEMA_ESTADO; setTimeout(pcPoblarMunicipios,600); });
 </script>
 </body>
 </html>

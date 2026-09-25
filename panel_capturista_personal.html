@@ -506,7 +506,7 @@ async function pcpRefrescarPerfil(){
     pcpPintarIdentidad();
   }
 }
-const LICENCIA_ID = window._sesion?.licencia_id || 'a1b2c3d4-0001-0000-0000-000000000001';
+const LICENCIA_ID = window._sesion?.licencia_id || null;   // [25 sep] sin sesion no se asume Colima
 // [FIX 10 jul] Antes eran const congeladas al cargar. Ahora son getters:
 //   1) respetan el MODO SUPERVISIÓN (window._SUP_*) cuando un admin elige
 //      qué capturista inspeccionar (ver supervision_capturista.js);
@@ -1187,7 +1187,7 @@ function registroRapido(){
 // [SWAP LUIS · T29-2] Escritura real del registro rápido en `ciudadanos`.
 async function guardarRegistroRapidoEnBD(nombre){
   const s = window._sesion || {};
-  const lic = s.licencia_id || 'a1b2c3d4-0001-0000-0000-000000000001';
+  const lic = s.licencia_id || null;   // [25 sep] sin sesion no se asume Colima
   // Sección de la casilla que registró el activista; si no hay, la de su sesión.
   const secc = (casillaRegistrada && casillaRegistrada.seccion) || s.seccion || null;
   const fila = {

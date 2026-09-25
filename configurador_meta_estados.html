@@ -974,7 +974,20 @@ function ayudaTab(name){
 const CC_SUPA_URL = 'https://dyirhwwmykskpuvzcafx.supabase.co';
 const CC_SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5aXJod3dteWtza3B1dnpjYWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NTk3ODgsImV4cCI6MjA5NTEzNTc4OH0.2xe4cHqORGng1hnYPJ9ZiyT0r87fMijbUEJqBy3-xoI';
 
-const CC_MUNICIPIOS = ['ARMERIA','COLIMA','COMALA','COQUIMATLAN','CUAUHTEMOC','IXTLAHUACAN','MANZANILLO','MINATITLAN','TECOMAN','VILLA DE ALVAREZ'];
+// [25 sep] Municipios validos = los de la licencia en sesion (secciones_ine).
+// El literal de Colima queda solo como fallback en demo sin sesion.
+let CC_MUNICIPIOS = ['ARMERIA','COLIMA','COMALA','COQUIMATLAN','CUAUHTEMOC','IXTLAHUACAN','MANZANILLO','MINATITLAN','TECOMAN','VILLA DE ALVAREZ'];
+(async function ccCargarMunicipios(){
+  try{
+    const s=JSON.parse(localStorage.getItem('electoral_sesion')||'null');
+    if(!(s&&s.licencia_id)) return;
+    const _f=window.supaFetch||fetch;
+    const r=await _f(CC_SUPA_URL+'/rest/v1/secciones_ine?select=municipio',{headers:{'apikey':CC_SUPA_KEY,'Authorization':'Bearer '+(s.access_token||CC_SUPA_KEY)}});
+    if(!r.ok) return; const d=await r.json();
+    const muns=[...new Set((d||[]).map(x=>String(x.municipio||'').toUpperCase()))].filter(Boolean);
+    if(muns.length) CC_MUNICIPIOS=muns;
+  }catch(e){ console.warn('cc municipios:',e); }
+})();
 const CC_CURP_RE = /^[A-Z][AEIOUX][A-Z]{2}\d{6}[HM][A-Z]{5}[0-9A-Z]\d$/i;
 
 let ccFilasValidas = [];   // filas listas para insertar
@@ -1047,7 +1060,7 @@ function ccValidar(rows){
     if(!curp) errores.push('falta CURP');
     else if(!CC_CURP_RE.test(curp)) errores.push('CURP inválida');
     if(!municipio) errores.push('falta municipio');
-    else if(!CC_MUNICIPIOS.includes(municipio)) errores.push('municipio no reconocido');
+    else if(!CC_MUNICIPIOS.includes(String(municipio||'').toUpperCase())) errores.push('municipio no reconocido');
     if(!seccion) errores.push('falta sección');
     else if(isNaN(parseInt(seccion))) errores.push('sección no es número');
 
