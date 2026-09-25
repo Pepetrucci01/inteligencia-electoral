@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title data-theme="title">Carga de cartografía</title>
+<style>
+  :root{--bg:#0a0e1a;--bg2:#0f1526;--bg3:#141b2e;--text:#e5e7eb;--muted:#8b93a7;--accent:#3b82f6;--green:#22c55e;--red:#ef4444;--amber:#f59e0b;--border:#1f2a44;}
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,Segoe UI,Roboto,sans-serif}
+  .topbar{display:flex;align-items:center;gap:12px;padding:14px 22px;background:var(--bg2);border-bottom:1px solid var(--border)}
+  .tb-title{font-weight:700;letter-spacing:.02em} .tb-sub{font-size:12px;color:var(--muted);font-family:ui-monospace,monospace}
+  .wrap{max-width:860px;margin:28px auto;padding:0 18px}
+  .card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px}
+  h2{margin:0 0 6px;font-size:16px} p{margin:6px 0;color:var(--muted);font-size:13px;line-height:1.5}
+  .drop{border:2px dashed var(--border);border-radius:10px;padding:34px;text-align:center;cursor:pointer;transition:.15s}
+  .drop.over{border-color:var(--accent);background:rgba(59,130,246,.08)}
+  .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+  .kpi{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+  .kpi .v{font-size:26px;font-weight:700;color:var(--green);font-family:ui-monospace,monospace} .kpi .l{font-size:11px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+  .bar{height:10px;background:var(--bg2);border-radius:99px;overflow:hidden;margin:12px 0 6px} .bar>div{height:100%;width:0;background:linear-gradient(90deg,#1d4ed8,var(--accent));transition:width .2s}
+  button{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:11px 18px;font-weight:600;cursor:pointer} button:disabled{opacity:.45;cursor:not-allowed}
+  button.sec{background:var(--bg2);border:1px solid var(--border);color:var(--text)}
+  .log{font-family:ui-monospace,monospace;font-size:12px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;max-height:220px;overflow:auto;white-space:pre-wrap}
+  .ok{color:var(--green)} .err{color:var(--red)} .warn{color:var(--amber)}
+  .pill{display:inline-block;padding:3px 10px;border-radius:99px;font-size:11px;font-family:ui-monospace,monospace;background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.3);color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div>
+    <div class="tb-title">🗺 CARGA DE CARTOGRAFÍA</div>
+    <div class="tb-sub">Polígonos de sección (GeoJSON WGS84) · <span data-theme="sistema-titulo">—</span></div>
+  </div>
+  <div style="margin-left:auto" class="pill" id="pill-lic">sin sesión</div>
+</div>
+
+<div class="wrap">
+  <div class="card">
+    <h2>1 · Elegir el GeoJSON de la licencia</h2>
+    <p>Archivo <code>*.geojson</code> con un <code>FeatureCollection</code> de secciones. Cada feature debe traer <code>properties.seccion</code>.
+       Se carga <b>bajo la licencia de tu sesión</b>: un admin solo puede cargar la cartografía de su propio estado (RLS).
+       Si la sección ya existe se actualiza (upsert).</p>
+    <div class="drop" id="drop">
+      <div style="font-size:34px">🗺</div>
+      <div><b>Arrastra el .geojson aquí</b> o haz clic para elegir</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px">Ej. BCS_secciones_wgs84.geojson · COLIMA_secciones_wgs84.geojson</div>
+      <input type="file" id="file" accept=".geojson,.json,application/geo+json,application/json" style="display:none">
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="v" id="k-feat">—</div><div class="l">Secciones en el archivo</div></div>
+      <div class="kpi"><div class="v" id="k-base">—</div><div class="l">Hoy en la base (tu licencia)</div></div>
+      <div class="kpi"><div class="v" id="k-mun">—</div><div class="l">Municipios detectados</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>2 · Cargar</h2>
+    <p>Se envía en lotes de 40 secciones. Al terminar, se sincronizan a <code>secciones_ine</code> los datos de sección que traiga el archivo
+       (distritos, votos 2024, dificultad, centroide) sin pisar lo que ya exista.</p>
+    <div class="bar"><div id="bar"></div></div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <button id="btn-cargar" disabled>Cargar a la base</button>
+      <button class="sec" id="btn-conteo">Ver conteo actual</button>
+      <span id="estado" style="font-size:12px;color:var(--muted)"></span>
+    </div>
+    <div class="log" id="log" style="margin-top:12px">Esperando archivo…</div>
+  </div>
+</div>
+
+<script src="theme.js"></script>
+<script>
+// ── Configuración (misma detección de ambiente que supabase_client.js) ──
+const HOST = location.hostname;
+const IS_PROD = ['inteligencia-electoral.vercel.app'].includes(HOST);
+const SUPABASE_URL = IS_PROD ? 'https://jawymbrpglddhhlizifk.supabase.co' : 'https://dyirhwwmykskpuvzcafx.supabase.co';
+const SUPABASE_KEY = IS_PROD ? 'sb_publishable_sFoiB-_SwBEONPhxg9-LnQ_0k2f2zzY'
+  : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5aXJod3dteWtza3B1dnpjYWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NTk3ODgsImV4cCI6MjA5NTEzNTc4OH0.2xe4cHqORGng1hnYPJ9ZiyT0r87fMijbUEJqBy3-xoI';
+const LOTE = 40;
+
+const $ = id => document.getElementById(id);
+const log = (m, cls) => { const el=$('log'); const d=document.createElement('div'); if(cls) d.className=cls; d.textContent=m; el.appendChild(d); el.scrollTop=el.scrollHeight; };
+
+function sesion(){ try{ return JSON.parse(localStorage.getItem('electoral_sesion')||'null'); }catch(e){ return null; } }
+function headers(extra){
+  const s=sesion(); const tok=(window._sesion&&window._sesion.access_token)||(s&&s.access_token)||SUPABASE_KEY;
+  return Object.assign({'apikey':SUPABASE_KEY,'Authorization':'Bearer '+tok,'Content-Type':'application/json'}, extra||{});
+}
+const sfetch = (url,opt)=> (window.supaFetch||fetch)(url,opt);
+
+let FC=null, LIC=null;
+
+(function init(){
+  const s=sesion(); LIC = s && s.licencia_id ? String(s.licencia_id) : null;
+  $('pill-lic').textContent = LIC ? ('licencia ' + LIC.slice(0,8) + '… · ' + (s.rol||'')) : 'sin sesión';
+  if(!LIC){ log('No hay sesión con licencia. Entra al sistema como admin del estado y vuelve a abrir esta página.','err'); return; }
+  if(!['super_admin','admin'].includes(String(s.rol||''))){ log('Tu rol es "'+s.rol+'". Solo admin/super_admin pueden cargar cartografía.','err'); }
+  conteo();
+})();
+
+async function conteo(){
+  try{
+    const r=await sfetch(SUPABASE_URL+'/rest/v1/cartografia_secciones?select=seccion&limit=1',{headers:headers({'Prefer':'count=exact'}),method:'GET'});
+    const cr=r.headers.get('content-range')||''; const tot=cr.split('/')[1];
+    $('k-base').textContent = (tot && tot!=='*') ? Number(tot).toLocaleString('es-MX') : '0';
+  }catch(e){ $('k-base').textContent='?'; }
+}
+$('btn-conteo').onclick=conteo;
+
+// ── archivo ──
+const drop=$('drop'), file=$('file');
+drop.onclick=()=>file.click();
+drop.ondragover=e=>{e.preventDefault();drop.classList.add('over');}; drop.ondragleave=()=>drop.classList.remove('over');
+drop.ondrop=e=>{e.preventDefault();drop.classList.remove('over'); if(e.dataTransfer.files[0]) leer(e.dataTransfer.files[0]);};
+file.onchange=()=>{ if(file.files[0]) leer(file.files[0]); };
+
+function leer(f){
+  $('log').textContent=''; log('Leyendo '+f.name+' ('+Math.round(f.size/1024)+' KB)…');
+  const rd=new FileReader();
+  rd.onload=()=>{
+    try{
+      const j=JSON.parse(rd.result);
+      if(!j || j.type!=='FeatureCollection' || !Array.isArray(j.features)) throw new Error('No es un FeatureCollection GeoJSON.');
+      const sinSec=j.features.filter(x=>!x.properties || x.properties.seccion==null).length;
+      if(sinSec) log(sinSec+' features sin properties.seccion: se omitirán.','warn');
+      FC=j;
+      const muns=new Set(j.features.map(x=>x.properties&&x.properties.nom_municipio).filter(Boolean));
+      $('k-feat').textContent=j.features.length.toLocaleString('es-MX'); $('k-mun').textContent=muns.size||'—';
+      log('OK: '+j.features.length+' secciones · '+muns.size+' municipios: '+[...muns].sort().join(', '),'ok');
+      $('btn-cargar').disabled=!LIC;
+    }catch(e){ FC=null; $('btn-cargar').disabled=true; log('Archivo inválido: '+e.message,'err'); }
+  };
+  rd.readAsText(f,'utf-8');
+}
+
+// ── carga por lotes ──
+$('btn-cargar').onclick=async()=>{
+  if(!FC||!LIC) return;
+  $('btn-cargar').disabled=true; $('bar').style.width='0%';
+  const feats=FC.features.filter(x=>x.properties&&x.properties.seccion!=null&&x.geometry);
+  const fuente='GeoJSON '+(file.files[0]?file.files[0].name:'')+' · '+new Date().toISOString().slice(0,10);
+  let hechas=0, err=0;
+  for(let i=0;i<feats.length;i+=LOTE){
+    const filas=feats.slice(i,i+LOTE).map(x=>{
+      const p=Object.assign({},x.properties); const sec=Number(p.seccion); delete p.seccion;
+      return {licencia_id:LIC, seccion:sec, propiedades:p, geometria:x.geometry, fuente:fuente};
+    });
+    try{
+      const r=await sfetch(SUPABASE_URL+'/rest/v1/cartografia_secciones?on_conflict=licencia_id,seccion',{
+        method:'POST', headers:headers({'Prefer':'resolution=merge-duplicates,return=minimal'}), body:JSON.stringify(filas)});
+      if(!r.ok){ const t=await r.text(); throw new Error('HTTP '+r.status+' '+t.slice(0,160)); }
+      hechas+=filas.length;
+    }catch(e){ err++; log('Lote '+(i/LOTE+1)+' falló: '+e.message,'err'); if(err>=3){ log('Demasiados errores, se detiene.','err'); break; } }
+    $('bar').style.width=Math.round(hechas/feats.length*100)+'%'; $('estado').textContent=hechas+' / '+feats.length;
+  }
+  log('Cartografía: '+hechas+' secciones enviadas'+(err?(' · '+err+' lotes con error'):''), err?'warn':'ok');
+
+  // sincronizar datos de seccion a secciones_ine
+  try{
+    const r=await sfetch(SUPABASE_URL+'/rest/v1/rpc/sincronizar_secciones_desde_cartografia',{method:'POST',headers:headers(),body:'{}'});
+    const j=await r.json();
+    if(!r.ok) throw new Error(j.message||JSON.stringify(j));
+    log('secciones_ine sincronizadas: '+j.secciones_actualizadas+' actualizadas · '+j.secciones_creadas+' creadas','ok');
+  }catch(e){ log('Sincronización a secciones_ine falló: '+e.message,'err'); }
+  await conteo(); $('btn-cargar').disabled=false;
+  log('Listo. Abre el módulo Mapa para verlo.','ok');
+};
+</script>
+</body>
+</html>
