@@ -93,7 +93,7 @@ let FC=null, LIC=null;
   const s=sesion(); LIC = s && s.licencia_id ? String(s.licencia_id) : null;
   $('pill-lic').textContent = LIC ? ('licencia ' + LIC.slice(0,8) + '… · ' + (s.rol||'')) : 'sin sesión';
   if(!LIC){ log('No hay sesión con licencia. Entra al sistema como admin del estado y vuelve a abrir esta página.','err'); return; }
-  if(!['super_admin','admin'].includes(String(s.rol||''))){ log('Tu rol es "'+s.rol+'". Solo admin/super_admin pueden cargar cartografía.','err'); }
+  if(String(s.rol||'')!=='super_admin'){ log('Tu rol es "'+s.rol+'". Solo super_admin puede cargar cartografía.','err'); }
   conteo();
 })();
 

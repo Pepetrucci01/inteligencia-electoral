@@ -355,7 +355,7 @@ table.res th{color:var(--text3);font-family:var(--mono);font-size:10px;text-tran
     const s = JSON.parse(localStorage.getItem('electoral_sesion')||'null');
     if(!s||!s.ts){ location.replace('login.html'); return; }
     if((Date.now()-s.ts)/3600000 >= 8){ localStorage.removeItem('electoral_sesion'); location.replace('login.html'); return; }
-    if(!['admin','super_admin'].includes(s.rol)){ location.replace('login.html'); return; }
+    if(s.rol!=='super_admin'){ location.replace('index.html'); return; }   // [25 sep] cargas: solo super_admin (las cargas son servicio de MEFT, no del cliente)
     window._sesion = s;
   }catch(e){ location.replace('login.html'); }
 })();
