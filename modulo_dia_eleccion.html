@@ -877,7 +877,7 @@ async function cargarSimpatizantesDiaE() {
     if (!await esperarSupabase(8000)) { _diaECargando = false; return; }
     // Leer sesión en el momento de ejecutar (ya restaurada por supabase_client.js)
     const sesionActual = window._sesion || SESION;
-    const licenciaId = sesionActual?.licencia_id || 'a1b2c3d4-0001-0000-0000-000000000001';
+    const licenciaId = sesionActual?.licencia_id || null;   // [25 sep] sin licencia no se asume Colima
     const rol = sesionActual?.rol || '';
 
     // [DÍA E 3 sep] Antes: .from('ciudadanos') bajo la RLS del usuario y con
@@ -2007,7 +2007,7 @@ async function guardarInstalacionEnBD(inst) {
     }
     const sesion = window._sesion || {};
     const fila = {
-      licencia_id:          sesion.licencia_id || 'a1b2c3d4-0001-0000-0000-000000000001',
+      licencia_id:          sesion.licencia_id || null,   // [25 sep] RLS rechaza null: nunca escribir en Colima por defecto
       numero_seccion:       inst.seccion,
       tipo_casilla:         inst.tipo,
       numero_casilla:       inst.numero_casilla || 1,
@@ -2158,7 +2158,7 @@ async function guardarCierreEnBD(cierre) {
     }
     const v = cierre.votos || {};
     const fila = {
-      licencia_id:           sesion.licencia_id || 'a1b2c3d4-0001-0000-0000-000000000001',
+      licencia_id:           sesion.licencia_id || null,   // [25 sep] idem
       numero_seccion:        INSTALACION.seccion,
       tipo_casilla:          INSTALACION.tipo,
       numero_casilla:        INSTALACION.numero_casilla || 1,

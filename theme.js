@@ -168,6 +168,10 @@ function applyTheme(theme) {
   document.querySelectorAll('[data-theme="sistema-titulo"]').forEach(el => {
     el.textContent = `${theme.partidoNombre} · ${_tituloEstado}`;
   });
+  // Estado solo (ej. "· 08:00–18:00 hrs · <span data-theme=sistema-estado>")
+  document.querySelectorAll('[data-theme="sistema-estado"]').forEach(el => {
+    el.textContent = theme.sistemaEstado || '';
+  });
   // Publicar para modulos que arman sus propios subtitulos (index.html tb-sub)
   window.SISTEMA_ESTADO = theme.sistemaEstado || '';
   window.SISTEMA_ANIO   = theme.sistemaAnio;

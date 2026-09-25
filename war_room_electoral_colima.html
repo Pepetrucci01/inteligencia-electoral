@@ -3,7 +3,7 @@
 ============================================================
   VOTERA(TM) - Inteligencia Electoral
   (c) 2026 MEFT Consulting - RFC: CUOJ7808208Z2
-  Villa de Alvarez, Colima, Mexico - votera.mx
+  votera.mx
   Todos los derechos reservados.
 
   Software propietario bajo licencia. Su uso, copia,
@@ -23,7 +23,7 @@
 <meta name="author" content="MEFT Consulting">
 <meta name="copyright" content="© 2026 MEFT Consulting. Todos los derechos reservados.">
 <meta name="application-name" content="VOTERA™ — Inteligencia Electoral">
-<title>WAR ROOM ELECTORAL — COLIMA 2027</title>
+<title data-theme="title">WAR ROOM ELECTORAL</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
@@ -397,7 +397,7 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
     <div class="fb-icon">✏️</div>
     <div>
       <div class="fb-title">FASE 1 — Captura de simpatizantes · En curso</div>
-      <div class="fb-sub">Avance de captura territorial · Meta: <span id="wr-meta-sub">208,754</span> simpatizantes · <span id="wr-dias-eleccion">279</span> días a la elección</div>
+      <div class="fb-sub">Avance de captura territorial · Meta: <span id="wr-meta-sub">—</span> simpatizantes · <span id="wr-dias-eleccion">279</span> días a la elección</div>
     </div>
   </div>
 
@@ -413,7 +413,7 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
     <span class="cfg-lbl">simpatizantes</span>
     <button class="cfg-btn" onclick="recalc()">⟳ RECALCULAR META</button>
     <span class="cfg-lbl">META ESTATAL CALCULADA:</span>
-    <span class="cfg-val" id="meta-calc">208,754</span>
+    <span class="cfg-val" id="meta-calc">—</span>
   </div>
 
   <div class="main">
@@ -423,12 +423,12 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
       <div class="pb-lbl">AVANCE ESTATAL VS META 2027</div>
       <div class="pb-track"><div class="pb-fill" id="pb-fill" style="width:7.2%;background:linear-gradient(90deg,#1d4ed8,#3b82f6)"></div></div>
       <div class="pb-pct" id="pb-pct" style="color:var(--accent)">7.2%</div>
-      <div class="pb-nums" id="pb-nums">— / <span id="wr-meta-pb">208,754</span> capturados</div>
+      <div class="pb-nums" id="pb-nums">— / <span id="wr-meta-pb">—</span> capturados</div>
     </div>
 
     <!-- KPIs -->
     <div class="kpi-row">
-      <div class="kpi bl" data-tip="Votos que la candidatura necesita para ganar en 2027. Es el objetivo final."><div class="kl">Meta estatal <span data-theme="sistema-anio">2027</span></div><div class="kv" id="kpi-meta">208,754</div><div class="ks">votos proyectados</div></div>
+      <div class="kpi bl" data-tip="Votos que la candidatura necesita para ganar en 2027. Es el objetivo final."><div class="kl">Meta estatal <span data-theme="sistema-anio">2027</span></div><div class="kv" id="kpi-meta">—</div><div class="ks">votos proyectados</div></div>
       <div class="kpi gr" data-tip="Ciudadanos registrados hasta hoy por tu estructura en campo."><div class="kl">Total capturados</div><div class="kv" id="kpi-total-cap">—</div><div class="ks">registros activos</div></div>
       <div class="kpi gr" data-tip="Ciudadanos con alto compromiso de votar por ti (nivel 3 y 4)."><div class="kl">Seguro vota</div><div class="kv" id="kpi-seguro-vota">—</div><div class="ks">nivel compromiso 3+4</div></div>
       <div class="kpi am" data-tip="Ciudadanos que requieren atención inmediata para asegurar su voto."><div class="kl">Prioridad alta</div><div class="kv" id="kpi-atencion">—</div><div class="ks">requieren atención</div></div>
@@ -613,10 +613,7 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
             </select>
             <select id="alerta-mun" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:7px 10px;outline:none;margin-bottom:10px;display:none" onchange="actualizarConteoAlerta()">
               <option value="">Todos los municipios</option>
-              <option>Armería</option><option>Colima</option><option>Comala</option>
-              <option>Coquimatlán</option><option>Cuauhtémoc</option><option>Ixtlahuacán</option>
-              <option>Manzanillo</option><option>Minatitlán</option><option>Tecomán</option>
-              <option>Villa de Álvarez</option>
+              <!-- [25 sep] municipios de la licencia: los llena wrPoblarSelectoresMun() -->
             </select>
 
             <!-- Contador -->
@@ -661,7 +658,7 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
   <div class="jornada-bar">
     <div>
       <div class="j-title">🗳 JORNADA ELECTORAL EN CURSO — 6 JUNIO 2027</div>
-      <div class="j-sub"><span id="j-total-casillas">—</span> casillas · 08:00–18:00 hrs · Colima</div>
+      <div class="j-sub"><span id="j-total-casillas">—</span> casillas · 08:00–18:00 hrs · <span data-theme="sistema-estado"></span></div>
     </div>
     <div class="j-reloj" id="f2-reloj">--:--:--</div>
     <div style="font-size:10px;font-family:var(--mono);color:var(--text3);margin-top:2px" id="f2-ultima-marca">sin marcas aún</div>
@@ -784,9 +781,7 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
       <div style="font-size:11px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;">🏛 Casillas instaladas</div>
       <select id="cas-fil-mun" onchange="filtrarCasillas()" style="font-family:var(--mono);font-size:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:5px;padding:4px 8px;cursor:pointer;">
         <option value="">Todos los municipios</option>
-        <option>Colima</option><option>Villa de Alvarez</option><option>Manzanillo</option>
-        <option>Tecoman</option><option>Armeria</option><option>Comala</option>
-        <option>Cuauhtemoc</option><option>Coquimatlan</option><option>Minatitlan</option><option>Ixtlahuacan</option>
+        <!-- [25 sep] municipios de la licencia: los llena wrPoblarSelectoresMun() -->
       </select>
       <input id="cas-fil-sec" type="text" placeholder="Sección..." oninput="filtrarCasillas()" style="font-family:var(--mono);font-size:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:4px 8px;width:90px;outline:none;">
       <div style="display:flex;gap:5px;flex-wrap:wrap;">
@@ -855,10 +850,7 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
             </select>
             <select id="alerta-mun-f2" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:11px;padding:7px 10px;outline:none;margin-bottom:10px;display:none" onchange="actualizarConteoAlerta()">
               <option value="">Todos los municipios</option>
-              <option>Armería</option><option>Colima</option><option>Comala</option>
-              <option>Coquimatlán</option><option>Cuauhtémoc</option><option>Ixtlahuacán</option>
-              <option>Manzanillo</option><option>Minatitlán</option><option>Tecomán</option>
-              <option>Villa de Álvarez</option>
+              <!-- [25 sep] municipios de la licencia: los llena wrPoblarSelectoresMun() -->
             </select>
 
             <!-- Contador -->
@@ -904,48 +896,77 @@ table.t tr.sel td{background:rgba(59,130,246,.06);}
 // Variable global para preservar el conteo real de Supabase
 let _totalCapturadosReal = 0;   // [FIX 1 sep] antes 14300 horneado; lo llena get_war_room_kpis
 
-const MUNS = [
-  {id:'TEC',n:'Tecomán',      cap:0,   meta:29884,secs:61, df:'DF2',cas:153,v24:6820,g24:'Partido A',p24:61.7},
-  {id:'MIN',n:'Minatitlán',   cap:0,   meta:4426, secs:7, df:'DF2',cas:19, v24:1440,g24:'Partido A',p24:64.1},
-  {id:'IXT',n:'Ixtlahuacán',  cap:0,   meta:2594, secs:8, df:'DF2',cas:12, v24:1280,g24:'Partido A',p24:61.4},
-  {id:'CML',n:'Comala',       cap:0,   meta:6403, secs:13, df:'DF1',cas:35, v24:1640,g24:'Partido A',p24:47.7},
-  {id:'ARM',n:'Armería',      cap:0,   meta:8432, secs:21, df:'DF2',cas:41, v24:2030,g24:'Partido A',p24:60.4},
-  {id:'VDA',n:'Villa de Álvarez',cap:0,   meta:36937,secs:71,df:'DF1',cas:194,v24:5220,g24:'Partido A',p24:47.0},
-  {id:'MAN',n:'Manzanillo',   cap:0,   meta:58013,secs:79, df:'DF2',cas:256,v24:8420,g24:'Partido A',p24:47.9},
-  {id:'COL',n:'Colima',       cap:0,   meta:48664,secs:97, df:'DF1',cas:248,v24:5180,g24:'Partido A',p24:45.4},
-  {id:'CUA',n:'Cuauhtémoc',   cap:0,   meta:8351, secs:18, df:'DF1',cas:45, v24:2310,g24:'Partido A',p24:50.4},
-  {id:'COQ',n:'Coquimatlán',  cap:0,   meta:5050, secs:13, df:'DF1',cas:30, v24:1820,g24:'Partido B',p24:52.7},
-];
-const DFS = [
-  {id:'DF1',n:'Distrito Federal 1',munIds:['CML','VDA','COL','CUA','COQ']},
-  {id:'DF2',n:'Distrito Federal 2',munIds:['TEC','MIN','IXT','ARM','MAN']},
-];
-DFS.forEach(df=>{
-  df.cap=MUNS.filter(m=>df.munIds.includes(m.id)).reduce((s,m)=>s+m.cap,0);
-  df.meta=MUNS.filter(m=>df.munIds.includes(m.id)).reduce((s,m)=>s+m.meta,0);
-  df.secs=MUNS.filter(m=>df.munIds.includes(m.id)).reduce((s,m)=>s+m.secs,0);
-  df.cas=MUNS.filter(m=>df.munIds.includes(m.id)).reduce((s,m)=>s+m.cas,0);
-});
+// [25 sep] CATÁLOGO POR LICENCIA. Antes MUNS/DFS/DLS eran un literal con los 10
+// municipios de COLIMA (metas, secciones y DF quemados) y los datos reales de la
+// RPC se MAPEABAN hacia ese esqueleto por nombre: cualquier municipio que no fuera
+// de Colima (LA PAZ, LOS CABOS...) se descartaba en silencio y la pantalla seguia
+// mostrando Colima con ceros. Ahora las tres estructuras arrancan VACIAS y las
+// construye wrConstruirCatalogo() con las secciones que entrega
+// get_war_room_territorio() (ya filtradas por licencia en la base). Las formas de
+// los objetos se conservan para que todo el render siga igual.
+const MUNS = [];
+const DFS  = [];
+const DLS  = [];
+let   WR_MUN_ID = {};   // nombre normalizado -> id interno (se llena en el catalogo)
 
-// Distritos locales — MAPEO REAL por municipio
-// Fuente: secciones_electorales_colima (base Colima 2027).
-// NOTA: un mismo numero de distrito local puede repetirse entre municipios
-// (los distritos locales cruzan varios municipios); por eso el id interno
-// combina municipio + numero para mantenerlo unico, mientras el nombre
-// visible y el campo num conservan el numero real del distrito.
-const DL_LOCALES_POR_MUN = {
-  TEC:[9,10,15,16], MIN:[14], IXT:[3], CML:[4], ARM:[9],
-  VDA:[4,6,7,8], MAN:[11,12,13,14], COL:[1,2,3,5], CUA:[6], COQ:[5],
-};
-const DLS = [];
-MUNS.forEach(m=>{
-  const nums = DL_LOCALES_POR_MUN[m.id] || [];
-  const n = Math.max(1, nums.length);
-  nums.forEach(num=>{
-    DLS.push({id:'DL_'+m.id+'_'+num, num:num, n:'Distrito Local '+num, mun:m.id, munNombre:m.n,
-      cap:Math.round(m.cap/n), meta:Math.round(m.meta/n), secs:Math.round(m.secs/n), cas:Math.round(m.cas/n)});
+function wrMunId(nombre){ return wrNorm(nombre).replace(/[^A-Z0-9]+/g,'_') || 'SIN_MUN'; }
+function wrMunNombre(nombre){
+  // "LOS CABOS" -> "Los Cabos"; "VILLA DE ALVAREZ" -> "Villa de Alvarez"
+  const menores = {DE:1,DEL:1,LA:1,LAS:1,LOS:1,Y:1};
+  return String(nombre||'').trim().toLowerCase().split(/\s+/).map((w,i)=>{
+    const W=w.toUpperCase(); return (i>0 && menores[W]) ? w : (w.charAt(0).toUpperCase()+w.slice(1));
+  }).join(' ');
+}
+
+function wrConstruirCatalogo(secciones){
+  MUNS.length=0; DFS.length=0; DLS.length=0; WR_MUN_ID={};
+  const porMun = {};
+  (Array.isArray(secciones)?secciones:[]).forEach(sc=>{
+    const nom = String(sc.mun||'').trim(); if(!nom) return;
+    const id = wrMunId(nom);
+    if(!porMun[id]){
+      porMun[id] = {id:id, n:wrMunNombre(nom), nombre:nom, cap:0, meta:0, secs:0, cas:0,
+                    v24:0, g24:'—', p24:null, df:null, _dfs:{}};
+      WR_MUN_ID[wrNorm(nom)] = id;
+    }
+    const m = porMun[id];
+    m.secs++; m.meta += Math.round(Number(sc.meta)||0);
+    m.cas  += Number(sc.cas)||0; m.cap += Number(sc.cap)||0;
+    if(sc.df!==null && sc.df!==undefined && sc.df!==''){ const k='DF'+sc.df; m._dfs[k]=(m._dfs[k]||0)+1; }
   });
-});
+  Object.values(porMun).forEach(m=>{
+    // DF del municipio = el distrito con mas secciones (un municipio puede cruzar DFs)
+    const dfs = Object.entries(m._dfs).sort((a,b)=>b[1]-a[1]);
+    m.df = dfs.length ? dfs[0][0] : null; delete m._dfs;
+    MUNS.push(m);
+  });
+  MUNS.sort((a,b)=>b.meta-a.meta);
+  // Distritos federales presentes en la licencia
+  const dfIds = [...new Set(MUNS.map(m=>m.df).filter(Boolean))]
+    .sort((a,b)=>Number(a.replace('DF',''))-Number(b.replace('DF','')));
+  dfIds.forEach(id=>{
+    DFS.push({id:id, n:'Distrito Federal '+id.replace('DF',''), munIds:MUNS.filter(m=>m.df===id).map(m=>m.id),
+              cap:0, meta:0, secs:0, cas:0});
+  });
+  // Selectores de municipio del DOM (arrancaron vacios)
+  wrPoblarSelectoresMun();
+}
+
+function wrPoblarSelectoresMun(){
+  const opts = MUNS.map(m=>`<option value="${m.id}">${m.n}</option>`).join('');
+  ['flt-mun','f2-flt-mun','cap-flt-mun'].forEach(id=>{
+    const el=document.getElementById(id); if(!el) return;
+    const v=el.value; el.innerHTML='<option value="">Todos</option>'+opts; if(v) el.value=v;
+  });
+  // Selectores que usan el NOMBRE como valor (alertas / casillas F2)
+  const optsNom = MUNS.map(m=>`<option>${m.n}</option>`).join('');
+  ['alerta-mun','cas-fil-mun','alerta-mun-f2'].forEach(id=>{
+    const el=document.getElementById(id); if(!el) return;
+    const first = el.querySelector('option'); const v=el.value;
+    el.innerHTML = (first && !first.value && !MUNS.some(m=>m.n===first.textContent) ? first.outerHTML : '') + optsNom;
+    if(v) el.value=v;
+  });
+}
 
 // ══════════════════════════════════════════════════════════════════════════
 // [FIX 1 sep] TERRITORIO REAL. Antes aqui vivian tres generadores con
@@ -964,8 +985,6 @@ const CAS_SEC = {};
 const CAPS = {};
 function fmt(n){return Number(n||0).toLocaleString('es-MX');}
 
-const WR_MUN_ID = {'TECOMAN':'TEC','MINATITLAN':'MIN','IXTLAHUACAN':'IXT','COMALA':'CML','ARMERIA':'ARM',
-  'VILLA DE ALVAREZ':'VDA','MANZANILLO':'MAN','COLIMA':'COL','CUAUHTEMOC':'CUA','COQUIMATLAN':'COQ'};
 const wrNorm = x => String(x||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
 const wrCap1 = x => { x=String(x||'').trim(); return x ? x.charAt(0).toUpperCase()+x.slice(1).toLowerCase() : '—'; };
 function wrHora(ts){ if(!ts) return '—'; try{ return new Date(ts).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}); }catch(_e){ return '—'; } }
@@ -982,6 +1001,9 @@ function wrConstruirTerritorio(t){
   const secciones = Array.isArray(t.secciones) ? t.secciones : [];
   const casillas  = Array.isArray(t.casillas)  ? t.casillas  : [];
   const caps      = Array.isArray(t.capturistas) ? t.capturistas : [];
+
+  // [25 sep] Primero el catalogo (municipios/DF) de ESTA licencia, desde las secciones.
+  wrConstruirCatalogo(secciones);
 
   // Limpiar
   Object.keys(SECS).forEach(k=>delete SECS[k]);
@@ -1297,7 +1319,7 @@ function sortWR(col) {
 }
 
 // [SWAP LUIS] meta base desde IE_METAS_CASILLA (208,717); fallback demo-safe
-const META_WR=(typeof IE_METAS_CASILLA!=='undefined' && IE_METAS_CASILLA.meta_estatal)?IE_METAS_CASILLA.meta_estatal:208754;
+const META_WR=(!window._sesion?.licencia_id && typeof IE_METAS_CASILLA!=='undefined' && IE_METAS_CASILLA.meta_estatal)?IE_METAS_CASILLA.meta_estatal:0;   // [25 sep] con licencia: la meta viene de la RPC/config
 function recalc(){
   const p=parseFloat(document.getElementById('cfg-pct').value)||6;
   const meta=Math.round(META_WR*(p/6));
@@ -1533,9 +1555,9 @@ function renderCuadF1(){
     html+='</div>';
   } else {
   html+='<div class="uq-grid">';
-  html+=card({lbl:'ESTADO COMPLETO',nom:'Colima',cap:capTot,meta:metaTot,sel:!f1s.df&&!f1s.mun,click:`drillF1('candidato',null)`,hint:(f1s.df||f1s.mun)?'← Clic para regresar a la vista estatal':'',tip:'Avance total del estado contra la meta 2027. Clic: regresa el War Room a la vista inicial.'});
+  html+=card({lbl:'ESTADO COMPLETO',nom:(window.SISTEMA_ESTADO||'Estado'),cap:capTot,meta:metaTot,sel:!f1s.df&&!f1s.mun,click:`drillF1('candidato',null)`,hint:(f1s.df||f1s.mun)?'← Clic para regresar a la vista estatal':'',tip:'Avance total del estado contra la meta 2027. Clic: regresa el War Room a la vista inicial.'});
   DFS.forEach(df=>{const p=pct(df.cap,df.meta);if(!okSem(p))return;
-    html+=card({lbl:df.id,nom:df.n.replace('Distrito Federal ','DF ')+(df.id==='DF1'?' · Norte':' · Sur'),cap:df.cap,meta:df.meta,sel:f1s.df===df.id,click:`drillF1('df','${df.id}')`,hint:`${df.secs} secc. · ${capsDF(df.id)} activistas · Ver municipios →`,tip:'Avance del distrito federal. Clic: los cuadrantes y la tabla se enfocan aquí.'});
+    html+=card({lbl:df.id,nom:df.n.replace('Distrito Federal ','DF '),cap:df.cap,meta:df.meta,sel:f1s.df===df.id,click:`drillF1('df','${df.id}')`,hint:`${df.secs} secc. · ${capsDF(df.id)} activistas · Ver municipios →`,tip:'Avance del distrito federal. Clic: los cuadrantes y la tabla se enfocan aquí.'});
   });
   html+='</div>';
   if(f1s.df){const df=DFS.find(d=>d.id===f1s.df);
@@ -1631,7 +1653,7 @@ function updateBcF1(){
   const _am=wrAlcanceMun();
   let h=_am
     ? `<a onclick="drillF1('mun','${_am.id}')" class="${!f1s.dl&&!f1s.sec?'act':''}">📍 ${_am.n}</a>`
-    : `<a onclick="drillF1('candidato',null)" class="${!f1s.df&&!f1s.mun?'act':''}">🏛 Candidato · Colima</a>`;
+    : `<a onclick="drillF1('candidato',null)" class="${!f1s.df&&!f1s.mun?'act':''}">🏛 Candidato · ${window.SISTEMA_ESTADO||'Estado'}</a>`;
   if(f1s.df&&!_am){const df=DFS.find(d=>d.id===f1s.df);
     h+=`<span class="sep">›</span><a onclick="drillF1('df','${f1s.df}')" class="${!f1s.mun?'act':''}">${df?df.n.replace('Distrito Federal ','DF ')+(df.id==='DF1'?' · Norte':' · Sur'):f1s.df}</a>`;}
   if(f1s.mun&&!_am){const m=MUNS.find(x=>x.id===f1s.mun);
@@ -2076,7 +2098,7 @@ function renderCuadF2(){
     const secIds=MUNS.filter(m=>df.munIds.includes(m.id)).flatMap(m=>munSecIds(m.id));
     const st=casStats(secIds);const p=Math.round((st.ab+st.ce)/Math.max(st.total,1)*100);
     if(!ok(p))return;
-    html+=card2({lbl:df.id,nom:df.n.replace('Distrito Federal ','DF ')+(df.id==='DF1'?' · Norte':' · Sur'),p:p,votos:st.votos,inc:st.inc,extra:`${st.inc} incid. · ${st.sr} s/rep.`,sel:f2s.df===df.id,click:`drillF2('df','${df.id}')`,hint:'Ver municipios →',tip:'Jornada en este distrito. Clic: los cuadrantes y la tabla se enfocan aquí.'});
+    html+=card2({lbl:df.id,nom:df.n.replace('Distrito Federal ','DF '),p:p,votos:st.votos,inc:st.inc,extra:`${st.inc} incid. · ${st.sr} s/rep.`,sel:f2s.df===df.id,click:`drillF2('df','${df.id}')`,hint:'Ver municipios →',tip:'Jornada en este distrito. Clic: los cuadrantes y la tabla se enfocan aquí.'});
   });
   html+='</div>';
   if(f2s.df){const df=DFS.find(d=>d.id===f2s.df);
@@ -2830,7 +2852,7 @@ async function cargarCasillasF2Reales() {
   }
 }
 
-const CASILLAS_F2 = [
+const CASILLAS_F2 = (window._sesion?.licencia_id) ? [] : [   // [25 sep] simulados de Colima solo sin licencia
   {id:'CAS-001',seccion:1,  municipio:'Colima',          tipo:'Básica',        estatus:'instalada',    hora:'08:02',rep:'Juan Pérez',votos:142},
   {id:'CAS-002',seccion:5,  municipio:'Colima',          tipo:'Básica',        estatus:'instalada',    hora:'08:05',rep:'Ana López',votos:138},
   {id:'CAS-003',seccion:12, municipio:'Colima',          tipo:'Básica',        estatus:'no_instalada', hora:'—',    rep:'Carlos Ruiz',votos:0},
@@ -3320,12 +3342,8 @@ async function cargarCasillasSeccion(secNum) {
 }
 
 // Mapa nombre municipio Supabase → id interno MUNS
-const MUN_NAME_MAP = {
-  'TECOMÁN':'TEC','MANZANILLO':'MAN','COLIMA':'COL','VILLA DE ÁLVAREZ':'VDA',
-  'VILLA DE ALVAREZ':'VDA','ARMERÍA':'ARM','ARMERIA':'ARM','COMALA':'CML',
-  'CUAUHTÉMOC':'CUA','CUAUHTEMOC':'CUA','IXTLAHUACÁN':'IXT','IXTLAHUACAN':'IXT',
-  'MINATITLÁN':'MIN','MINATITLAN':'MIN','COQUIMATLÁN':'COQ','COQUIMATLAN':'COQ'
-};
+// [25 sep] Derivado del catalogo dinamico (antes: literal de Colima)
+const MUN_NAME_MAP = new Proxy({}, { get:(_,k)=> WR_MUN_ID[wrNorm(String(k))] });
 
 // Objeto global de secciones reales: { 'TEC': [{id,num,mun,munNombre,cap,meta,cas},...], ... }
 window.SECS_REAL = {};
@@ -3340,11 +3358,8 @@ async function cargarSeccionesSupabase(munId = null) {
   }
 
   // Nombre exacto del municipio en la BD
-  const MUN_BD_NAME = {
-    'TEC':'TECOMÁN','MIN':'MINATITLÁN','IXT':'IXTLAHUACÁN','CML':'COMALA',
-    'ARM':'ARMERÍA','VDA':'VILLA DE ALVAREZ','MAN':'MANZANILLO',
-    'COL':'COLIMA','CUA':'CUAUHTÉMOC','COQ':'COQUIMATLÁN'
-  };
+  // [25 sep] Nombre en BD desde el catalogo dinamico (antes: literal de Colima)
+  const MUN_BD_NAME = Object.fromEntries(MUNS.map(m=>[m.id, m.nombre||m.n]));
 
   // [FIX 1 sep] Si el territorio real ya cargo, no hay nada que sustituir.
   if (window.TERRITORIO_REAL) { poblarFiltrosSecciones(munId); return; }
@@ -3352,9 +3367,8 @@ async function cargarSeccionesSupabase(munId = null) {
     const bdNombre = MUN_BD_NAME[munId] || '';
     if(!bdNombre) return;
 
-    const res = await fetch(
-      `${SUPA_URL}/rest/v1/secciones_electorales_colima?select=seccion,municipio,meta_proyectada&municipio=eq.${encodeURIComponent(bdNombre)}&order=seccion`,
-      { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` } }
+    const res = await wrFetch(
+      `${SUPA_URL}/rest/v1/secciones_ine?select=seccion,municipio,meta_proyectada&municipio=eq.${encodeURIComponent(bdNombre)}&order=seccion`
     );
     if(!res.ok) return;
     const all = await res.json();
@@ -3398,7 +3412,7 @@ function poblarFiltrosSecciones(munId) {
 // ══════════════════════════════════════════════════
 // CARGA INICIAL DATOS REALES DESDE SUPABASE
 // ══════════════════════════════════════════════════
-const LICENCIA_ID = (window._sesion?.licencia_id) || 'a1b2c3d4-0001-0000-0000-000000000001';
+const LICENCIA_ID = (window._sesion?.licencia_id) || null;   // [25 sep] sin sesion no se asume licencia
 
 function wrFetch(url, options = {}) {
   const opts = Object.assign({}, options);
@@ -3570,10 +3584,8 @@ function marcarModoFallback(activo, motivo){
 async function cargarDatosReales() {
   try {
     // ── 1. Metas por municipio desde secciones_electorales_colima ──
-    const rMetas = await fetch(
-      `${SUPA_URL}/rest/v1/secciones_electorales_colima?select=municipio,meta_proyectada`,
-      { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` } }
-    );
+    // [25 sep] secciones_ine con sesion: RLS entrega solo la licencia del usuario
+    const rMetas = await wrFetch(`${SUPA_URL}/rest/v1/secciones_ine?select=municipio,meta_proyectada`);
     const secciones = await rMetas.json();
 
     // Agrupar meta por municipio
@@ -3704,7 +3716,7 @@ async function cargarKPIsReales() {
   try {
     // Total ciudadanos
     const rTotal = await fetch(
-      `${SUPA_URL}/rest/v1/ciudadanos?select=id&licencia_id=eq.${window._sesion?.licencia_id||'a1b2c3d4-0001-0000-0000-000000000001'}`,
+      `${SUPA_URL}/rest/v1/ciudadanos?select=id&licencia_id=eq.${window._sesion?.licencia_id||''}`,
       { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}`, 'Prefer': 'count=exact', 'Range': '0-0' } }
     );
     const total = parseInt(rTotal.headers.get('Content-Range')?.split('/')[1] || 0);
@@ -4153,6 +4165,8 @@ document.addEventListener('DOMContentLoaded',()=>{
    IE_METAS_CASILLA ya esta alineado 1:1 con casillas.meta_proyectada. */
 (function(){
   try{
+    // [25 sep] El horneado es de COLIMA: solo aplica en demo SIN licencia en sesion.
+    if(window._sesion?.licencia_id) return;
     if(typeof IE_METAS_CASILLA==='undefined' || !IE_METAS_CASILLA.secciones) return;
     if(typeof MUNS==='undefined') return;
     var norm=function(x){return String(x||'').toUpperCase()
@@ -4200,13 +4214,15 @@ document.addEventListener('DOMContentLoaded',()=>{
 // (208,754): el coordinador de Manzanillo veía "META DE MANZANILLO: 208,754".
 // Ahora la meta de la RPC manda, porque es la unica que respeta el alcance.
 (function(){
-  if(typeof IE_METAS_CASILLA==='undefined' || !IE_METAS_CASILLA.meta_estatal) return;
   function metaVigente(){
     var k = window._kpisRPC;
     if(k && Number(k.meta) > 0) return Number(k.meta);
-    return IE_METAS_CASILLA.meta_estatal;
+    if(typeof window.SISTEMA_META==='number' && window.SISTEMA_META>0) return window.SISTEMA_META;
+    // [25 sep] horneado de Colima SOLO sin licencia en sesion
+    if(!window._sesion?.licencia_id && typeof IE_METAS_CASILLA!=='undefined' && IE_METAS_CASILLA.meta_estatal) return IE_METAS_CASILLA.meta_estatal;
+    return 0;
   }
-  function f(n){ return Number(n).toLocaleString('es-MX'); }
+  function f(n){ return Number(n)>0 ? Number(n).toLocaleString('es-MX') : '—'; }
   function ap(){
     var M = metaVigente();
     var m=f(M);
