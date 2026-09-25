@@ -15,7 +15,7 @@
  *    partido-slogan   → slogan o subtítulo
  *    logo-img         → <img> del logo
  *    logo-inicial     → div con iniciales
- *    sistema-meta     → meta estatal (ej. "208,754")
+ *    sistema-meta     → meta estatal de la licencia (config)
  *    sistema-anio     → año de elección (ej. "2027")
  *    sistema-titulo   → "NombreSoftware · Estado AÑO"
  *    dias-eleccion    → cuenta regresiva en días
@@ -33,10 +33,14 @@ const DEFAULT_THEME = {
   logoInicial:    'IE',
 
   // Datos operativos del cliente
-  sistemaEstado:  'Colima',
-  sistemaMeta:    208754,        // número — se formatea automáticamente (meta Colima 2027 depurada)
-  sistemaAnio:    2027,          // año de la elección
-  fechaEleccion:  '2027-06-06', // ISO — para cuenta regresiva (fecha oficial elección)
+  // [25 sep] NEUTROS. Antes venian 'Colima' / 208754 quemados y cualquier
+  // licencia sin config (o antes de que cargara) se veia como Colima. Ahora
+  // el estado, la meta y el año se leen de configuracion_sistema POR LICENCIA
+  // (cargarConfigLicenciaSupabase). Sin licencia en sesion se muestra '—'.
+  sistemaEstado:  '',
+  sistemaMeta:    0,             // número — se formatea automáticamente; 0 = sin dato
+  sistemaAnio:    2027,          // año de la elección (default; lo pisa la config)
+  fechaEleccion:  '2027-06-06', // ISO — para cuenta regresiva (default; lo pisa la config)
 
   // Paleta
   colorPrimario:    '#3b82f6',
@@ -53,17 +57,34 @@ const DEFAULT_THEME = {
 };
 
 /* ── Lectura / escritura ── */
-function loadTheme() {
+// [25 sep] La llave de localStorage es POR LICENCIA. Antes era una sola para
+// todo el navegador: entrar como Colima y luego como BCS en la misma maquina
+// hacia que BCS heredara el tema (nombre, meta, colores) de Colima.
+function _themeKey() {
   try {
-    const s = localStorage.getItem(THEME_KEY);
-    if (s) return Object.assign({}, DEFAULT_THEME, JSON.parse(s));
+    const raw = localStorage.getItem('electoral_sesion');
+    const lic = raw ? (JSON.parse(raw) || {}).licencia_id : null;
+    return lic ? (THEME_KEY + ':' + String(lic)) : THEME_KEY;
+  } catch (e) { return THEME_KEY; }
+}
+
+// Config viva leida de configuracion_sistema (por licencia). Tiene la ULTIMA
+// palabra sobre el default y sobre lo guardado en localStorage.
+let _CONFIG_SUPABASE = null;
+
+function loadTheme() {
+  let base = Object.assign({}, DEFAULT_THEME);
+  try {
+    const s = localStorage.getItem(_themeKey());
+    if (s) base = Object.assign(base, JSON.parse(s));
   } catch(e) {}
-  return Object.assign({}, DEFAULT_THEME);
+  if (_CONFIG_SUPABASE) base = Object.assign(base, _CONFIG_SUPABASE);
+  return base;
 }
 
 function saveTheme(config) {
   const theme = Object.assign(loadTheme(), config);
-  localStorage.setItem(THEME_KEY, JSON.stringify(theme));
+  localStorage.setItem(_themeKey(), JSON.stringify(theme));
   applyTheme(theme);
   return theme;
 }
@@ -115,21 +136,23 @@ function applyTheme(theme) {
   });
 
   // Meta estatal (formateada con comas)
-  // [SWAP LUIS ✓ Fase 4] Prioridad de fuentes para la meta estatal:
-  //   1. _META_SUPABASE  → valor vivo de configuracion_sistema.sistema_meta (si ya se cargó)
-  //   2. IE_METAS_CASILLA.meta_estatal → JSON horneado (208,754)
-  //   3. theme.sistemaMeta → default del tema (fallback final)
-  // La carga desde Supabase es asíncrona (cargarMetaEstatalSupabase); mientras
-  // llega, se pinta el horneado para que no haya parpadeo ni cero.
+  // [25 sep] Prioridad de fuentes para la meta:
+  //   1. _META_SUPABASE  → configuracion_sistema.sistema_meta de LA LICENCIA en sesion
+  //   2. IE_METAS_CASILLA.meta_estatal → JSON horneado de Colima. SOLO se usa si
+  //      NO hay licencia en sesion (demo publica sin login). Con licencia, usar
+  //      el horneado seria mostrar la meta de Colima a otro estado.
+  //   3. theme.sistemaMeta (0 = sin dato → se pinta '—', nunca un numero ajeno)
+  const _sesTheme = _leerSesionAlcance();
+  const _conLicencia = !!(_sesTheme && _sesTheme.licencia_id);
   let metaVal;
   if (typeof _META_SUPABASE === 'number' && _META_SUPABASE > 0) {
     metaVal = _META_SUPABASE;
-  } else if (typeof IE_METAS_CASILLA !== 'undefined' && IE_METAS_CASILLA.meta_estatal) {
+  } else if (!_conLicencia && typeof IE_METAS_CASILLA !== 'undefined' && IE_METAS_CASILLA.meta_estatal) {
     metaVal = IE_METAS_CASILLA.meta_estatal;
   } else {
     metaVal = theme.sistemaMeta;
   }
-  const metaFmt = Number(metaVal).toLocaleString('es-MX');
+  const metaFmt = (Number(metaVal) > 0) ? Number(metaVal).toLocaleString('es-MX') : '—';
   document.querySelectorAll('[data-theme="sistema-meta"]').forEach(el => {
     el.textContent = metaFmt;
   });
@@ -139,10 +162,15 @@ function applyTheme(theme) {
     el.textContent = theme.sistemaAnio;
   });
 
-  // Título compuesto: "NombreSoftware · Estado AÑO"
+  // Título compuesto: "NombreSoftware · Estado AÑO" (sin estado: "NombreSoftware · AÑO")
+  const _tituloEstado = theme.sistemaEstado
+    ? `${theme.sistemaEstado} ${theme.sistemaAnio}` : `${theme.sistemaAnio}`;
   document.querySelectorAll('[data-theme="sistema-titulo"]').forEach(el => {
-    el.textContent = `${theme.partidoNombre} · ${theme.sistemaEstado} ${theme.sistemaAnio}`;
+    el.textContent = `${theme.partidoNombre} · ${_tituloEstado}`;
   });
+  // Publicar para modulos que arman sus propios subtitulos (index.html tb-sub)
+  window.SISTEMA_ESTADO = theme.sistemaEstado || '';
+  window.SISTEMA_ANIO   = theme.sistemaAnio;
 
   // Cuenta regresiva: días a la elección
   try {
@@ -166,50 +194,70 @@ function applyTheme(theme) {
 }
 
 // ══════════════════════════════════════════════════════════════════
-//  META ESTATAL DINÁMICA — Fase 4 (T20)
-//  Lee configuracion_sistema.sistema_meta con el access_token de la sesión.
-//  Fallback obligatorio: si el fetch/RLS falla, NO toca nada y se conserva
-//  el valor horneado (208,754) que applyTheme ya pintó. Nunca deja la meta
-//  en blanco ni en cero por un error de red o de sesión.
+//  CONFIG DE LICENCIA DINÁMICA — [25 sep] antes T20 "meta estatal"
+//  Lee configuracion_sistema COMPLETA de la licencia en sesion: estado, año,
+//  fecha de eleccion, meta, nombre/slogan/logo y colores. Asi el shell y los
+//  modulos muestran el estado del cliente, no 'Colima' del default.
+//  Fallback: si el fetch/RLS falla, NO toca nada. Con licencia en sesion lo
+//  que queda pintado es el neutro ('—'), nunca datos de otro estado.
 // ══════════════════════════════════════════════════════════════════
 let _META_SUPABASE = null; // se llena solo si Supabase responde con un número válido
 
-async function cargarMetaEstatalSupabase() {
+async function cargarConfigLicenciaSupabase() {
   try {
     const sesion = _leerSesionAlcance();
-    // Sin sesión o sin licencia_id (uuid como string): no consultar, quedarse con horneado.
     const licenciaId = sesion && sesion.licencia_id ? String(sesion.licencia_id) : null;
     if (!licenciaId) return;
     if (typeof supaFetch !== 'function') return; // supaFetch aún no disponible
 
     const url = _SUPA_URL_THEME
       + '/rest/v1/configuracion_sistema'
-      + '?select=sistema_meta'
+      + '?select=partido_nombre,partido_slogan,logo_url,logo_inicial,'
+      +  'sistema_estado,sistema_meta,sistema_anio,fecha_eleccion,'
+      +  'color_primario,color_secundario,color_alerta,color_exito,color_advertencia'
       + '&licencia_id=eq.' + encodeURIComponent(licenciaId)
       + '&limit=1';
 
     const res = await supaFetch(url, { method: 'GET' });
-    // RLS o red fallando: NO actualizar UI (fallback = horneado).
     if (!res || !res.ok) return;
-
     const data = await res.json();
     if (!Array.isArray(data) || data.length === 0) return;
+    const c = data[0] || {};
 
-    const val = Number(data[0].sistema_meta);
-    if (!Number.isFinite(val) || val <= 0) return; // dato inválido: conservar horneado
+    // Mapear columnas -> claves del tema. Solo se toman valores presentes.
+    const cfg = {};
+    const pon = (k, v) => { if (v !== null && v !== undefined && v !== '') cfg[k] = v; };
+    pon('partidoNombre',    c.partido_nombre);
+    pon('partidoSlogan',    c.partido_slogan);
+    pon('logoUrl',          c.logo_url);
+    pon('logoInicial',      c.logo_inicial);
+    pon('sistemaEstado',    c.sistema_estado);
+    pon('sistemaAnio',      c.sistema_anio);
+    pon('fechaEleccion',    c.fecha_eleccion);
+    pon('colorPrimario',    c.color_primario);
+    pon('colorSecundario',  c.color_secundario);
+    pon('colorAlerta',      c.color_alerta);
+    pon('colorExito',       c.color_exito);
+    pon('colorAdvertencia', c.color_advertencia);
 
-    // Éxito: cachear y repintar solo las tarjetas de meta.
-    _META_SUPABASE = val;
-    // [T20/21] Publicar como fuente única para el resto de módulos (visor T18,
-    //  War Room, Reportes). Leen window.SISTEMA_META con fallback al horneado.
-    window.SISTEMA_META = val;
-    try { window.dispatchEvent(new CustomEvent('sistema-meta-ready', { detail: val })); } catch (e) {}
+    const val = Number(c.sistema_meta);
+    if (Number.isFinite(val) && val > 0) {
+      _META_SUPABASE = val;
+      cfg.sistemaMeta = val;
+      window.SISTEMA_META = val;
+      try { window.dispatchEvent(new CustomEvent('sistema-meta-ready', { detail: val })); } catch (e) {}
+    }
+
+    _CONFIG_SUPABASE = cfg;
+    window.SISTEMA_CONFIG = cfg;
     applyTheme(loadTheme());
+    try { window.dispatchEvent(new CustomEvent('sistema-config-ready', { detail: cfg })); } catch (e) {}
   } catch (e) {
-    // Cualquier error: silencioso, se conserva el valor horneado ya pintado.
-    console.warn('Meta estatal: usando valor horneado (Supabase no disponible)', e);
+    console.warn('Config de licencia: no disponible, se conserva lo pintado', e);
   }
 }
+// Alias de compatibilidad (modulos que llamaban al nombre anterior)
+const cargarMetaEstatalSupabase = cargarConfigLicenciaSupabase;
 
 function adjustColor(hex, amount) {
   const num = parseInt(hex.replace('#',''), 16);
@@ -478,13 +526,13 @@ setInterval(() => {
 }, 45 * 60 * 1000);
 
 // ══════════════════════════════════════════════════════════════════
-//  T20 — Cargar meta estatal viva desde Supabase al arrancar.
+//  Cargar la config de la licencia (estado, meta, marca) al arrancar.
 //  Se ejecuta aquí (final del archivo) porque supaFetch ya está definido.
 //  applyTheme ya pintó el valor horneado; esto lo actualiza si Supabase
 //  responde. Si falla, no pasa nada (fallback = horneado).
 // ══════════════════════════════════════════════════════════════════
 (function() {
-  const lanzar = () => { cargarMetaEstatalSupabase(); };
+  const lanzar = () => { cargarConfigLicenciaSupabase(); };
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', lanzar);
   } else {

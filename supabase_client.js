@@ -1,5 +1,5 @@
 // ============================================================
-//  CLIENTE SUPABASE — SIE COLIMA 2027
+//  CLIENTE SUPABASE — VOTERA (multi-licencia)
 // ============================================================
 
 // [FIX 12 jul] La deteccion anterior solo matcheaba el dominio EXACTO de
@@ -268,18 +268,27 @@ const SDB = {
     return { data: resumen, error: null };
   },
 
-  async getSeccionesColima(municipio = null) {
+  // [25 sep] Secciones de LA LICENCIA en sesion. Lee secciones_ine (RLS filtra por
+  // licencia; sin sesion devuelve vacio). Antes leia secciones_electorales_colima,
+  // que era solo Colima y legible sin login.
+  // NOTA: PostgREST corta en 1000 filas (db-max-rows). Colima 388 / BCS 521 caben;
+  // un estado grande (Jalisco ~3,400) necesitara RPC agregada. Pendiente.
+  async getSecciones(municipio = null) {
     await this.waitReady();
+    await this.asegurarSesion();
     let query = window.supabase
-      .from('secciones_electorales_colima')
+      .from('secciones_ine')
       .select(`id, seccion, municipio, id_municipio, distrito_federal, distrito_local,
                lat, lon, lista_nominal, total_votos, votos_morena, votos_priand, votos_mc,
-               afluencia, estatus_afluencia, meta_proyectada, refuerzo_prioritario, metodologia`)
+               afluencia, estatus_afluencia, meta_proyectada, meta_real, estructura_real,
+               refuerzo_prioritario, metodologia`)
       .order('seccion');
     if (municipio) query = query.eq('municipio', municipio);
     const { data, error } = await query;
     return { data, error };
   },
+  // Alias de compatibilidad para modulos que aun llaman al nombre viejo.
+  async getSeccionesColima(municipio = null) { return this.getSecciones(municipio); },
 
 };
 
@@ -350,4 +359,4 @@ const TERRITORIO = {
   esEstado() { return this.get().tipo === 'estado'; },
 };
 
-console.log(`🗺 SIE Colima 2027 | Ambiente: ${ENV.toUpperCase()} | ${SUPA_URL}`);
+console.log(`🗺 VOTERA | Ambiente: ${ENV.toUpperCase()} | ${SUPA_URL}`);

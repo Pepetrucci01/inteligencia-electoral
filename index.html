@@ -3,7 +3,7 @@
 ============================================================
   VOTERA(TM) - Inteligencia Electoral
   (c) 2026 MEFT Consulting - RFC: CUOJ7808208Z2
-  Villa de Alvarez, Colima, Mexico - votera.mx
+  votera.mx
   Todos los derechos reservados.
 
   Software propietario bajo licencia. Su uso, copia,
@@ -301,8 +301,8 @@ body.rol-consulta     .kpi-estatal { display:none; }
     </div>
     <div class="estado-card">
       <div class="estado-lbl">Estado activo</div>
-      <div class="estado-nom" data-theme="sistema-titulo">Colima 2027</div>
-      <div class="estado-meta"><span data-theme="sistema-meta" id="ix-meta-side">208,754</span> meta</div>
+      <div class="estado-nom" data-theme="sistema-titulo">—</div>
+      <div class="estado-meta"><span data-theme="sistema-meta" id="ix-meta-side">—</span> meta</div>
     </div>
   </div>
 
@@ -462,7 +462,7 @@ body.rol-consulta     .kpi-estatal { display:none; }
       <div class="hamburger" onclick="openSidebar()">☰</div>
       <div>
         <div class="tb-title" id="tb-title">Panel de inicio</div>
-        <div class="tb-sub" id="tb-sub">Inteligencia Electoral · Colima 2027</div>
+        <div class="tb-sub" id="tb-sub">Inteligencia Electoral</div>
       </div>
     </div>
     <div class="topbar-right">
@@ -509,7 +509,7 @@ body.rol-consulta     .kpi-estatal { display:none; }
     <div class="hub-head">
       <div>
         <div class="hub-title">Bienvenido al sistema</div>
-        <div class="hub-sub"><span data-theme="sistema-titulo">Colima 2027</span> · <strong><span id="mod-count">8</span> módulos</strong> operativos</div>
+        <div class="hub-sub"><span data-theme="sistema-titulo">—</span> · <strong><span id="mod-count">8</span> módulos</strong> operativos</div>
       </div>
       <div class="hub-date" id="hub-date">--</div>
     </div>
@@ -518,11 +518,11 @@ body.rol-consulta     .kpi-estatal { display:none; }
       <div class="pb-label">Avance vs meta <span data-theme="sistema-anio">2027</span></div>
       <div class="pb-track"><div class="pb-fill" id="hub-pb-fill" style="width:0%"></div></div>
       <div class="pb-pct" id="hub-pb-pct">—</div>
-      <div class="pb-nums" id="hub-pb-nums"><span id="hub-pb-cap">—</span> / <span data-theme="sistema-meta">208,754</span></div>
+      <div class="pb-nums" id="hub-pb-nums"><span id="hub-pb-cap">—</span> / <span data-theme="sistema-meta">—</span></div>
     </div>
 
     <div class="kpi-row">
-      <div class="kpi bl" id="hub-card-meta" data-tip="Total de simpatizantes que se propuso captar en tu alcance territorial para 2027."><div class="kv" data-theme="sistema-meta" id="ix-meta-kpi">208,754</div><div class="kl" id="hub-kl-meta">Meta estatal</div></div>
+      <div class="kpi bl" id="hub-card-meta" data-tip="Total de simpatizantes que se propuso captar en tu alcance territorial para 2027."><div class="kv" data-theme="sistema-meta" id="ix-meta-kpi">—</div><div class="kl" id="hub-kl-meta">Meta estatal</div></div>
       <div class="kpi gr" data-tip="Simpatizantes registrados hasta hoy en el padrón de la campaña."><div class="kv" id="hub-kpi-total">—</div><div class="kl">Capturados</div></div>
       <div class="kpi gr" data-tip="Simpatizantes con nivel de compromiso alto (3 o 4): se considera que su voto está asegurado."><div class="kv" id="hub-kpi-seguro">—</div><div class="kl">Voto seguro</div></div>
       <div class="kpi am" data-tip="Simpatizantes marcados como posible fuga de voto. Requieren visita o seguimiento para no perderlos."><div class="kv" id="hub-kpi-riesgo">—</div><div class="kl">En riesgo</div></div>
@@ -657,7 +657,7 @@ function actualizarContadorModulos(){
   }catch(_e){}
 }
 
-const APP_BUILD = '20260907b'; // [07/09 b] shell se recarga solo si cambia la sesión (storage/visibilidad) · login nunca en iframe · sin-acceso en vez de login (auth-guard) · badge alcance compacto en móvil (theme.js) // [07/09] responsive móvil ronda 1: shell (crédito en franja propia, 100dvh), war room, activistas, reportes, admin // [05/09] alertas solo en Inicio + plegables · importador pestaña 5 + telefonistas · call center fuente // [04/09] reportar un problema (tickets sobre sistema original VOT-2026-*, todos los roles) · soporte técnico solo super_admin+soporte (data-rol) · consulta IA (nuevo módulo) · panel capturista (paginación, Día E) · war room (388) · captura (aviso cuota) · día E (modal logout) // [03/09] día E: buscador único + voz + registro sorpresa real + encabezado por rol; iframe allow=microphone // [02/09] captura (identidad real, Mi Sección, scan INE, responsive) · reportes (calidad en vivo, alcance municipal) · war room (alertas por rol) · panel capturista (header móvil) // [31/08] subir esta cadena cada vez que se actualice un modulo: es el rompe-cache de los iframes
+const APP_BUILD = '20260925a'; // [25 sep] shell multi-licencia: estado/meta/año desde configuracion_sistema, sin Colima quemado, tema por licencia // [07/09 b] shell se recarga solo si cambia la sesión (storage/visibilidad) · login nunca en iframe · sin-acceso en vez de login (auth-guard) · badge alcance compacto en móvil (theme.js) // [07/09] responsive móvil ronda 1: shell (crédito en franja propia, 100dvh), war room, activistas, reportes, admin // [05/09] alertas solo en Inicio + plegables · importador pestaña 5 + telefonistas · call center fuente // [04/09] reportar un problema (tickets sobre sistema original VOT-2026-*, todos los roles) · soporte técnico solo super_admin+soporte (data-rol) · consulta IA (nuevo módulo) · panel capturista (paginación, Día E) · war room (388) · captura (aviso cuota) · día E (modal logout) // [03/09] día E: buscador único + voz + registro sorpresa real + encabezado por rol; iframe allow=microphone // [02/09] captura (identidad real, Mi Sección, scan INE, responsive) · reportes (calidad en vivo, alcance municipal) · war room (alertas por rol) · panel capturista (header móvil) // [31/08] subir esta cadena cada vez que se actualice un modulo: es el rompe-cache de los iframes
 
 let collapsed = false;
 
@@ -687,10 +687,23 @@ function closeSidebar(){
   document.getElementById('mob-overlay').classList.remove('open');
 }
 
+// [25 sep] Estado y año del subtitulo vienen de la config de la licencia
+// (theme.js publica window.SISTEMA_ESTADO / SISTEMA_ANIO). Antes: ' · Colima 2027' quemado.
+function _sufijoEstado(){
+  var est = window.SISTEMA_ESTADO || '';
+  var an  = window.SISTEMA_ANIO || '';
+  return (est || an) ? (' · ' + [est, an].filter(Boolean).join(' ')) : '';
+}
+window.addEventListener('sistema-config-ready', function(){
+  var sub = document.getElementById('tb-sub'); if(!sub) return;
+  var base = sub.textContent.split(' · ')[0];
+  sub.textContent = base + _sufijoEstado();
+});
+
 function load(id, file, title, sub){
   closeSidebar();
   document.getElementById('tb-title').textContent = title;
-  document.getElementById('tb-sub').textContent = sub + ' · Colima 2027';
+  document.getElementById('tb-sub').textContent = sub + _sufijoEstado();
   document.getElementById('bc').textContent = title;
   document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
   const ni = document.getElementById('nav-'+id);
@@ -714,7 +727,7 @@ function showHub(){
   const _al = document.getElementById('alertas-hub'); if(_al && window._alertasHay) _al.style.display = 'block';
   document.getElementById('frame-wrap').style.display = 'none';
   document.getElementById('tb-title').textContent = 'Panel de inicio';
-  document.getElementById('tb-sub').textContent = 'Inteligencia Electoral · Colima 2027';
+  document.getElementById('tb-sub').textContent = 'Inteligencia Electoral' + _sufijoEstado();
   document.getElementById('bc').textContent = 'Inicio';
   document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
   document.getElementById('nav-hub').classList.add('active');
@@ -829,13 +842,13 @@ function cerrarSesion(){
   try {
     const SUPA_URL = 'https://dyirhwwmykskpuvzcafx.supabase.co';
     const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5aXJod3dteWtza3B1dnpjYWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NTk3ODgsImV4cCI6MjA5NTEzNTc4OH0.2xe4cHqORGng1hnYPJ9ZiyT0r87fMijbUEJqBy3-xoI';
-    const LICENCIA = (window._sesion?.licencia_id) || 'a1b2c3d4-0001-0000-0000-000000000001';
+    const LICENCIA = (window._sesion?.licencia_id) || null;   // [25 sep] sin sesion NO se asume ninguna licencia
     // [SWAP LUIS] meta desde IE_METAS_CASILLA (208,754); fallback demo-safe
     const META = (typeof window.SISTEMA_META==='number' && window.SISTEMA_META>0) ? window.SISTEMA_META
-                 : ((typeof IE_METAS_CASILLA!=='undefined' && IE_METAS_CASILLA.meta_estatal) ? IE_METAS_CASILLA.meta_estatal : 208754);
+                 : ((!window._sesion?.licencia_id && typeof IE_METAS_CASILLA!=='undefined' && IE_METAS_CASILLA.meta_estatal) ? IE_METAS_CASILLA.meta_estatal : 0);
     const fmt = n => Math.round(n).toLocaleString('es-MX');
-    // [SWAP LUIS] Sincroniza tarjetas de META visibles con el valor horneado (demo sin sesión)
-    (function(){ const mtxt=fmt(META);
+    // [25 sep] Sincroniza tarjetas de META; sin dato (0) se pinta '—', nunca la meta de otro estado
+    (function(){ const mtxt = META > 0 ? fmt(META) : '—';
       ['ix-meta-side','ix-meta-kpi'].forEach(id=>{const el=document.getElementById(id); if(el) el.textContent=mtxt;});
       // [v90] Antes: pb.innerHTML='10,000 / '+mtxt — reescribia la barra ENTERA
       // y borraba el span de meta. Ahora solo se toca el span de meta; el
@@ -1045,10 +1058,10 @@ function toggleAlertas(){
     // la del estado. Las de abajo son respaldo por si la RPC no respondio.
     if(typeof window.__hubMeta==='number' && window.__hubMeta>0) return window.__hubMeta;
     if(typeof window.SISTEMA_META==='number' && window.SISTEMA_META>0) return window.SISTEMA_META;
-    if(typeof IE_METAS_CASILLA!=='undefined' && IE_METAS_CASILLA.meta_estatal) return IE_METAS_CASILLA.meta_estatal;
-    return 208754;
+    if(!window._sesion?.licencia_id && typeof IE_METAS_CASILLA!=='undefined' && IE_METAS_CASILLA.meta_estatal) return IE_METAS_CASILLA.meta_estatal;
+    return 0;
   }
-  function fmtMeta(n){ return Math.round(n).toLocaleString('es-MX'); }
+  function fmtMeta(n){ return (Number(n) > 0) ? Math.round(n).toLocaleString('es-MX') : '—'; }
   function aplicarMeta(){
     var M = metaActual();
     var mtxt = fmtMeta(M);
