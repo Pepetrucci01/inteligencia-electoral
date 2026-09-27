@@ -497,18 +497,24 @@ document.getElementById('file').addEventListener('change', function(e){
 
 // Arrastrar y soltar sobre la zona. Sin preventDefault en dragover, el
 // navegador abre el archivo en una pestaña en vez de recibirlo — ese era el bug.
+// [27 sep] Drag-and-drop en LAS 6 zonas (antes solo la primera y siempre caia en Metas).
+// Al soltar, el archivo se inyecta al <input> de SU zona y se dispara 'change',
+// asi cada pestana usa su propio lector.
 (function(){
-  const zona = document.querySelector('.drop');
-  if(!zona) return;
-  ['dragenter','dragover'].forEach(ev =>
-    zona.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation();
-      zona.style.borderColor = 'var(--accent)'; zona.style.background = 'var(--bg4)'; }));
-  ['dragleave','drop'].forEach(ev =>
-    zona.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation();
-      zona.style.borderColor = ''; zona.style.background = ''; }));
-  zona.addEventListener('drop', e => {
-    const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-    leerArchivo(f);
+  document.querySelectorAll('.drop').forEach(zona => {
+    ['dragenter','dragover'].forEach(ev =>
+      zona.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation();
+        zona.style.borderColor = 'var(--accent)'; zona.style.background = 'var(--bg4)'; }));
+    ['dragleave','drop'].forEach(ev =>
+      zona.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation();
+        zona.style.borderColor = ''; zona.style.background = ''; }));
+    zona.addEventListener('drop', e => {
+      const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      const inp = zona.querySelector('input[type=file]');
+      if(!f || !inp) return;
+      try{ const dt = new DataTransfer(); dt.items.add(f); inp.files = dt.files; }catch(_e){ return; }
+      inp.dispatchEvent(new Event('change', { bubbles: true }));
+    });
   });
 })();
 
@@ -882,6 +888,17 @@ async function correrAltas(filas, pre, etiqueta){
 let C_OK = [], C_ERR = [];
 const CURP_RE = /^[A-Z][AEIOUX][A-Z]{2}\d{6}[HM][A-Z]{5}[0-9A-Z]\d$/i;
 const cNorm = v => String(v||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+// [27 sep] La base exige valores exactos (CHECK): sexo HOMBRE/MUJER/OTRO y
+// origen 'Casa por casa'/'Referido'/'Digital'/'Evento'/'Otro'. Antes se mandaba
+// 'H'/'M' y origen en minusculas y TODA la carga fallaba.
+const sexoDb = v => { const s = cNorm(v); if(!s) return null;
+  if(s==='H'||s.indexOf('HOM')===0||s.indexOf('MASC')===0) return 'HOMBRE';
+  if(s==='M'||s.indexOf('MUJ')===0||s.indexOf('FEM')===0) return 'MUJER';
+  return 'OTRO'; };
+const ORIGEN_DB = { 'CASA POR CASA':'Casa por casa','CASA':'Casa por casa','VISITA':'Casa por casa',
+  'REFERIDO':'Referido','REFERIDA':'Referido','EVENTO':'Evento',
+  'DIGITAL':'Digital','REDES':'Digital','REDES SOCIALES':'Digital','OTRO':'Otro' };
+const origenDb = v => { const s = cNorm(v); if(!s) return null; return ORIGEN_DB[s] || 'Otro'; };
 
 function leerCiudadanos(f){
   if(!f) return;
@@ -922,9 +939,9 @@ async function validarCiudadanos(rows){
     else if(SEC.size && !SEC.has(parseInt(sec))) err.push('sección no existe en la carga maestra');
     const fila = { _row: idx+2, nombre, apellido_paterno: ap, apellido_materno: get('apellido_materno'), curp,
       clave_elector: get('clave_elector'), edad: get('edad') ? parseInt(get('edad')) : null,
-      sexo: cNorm(get('sexo')).charAt(0) || null, telefono: get('telefono'), municipio: mun,
+      sexo: sexoDb(get('sexo')), telefono: get('telefono'), municipio: mun,
       seccion_electoral: sec ? parseInt(sec) : null, domicilio: get('domicilio'),
-      compromiso: get('compromiso') ? parseInt(get('compromiso')) : 1, origen: get('origen').toLowerCase() || null,
+      compromiso: get('compromiso') ? parseInt(get('compromiso')) : 1, origen: origenDb(get('origen')),
       es_apoyo: cNorm(get('es_apoyo'))==='SI', es_influencia: cNorm(get('es_influencia'))==='SI',
       es_riesgo: cNorm(get('es_riesgo'))==='SI', notas: get('notas'), _errores: err };
     (err.length ? C_ERR : C_OK).push(fila);
@@ -982,7 +999,7 @@ async function importarCiudadanos(){
     const o = {...f}; delete o._row; delete o._errores; delete o._dup;
     o.licencia_id = licDestino() || (BASE ? BASE.licencia_id : ses.licencia_id);
     o.capturista_id = ses.id || null; o.responsable_id = ses.id || null;
-    o.origen = o.origen || 'carga_excel';
+    o.origen = o.origen || 'Otro';
     o.consentimiento = true; o.consentimiento_fecha = ahora;
     Object.keys(o).forEach(k => { if(o[k]==='') o[k]=null; });
     return o;
