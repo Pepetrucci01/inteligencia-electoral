@@ -114,7 +114,8 @@ table.res th{color:var(--text3);font-family:var(--mono);font-size:10px;text-tran
   <div class="card hidden" id="preview">
     <h2>2 · Revisión previa</h2>
     <p>Totales leídos del <b>archivo</b> y lo que hay <b>hoy en la base</b> para tu licencia.
-       Al importar, la base quedará exactamente como el archivo.</p>
+       En modo normal, al importar la base quedará exactamente como el archivo;
+       en <b>modo acumular</b>, este archivo se suma a lo ya cargado.</p>
     <div class="kpis">
       <div class="kpi" id="k-casillas"><div class="kpi-val">–</div><div class="kpi-lbl">Casillas · archivo</div><div class="kpi-base" id="b-casillas"></div></div>
       <div class="kpi" id="k-meta"><div class="kpi-val">–</div><div class="kpi-lbl">Meta proyectada · archivo</div><div class="kpi-base" id="b-meta"></div></div>
@@ -122,6 +123,14 @@ table.res th{color:var(--text3);font-family:var(--mono);font-size:10px;text-tran
     </div>
     <div class="tipos" id="tipos"></div>
     <div id="preview-msg"></div>
+    <!-- [27 sep] Modo acumular: para estados grandes cargados en partes. Apagado = comportamiento
+         normal (la base queda igual al archivo, con candado anti-parcial del 25%). -->
+    <label style="display:flex;gap:8px;align-items:flex-start;margin:12px 0 2px;cursor:pointer;font-size:13px;line-height:1.45">
+      <input type="checkbox" id="modo-acumular" onchange="reevaluarPreview()" style="margin-top:2px;accent-color:var(--accent)">
+      <span><b>Modo acumular</b> — agrega o actualiza lo que trae este archivo <b>sin desactivar</b> las casillas
+        que no vengan en él. Úsalo para subir un estado en varias partes. Es idempotente: repetir una parte
+        no duplica. Apagado = modo normal: la base queda exactamente igual al archivo.</span>
+    </label>
     <div class="actions">
       <button class="btn btn-primary" id="btn-import" disabled onclick="importar()">Importar a la base</button>
       <button class="btn btn-ghost" onclick="location.reload()">Cancelar</button>
@@ -373,6 +382,7 @@ table.res th{color:var(--text3);font-family:var(--mono);font-size:10px;text-tran
 // Mapeo de columnas Excel → campos que espera la función. El tipo se manda como
 // LETRA (tipo_letra); la función lo traduce y truena si no mapea.
 let FILAS = null;   // array listo para la función
+let ULTIMAS_ROWS = null; // filas crudas del último archivo leído (para repintar el preview al cambiar de modo)
 // [31/08] Antes: ESPERADO = {1033, 208748, 500} quemado. Ahora la referencia es
 // lo que hay HOY en la base para la licencia del usuario (get_estado_carga_maestra).
 // ══════════ OPERADOR MEFT · estado destino obligatorio ══════════
@@ -523,7 +533,11 @@ document.getElementById('file').addEventListener('change', function(e){
   });
 })();
 
+function modoAcumular(){ const c = document.getElementById('modo-acumular'); return !!(c && c.checked); }
+function reevaluarPreview(){ if(ULTIMAS_ROWS) procesar(ULTIMAS_ROWS); }
+
 function procesar(rows){
+  ULTIMAS_ROWS = rows;
   FILAS = [];
   const tipos = { B:0, C:0, E:0, S:0, '?':0 };
   let sumMeta = 0, sumEstruct = 0;
@@ -590,11 +604,15 @@ function procesar(rows){
     mostrarPreviewMsg('err', '❌ Hay '+tipos['?']+' casilla(s) con TIPO_CASILLA no reconocido (no es B/C/E/S). '
       + 'Corrige el archivo — el importador no aceptará letras sin mapear.');
     document.getElementById('btn-import').disabled = true;
-  } else if(cambioGrande){
+  } else if(cambioGrande && !modoAcumular()){
     mostrarPreviewMsg('warn', '⚠️ El archivo trae <b>'+n+'</b> casillas y la base tiene <b>'+fmtN(bCas)
       +'</b> activas'+hojaTxt+'. Parece un archivo parcial: la base lo va a rechazar (deja fuera más del 25%). '
-      +'Si es intencional, primero desactiva casillas a mano.');
+      +'Si es una carga por partes, activa <b>Modo acumular</b> aquí abajo.');
     document.getElementById('btn-import').disabled = true;
+  } else if(modoAcumular()){
+    mostrarPreviewMsg('ok', '✅ '+n+' casillas leídas'+hojaTxt+'. <b>Modo acumular:</b> se agregan o actualizan estas '
+      +fmtN(n)+' sin desactivar nada de lo ya cargado. Los KPIs de arriba son solo de este archivo.');
+    document.getElementById('btn-import').disabled = false;
   } else {
     const dif = bCas==null ? '' : (bCas===n && bMeta===metaRed ? ' Coincide con lo que ya hay en base (recarga idempotente).' : ' Al importar, la base quedará con estos totales.');
     mostrarPreviewMsg('ok', '✅ '+n+' casillas leídas'+hojaTxt+'.'+dif);
@@ -1213,19 +1231,27 @@ async function importar(){
         'Authorization': 'Bearer '+token,
         'Content-Type':'application/json'
       },
-      body: JSON.stringify({ p_filas: FILAS, p_licencia_id: licDestino() })
+      body: JSON.stringify({ p_filas: FILAS, p_licencia_id: licDestino(), p_modo: modoAcumular() ? 'acumular' : 'reemplazar' })
     });
     const data = await res.json();
     document.getElementById('result').classList.remove('hidden');
     if(res.ok && data && data.ok){
-      document.getElementById('result-msg').innerHTML =
-        '<div class="msg msg-ok">✅ Importación exitosa.<br>'
-        + 'Casillas: <b>'+data.casillas+'</b> · '
-        + 'Meta proyectada: <b>'+Number(data.meta_proyectada).toLocaleString('es-MX')+'</b> · '
-        + 'Estructura real: <b>'+Number(data.estructura_real).toFixed(2)+'</b><br>'
-        + 'Estado: <b>'+(data.estado||'—')+'</b> · Filas procesadas: <b>'+data.filas_procesadas+'</b>'
-        + (Number(data.desactivadas)>0 ? ' · <span style="color:var(--amber)">Desactivadas (no venían en el archivo): <b>'+data.desactivadas+'</b></span>' : ' · Desactivadas: <b>0</b>')
-        + '<br>La base quedó igual al archivo. Meta de la licencia alineada a <b>'+Number(data.meta_proyectada).toLocaleString('es-MX')+'</b>.</div>';
+      const fN = v => Number(v||0).toLocaleString('es-MX');
+      document.getElementById('result-msg').innerHTML = (data.modo==='acumular')
+        ? '<div class="msg msg-ok">✅ Parte importada (modo acumular).<br>'
+          + 'Casillas de este archivo verificadas en base: <b>'+fN(data.filas_archivo)+'</b><br>'
+          + 'Total ahora en la base: <b>'+fN(data.casillas)+'</b> casillas · '
+          + 'Meta acumulada: <b>'+fN(data.meta_proyectada)+'</b> · '
+          + 'Estructura acumulada: <b>'+Number(data.estructura_real).toFixed(2)+'</b><br>'
+          + 'Estado: <b>'+(data.estado||'—')+'</b> · Nada se desactivó. Puedes subir la siguiente parte '
+          + '(Cancelar recarga la página para elegir otro archivo).</div>'
+        : '<div class="msg msg-ok">✅ Importación exitosa.<br>'
+          + 'Casillas: <b>'+data.casillas+'</b> · '
+          + 'Meta proyectada: <b>'+fN(data.meta_proyectada)+'</b> · '
+          + 'Estructura real: <b>'+Number(data.estructura_real).toFixed(2)+'</b><br>'
+          + 'Estado: <b>'+(data.estado||'—')+'</b> · Filas procesadas: <b>'+data.filas_procesadas+'</b>'
+          + (Number(data.desactivadas)>0 ? ' · <span style="color:var(--amber)">Desactivadas (no venían en el archivo): <b>'+data.desactivadas+'</b></span>' : ' · Desactivadas: <b>0</b>')
+          + '<br>La base quedó igual al archivo. Meta de la licencia alineada a <b>'+fN(data.meta_proyectada)+'</b>.</div>';
       btn.classList.add('hidden');
     } else {
       const err = (data && (data.message||data.error||data.hint)) || ('HTTP '+res.status);
