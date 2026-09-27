@@ -72,7 +72,7 @@ table.res th{color:var(--text3);font-family:var(--mono);font-size:10px;text-tran
 </head>
 <body>
 
-<div id="barra-destino" class="hidden" style="position:sticky;top:0;z-index:60;display:flex;gap:12px;align-items:center;padding:10px 18px;background:#3f1d1d;border-bottom:2px solid #ef4444;color:#fecaca;font-weight:700;font-size:13px;letter-spacing:.3px">
+<div id="barra-destino" style="position:sticky;top:0;z-index:60;display:none;gap:12px;align-items:center;padding:10px 18px;background:#3f1d1d;border-bottom:2px solid #ef4444;color:#fecaca;font-weight:700;font-size:13px;letter-spacing:.3px">
   <span style="white-space:nowrap;color:#fca5a5">ESTADO DESTINO</span>
   <select id="sel-estado" style="background:#1a0f0f;color:#fff;border:1px solid #ef4444;border-radius:8px;padding:7px 10px;font-size:13px;min-width:280px"></select>
   <span id="banner-destino" style="flex:1"></span>
@@ -399,7 +399,7 @@ async function bootOperador(){
     const prev = sessionStorage.getItem('lic_destino');
     if(prev && lics.some(l => l.id === prev)) sel.value = prev;
     sel.onchange = aplicarDestino;
-    document.getElementById('barra-destino').classList.remove('hidden');
+    document.getElementById('barra-destino').style.display = 'flex';
     aplicarDestino();
   }catch(e){ console.warn('operador:', e); }
 }
@@ -419,7 +419,7 @@ function aplicarDestino(){
   BASE = null; cargarEstadoBase();
   if(window.cgConteo) window.cgConteo();
 }
-document.addEventListener('DOMContentLoaded', bootOperador);
+if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootOperador); else bootOperador();
 
 // La validacion real vive en la funcion (base == archivo); esto es solo contexto.
 let BASE = null;
