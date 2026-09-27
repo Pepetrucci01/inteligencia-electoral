@@ -386,18 +386,30 @@ async function esperarSupabase(intentos){
   for(let i=0;i<intentos && !(window.supabase && window.supabase.auth);i++){ await new Promise(r=>setTimeout(r,100)); }
   return !!(window.supabase && window.supabase.auth);
 }
+function tokenSesion(){
+  try{ const s=JSON.parse(localStorage.getItem('electoral_sesion')||'null');
+       return (window._sesion&&window._sesion.access_token)||(s&&s.access_token)||null; }catch(_){ return null; }
+}
+async function esperarToken(intentos){
+  intentos = intentos || 60;  // ~6s
+  for(let i=0;i<intentos;i++){
+    const t = tokenSesion();                 // el login guarda el token AQUÍ (localStorage), no en el cliente supabase
+    if(t) return t;
+    try{ const t2=(await window.supabase?.auth?.getSession())?.data?.session?.access_token; if(t2) return t2; }catch(_){}
+    await new Promise(r=>setTimeout(r,100));
+  }
+  return null;
+}
 async function bootOperador(){
   try{
-    if(!(await esperarSupabase())){ console.warn('operador: supabase no cargó a tiempo'); return; }
-    const token = (await window.supabase.auth.getSession()).data.session?.access_token;
-    if(!token){ location.replace('login.html'); return; }
+    const token = await esperarToken();
+    if(!token){ console.warn('operador: sin token todavía; no muestro barra (sin redirigir)'); return; }
     const r = await fetch(`${SUPA_URL}/rest/v1/rpc/licencias_para_operador`, {
       method:'POST', headers:{ 'apikey':SUPA_KEY, 'Authorization':'Bearer '+token, 'Content-Type':'application/json' }, body:'{}'
     });
     const lics = r.ok ? await r.json() : [];
     if(!Array.isArray(lics) || !lics.length){
-      alert('El módulo de Cargas es exclusivo del operador MEFT.');
-      location.replace('index.html'); return;
+      console.warn('operador: cuenta sin licencias de carga; barra oculta'); return;
     }
     const sel = document.getElementById('sel-estado');
     sel.innerHTML = '<option value="">— Selecciona el estado destino —</option>' +
@@ -432,7 +444,7 @@ let BASE = null;
 async function cargarEstadoBase(){
   try{
     await esperarSupabase();
-    const token = (await window.supabase.auth.getSession()).data.session?.access_token || SUPA_KEY;
+    const token = (await esperarToken()) || SUPA_KEY;
     const r = await fetch(`${SUPA_URL}/rest/v1/rpc/get_estado_carga_maestra`, {
       method:'POST', headers:{ 'apikey':SUPA_KEY, 'Authorization':'Bearer '+token, 'Content-Type':'application/json' }, body: JSON.stringify({ p_licencia_id: licDestino() })
     });
