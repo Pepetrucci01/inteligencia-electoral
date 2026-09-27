@@ -72,6 +72,11 @@ table.res th{color:var(--text3);font-family:var(--mono);font-size:10px;text-tran
 </head>
 <body>
 
+<div id="barra-destino" class="hidden" style="position:sticky;top:0;z-index:60;display:flex;gap:12px;align-items:center;padding:10px 18px;background:#3f1d1d;border-bottom:2px solid #ef4444;color:#fecaca;font-weight:700;font-size:13px;letter-spacing:.3px">
+  <span style="white-space:nowrap;color:#fca5a5">ESTADO DESTINO</span>
+  <select id="sel-estado" style="background:#1a0f0f;color:#fff;border:1px solid #ef4444;border-radius:8px;padding:7px 10px;font-size:13px;min-width:280px"></select>
+  <span id="banner-destino" style="flex:1"></span>
+</div>
 <div class="topbar">
   <div class="logo-mark">📥</div>
   <div>
@@ -365,13 +370,64 @@ table.res th{color:var(--text3);font-family:var(--mono);font-size:10px;text-tran
 let FILAS = null;   // array listo para la función
 // [31/08] Antes: ESPERADO = {1033, 208748, 500} quemado. Ahora la referencia es
 // lo que hay HOY en la base para la licencia del usuario (get_estado_carga_maestra).
+// ══════════ OPERADOR MEFT · estado destino obligatorio ══════════
+// El módulo de cargas es servicio de MEFT: solo cuentas con
+// usuarios.es_operador_meft entran, y TODO se sube al estado elegido aquí.
+// licencias_para_operador() devuelve vacío para cualquier otro usuario.
+window.LIC_DESTINO = null;
+function licDestino(){ return window.LIC_DESTINO || null; }
+function exigirDestino(){
+  if(licDestino()) return true;
+  alert('Selecciona el ESTADO DESTINO en la barra roja antes de cargar.');
+  return false;
+}
+async function bootOperador(){
+  try{
+    const token = (await window.supabase.auth.getSession()).data.session?.access_token;
+    if(!token){ location.replace('login.html'); return; }
+    const r = await fetch(`${SUPA_URL}/rest/v1/rpc/licencias_para_operador`, {
+      method:'POST', headers:{ 'apikey':SUPA_KEY, 'Authorization':'Bearer '+token, 'Content-Type':'application/json' }, body:'{}'
+    });
+    const lics = r.ok ? await r.json() : [];
+    if(!Array.isArray(lics) || !lics.length){
+      alert('El módulo de Cargas es exclusivo del operador MEFT.');
+      location.replace('index.html'); return;
+    }
+    const sel = document.getElementById('sel-estado');
+    sel.innerHTML = '<option value="">— Selecciona el estado destino —</option>' +
+      lics.map(l => '<option value="'+l.id+'">'+l.estado+' · '+l.clave+(l.anio_eleccion?(' · '+l.anio_eleccion):'')+'</option>').join('');
+    const prev = sessionStorage.getItem('lic_destino');
+    if(prev && lics.some(l => l.id === prev)) sel.value = prev;
+    sel.onchange = aplicarDestino;
+    document.getElementById('barra-destino').classList.remove('hidden');
+    aplicarDestino();
+  }catch(e){ console.warn('operador:', e); }
+}
+function aplicarDestino(){
+  const sel = document.getElementById('sel-estado');
+  const opt = sel.options[sel.selectedIndex];
+  window.LIC_DESTINO = sel.value || null;
+  try{ if(sel.value) sessionStorage.setItem('lic_destino', sel.value); else sessionStorage.removeItem('lic_destino'); }catch(_){ }
+  const b = document.getElementById('banner-destino');
+  if(window.LIC_DESTINO){
+    b.innerHTML = '⚠️ CARGANDO EN: <b>'+(opt?opt.text.split('·')[0].trim().toUpperCase():'')+'</b> — todo lo que subas en las 6 pestañas cae en este estado.';
+    document.getElementById('barra-destino').style.background = '#7f1d1d';
+  }else{
+    b.innerHTML = '⛔ SIN ESTADO DESTINO — selecciona un estado antes de subir cualquier cosa.';
+    document.getElementById('barra-destino').style.background = '#3f1d1d';
+  }
+  BASE = null; cargarEstadoBase();
+  if(window.cgConteo) window.cgConteo();
+}
+document.addEventListener('DOMContentLoaded', bootOperador);
+
 // La validacion real vive en la funcion (base == archivo); esto es solo contexto.
 let BASE = null;
 async function cargarEstadoBase(){
   try{
     const token = (await window.supabase.auth.getSession()).data.session?.access_token || SUPA_KEY;
     const r = await fetch(`${SUPA_URL}/rest/v1/rpc/get_estado_carga_maestra`, {
-      method:'POST', headers:{ 'apikey':SUPA_KEY, 'Authorization':'Bearer '+token, 'Content-Type':'application/json' }, body:'{}'
+      method:'POST', headers:{ 'apikey':SUPA_KEY, 'Authorization':'Bearer '+token, 'Content-Type':'application/json' }, body: JSON.stringify({ p_licencia_id: licDestino() })
     });
     if(r.ok){ BASE = await r.json(); pintarEstadoBase(); }
   }catch(e){ console.warn('estado base:', e); }
@@ -654,7 +710,7 @@ async function revisarBajasEstructura(emailsArchivo){
     const r = await fetch(`${SUPA_URL}/rest/v1/rpc/previsualizar_bajas_estructura`, {
       method:'POST',
       headers:{ 'apikey':SUPA_KEY, 'Authorization':'Bearer '+token, 'Content-Type':'application/json' },
-      body: JSON.stringify({ p_emails: emailsArchivo })
+      body: JSON.stringify({ p_emails: emailsArchivo, p_licencia_id: licDestino() })
     });
     if(!r.ok){ console.warn('Revisión de bajas: HTTP '+r.status); return; }
     const d = await r.json();
@@ -693,7 +749,7 @@ async function aplicarBajasSiCorresponde(){
     const r = await fetch(`${SUPA_URL}/rest/v1/rpc/aplicar_bajas_estructura`, {
       method:'POST',
       headers:{ 'apikey':SUPA_KEY, 'Authorization':'Bearer '+token, 'Content-Type':'application/json' },
-      body: JSON.stringify({ p_emails: window._BAJAS_PENDIENTES })
+      body: JSON.stringify({ p_emails: window._BAJAS_PENDIENTES, p_licencia_id: licDestino() })
     });
     if(!r.ok) throw new Error('HTTP '+r.status);
     return await r.json();
@@ -766,7 +822,7 @@ async function correrAltas(filas, pre, etiqueta){
       const lote = E_FILAS.slice(i, i+LOTE);
       const r = await fetch(`${SUPA_URL}/functions/v1/importar-estructura`, {
         method:'POST', headers:{ 'apikey':SUPA_KEY, 'Authorization':'Bearer '+token, 'Content-Type':'application/json' },
-        body: JSON.stringify({ filas: lote })
+        body: JSON.stringify({ filas: lote, licencia_id: licDestino() })
       });
       const data = await r.json().catch(() => ({}));
       if(!r.ok || !data.ok) throw new Error(data.error || ('HTTP '+r.status));
@@ -861,14 +917,14 @@ async function validarCiudadanos(rows){
 // Descarta las CURP que ya existen en la base (por lotes: el filtro in.() topa
 // con el limite de longitud de la URL).
 async function descartarDuplicados(){
-  if(!C_OK.length) return;
+  if(!C_OK.length || !licDestino()) return;
   try{
     const token = (await window.supabase.auth.getSession()).data.session?.access_token || SUPA_KEY;
     const curps = [...new Set(C_OK.map(f => f.curp))];
     const existentes = new Set();
     for(let i=0; i<curps.length; i+=150){
       const lista = curps.slice(i,i+150).map(c => '"'+c+'"').join(',');
-      const r = await fetch(`${SUPA_URL}/rest/v1/ciudadanos?select=curp&curp=in.(${encodeURIComponent(lista)})`,
+      const r = await fetch(`${SUPA_URL}/rest/v1/ciudadanos?select=curp&licencia_id=eq.${licDestino()}&curp=in.(${encodeURIComponent(lista)})`,
         { headers:{ 'apikey':SUPA_KEY, 'Authorization':'Bearer '+token } });
       if(r.ok) (await r.json()).forEach(x => existentes.add(String(x.curp).toUpperCase()));
     }
@@ -897,6 +953,7 @@ function previewCiudadanos(){
 
 async function importarCiudadanos(){
   if(!C_OK.length) return;
+  if(!exigirDestino()) return;
   const btn = document.getElementById('c-btn-import'); btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Cargando…';
   document.getElementById('c-result').classList.remove('hidden');
   const prog = document.querySelector('#c-prog i'), msg = document.getElementById('c-result-msg');
@@ -904,7 +961,7 @@ async function importarCiudadanos(){
   const ahora = new Date().toISOString();
   const payload = C_OK.map(f => {
     const o = {...f}; delete o._row; delete o._errores; delete o._dup;
-    o.licencia_id = BASE ? BASE.licencia_id : ses.licencia_id;
+    o.licencia_id = licDestino() || (BASE ? BASE.licencia_id : ses.licencia_id);
     o.capturista_id = ses.id || null; o.responsable_id = ses.id || null;
     o.origen = o.origen || 'carga_excel';
     o.consentimiento = true; o.consentimiento_fecha = ahora;
@@ -1004,7 +1061,7 @@ async function importarExternos(){
     for(let i=0; i<filas.length; i+=500){
       const r = await fetch(`${SUPA_URL}/rest/v1/rpc/importar_contactos_externos`, {
         method:'POST', headers:{ 'apikey':SUPA_KEY, 'Authorization':'Bearer '+token, 'Content-Type':'application/json' },
-        body: JSON.stringify({ p_filas: filas.slice(i,i+500), p_fuente: X_FUENTE, p_consent: true }) });
+        body: JSON.stringify({ p_filas: filas.slice(i,i+500), p_fuente: X_FUENTE, p_consent: true, p_licencia_id: licDestino() }) });
       if(!r.ok){ const t = await r.text(); let m=t; try{ m = JSON.parse(t).message || t; }catch(_){} throw new Error(m); }
       const j = await r.json();
       tot.insertados += j.insertados; tot.duplicados += j.duplicados; tot.ya_simpatizantes += j.ya_simpatizantes; tot.invalidos += j.invalidos; tot.total_base = j.total_base;
@@ -1033,7 +1090,7 @@ async function cargarEstadoCC(){
   const el = document.getElementById('cc-estado'); if(!el) return;
   try{
     const token = (await window.supabase.auth.getSession()).data.session?.access_token; if(!token) return;
-    const r = await fetch(`${SUPA_URL}/rest/v1/rpc/cc_base_externa_estado`, { method:'POST', headers:{ 'apikey':SUPA_KEY, 'Authorization':'Bearer '+token, 'Content-Type':'application/json' }, body:'{}' });
+    const r = await fetch(`${SUPA_URL}/rest/v1/rpc/cc_base_externa_estado`, { method:'POST', headers:{ 'apikey':SUPA_KEY, 'Authorization':'Bearer '+token, 'Content-Type':'application/json' }, body: JSON.stringify({ p_licencia_id: licDestino() }) });
     if(!r.ok) return;
     const e = await r.json();
     if(!e || !e.total){ el.style.display='block'; el.className='msg'; el.textContent='Esta licencia todavía no tiene base externa cargada.'; return; }
@@ -1060,6 +1117,7 @@ function descargarErrores(){
 
 async function importar(){
   if(!FILAS || !FILAS.length) return;
+  if(!exigirDestino()) return;
   const btn = document.getElementById('btn-import');
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>Importando…';
@@ -1072,7 +1130,7 @@ async function importar(){
         'Authorization': 'Bearer '+token,
         'Content-Type':'application/json'
       },
-      body: JSON.stringify({ p_filas: FILAS })
+      body: JSON.stringify({ p_filas: FILAS, p_licencia_id: licDestino() })
     });
     const data = await res.json();
     document.getElementById('result').classList.remove('hidden');
@@ -1106,7 +1164,7 @@ async function importar(){
 // ══════════ PESTAÑA 6: CARTOGRAFÍA (mismo comportamiento que cargar_cartografia.html) ══════════
 (function(){
   var FC=null;
-  function lic(){ try{ var s=JSON.parse(localStorage.getItem('electoral_sesion')||'null'); return s&&s.licencia_id?String(s.licencia_id):null; }catch(e){ return null; } }
+  function lic(){ return (window.LIC_DESTINO||null); }  // destino del operador MEFT, nunca la sesión
   function tok(){ try{ var s=JSON.parse(localStorage.getItem('electoral_sesion')||'null'); return (window._sesion&&window._sesion.access_token)||(s&&s.access_token)||SUPA_KEY; }catch(e){ return SUPA_KEY; } }
   function hdr(extra){ return Object.assign({'apikey':SUPA_KEY,'Authorization':'Bearer '+tok(),'Content-Type':'application/json'}, extra||{}); }
   var F=function(u,o){ return (window.supaFetch||fetch)(u,o); };
@@ -1114,7 +1172,7 @@ async function importar(){
   function setK(id,v){ var e=document.getElementById(id); if(e)e.querySelector('.kpi-val').textContent=v; }
 
   window.cgConteo=async function(){
-    try{ var r=await F(SUPA_URL+'/rest/v1/cartografia_secciones?select=seccion&limit=1',{headers:hdr({'Prefer':'count=exact'})});
+    try{ var r=await F(SUPA_URL+'/rest/v1/cartografia_secciones?select=seccion&limit=1&licencia_id=eq.'+(lic()||'00000000-0000-0000-0000-000000000000')+'',{headers:hdr({'Prefer':'count=exact'})});
       var cr=r.headers.get('content-range')||''; var tot=cr.split('/')[1];
       setK('cg-k-base',(tot&&tot!=='*')?Number(tot).toLocaleString('es-MX'):'0');
     }catch(e){ setK('cg-k-base','?'); }
@@ -1137,7 +1195,7 @@ async function importar(){
     rd.readAsText(f,'utf-8');
   }
   window.cgCargar=async function(){
-    var L=lic(); if(!FC||!L){ cglog('Sin sesión con licencia o sin archivo.','red'); return; }
+    var L=lic(); if(!FC||!L){ cglog('Selecciona el estado destino y un archivo.','red'); return; }
     var btn=document.getElementById('cg-btn'); btn.disabled=true; document.getElementById('cg-bar').style.width='0%';
     var feats=FC.features.filter(function(x){return x.properties&&x.properties.seccion!=null&&x.geometry;});
     var fuente='GeoJSON '+new Date().toISOString().slice(0,10); var hechas=0,err=0,LT=40;
@@ -1149,7 +1207,7 @@ async function importar(){
       document.getElementById('cg-bar').style.width=Math.round(hechas/feats.length*100)+'%'; document.getElementById('cg-estado').textContent=hechas+' / '+feats.length;
     }
     cglog('Cartografía: '+hechas+' secciones enviadas'+(err?(' · '+err+' lotes con error'):''), err?'amber':'green');
-    try{ var r2=await F(SUPA_URL+'/rest/v1/rpc/sincronizar_secciones_desde_cartografia',{method:'POST',headers:hdr(),body:'{}'});
+    try{ var r2=await F(SUPA_URL+'/rest/v1/rpc/sincronizar_secciones_desde_cartografia',{method:'POST',headers:hdr(),body:JSON.stringify({p_licencia_id:lic()})});
       var j=await r2.json(); if(!r2.ok) throw new Error(j.message||JSON.stringify(j));
       cglog('secciones_ine sincronizadas: '+j.secciones_actualizadas+' actualizadas · '+j.secciones_creadas+' creadas','green');
     }catch(e){ cglog('Sincronización a secciones_ine falló: '+e.message,'red'); }
