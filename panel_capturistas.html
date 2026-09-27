@@ -252,12 +252,15 @@ table.cap-table tr.selected{background:rgba(59,130,246,0.1);}
     <option>Manzanillo</option><option>Minatitlán</option><option>Tecomán</option>
     <option>Villa de Álvarez</option>
   </select>
+  <span class="filter-label">SECCIÓN</span>
+  <input type="number" id="fil-seccion" placeholder="Todas" min="1" oninput="aplicarFiltros()" style="width:78px">
   <div class="filter-sep"></div>
   <span class="filter-label">ORDENAR POR</span>
   <button class="sort-btn" id="sort-total" onclick="setSorteo('total')">Volumen</button>
   <button class="sort-btn active" id="sort-score" onclick="setSorteo('score')">Score</button>
   <button class="sort-btn" id="sort-pct_meta" onclick="setSorteo('pct_meta')">% Meta</button>
   <button class="sort-btn" id="sort-pct_val" onclick="setSorteo('pct_val')">% Validados</button>
+  <button class="sort-btn" id="sort-SECCION" onclick="setSorteo('SECCION')">Sección</button>
   <div class="filter-sep"></div>
   <span class="filter-label">BUSCAR</span>
   <input type="text" id="fil-search" placeholder="ID o nombre..." oninput="aplicarFiltros()" style="width:160px">
@@ -320,6 +323,7 @@ table.cap-table tr.selected{background:rgba(59,130,246,0.1);}
             <tr>
               <th style="text-align:center">#</th>
               <th onclick="sortPanel('CAPTURADO_POR')" style="cursor:pointer;user-select:none;text-align:center">Activista <span id="sort-p-CAPTURADO_POR" style="color:var(--text3)">↕</span></th>
+              <th onclick="sortPanel('SECCION')" style="cursor:pointer;user-select:none;text-align:center">Sección <span id="sort-p-SECCION" style="color:var(--text3)">↕</span></th>
               <th onclick="sortPanel('MUNICIPIO')" style="cursor:pointer;user-select:none;text-align:center">Municipio <span id="sort-p-MUNICIPIO" style="color:var(--text3)">↕</span></th>
               <th onclick="sortPanel('total')" style="cursor:pointer;user-select:none;text-align:center">Capturas <span id="sort-p-total" style="color:var(--text3)">↕</span></th>
               <th style="text-align:center">Avance</th>
@@ -808,10 +812,14 @@ function buscarNombre(nombre, q){
 function getDatos(){
   const mun = document.getElementById('fil-municipio').value;
   const q   = normalizar(document.getElementById('fil-search').value);
+  const sec = (document.getElementById('fil-seccion')?.value || '').trim();  // [27 sep] filtro por número de sección
   let d = [...DATOS];
   if(mun) d = d.filter(r=>r.MUNICIPIO===mun);
+  if(sec) d = d.filter(r=>String(r.SECCION||'')===sec);
   if(q)   d = d.filter(r=>buscarNombre(r.CAPTURADO_POR, q)||normalizar(r.ID_CAPTURISTA).includes(q));
-  d.sort((a,b)=> sortAsc ? a[sortField]-b[sortField] : b[sortField]-a[sortField]);
+  // [27 sep] "sin sección" (null) siempre al final, en cualquier dirección
+  const val = r => { const v = r[sortField]; return (v===null||v===undefined||isNaN(v)) ? (sortAsc?Infinity:-Infinity) : Number(v); };
+  d.sort((a,b)=> sortAsc ? val(a)-val(b) : val(b)-val(a));
   return d;
 }
 
@@ -848,6 +856,7 @@ function renderTable(d){
              meta, que es lo que el coordinador necesita para ubicar a su gente. -->
         <div class="cap-id">${r.SECCION ? 'Secc. ' + r.SECCION : 'sin sección'}${r.meta ? ' · meta ' + Number(r.meta).toLocaleString('es-MX') : ''}</div>
       </td>
+      <td style="text-align:center;font-family:var(--mono);color:var(--text2)">${r.SECCION || '—'}</td>
       <td style="text-align:center"><div class="cap-mun" style="color:var(--cyan)">${r.MUNICIPIO}</div></td>
       <td style="text-align:center;color:${mc};font-weight:600">${fmt(r.total)}</td>
       <td style="text-align:center;width:100px">
@@ -996,7 +1005,7 @@ function seleccionar(id, mun){
 }
 
 function setSorteo(field){
-  if(sortField===field) sortAsc=!sortAsc; else { sortField=field; sortAsc=false; }
+  if(sortField===field) sortAsc=!sortAsc; else { sortField=field; sortAsc = field==='SECCION'; }  // [27 sep] sección arranca ascendente
   document.querySelectorAll('.sort-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('sort-'+field)?.classList.add('active');
   aplicarFiltros();
@@ -1012,9 +1021,9 @@ let PANEL_SORT = {col: null, asc: true};
 
 function sortPanel(col) {
   if(PANEL_SORT.col === col) { PANEL_SORT.asc = !PANEL_SORT.asc; }
-  else { PANEL_SORT.col = col; PANEL_SORT.asc = col === 'CAPTURADO_POR' || col === 'MUNICIPIO' || col === 'ultima_str'; }
+  else { PANEL_SORT.col = col; PANEL_SORT.asc = col === 'CAPTURADO_POR' || col === 'MUNICIPIO' || col === 'ultima_str' || col === 'SECCION'; }
 
-  ['CAPTURADO_POR','MUNICIPIO','total','pct_meta','pct_val','seguros','score','ultima_str'].forEach(c => {
+  ['CAPTURADO_POR','SECCION','MUNICIPIO','total','pct_meta','pct_val','seguros','score','ultima_str'].forEach(c => {
     const el = document.getElementById('sort-p-'+c);
     if(el){ el.textContent='↕'; el.style.color='var(--text3)'; }
   });
@@ -1032,6 +1041,8 @@ getDatos = function() {
   return [...d].sort((a,b) => {
     let va = a[PANEL_SORT.col], vb = b[PANEL_SORT.col];
     if(typeof va === 'string') return PANEL_SORT.asc ? va.localeCompare(vb) : vb.localeCompare(va);
+    if(va===null||va===undefined) va = PANEL_SORT.asc ? Infinity : -Infinity;  // [27 sep] sin sección al final
+    if(vb===null||vb===undefined) vb = PANEL_SORT.asc ? Infinity : -Infinity;
     return PANEL_SORT.asc ? va-vb : vb-va;
   });
 };
