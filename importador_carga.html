@@ -247,6 +247,11 @@ table.res th{color:var(--text3);font-family:var(--mono);font-size:10px;text-tran
       <div><b>Haz clic para elegir</b> o arrastra el archivo aquí</div>
       <div class="drop-hint">PADRON_SIMPATIZANTES.xlsx</div>
     </label>
+    <!-- [27 sep] Herramientas del padrón: exportar y vaciar (solo operadores MEFT; el servidor lo exige) -->
+    <div class="actions" style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-ghost" id="c-btn-export" onclick="descargarPadron()">⬇ Descargar padrón (Excel)</button>
+      <button class="btn btn-ghost" id="c-btn-wipe" style="border-color:#7f1d1d;color:#fca5a5" onclick="vaciarPadron()">🗑 Vaciar padrón de esta licencia…</button>
+    </div>
   </div>
   <div class="card hidden" id="c-preview">
     <h2>2 · Revisión previa</h2>
@@ -921,6 +926,7 @@ document.getElementById('file-ciud').addEventListener('change', e => leerCiudada
 
 async function validarCiudadanos(rows){
   C_OK = []; C_ERR = [];
+  const vistos = new Set();  // [27 sep] CURP repetidas DENTRO del archivo: la primera pasa, las demás se rechazan
   const MUN = new Set((BASE && BASE.municipios || []).map(cNorm));
   const SEC = new Set((BASE && BASE.secciones || []).map(Number));
   const CURP_EJEMPLO = 'GALM880101MCLRPR05';
@@ -933,6 +939,7 @@ async function validarCiudadanos(rows){
     if(!nombre) err.push('falta nombre');
     if(!ap) err.push('falta apellido paterno');
     if(!curp) err.push('falta CURP'); else if(!CURP_RE.test(curp)) err.push('CURP inválida');
+    else if(vistos.has(curp)) err.push('CURP repetida en el archivo'); else vistos.add(curp);
     if(!mun) err.push('falta municipio'); else if(MUN.size && !MUN.has(mun)) err.push('municipio fuera de la carga maestra');
     if(!sec) err.push('falta sección');
     else if(isNaN(parseInt(sec))) err.push('sección no es número');
@@ -1026,6 +1033,46 @@ async function importarCiudadanos(){
     btn.disabled=false; btn.innerHTML='Reintentar';
   }
 }
+// [27 sep] Exportar el padrón de la licencia destino en las columnas de la plantilla.
+async function descargarPadron(){
+  if(!exigirDestino()) return;
+  const btn = document.getElementById('c-btn-export'); const txt = btn.innerHTML;
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Exportando…';
+  try{
+    const token = (await window.supabase.auth.getSession()).data.session?.access_token || SUPA_KEY;
+    const r = await fetch(`${SUPA_URL}/rest/v1/rpc/exportar_padron_ciudadanos`, {
+      method:'POST', headers:{ 'apikey':SUPA_KEY, 'Authorization':'Bearer '+token, 'Content-Type':'application/json' },
+      body: JSON.stringify({ p_licencia: licDestino() }) });
+    if(!r.ok) throw new Error((await r.json().catch(()=>({}))).message || 'No se pudo exportar.');
+    const filas = await r.json();
+    const cols = ['nombre','apellido_paterno','apellido_materno','curp','clave_elector','edad','sexo','telefono','municipio','seccion_electoral','domicilio','compromiso','origen','es_apoyo','es_influencia','es_riesgo','notas'];
+    const aoa = [cols].concat(filas.map(f => cols.map(c => f[c] ?? '')));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aoa), 'CIUDADANOS');
+    XLSX.writeFile(wb, 'PADRON_CIUDADANOS_' + new Date().toISOString().slice(0,10) + '.xlsx');
+    alert('Padrón exportado: ' + filas.length.toLocaleString('es-MX') + ' ciudadanos.');
+  }catch(e){ alert('Error al exportar: ' + e.message); }
+  btn.disabled = false; btn.innerHTML = txt;
+}
+
+// [27 sep] Vaciar el padrón de la licencia destino. El servidor exige operador MEFT
+// y la CLAVE de la licencia tecleada; borra SOLO ciudadanos y queda en audit_log.
+async function vaciarPadron(){
+  if(!exigirDestino()) return;
+  const clave = prompt('\u26a0\ufe0f Esto BORRA TODOS los ciudadanos de la licencia destino (estructura, metas y casillas quedan intactas).\n\nRecomendado: usa antes "Descargar padr\u00f3n" como respaldo.\n\nPara confirmar, escribe la CLAVE de la licencia (p. ej. BCS-DEMO):');
+  if(clave === null || !clave.trim()) return;
+  try{
+    const token = (await window.supabase.auth.getSession()).data.session?.access_token || SUPA_KEY;
+    const r = await fetch(`${SUPA_URL}/rest/v1/rpc/vaciar_padron_licencia`, {
+      method:'POST', headers:{ 'apikey':SUPA_KEY, 'Authorization':'Bearer '+token, 'Content-Type':'application/json' },
+      body: JSON.stringify({ p_licencia: licDestino(), p_clave: clave.trim() }) });
+    const data = await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(data.message || 'No se pudo vaciar.');
+    alert('Padr\u00f3n vaciado: ' + Number(data.borrados||0).toLocaleString('es-MX') + ' ciudadanos borrados de ' + (data.clave||'') + '.');
+    location.reload();
+  }catch(e){ alert('Error: ' + e.message); }
+}
+
 function descargarErroresCiud(){
   const rows = [['fila','nombre','apellido_paterno','curp','municipio','seccion','motivo']]
     .concat(C_ERR.map(f => [f._row,f.nombre,f.apellido_paterno,f.curp,f.municipio,f.seccion_electoral,(f._errores||[]).join(' · ')]));
