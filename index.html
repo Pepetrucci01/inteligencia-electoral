@@ -1328,7 +1328,7 @@ function toggleAlertas(){
   function esc(t){ return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
   sel.innerHTML = lics.map(l =>
     '<option value="'+esc(l.id)+'"'+(activa && l.id===activa.id?' selected':'')+'>'
-    + esc(l.clave || l.estado) + (l.es_propia ? ' \u00b7 propia' : '') + '</option>'
+    + esc(l.estado || l.clave) + '</option>'
   ).join('');
   sel.classList.toggle('ajena', !!(activa && propia && activa.id!==propia.id));
   sel.style.display = 'inline-block';
