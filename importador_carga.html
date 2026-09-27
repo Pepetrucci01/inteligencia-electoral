@@ -923,10 +923,10 @@ async function descartarDuplicados(){
     const curps = [...new Set(C_OK.map(f => f.curp))];
     const existentes = new Set();
     for(let i=0; i<curps.length; i+=150){
-      const lista = curps.slice(i,i+150).map(c => '"'+c+'"').join(',');
-      const r = await fetch(`${SUPA_URL}/rest/v1/ciudadanos?select=curp&licencia_id=eq.${licDestino()}&curp=in.(${encodeURIComponent(lista)})`,
-        { headers:{ 'apikey':SUPA_KEY, 'Authorization':'Bearer '+token } });
-      if(r.ok) (await r.json()).forEach(x => existentes.add(String(x.curp).toUpperCase()));
+      const r = await fetch(`${SUPA_URL}/rest/v1/rpc/ciudadanos_curps_existentes`,
+        { method:'POST', headers:{ 'apikey':SUPA_KEY, 'Authorization':'Bearer '+token, 'Content-Type':'application/json' },
+          body: JSON.stringify({ p_licencia_id: licDestino(), p_curps: curps.slice(i,i+150) }) });
+      if(r.ok){ const arr = await r.json(); (Array.isArray(arr)?arr:[]).forEach(c => existentes.add(String(c).toUpperCase())); }
     }
     if(!existentes.size) return;
     const quedan = [];

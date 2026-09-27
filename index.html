@@ -657,7 +657,7 @@ function actualizarContadorModulos(){
   }catch(_e){}
 }
 
-const APP_BUILD = '20260925a'; // [25 sep] shell multi-licencia: estado/meta/año desde configuracion_sistema, sin Colima quemado, tema por licencia // [07/09 b] shell se recarga solo si cambia la sesión (storage/visibilidad) · login nunca en iframe · sin-acceso en vez de login (auth-guard) · badge alcance compacto en móvil (theme.js) // [07/09] responsive móvil ronda 1: shell (crédito en franja propia, 100dvh), war room, activistas, reportes, admin // [05/09] alertas solo en Inicio + plegables · importador pestaña 5 + telefonistas · call center fuente // [04/09] reportar un problema (tickets sobre sistema original VOT-2026-*, todos los roles) · soporte técnico solo super_admin+soporte (data-rol) · consulta IA (nuevo módulo) · panel capturista (paginación, Día E) · war room (388) · captura (aviso cuota) · día E (modal logout) // [03/09] día E: buscador único + voz + registro sorpresa real + encabezado por rol; iframe allow=microphone // [02/09] captura (identidad real, Mi Sección, scan INE, responsive) · reportes (calidad en vivo, alcance municipal) · war room (alertas por rol) · panel capturista (header móvil) // [31/08] subir esta cadena cada vez que se actualice un modulo: es el rompe-cache de los iframes
+const APP_BUILD = '20260927b'; // [25 sep] shell multi-licencia: estado/meta/año desde configuracion_sistema, sin Colima quemado, tema por licencia // [07/09 b] shell se recarga solo si cambia la sesión (storage/visibilidad) · login nunca en iframe · sin-acceso en vez de login (auth-guard) · badge alcance compacto en móvil (theme.js) // [07/09] responsive móvil ronda 1: shell (crédito en franja propia, 100dvh), war room, activistas, reportes, admin // [05/09] alertas solo en Inicio + plegables · importador pestaña 5 + telefonistas · call center fuente // [04/09] reportar un problema (tickets sobre sistema original VOT-2026-*, todos los roles) · soporte técnico solo super_admin+soporte (data-rol) · consulta IA (nuevo módulo) · panel capturista (paginación, Día E) · war room (388) · captura (aviso cuota) · día E (modal logout) // [03/09] día E: buscador único + voz + registro sorpresa real + encabezado por rol; iframe allow=microphone // [02/09] captura (identidad real, Mi Sección, scan INE, responsive) · reportes (calidad en vivo, alcance municipal) · war room (alertas por rol) · panel capturista (header móvil) // [31/08] subir esta cadena cada vez que se actualice un modulo: es el rompe-cache de los iframes
 
 let collapsed = false;
 
@@ -1230,6 +1230,40 @@ function toggleAlertas(){
       }).join('');
     }catch(e){ el.textContent='No se pudieron cargar tus reportes.'; }
   }
+})();
+</script>
+<script>
+// [27 sep] Gate Operador MEFT. Cargas es servicio de MEFT: solo lo ven —y solo
+// entran— cuentas con es_operador_meft, y esas cuentas ven ÚNICAMENTE Cargas.
+// licencias_para_operador() devuelve filas solo para operadores; resto: vacío.
+(async function(){
+  const SUPA_URL = 'https://dyirhwwmykskpuvzcafx.supabase.co';
+  const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5aXJod3dteWtza3B1dnpjYWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NTk3ODgsImV4cCI6MjA5NTEzNTc4OH0.2xe4cHqORGng1hnYPJ9ZiyT0r87fMijbUEJqBy3-xoI';
+  function soloCargas(){
+    document.querySelectorAll('.nav-item').forEach(el=>{ if(el.id!=='nav-carga') el.style.display='none'; });
+    var c=document.getElementById('nav-carga'); if(c) c.style.display='flex';
+    document.querySelectorAll('#hub .mc').forEach(el=>el.style.display='none');
+    try{ load('carga','importador_carga.html','Cargas','Metas \u00b7 estructura \u00b7 representantes \u00b7 ciudadanos'); }catch(e){}
+  }
+  function ocultarCargas(){
+    var e=document.getElementById('nav-carga'); if(e) e.style.display='none';
+    document.querySelectorAll('.mc.carga').forEach(el=>el.style.display='none');
+  }
+  try{
+    for(let i=0;i<30 && !window._sesion?.access_token;i++) await new Promise(r=>setTimeout(r,100));
+    const token = window._sesion?.access_token;
+    if(!token){ ocultarCargas(); return; }
+    const r = await fetch(SUPA_URL+'/rest/v1/rpc/licencias_para_operador',{method:'POST',headers:{apikey:SUPA_KEY,Authorization:'Bearer '+token,'Content-Type':'application/json'},body:'{}'});
+    const lics = r.ok ? await r.json() : [];
+    window._esOperadorMEFT = Array.isArray(lics) && lics.length>0;
+  }catch(e){ window._esOperadorMEFT = false; }
+  if(window._esOperadorMEFT) soloCargas(); else ocultarCargas();
+  if(typeof actualizarContadorModulos==='function') actualizarContadorModulos();
+  const _prev = window.load;
+  window.load = function(id){
+    if(id==='carga' && window._esOperadorMEFT!==true){ alert('El m\u00f3dulo de Cargas es exclusivo del operador MEFT.'); return; }
+    return _prev.apply(this, arguments);
+  };
 })();
 </script>
 </body>
