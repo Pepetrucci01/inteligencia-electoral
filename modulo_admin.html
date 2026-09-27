@@ -1508,9 +1508,9 @@ function modalNuevaLicencia(){
   document.getElementById('modal-body').innerHTML=`
     <div class="form-row">
       <div class="form-group"><label class="form-label">Estado</label>
-        <select class="form-select"><option>Seleccionar...</option><option>Aguascalientes</option><option>Baja California</option><option>Chiapas</option><option>Guerrero</option><option>Oaxaca</option><option>Puebla</option><option>Yucatán</option></select>
+        <select class="form-select" id="m-lic-estado"><option value="">Seleccionar...</option><option>Aguascalientes</option><option>Baja California</option><option>Baja California Sur</option><option>Campeche</option><option>Chiapas</option><option>Chihuahua</option><option>Ciudad de México</option><option>Coahuila</option><option>Colima</option><option>Durango</option><option>Estado de México</option><option>Guanajuato</option><option>Guerrero</option><option>Hidalgo</option><option>Jalisco</option><option>Michoacán</option><option>Morelos</option><option>Nayarit</option><option>Nuevo León</option><option>Oaxaca</option><option>Puebla</option><option>Querétaro</option><option>Quintana Roo</option><option>San Luis Potosí</option><option>Sinaloa</option><option>Sonora</option><option>Tabasco</option><option>Tamaulipas</option><option>Tlaxcala</option><option>Veracruz</option><option>Yucatán</option><option>Zacatecas</option></select>
       </div>
-      <div class="form-group"><label class="form-label">Partido / cliente</label><input class="form-input" placeholder="Ej. Partido — Estado"></div>
+      <div class="form-group"><label class="form-label">Partido / cliente</label><input class="form-input" id="m-lic-cliente" placeholder="Ej. Partido — Estado"></div>
     </div>
     <div class="form-group"><label class="form-label">Plan</label>
       <select class="form-select" id="m-plan" onchange="actualizarPrecio()">
@@ -1521,11 +1521,15 @@ function modalNuevaLicencia(){
       </select>
     </div>
     <div class="form-row">
-      <div class="form-group"><label class="form-label">Fecha inicio</label><input class="form-input" type="date" value="${new Date().toISOString().slice(0,10)}"></div>
-      <div class="form-group"><label class="form-label">Meses contratados</label><input class="form-input" type="number" value="12" min="1" max="36"></div>
+      <div class="form-group"><label class="form-label">Fecha inicio</label><input class="form-input" id="m-lic-inicio" type="date" value="${new Date().toISOString().slice(0,10)}"></div>
+      <div class="form-group"><label class="form-label">Meses contratados</label><input class="form-input" id="m-lic-meses" type="number" value="12" min="1" max="36"></div>
     </div>
-    <div class="form-group"><label class="form-label">Email de contacto</label><input class="form-input" type="email" placeholder="cliente@partido.mx"></div>
-    <div class="form-group"><label class="form-label">Notas de contrato</label><textarea class="form-textarea" rows="2" placeholder="Condiciones especiales, descuentos..."></textarea></div>
+    <div class="form-group"><label class="form-label">Email de contacto</label><input class="form-input" id="m-lic-email" type="email" placeholder="cliente@partido.mx"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Clave de licencia</label><input class="form-input" id="m-lic-clave" placeholder="Ej. CHIHUAHUA-DEMO" style="text-transform:uppercase"></div>
+      <div class="form-group"><label class="form-label">Meta estatal (Hamilton)</label><input class="form-input" id="m-lic-meta" type="number" placeholder="Ej. 194277" min="0"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Notas de contrato</label><textarea class="form-textarea" id="m-lic-notas" rows="2" placeholder="Condiciones especiales, descuentos..."></textarea></div>
 
     <div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.3);border-radius:8px;padding:14px;margin-top:10px;">
       <div style="font-size:12px;font-weight:700;color:var(--accent,#3b82f6);margin-bottom:10px;">ø ACUERDO DE EXCLUSIVIDAD Y CONFIDENCIALIDAD</div>
@@ -1542,7 +1546,7 @@ function modalNuevaLicencia(){
     </div>
 
     <div class="btn-row" style="margin-top:10px">
-      <button class="btn primary" id="btn-crear-lic" style="flex:1;opacity:0.4;cursor:not-allowed;" disabled onclick="crearLicenciaConTerminos()">✅ Crear Licenciao al cliente.');cerrarModal()">Crear licencia</button>
+      <button class="btn primary" id="btn-crear-lic" style="flex:1;opacity:0.4;cursor:not-allowed;" disabled onclick="crearLicenciaConTerminos()">✅ Crear licencia</button>
       <button class="btn" onclick="cerrarModal()">Cancelar</button>
     </div>`;
   document.getElementById('modal-bg').style.display='flex';
@@ -2116,13 +2120,47 @@ function checkTerminosLic() {
   }
 }
 
-function crearLicenciaConTerminos() {
-  var fecha = new Date().toLocaleString('es-MX', {
-    year:'numeric', month:'long', day:'numeric',
-    hour:'2-digit', minute:'2-digit'
-  });
-  alert('✅ Licencia creada exitosamente\n\nFecha de activación: ' + fecha + '\n\nLos términos de exclusividad han sido registrados.\nSe enviará confirmación al cliente por email.');
-  closeModal();
+async function crearLicenciaConTerminos() {
+  // [27 sep] Antes solo mostraba un alert demo. Ahora inserta de verdad en `licencias`.
+  const g = id => (document.getElementById(id)?.value || '').trim();
+  const estado = g('m-lic-estado');
+  const clave  = g('m-lic-clave').toUpperCase();
+  const meta   = parseInt(g('m-lic-meta') || '0', 10) || 0;
+  const inicio = g('m-lic-inicio') || new Date().toISOString().slice(0,10);
+  const meses  = parseInt(g('m-lic-meses') || '12', 10) || 12;
+  const cliente= g('m-lic-cliente');
+  const notas  = g('m-lic-notas');
+
+  if(!estado){ alert('Elige el estado.'); return; }
+  if(!clave){ alert('Escribe la clave de la licencia (ej. CHIHUAHUA-DEMO).'); return; }
+  if(!meta){ if(!confirm('La meta estatal está en 0. ¿Crear de todos modos?')) return; }
+
+  const btn = document.getElementById('btn-crear-lic');
+  const txt = btn ? btn.textContent : '';
+  if(btn){ btn.disabled = true; btn.textContent = 'Creando…'; }
+
+  try{
+    if(!await esperarSupabase(8000)) throw new Error('Sin conexión a Supabase.');
+    const venc = new Date(inicio); venc.setMonth(venc.getMonth() + meses);
+    const fechaVenc = venc.toISOString().slice(0,10);
+    const usuario = (window._sesion?.email) || 'admin';
+
+    const { data, error } = await window.supabase.from('licencias').insert({
+      clave, tipo:'estado', estado, meta_estatal:meta, anio_eleccion:2027,
+      fecha_inicio:inicio, fecha_vencimiento:fechaVenc, max_usuarios:50,
+      activa:true, exclusiva:true, modulos_habilitados:['completo'],
+      notas: notas || (cliente ? ('Cliente: '+cliente) : null),
+      terminos_aceptados:true, terminos_fecha:new Date().toISOString(), terminos_usuario:usuario
+    }).select('id, clave').single();
+
+    if(error) throw error;
+    alert('✅ Licencia creada: ' + data.clave + '\n\nUUID: ' + data.id + '\nVence: ' + fechaVenc + '\n\nGuárdala: esta clave es la que se teclea para vaciar el padrón.');
+    cerrarModal();
+    if(typeof cargarLicencias === 'function') cargarLicencias();
+  }catch(e){
+    alert('No se pudo crear la licencia: ' + (e.message || e.code || e));
+    if(btn){ btn.disabled = false; btn.textContent = txt; }
+  }
 }
 
 
