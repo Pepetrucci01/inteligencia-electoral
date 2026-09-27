@@ -381,8 +381,14 @@ function exigirDestino(){
   alert('Selecciona el ESTADO DESTINO en la barra roja antes de cargar.');
   return false;
 }
+async function esperarSupabase(intentos){
+  intentos = intentos || 50;  // ~5s máx
+  for(let i=0;i<intentos && !(window.supabase && window.supabase.auth);i++){ await new Promise(r=>setTimeout(r,100)); }
+  return !!(window.supabase && window.supabase.auth);
+}
 async function bootOperador(){
   try{
+    if(!(await esperarSupabase())){ console.warn('operador: supabase no cargó a tiempo'); return; }
     const token = (await window.supabase.auth.getSession()).data.session?.access_token;
     if(!token){ location.replace('login.html'); return; }
     const r = await fetch(`${SUPA_URL}/rest/v1/rpc/licencias_para_operador`, {
@@ -425,6 +431,7 @@ if(document.readyState === 'loading') document.addEventListener('DOMContentLoade
 let BASE = null;
 async function cargarEstadoBase(){
   try{
+    await esperarSupabase();
     const token = (await window.supabase.auth.getSession()).data.session?.access_token || SUPA_KEY;
     const r = await fetch(`${SUPA_URL}/rest/v1/rpc/get_estado_carga_maestra`, {
       method:'POST', headers:{ 'apikey':SUPA_KEY, 'Authorization':'Bearer '+token, 'Content-Type':'application/json' }, body: JSON.stringify({ p_licencia_id: licDestino() })
