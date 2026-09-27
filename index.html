@@ -90,6 +90,11 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--s
 .tb-title{font-size:13px;font-weight:600;}
 .tb-sub{font-size:11px;color:var(--text3);font-family:var(--mono);}
 .topbar-right{display:flex;align-items:center;gap:10px;}
+/* [27 sep] Selector de licencia (solo super_admin). .ajena = parado en una
+   licencia que NO es la propia: se marca en ámbar para que nunca pase
+   desapercibido en qué estado está trabajando. */
+.tb-lic{display:none;background:var(--bg3);color:var(--text);border:1px solid var(--border2);border-radius:6px;font-family:var(--mono);font-size:11px;padding:3px 6px;cursor:pointer;max-width:180px;outline:none;}
+.tb-lic.ajena{border-color:rgba(245,158,11,.55);color:var(--amber);background:rgba(245,158,11,.08);}
 .tb-badge{font-size:10px;font-family:var(--mono);padding:3px 10px;border-radius:99px;}
 .clock{font-family:var(--mono);font-size:12px;color:var(--text3);}
 .breadcrumb{height:30px;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:6px;font-size:11px;font-family:var(--mono);color:var(--text3);flex-shrink:0;}
@@ -210,6 +215,7 @@ body.rol-consulta     .kpi-estatal { display:none; }
   .tb-sub{font-size:10px;}
   .topbar-right{gap:6px;flex-shrink:0;}
   #tb-sistema,#tb-dias{display:none;}   /* solo estos dos; el badge de alcance (Vista Estatal) se queda */
+  .tb-lic{max-width:110px;font-size:10px;}   /* [27 sep] el selector de licencia también se queda, compacto */
   .topbar-right .clock{display:none;}
   #tb-usuario{display:none !important;}
   .breadcrumb{padding:0 12px;white-space:nowrap;overflow:hidden;}
@@ -466,6 +472,9 @@ body.rol-consulta     .kpi-estatal { display:none; }
       </div>
     </div>
     <div class="topbar-right">
+      <!-- [27 sep] Selector de licencia: solo lo pinta el JS si el servidor
+           confirma super_admin (licencias_para_superadmin regresa filas). -->
+      <select id="tb-lic" class="tb-lic" title="Licencia activa"></select>
       <span id="tb-usuario" style="font-size:11px;color:var(--text2);font-family:var(--mono);display:none;align-items:center;gap:8px;">
         <span id="tb-nombre" style="color:var(--text)"></span>
         <span style="color:var(--text3)">·</span>
@@ -657,7 +666,7 @@ function actualizarContadorModulos(){
   }catch(_e){}
 }
 
-const APP_BUILD = '20260927e'; // [25 sep] shell multi-licencia: estado/meta/año desde configuracion_sistema, sin Colima quemado, tema por licencia // [07/09 b] shell se recarga solo si cambia la sesión (storage/visibilidad) · login nunca en iframe · sin-acceso en vez de login (auth-guard) · badge alcance compacto en móvil (theme.js) // [07/09] responsive móvil ronda 1: shell (crédito en franja propia, 100dvh), war room, activistas, reportes, admin // [05/09] alertas solo en Inicio + plegables · importador pestaña 5 + telefonistas · call center fuente // [04/09] reportar un problema (tickets sobre sistema original VOT-2026-*, todos los roles) · soporte técnico solo super_admin+soporte (data-rol) · consulta IA (nuevo módulo) · panel capturista (paginación, Día E) · war room (388) · captura (aviso cuota) · día E (modal logout) // [03/09] día E: buscador único + voz + registro sorpresa real + encabezado por rol; iframe allow=microphone // [02/09] captura (identidad real, Mi Sección, scan INE, responsive) · reportes (calidad en vivo, alcance municipal) · war room (alertas por rol) · panel capturista (header móvil) // [31/08] subir esta cadena cada vez que se actualice un modulo: es el rompe-cache de los iframes
+const APP_BUILD = '20260927f'; // [27 sep] selector de licencia para super_admin en el topbar: la eleccion vive en el servidor (set_licencia_activa + get_mi_licencia con override), el shell sincroniza electoral_sesion.licencia_id y recarga // [25 sep] shell multi-licencia: estado/meta/año desde configuracion_sistema, sin Colima quemado, tema por licencia // [07/09 b] shell se recarga solo si cambia la sesión (storage/visibilidad) · login nunca en iframe · sin-acceso en vez de login (auth-guard) · badge alcance compacto en móvil (theme.js) // [07/09] responsive móvil ronda 1: shell (crédito en franja propia, 100dvh), war room, activistas, reportes, admin // [05/09] alertas solo en Inicio + plegables · importador pestaña 5 + telefonistas · call center fuente // [04/09] reportar un problema (tickets sobre sistema original VOT-2026-*, todos los roles) · soporte técnico solo super_admin+soporte (data-rol) · consulta IA (nuevo módulo) · panel capturista (paginación, Día E) · war room (388) · captura (aviso cuota) · día E (modal logout) // [03/09] día E: buscador único + voz + registro sorpresa real + encabezado por rol; iframe allow=microphone // [02/09] captura (identidad real, Mi Sección, scan INE, responsive) · reportes (calidad en vivo, alcance municipal) · war room (alertas por rol) · panel capturista (header móvil) // [31/08] subir esta cadena cada vez que se actualice un modulo: es el rompe-cache de los iframes
 
 let collapsed = false;
 
@@ -1264,6 +1273,99 @@ function toggleAlertas(){
     if(id==='carga' && window._esOperadorMEFT!==true){ alert('El m\u00f3dulo de Cargas es exclusivo del operador MEFT.'); return; }
     return _prev.apply(this, arguments);
   };
+})();
+</script>
+<script>
+// [27 sep] SELECTOR DE LICENCIA (solo super_admin). El super_admin puede
+// "pararse" en cualquier licencia sin cambiar de cuenta: la eleccion vive en
+// el SERVIDOR (tabla superadmin_licencia_activa via RPC set_licencia_activa),
+// y get_mi_licencia() la respeta — con eso TODO el RLS y todas las RPC del
+// sistema obedecen solas. Este bloque unicamente: (1) pinta el dropdown si el
+// servidor confirma que la cuenta es super_admin (licencias_para_superadmin
+// regresa vacio para cualquier otro rol, y aqui no se decide nada por rol del
+// localStorage), (2) llama la RPC al cambiar, (3) mantiene
+// electoral_sesion.licencia_id sincronizado con la verdad del servidor para
+// que theme.js y los modulos que leen la sesion pinten la licencia correcta,
+// y recarga. Falla cerrado: sin filas, sin permiso o con error, el selector
+// no aparece y todo queda como hoy. Las cuentas de operador MEFT no lo ven:
+// ellas eligen estado dentro de Cargas.
+(async function(){
+  const SUPA_URL = 'https://dyirhwwmykskpuvzcafx.supabase.co';
+  const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5aXJod3dteWtza3B1dnpjYWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NTk3ODgsImV4cCI6MjA5NTEzNTc4OH0.2xe4cHqORGng1hnYPJ9ZiyT0r87fMijbUEJqBy3-xoI';
+  const sel = document.getElementById('tb-lic');
+  if(!sel) return;
+
+  // Esperar la sesion y el veredicto del gate de operador MEFT (bloque previo).
+  for(let i=0;i<40 && (!window._sesion?.access_token || window._esOperadorMEFT===undefined);i++)
+    await new Promise(r=>setTimeout(r,100));
+  if(!window._sesion?.access_token || window._esOperadorMEFT===true) return;
+
+  async function rpc(nombre, cuerpo){
+    const doFetch = () => fetch(SUPA_URL+'/rest/v1/rpc/'+nombre,{
+      method:'POST',
+      headers:{ apikey:SUPA_KEY, Authorization:'Bearer '+(window._sesion?.access_token||''), 'Content-Type':'application/json' },
+      body: JSON.stringify(cuerpo||{})
+    });
+    let r = await doFetch();
+    if((r.status===401||r.status===403) && typeof window.refrescarTokenSupabase==='function'){
+      if(await window.refrescarTokenSupabase()) r = await doFetch();
+    }
+    if(!r.ok){
+      let msg = 'HTTP '+r.status;
+      try{ const j = await r.json(); if(j && j.message) msg = j.message; }catch(e){}
+      throw new Error(msg);
+    }
+    return r.json();
+  }
+
+  let lics = [];
+  try{ lics = await rpc('licencias_para_superadmin'); }catch(e){ return; }   // sin permiso o error: sin selector
+  if(!Array.isArray(lics) || lics.length===0) return;                        // no es super_admin
+
+  const propia = lics.find(l=>l.es_propia) || null;
+  const activa = lics.find(l=>l.es_activa) || propia || lics[0];
+
+  function esc(t){ return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  sel.innerHTML = lics.map(l =>
+    '<option value="'+esc(l.id)+'"'+(activa && l.id===activa.id?' selected':'')+'>'
+    + esc(l.clave || l.estado) + (l.es_propia ? ' \u00b7 propia' : '') + '</option>'
+  ).join('');
+  sel.classList.toggle('ajena', !!(activa && propia && activa.id!==propia.id));
+  sel.style.display = 'inline-block';
+
+  // Reconciliar la sesion local con la verdad del servidor: si quedo elegida
+  // una licencia de una sesion anterior, el shell debe pintarla desde ya.
+  // (La firma del auth-guard es id|rol|municipio: tocar licencia_id no
+  // dispara sus recargas; la recarga la hacemos nosotros, una sola vez.)
+  try{
+    const s = JSON.parse(localStorage.getItem('electoral_sesion')||'null');
+    if(s && activa && s.licencia_id !== activa.id){
+      s.licencia_id = activa.id;
+      localStorage.setItem('electoral_sesion', JSON.stringify(s));
+      location.reload();
+      return;
+    }
+  }catch(e){}
+
+  sel.addEventListener('change', async function(){
+    const destino = sel.value;
+    sel.disabled = true;
+    try{
+      // Elegir la propia = borrar el override en el servidor (p_licencia null).
+      const efectiva = await rpc('set_licencia_activa',
+        { p_licencia: (propia && destino===propia.id) ? null : destino });
+      try{
+        const s = JSON.parse(localStorage.getItem('electoral_sesion')||'null');
+        if(s){ s.licencia_id = efectiva || destino; localStorage.setItem('electoral_sesion', JSON.stringify(s)); }
+      }catch(e){}
+      location.reload();
+    }catch(e){
+      alert('No se pudo cambiar de licencia: '+(e && e.message ? e.message : e));
+      if(activa) sel.value = activa.id;
+      sel.classList.toggle('ajena', !!(activa && propia && activa.id!==propia.id));
+      sel.disabled = false;
+    }
+  });
 })();
 </script>
 </body>
