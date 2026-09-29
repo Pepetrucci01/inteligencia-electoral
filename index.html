@@ -666,7 +666,7 @@ function actualizarContadorModulos(){
   }catch(_e){}
 }
 
-const APP_BUILD = '20260927f'; // [27 sep] selector de licencia para super_admin en el topbar: la eleccion vive en el servidor (set_licencia_activa + get_mi_licencia con override), el shell sincroniza electoral_sesion.licencia_id y recarga // [25 sep] shell multi-licencia: estado/meta/año desde configuracion_sistema, sin Colima quemado, tema por licencia // [07/09 b] shell se recarga solo si cambia la sesión (storage/visibilidad) · login nunca en iframe · sin-acceso en vez de login (auth-guard) · badge alcance compacto en móvil (theme.js) // [07/09] responsive móvil ronda 1: shell (crédito en franja propia, 100dvh), war room, activistas, reportes, admin // [05/09] alertas solo en Inicio + plegables · importador pestaña 5 + telefonistas · call center fuente // [04/09] reportar un problema (tickets sobre sistema original VOT-2026-*, todos los roles) · soporte técnico solo super_admin+soporte (data-rol) · consulta IA (nuevo módulo) · panel capturista (paginación, Día E) · war room (388) · captura (aviso cuota) · día E (modal logout) // [03/09] día E: buscador único + voz + registro sorpresa real + encabezado por rol; iframe allow=microphone // [02/09] captura (identidad real, Mi Sección, scan INE, responsive) · reportes (calidad en vivo, alcance municipal) · war room (alertas por rol) · panel capturista (header móvil) // [31/08] subir esta cadena cada vez que se actualice un modulo: es el rompe-cache de los iframes
+const APP_BUILD = '20260929a'; // [29 sep] dropdown de licencia con los 32 estados: los sin licencia se ven igual pero al elegirlos solo avisan "licencia en preparación" y el selector regresa — sin RPC, sin recarga // [27 sep] selector de licencia para super_admin en el topbar: la eleccion vive en el servidor (set_licencia_activa + get_mi_licencia con override), el shell sincroniza electoral_sesion.licencia_id y recarga // [25 sep] shell multi-licencia: estado/meta/año desde configuracion_sistema, sin Colima quemado, tema por licencia // [07/09 b] shell se recarga solo si cambia la sesión (storage/visibilidad) · login nunca en iframe · sin-acceso en vez de login (auth-guard) · badge alcance compacto en móvil (theme.js) // [07/09] responsive móvil ronda 1: shell (crédito en franja propia, 100dvh), war room, activistas, reportes, admin // [05/09] alertas solo en Inicio + plegables · importador pestaña 5 + telefonistas · call center fuente // [04/09] reportar un problema (tickets sobre sistema original VOT-2026-*, todos los roles) · soporte técnico solo super_admin+soporte (data-rol) · consulta IA (nuevo módulo) · panel capturista (paginación, Día E) · war room (388) · captura (aviso cuota) · día E (modal logout) // [03/09] día E: buscador único + voz + registro sorpresa real + encabezado por rol; iframe allow=microphone // [02/09] captura (identidad real, Mi Sección, scan INE, responsive) · reportes (calidad en vivo, alcance municipal) · war room (alertas por rol) · panel capturista (header móvil) // [31/08] subir esta cadena cada vez que se actualice un modulo: es el rompe-cache de los iframes
 
 let collapsed = false;
 
@@ -1326,12 +1326,66 @@ function toggleAlertas(){
   const activa = lics.find(l=>l.es_activa) || propia || lics[0];
 
   function esc(t){ return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-  sel.innerHTML = lics.map(l =>
-    '<option value="'+esc(l.id)+'"'+(activa && l.id===activa.id?' selected':'')+'>'
-    + esc(l.estado || l.clave) + '</option>'
-  ).join('');
+
+  // [29 sep] Los 32 estados SIEMPRE visibles en el dropdown, con el mismo
+  // aspecto. Los que tienen licencia funcionan como siempre (value = id de la
+  // licencia); los que aún no, llevan value 'pend:<Estado>' y al elegirlos
+  // solo sale un toast discreto y el selector regresa a la licencia activa —
+  // sin RPC, sin recarga, sin tocar la base. En cuanto exista la licencia de
+  // un estado (modal Nueva licencia), ese estado se "enciende" solo porque
+  // licencias_para_superadmin ya lo regresa. Una licencia con estado raro que
+  // no cuadre con el catálogo NUNCA se pierde: se agrega tal cual a la lista.
+  const ESTADOS_32 = ['Aguascalientes','Baja California','Baja California Sur','Campeche','Chiapas','Chihuahua','Ciudad de México','Coahuila','Colima','Durango','Estado de México','Guanajuato','Guerrero','Hidalgo','Jalisco','Michoacán','Morelos','Nayarit','Nuevo León','Oaxaca','Puebla','Querétaro','Quintana Roo','San Luis Potosí','Sinaloa','Sonora','Tabasco','Tamaulipas','Tlaxcala','Veracruz','Yucatán','Zacatecas'];
+  // Nombres alternos con los que puede venir el `estado` de una licencia
+  // (creada a mano o con catálogos viejos), para no duplicar el estado:
+  const ALIAS_EDO = { 'MEXICO':'ESTADO DE MEXICO', 'EDOMEX':'ESTADO DE MEXICO', 'ESTADO DE MEX':'ESTADO DE MEXICO', 'CDMX':'CIUDAD DE MEXICO', 'DISTRITO FEDERAL':'CIUDAD DE MEXICO', 'COAHUILA DE ZARAGOZA':'COAHUILA', 'MICHOACAN DE OCAMPO':'MICHOACAN', 'VERACRUZ DE IGNACIO DE LA LLAVE':'VERACRUZ' };
+  function normEdo(t){
+    t = String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim().replace(/\s+/g,' ');
+    return ALIAS_EDO[t] || t;
+  }
+  // Licencias por estado. Si un estado llega a tener 2+ licencias (p. ej.
+  // BCS-DEMO y una de partido), cada opción se distingue con su clave.
+  const licsPorEstado = {};
+  lics.forEach(function(l){ const k = normEdo(l.estado || l.clave); licsPorEstado[k] = (licsPorEstado[k]||0)+1; });
+
+  const items = lics.map(function(l){
+    const k = normEdo(l.estado || l.clave);
+    return {
+      value: l.id,
+      label: (l.estado || l.clave) + (licsPorEstado[k] > 1 && l.clave ? ' · ' + l.clave : ''),
+      orden: k,
+      esLic: true,
+      id: l.id
+    };
+  });
+  ESTADOS_32.forEach(function(e){
+    if(!licsPorEstado[normEdo(e)]) items.push({ value:'pend:'+e, label:e, orden:normEdo(e), esLic:false, id:null });
+  });
+  items.sort(function(a,b){ return a.orden < b.orden ? -1 : a.orden > b.orden ? 1 : 0; });
+
+  sel.innerHTML = items.map(function(it){
+    return '<option value="'+esc(it.value)+'"'+(activa && it.esLic && it.id===activa.id?' selected':'')+'>'
+      + esc(it.label) + '</option>';
+  }).join('');
   sel.classList.toggle('ajena', !!(activa && propia && activa.id!==propia.id));
   sel.style.display = 'inline-block';
+
+  // Toast discreto para estados sin licencia: se pinta con los colores del
+  // tema, se va solo a los ~2.5 s y no bloquea nada.
+  let toastTimer = null;
+  function toastLic(msg){
+    let el = document.getElementById('tb-lic-toast');
+    if(!el){
+      el = document.createElement('div');
+      el.id = 'tb-lic-toast';
+      el.style.cssText = 'position:fixed;top:52px;right:16px;z-index:9999;background:var(--bg3,#141a2e);color:var(--text,#e5e9f2);border:1px solid var(--border2,#2a3350);border-radius:8px;padding:8px 14px;font-family:var(--mono,monospace);font-size:11px;box-shadow:0 6px 24px rgba(0,0,0,.45);opacity:0;transition:opacity .25s;pointer-events:none;max-width:70vw;';
+      document.body.appendChild(el);
+    }
+    el.textContent = msg;
+    requestAnimationFrame(function(){ el.style.opacity = '1'; });
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ el.style.opacity = '0'; }, 2600);
+  }
 
   // Reconciliar la sesion local con la verdad del servidor: si quedo elegida
   // una licencia de una sesion anterior, el shell debe pintarla desde ya.
@@ -1349,6 +1403,14 @@ function toggleAlertas(){
 
   sel.addEventListener('change', async function(){
     const destino = sel.value;
+    // [29 sep] Estado sin licencia: aviso discreto y el selector regresa a
+    // la licencia activa. No hay RPC ni recarga; nada cambia en el servidor.
+    if(String(destino).indexOf('pend:')===0){
+      toastLic(destino.slice(5) + ' · licencia en preparación');
+      if(activa) sel.value = activa.id;
+      sel.classList.toggle('ajena', !!(activa && propia && activa.id!==propia.id));
+      return;
+    }
     sel.disabled = true;
     try{
       // Elegir la propia = borrar el override en el servidor (p_licencia null).
