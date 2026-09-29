@@ -253,10 +253,10 @@ body.rol-consulta     .kpi-estatal { display:none; }
 <script>
 // ── Candado de dominio — solo corre en dominios autorizados ───────────────
 (function(){
-  const ALLOW = ['votera.mx','www.votera.mx','localhost','127.0.0.1'];
+  const ALLOW = ['votera.mx','www.votera.mx','meft-sie-votera.com','www.meft-sie-votera.com','localhost','127.0.0.1'];
   const h = location.hostname;
   const ok = ALLOW.includes(h) || h.includes('inteligencia-electoral');
-  if(!ok){ location.replace('https://inteligencia-electoral.vercel.app/'); }
+  if(!ok){ location.replace('https://meft-sie-votera.com/'); }
 })();
 // Guard de sesión — redirigir a login si no hay sesión válida
 (function(){
